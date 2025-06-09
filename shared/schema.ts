@@ -69,6 +69,8 @@ export const globalSettings = mysqlTable("global_settings", {
   secondaryColor: varchar("secondary_color", { length: 7 }).notNull().default("#64748b"),
   backgroundColor: varchar("background_color", { length: 7 }).notNull().default("#f8fafc"),
   textColor: varchar("text_color", { length: 7 }).notNull().default("#1e293b"),
+  evolutionApiUrl: varchar("evolution_api_url", { length: 500 }),
+  evolutionApiGlobalKey: varchar("evolution_api_global_key", { length: 500 }),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
 

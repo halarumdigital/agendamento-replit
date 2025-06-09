@@ -5,12 +5,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { Settings, Palette, Upload } from "lucide-react";
+import { Settings, Palette, MessageSquare, Globe } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { settingsSchema } from "@/lib/validations";
 import type { GlobalSettings } from "@shared/schema";
 import { z } from "zod";
+import { isUnauthorizedError } from "@/lib/authUtils";
 
 type SettingsFormData = z.infer<typeof settingsSchema>;
 
@@ -31,6 +34,8 @@ export default function SettingsPage() {
       secondaryColor: "#64748b",
       backgroundColor: "#f8fafc",
       textColor: "#1e293b",
+      evolutionApiUrl: "",
+      evolutionApiGlobalKey: "",
     },
     values: settings ? {
       systemName: settings.systemName,
@@ -39,6 +44,8 @@ export default function SettingsPage() {
       secondaryColor: settings.secondaryColor,
       backgroundColor: settings.backgroundColor,
       textColor: settings.textColor,
+      evolutionApiUrl: settings.evolutionApiUrl || "",
+      evolutionApiGlobalKey: settings.evolutionApiGlobalKey || "",
     } : undefined,
   });
 
@@ -48,15 +55,26 @@ export default function SettingsPage() {
     },
     onSuccess: () => {
       toast({
-        title: "Sucesso",
-        description: "Configurações salvas com sucesso!",
+        title: "Configurações atualizadas",
+        description: "As configurações foram salvas com sucesso.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
     },
     onError: (error: Error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Não autorizado",
+          description: "Você foi desconectado. Fazendo login novamente...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 500);
+        return;
+      }
       toast({
         title: "Erro",
-        description: error.message || "Falha ao salvar configurações",
+        description: "Falha ao atualizar as configurações. Tente novamente.",
         variant: "destructive",
       });
     },
@@ -68,226 +86,238 @@ export default function SettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Configurações Globais</h1>
-          <p className="text-slate-600 mt-1">Carregando...</p>
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center gap-2 mb-6">
+          <Settings className="w-6 h-6" />
+          <h1 className="text-2xl font-bold">Configurações</h1>
+        </div>
+        <div className="space-y-4">
+          <div className="h-32 bg-gray-200 rounded animate-pulse"></div>
+          <div className="h-32 bg-gray-200 rounded animate-pulse"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">Configurações Globais</h1>
-        <p className="text-slate-600 mt-1">Personalize a aparência e configurações do sistema</p>
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex items-center gap-2 mb-6">
+        <Settings className="w-6 h-6" />
+        <h1 className="text-2xl font-bold">Configurações</h1>
       </div>
 
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        {/* System Branding */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Settings className="w-5 h-5 mr-2" />
-              Identidade Visual
-            </CardTitle>
-            <CardDescription>
-              Configure o nome e logotipo do sistema
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="systemName">Nome do Sistema</Label>
-              <Input
-                id="systemName"
-                {...form.register("systemName")}
-                placeholder="AdminPro"
-              />
-              {form.formState.errors.systemName && (
-                <p className="text-sm text-red-600">
-                  {form.formState.errors.systemName.message}
-                </p>
-              )}
-              <p className="text-xs text-slate-500">
-                Este nome será exibido no topo da aplicação
-              </p>
-            </div>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <Tabs defaultValue="general" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="general" className="flex items-center gap-2">
+                <Settings className="w-4 h-4" />
+                Geral
+              </TabsTrigger>
+              <TabsTrigger value="appearance" className="flex items-center gap-2">
+                <Palette className="w-4 h-4" />
+                Aparência
+              </TabsTrigger>
+              <TabsTrigger value="evolution" className="flex items-center gap-2">
+                <MessageSquare className="w-4 h-4" />
+                Evolution API
+              </TabsTrigger>
+            </TabsList>
 
-            <div className="space-y-2">
-              <Label htmlFor="logoUrl">URL do Logo (opcional)</Label>
-              <Input
-                id="logoUrl"
-                {...form.register("logoUrl")}
-                placeholder="https://exemplo.com/logo.png"
-              />
-              {form.formState.errors.logoUrl && (
-                <p className="text-sm text-red-600">
-                  {form.formState.errors.logoUrl.message}
-                </p>
-              )}
-              <p className="text-xs text-slate-500">
-                Cole a URL de uma imagem online ou deixe em branco para usar o ícone padrão
-              </p>
-            </div>
+            <TabsContent value="general" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Globe className="w-5 h-5" />
+                    Configurações Gerais
+                  </CardTitle>
+                  <CardDescription>
+                    Configure as informações básicas do sistema.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="systemName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nome do Sistema</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Digite o nome do sistema" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-            <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center">
-              <div className="w-16 h-16 bg-slate-100 rounded-lg mx-auto mb-4 flex items-center justify-center">
-                <Upload className="w-8 h-8 text-slate-400" />
-              </div>
-              <p className="text-sm font-medium text-slate-900">Upload de arquivo em desenvolvimento</p>
-              <p className="text-xs text-slate-500 mt-1">
-                Por enquanto, use a URL do logo acima
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+                  <FormField
+                    control={form.control}
+                    name="logoUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>URL do Logo (opcional)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="https://exemplo.com/logo.png" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-        {/* Color Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Palette className="w-5 h-5 mr-2" />
-              Cores do Sistema
-            </CardTitle>
-            <CardDescription>
-              Personalize as cores da interface
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="primaryColor">Cor Primária</Label>
-                <div className="flex items-center space-x-3">
-                  <input
-                    type="color"
-                    {...form.register("primaryColor")}
-                    className="w-12 h-10 border border-slate-300 rounded-lg cursor-pointer"
+            <TabsContent value="appearance" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Palette className="w-5 h-5" />
+                    Personalização Visual
+                  </CardTitle>
+                  <CardDescription>
+                    Customize as cores e aparência do sistema.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="primaryColor"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Cor Primária</FormLabel>
+                        <FormControl>
+                          <div className="flex gap-2">
+                            <Input type="color" className="w-16 h-10 p-1" {...field} />
+                            <Input placeholder="#2563eb" {...field} />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                  <Input
-                    {...form.register("primaryColor")}
-                    placeholder="#2563eb"
-                    className="flex-1"
-                  />
-                </div>
-                {form.formState.errors.primaryColor && (
-                  <p className="text-sm text-red-600">
-                    {form.formState.errors.primaryColor.message}
-                  </p>
-                )}
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="secondaryColor">Cor Secundária</Label>
-                <div className="flex items-center space-x-3">
-                  <input
-                    type="color"
-                    {...form.register("secondaryColor")}
-                    className="w-12 h-10 border border-slate-300 rounded-lg cursor-pointer"
+                  <FormField
+                    control={form.control}
+                    name="secondaryColor"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Cor Secundária</FormLabel>
+                        <FormControl>
+                          <div className="flex gap-2">
+                            <Input type="color" className="w-16 h-10 p-1" {...field} />
+                            <Input placeholder="#64748b" {...field} />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                  <Input
-                    {...form.register("secondaryColor")}
-                    placeholder="#64748b"
-                    className="flex-1"
-                  />
-                </div>
-                {form.formState.errors.secondaryColor && (
-                  <p className="text-sm text-red-600">
-                    {form.formState.errors.secondaryColor.message}
-                  </p>
-                )}
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="backgroundColor">Cor de Fundo</Label>
-                <div className="flex items-center space-x-3">
-                  <input
-                    type="color"
-                    {...form.register("backgroundColor")}
-                    className="w-12 h-10 border border-slate-300 rounded-lg cursor-pointer"
+                  <FormField
+                    control={form.control}
+                    name="backgroundColor"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Cor de Fundo</FormLabel>
+                        <FormControl>
+                          <div className="flex gap-2">
+                            <Input type="color" className="w-16 h-10 p-1" {...field} />
+                            <Input placeholder="#f8fafc" {...field} />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                  <Input
-                    {...form.register("backgroundColor")}
-                    placeholder="#f8fafc"
-                    className="flex-1"
-                  />
-                </div>
-                {form.formState.errors.backgroundColor && (
-                  <p className="text-sm text-red-600">
-                    {form.formState.errors.backgroundColor.message}
-                  </p>
-                )}
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="textColor">Cor do Texto</Label>
-                <div className="flex items-center space-x-3">
-                  <input
-                    type="color"
-                    {...form.register("textColor")}
-                    className="w-12 h-10 border border-slate-300 rounded-lg cursor-pointer"
+                  <FormField
+                    control={form.control}
+                    name="textColor"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Cor do Texto</FormLabel>
+                        <FormControl>
+                          <div className="flex gap-2">
+                            <Input type="color" className="w-16 h-10 p-1" {...field} />
+                            <Input placeholder="#1e293b" {...field} />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                  <Input
-                    {...form.register("textColor")}
-                    placeholder="#1e293b"
-                    className="flex-1"
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="evolution" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MessageSquare className="w-5 h-5" />
+                    Evolution API
+                  </CardTitle>
+                  <CardDescription>
+                    Configure a integração com a Evolution API para WhatsApp.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="evolutionApiUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>URL da Evolution API</FormLabel>
+                        <FormControl>
+                          <Input placeholder="https://api.evolution.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </div>
-                {form.formState.errors.textColor && (
-                  <p className="text-sm text-red-600">
-                    {form.formState.errors.textColor.message}
-                  </p>
-                )}
-              </div>
-            </div>
 
-            <div className="p-4 bg-slate-50 rounded-lg">
-              <h4 className="text-sm font-medium text-slate-700 mb-3">Pré-visualização</h4>
-              <div className="space-y-3">
-                <div className="flex items-center space-x-3">
-                  <div 
-                    className="w-6 h-6 rounded"
-                    style={{ backgroundColor: form.watch("primaryColor") }}
-                  ></div>
-                  <span className="text-sm text-slate-600">Elementos primários (botões, links)</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <div 
-                    className="w-6 h-6 rounded"
-                    style={{ backgroundColor: form.watch("secondaryColor") }}
-                  ></div>
-                  <span className="text-sm text-slate-600">Elementos secundários (bordas, ícones)</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <div 
-                    className="w-6 h-6 border rounded"
-                    style={{ backgroundColor: form.watch("backgroundColor") }}
-                  ></div>
-                  <span className="text-sm text-slate-600">Fundo da aplicação</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <div 
-                    className="w-6 h-6 rounded"
-                    style={{ backgroundColor: form.watch("textColor") }}
-                  ></div>
-                  <span className="text-sm text-slate-600">Cor do texto</span>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                  <FormField
+                    control={form.control}
+                    name="evolutionApiGlobalKey"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Global Key</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="password" 
+                            placeholder="Digite a chave global da API" 
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-        {/* Save Button */}
-        <div className="flex justify-end">
-          <Button 
-            type="submit" 
-            disabled={updateMutation.isPending}
-            className="px-6"
-          >
-            {updateMutation.isPending ? "Salvando..." : "Salvar Configurações"}
-          </Button>
-        </div>
-      </form>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+                    <h4 className="font-medium text-blue-900 mb-2">Como configurar:</h4>
+                    <ul className="text-sm text-blue-800 space-y-1">
+                      <li>• URL: Endereço completo da sua instância Evolution API</li>
+                      <li>• Global Key: Chave de autenticação global da API</li>
+                      <li>• Essas configurações são necessárias para integração com WhatsApp</li>
+                    </ul>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+
+          <div className="flex justify-end">
+            <Button 
+              type="submit" 
+              disabled={updateMutation.isPending}
+              className="w-full md:w-auto"
+            >
+              {updateMutation.isPending ? "Salvando..." : "Salvar Configurações"}
+            </Button>
+          </div>
+        </form>
+      </Form>
     </div>
   );
 }

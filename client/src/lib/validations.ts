@@ -136,4 +136,6 @@ export const settingsSchema = z.object({
   secondaryColor: z.string().regex(/^#[0-9A-F]{6}$/i, "Cor secundária deve ser um hex válido"),
   backgroundColor: z.string().regex(/^#[0-9A-F]{6}$/i, "Cor de fundo deve ser um hex válido"),
   textColor: z.string().regex(/^#[0-9A-F]{6}$/i, "Cor do texto deve ser um hex válido"),
+  evolutionApiUrl: z.string().optional(),
+  evolutionApiGlobalKey: z.string().optional(),
 });
