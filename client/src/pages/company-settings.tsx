@@ -696,17 +696,6 @@ export default function CompanySettings() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => autoConfigureWebhookMutation.mutate(instance.id)}
-                              disabled={autoConfigureWebhookMutation.isPending}
-                              className="flex items-center gap-1"
-                            >
-                              <Bot className="w-4 h-4" />
-                              {autoConfigureWebhookMutation.isPending ? "Configurando..." : 
-                               instance.webhook ? "Reconfigurar IA" : "Configurar IA"}
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
                               onClick={() => {
                                 setSelectedInstance(instance);
                                 webhookForm.reset({
@@ -714,10 +703,10 @@ export default function CompanySettings() {
                                   apiKey: instance.apiKey || "",
                                 });
                               }}
-                              className="flex items-center gap-1 text-gray-600"
+                              className="flex items-center gap-1"
                             >
-                              <Settings className="w-4 h-4" />
-                              Config Manual
+                              <Bot className="w-4 h-4" />
+                              {instance.webhook ? "Reconfigurar IA" : "Configurar IA"}
                             </Button>
                           </>
                         ) : (

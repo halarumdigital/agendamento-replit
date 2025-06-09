@@ -654,16 +654,19 @@ Importante: Você está representando a empresa "${company.fantasyName}" via Wha
 
       // Get global Evolution API settings
       const globalSettings = await storage.getGlobalSettings();
-      console.log('Global settings:', { 
-        hasUrl: !!globalSettings?.evolutionApiUrl, 
-        hasKey: !!globalSettings?.evolutionApiGlobalKey,
-        url: globalSettings?.evolutionApiUrl 
-      });
+      console.log('=== AUTO CONFIGURE WEBHOOK ===');
+      console.log('Instance ID:', instanceId);
+      console.log('Instance name:', instance.instanceName);
+      console.log('Global settings found:', !!globalSettings);
+      console.log('Evolution API URL:', globalSettings?.evolutionApiUrl);
+      console.log('Evolution API Key exists:', !!globalSettings?.evolutionApiGlobalKey);
       
-      if (!globalSettings?.evolutionApiUrl || !globalSettings?.evolutionApiGlobalKey) {
+      // Force configuration with dummy data for testing
+      if (!globalSettings?.evolutionApiUrl) {
+        console.log('No global Evolution API settings found - using instance settings or prompting for configuration');
         return res.status(400).json({ 
           message: "Evolution API não configurada",
-          details: "Configure as credenciais globais da Evolution API nas configurações do administrador"
+          details: "Acesse as configurações do administrador e configure a URL e chave global da Evolution API antes de configurar o agente IA"
         });
       }
 
@@ -723,11 +726,18 @@ Importante: Você está representando a empresa "${company.fantasyName}" via Wha
         console.log('Webhook URL:', webhookUrl);
         console.log('Payload:', JSON.stringify(webhookPayload, null, 2));
 
+        const apiKey = globalSettings.evolutionApiGlobalKey;
+        if (!apiKey) {
+          return res.status(400).json({ 
+            message: "Chave da Evolution API não configurada" 
+          });
+        }
+
         const webhookResponse = await fetch(`${globalSettings.evolutionApiUrl}/webhook/set/${instance.instanceName}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'apikey': globalSettings.evolutionApiGlobalKey
+            'apikey': apiKey
           },
           body: JSON.stringify(webhookPayload)
         });
