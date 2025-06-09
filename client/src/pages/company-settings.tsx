@@ -751,16 +751,16 @@ export default function CompanySettings() {
                                 
                                 // Try to fetch the latest instance details with API credentials
                                 try {
-                                  const details = await apiRequest("GET", `/api/company/whatsapp/instances/${instance.instanceName}/details`);
+                                  const details = await apiRequest("GET", `/api/company/whatsapp/instances/${instance.instanceName}/details`) as any;
                                   webhookForm.reset({
-                                    apiUrl: details.instance?.apiUrl || instance.apiUrl || "https://sua-evolution-api.com",
-                                    apiKey: details.instance?.apiKey || instance.apiKey || "",
+                                    apiUrl: details?.instance?.apiUrl || (instance as any).apiUrl || "https://sua-evolution-api.com",
+                                    apiKey: details?.instance?.apiKey || (instance as any).apiKey || "",
                                   });
                                 } catch (error) {
                                   // Fallback to instance data if details fetch fails
                                   webhookForm.reset({
-                                    apiUrl: instance.apiUrl || "https://sua-evolution-api.com",
-                                    apiKey: instance.apiKey || "",
+                                    apiUrl: (instance as any).apiUrl || "https://sua-evolution-api.com",
+                                    apiKey: (instance as any).apiKey || "",
                                   });
                                 }
                               }}

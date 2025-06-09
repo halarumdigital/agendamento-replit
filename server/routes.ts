@@ -1055,7 +1055,67 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
           companyId,
           instanceName,
           status: 'created',
+          apiUrl: settings.evolutionApiUrl,
+          apiKey: settings.evolutionApiGlobalKey
         });
+
+        // Auto-configure webhook for the new instance
+        try {
+          console.log('🤖 Auto-configurando webhook para instância:', instanceName);
+          
+          const webhookUrl = `${req.protocol}://${req.get('host')}/api/webhook/whatsapp/${instanceName}`;
+          
+          const webhookPayload = {
+            url: webhookUrl,
+            events: [
+              "APPLICATION_STARTUP",
+              "QRCODE_UPDATED", 
+              "MESSAGES_SET",
+              "MESSAGES_UPSERT",
+              "MESSAGES_UPDATE",
+              "MESSAGES_DELETE",
+              "SEND_MESSAGE",
+              "CONTACTS_SET",
+              "CONTACTS_UPSERT",
+              "CONTACTS_UPDATE",
+              "PRESENCE_UPDATE",
+              "CHATS_SET",
+              "CHATS_UPSERT", 
+              "CHATS_UPDATE",
+              "CHATS_DELETE",
+              "GROUPS_UPSERT",
+              "GROUP_UPDATE",
+              "GROUP_PARTICIPANTS_UPDATE",
+              "CONNECTION_UPDATE",
+              "CALL",
+              "NEW_JWT_TOKEN"
+            ],
+            webhook_by_events: false,
+            webhook_base64: false
+          };
+
+          const webhookResponse = await fetch(`${settings.evolutionApiUrl}/webhook/set/${instanceName}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': settings.evolutionApiGlobalKey
+            },
+            body: JSON.stringify(webhookPayload)
+          });
+
+          if (webhookResponse.ok) {
+            // Update instance with webhook URL
+            await storage.updateWhatsappInstance(instance.id, {
+              webhook: webhookUrl
+            });
+            console.log('✅ Webhook configurado automaticamente para:', instanceName);
+          } else {
+            const errorText = await webhookResponse.text();
+            console.log('⚠️ Falha ao configurar webhook automaticamente:', errorText);
+          }
+        } catch (webhookError) {
+          console.error('⚠️ Erro ao configurar webhook automaticamente:', webhookError);
+        }
 
         res.json({
           ...instance,
@@ -1071,9 +1131,67 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
             status: 'created',
             createdAt: new Date(),
             updatedAt: new Date(),
+            apiUrl: settings.evolutionApiUrl,
+            apiKey: settings.evolutionApiGlobalKey,
+            webhook: null as string | null
           };
           
           tempWhatsappInstances.push(newInstance);
+          
+          // Auto-configure webhook for temporary instance too
+          try {
+            console.log('🤖 Auto-configurando webhook para instância temporária:', instanceName);
+            
+            const webhookUrl = `${req.protocol}://${req.get('host')}/api/webhook/whatsapp/${instanceName}`;
+            
+            const webhookPayload = {
+              url: webhookUrl,
+              events: [
+                "APPLICATION_STARTUP",
+                "QRCODE_UPDATED", 
+                "MESSAGES_SET",
+                "MESSAGES_UPSERT",
+                "MESSAGES_UPDATE",
+                "MESSAGES_DELETE",
+                "SEND_MESSAGE",
+                "CONTACTS_SET",
+                "CONTACTS_UPSERT",
+                "CONTACTS_UPDATE",
+                "PRESENCE_UPDATE",
+                "CHATS_SET",
+                "CHATS_UPSERT", 
+                "CHATS_UPDATE",
+                "CHATS_DELETE",
+                "GROUPS_UPSERT",
+                "GROUP_UPDATE",
+                "GROUP_PARTICIPANTS_UPDATE",
+                "CONNECTION_UPDATE",
+                "CALL",
+                "NEW_JWT_TOKEN"
+              ],
+              webhook_by_events: false,
+              webhook_base64: false
+            };
+
+            const webhookResponse = await fetch(`${settings.evolutionApiUrl}/webhook/set/${instanceName}`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'apikey': settings.evolutionApiGlobalKey
+              },
+              body: JSON.stringify(webhookPayload)
+            });
+
+            if (webhookResponse.ok) {
+              (newInstance as any).webhook = webhookUrl;
+              console.log('✅ Webhook configurado automaticamente para instância temporária:', instanceName);
+            } else {
+              const errorText = await webhookResponse.text();
+              console.log('⚠️ Falha ao configurar webhook automaticamente:', errorText);
+            }
+          } catch (webhookError) {
+            console.error('⚠️ Erro ao configurar webhook automaticamente:', webhookError);
+          }
           
           res.json({
             ...newInstance,
