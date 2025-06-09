@@ -34,8 +34,8 @@ export default function Login() {
         description: "Login realizado com sucesso!",
       });
       
-      // Redirect to dashboard
-      window.location.href = "/";
+      // Redirect to admin dashboard
+      window.location.href = "/administrador";
     } catch (error: any) {
       toast({
         title: "Erro",
