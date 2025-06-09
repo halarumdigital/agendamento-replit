@@ -821,14 +821,14 @@ Importante: Você está representando a empresa "${company.fantasyName}" via Wha
             webhook: {
               enabled: true,
               url: webhookUrl,
-              webhook_by_events: false,
-              webhook_base64: true,
+              base64: true,
               events: [
                 "QRCODE_UPDATED",
                 "MESSAGES_UPSERT",
                 "CONNECTION_UPDATE"
               ]
-            }
+            },
+            webhook_by_events: false
           })
         });
 
@@ -1048,14 +1048,14 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
             webhook: {
               enabled: true,
               url: webhookUrl,
-              webhook_by_events: false,
-              webhook_base64: true,
+              base64: true,
               events: [
                 "QRCODE_UPDATED",
                 "MESSAGES_UPSERT",
                 "CONNECTION_UPDATE"
               ]
-            }
+            },
+            webhook_by_events: false
           };
 
           const webhookResponse = await fetch(`${settings.evolutionApiUrl}/webhook/set/${instanceName}`, {
@@ -1112,14 +1112,14 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
               webhook: {
                 enabled: true,
                 url: webhookUrl,
-                webhook_by_events: false,
-                webhook_base64: true,
+                base64: true,
                 events: [
                   "QRCODE_UPDATED",
                   "MESSAGES_UPSERT",
                   "CONNECTION_UPDATE"
                 ]
-              }
+              },
+              webhook_by_events: false
             };
 
             const webhookResponse = await fetch(`${settings.evolutionApiUrl}/webhook/set/${instanceName}`, {
