@@ -204,6 +204,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // OpenAI models endpoint
+  app.get('/api/openai/models', isAuthenticated, async (req, res) => {
+    try {
+      const settings = await storage.getGlobalSettings();
+      
+      if (!settings?.openaiApiKey) {
+        return res.status(400).json({ 
+          message: "Chave da API OpenAI não configurada. Configure nas configurações globais.",
+          models: []
+        });
+      }
+
+      const openaiResponse = await fetch('https://api.openai.com/v1/models', {
+        headers: {
+          'Authorization': `Bearer ${settings.openaiApiKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!openaiResponse.ok) {
+        return res.status(openaiResponse.status).json({ 
+          message: `Erro da OpenAI API: ${openaiResponse.statusText}`,
+          models: []
+        });
+      }
+
+      const modelsData = await openaiResponse.json();
+      
+      // Filter for GPT models only and sort by relevance
+      const gptModels = modelsData.data
+        .filter((model: any) => model.id.includes('gpt'))
+        .map((model: any) => ({
+          id: model.id,
+          name: model.id,
+          created: model.created
+        }))
+        .sort((a: any, b: any) => {
+          // Sort by model priority: gpt-4o, gpt-4, gpt-3.5
+          const priority = (id: string) => {
+            if (id.includes('gpt-4o')) return 1;
+            if (id.includes('gpt-4')) return 2;
+            if (id.includes('gpt-3.5')) return 3;
+            return 4;
+          };
+          return priority(a.id) - priority(b.id);
+        });
+
+      res.json({
+        models: gptModels,
+        message: `${gptModels.length} modelos encontrados`
+      });
+    } catch (error: any) {
+      console.error("Error fetching OpenAI models:", error);
+      res.status(500).json({ 
+        message: `Erro ao buscar modelos: ${error.message}`,
+        models: []
+      });
+    }
+  });
+
   // Admin authentication routes
   app.post('/api/auth/login', async (req: any, res) => {
     try {

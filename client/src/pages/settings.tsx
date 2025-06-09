@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,9 +22,15 @@ type SettingsFormData = z.infer<typeof settingsSchema>;
 export default function SettingsPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [fetchingModels, setFetchingModels] = useState(false);
 
   const { data: settings, isLoading } = useQuery<GlobalSettings>({
     queryKey: ["/api/settings"],
+  });
+
+  const { data: openaiModels, isLoading: isLoadingModels } = useQuery({
+    queryKey: ["/api/openai/models"],
+    enabled: false, // Only fetch when explicitly triggered
   });
 
   const form = useForm<SettingsFormData>({
