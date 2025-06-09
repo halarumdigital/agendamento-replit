@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Settings, Building2, Lock, User, MessageSquare, Trash2, Plus, Smartphone, QrCode } from "lucide-react";
+import { Settings, Building2, Lock, User, MessageSquare, Trash2, Plus, Smartphone, QrCode, RefreshCw } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useCompanyAuth } from "@/hooks/useCompanyAuth";
 import { z } from "zod";
@@ -216,6 +216,27 @@ export default function CompanySettings() {
       toast({
         title: "Erro de Conexão",
         description: errorMessage,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const checkStatusMutation = useMutation({
+    mutationFn: async (instanceName: string) => {
+      const response = await apiRequest("GET", `/api/company/whatsapp/instances/${instanceName}/status`);
+      return await response.json();
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/company/whatsapp/instances"] });
+      toast({
+        title: "Status atualizado",
+        description: `Status da instância: ${data.connectionStatus || 'Desconhecido'}`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao verificar status",
+        description: error.message || "Erro ao verificar status da instância",
         variant: "destructive",
       });
     },
@@ -512,6 +533,16 @@ export default function CompanySettings() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => checkStatusMutation.mutate(instance.instanceName)}
+                          disabled={checkStatusMutation.isPending}
+                          className="flex items-center gap-1"
+                        >
+                          <QrCode className="w-4 h-4" />
+                          {checkStatusMutation.isPending ? "Verificando..." : "Status"}
+                        </Button>
                         {instance.status !== 'connected' && (
                           <Button
                             variant="outline"

@@ -704,6 +704,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get WhatsApp instance connection status
+  app.get('/api/company/whatsapp/instances/:instanceName/status', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const { instanceName } = req.params;
+
+      // Get Evolution API settings
+      const settings = await storage.getGlobalSettings();
+      
+      if (!settings?.evolutionApiUrl || !settings?.evolutionApiGlobalKey) {
+        return res.status(400).json({ 
+          message: "Evolution API não configurada.",
+          needsConfig: true 
+        });
+      }
+
+      try {
+        // Call Evolution API to get connection status
+        const evolutionResponse = await fetch(`${settings.evolutionApiUrl}/instance/connectionState/${instanceName}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': settings.evolutionApiGlobalKey,
+          },
+        });
+
+        if (!evolutionResponse.ok) {
+          const errorText = await evolutionResponse.text();
+          console.error("Evolution API status error:", errorText);
+          
+          if (evolutionResponse.status === 404) {
+            return res.status(404).json({ 
+              message: "Instância não encontrada na Evolution API.",
+              status: "not_found"
+            });
+          }
+          
+          return res.status(400).json({ 
+            message: `Erro da Evolution API: ${evolutionResponse.status}`,
+            status: "error"
+          });
+        }
+
+        const statusData = await evolutionResponse.json();
+        
+        // Update instance status in database
+        try {
+          const instances = await storage.getWhatsappInstancesByCompany(companyId);
+          const instance = instances.find(inst => inst.instanceName === instanceName);
+          if (instance) {
+            await storage.updateWhatsappInstance(instance.id, {
+              status: statusData.state || statusData.status || 'unknown'
+            });
+          }
+        } catch (dbError) {
+          console.error("Error updating instance status:", dbError);
+        }
+        
+        res.json({
+          instanceName,
+          connectionStatus: statusData.state || statusData.status,
+          instance: statusData.instance || {},
+          message: "Status obtido da Evolution API",
+          ...statusData
+        });
+      } catch (fetchError: any) {
+        console.error("Error calling Evolution API status:", fetchError);
+        res.status(500).json({ 
+          message: `Erro ao conectar com Evolution API: ${fetchError.message}`,
+          status: "connection_error"
+        });
+      }
+    } catch (error) {
+      console.error("Error getting WhatsApp instance status:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
