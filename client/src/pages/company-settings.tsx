@@ -59,6 +59,13 @@ export default function CompanySettings() {
     },
   });
 
+  const aiAgentForm = useForm<CompanyAiAgentData>({
+    resolver: zodResolver(companyAiAgentSchema),
+    defaultValues: {
+      aiAgentPrompt: company?.aiAgentPrompt || "",
+    },
+  });
+
   // WhatsApp instances query
   const { data: whatsappInstances = [], isLoading: isLoadingInstances } = useQuery<any[]>({
     queryKey: ["/api/company/whatsapp/instances"],
@@ -153,8 +160,32 @@ export default function CompanySettings() {
     },
   });
 
+  const updateAiAgentMutation = useMutation({
+    mutationFn: async (data: CompanyAiAgentData) => {
+      await apiRequest("PUT", "/api/company/ai-agent", data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Agente IA configurado",
+        description: "As configurações do agente IA foram atualizadas com sucesso.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/company/auth/profile"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro",
+        description: "Falha ao atualizar configurações do agente IA. Tente novamente.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const onWhatsappSubmit = (data: WhatsappInstanceData) => {
     createInstanceMutation.mutate(data);
+  };
+
+  const onAiAgentSubmit = (data: CompanyAiAgentData) => {
+    updateAiAgentMutation.mutate(data);
   };
 
   const connectInstanceMutation = useMutation({
@@ -278,9 +309,9 @@ export default function CompanySettings() {
               <MessageSquare className="w-4 h-4" />
               WhatsApp
             </TabsTrigger>
-            <TabsTrigger value="preferences" className="flex items-center gap-2">
-              <User className="w-4 h-4" />
-              Preferências
+            <TabsTrigger value="ai-agent" className="flex items-center gap-2">
+              <Bot className="w-4 h-4" />
+              Agente IA
             </TabsTrigger>
           </TabsList>
 
@@ -633,6 +664,93 @@ export default function CompanySettings() {
                     Português (BR)
                   </Button>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="ai-agent" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Bot className="w-5 h-5" />
+                Configuração do Agente IA
+              </CardTitle>
+              <CardDescription>
+                Configure o prompt personalizado para o agente de IA da sua empresa
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...aiAgentForm}>
+                <form onSubmit={aiAgentForm.handleSubmit(onAiAgentSubmit)} className="space-y-6">
+                  <FormField
+                    control={aiAgentForm.control}
+                    name="aiAgentPrompt"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Prompt do Agente IA</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Exemplo: Você é um assistente virtual especializado em atendimento ao cliente para uma empresa de tecnologia. Sempre seja educado, profissional e forneça respostas precisas sobre nossos produtos e serviços..."
+                            className="min-h-[200px] resize-none"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                        <div className="text-sm text-gray-500">
+                          <p>• O prompt deve descrever como o agente IA deve se comportar</p>
+                          <p>• Inclua informações sobre sua empresa, produtos ou serviços</p>
+                          <p>• Defina o tom de voz e estilo de comunicação desejado</p>
+                          <p>• Mínimo de 10 caracteres</p>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="flex justify-end">
+                    <Button 
+                      type="submit" 
+                      disabled={updateAiAgentMutation.isPending}
+                      className="min-w-[140px]"
+                    >
+                      {updateAiAgentMutation.isPending ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                          Salvando...
+                        </>
+                      ) : (
+                        "Salvar Configurações"
+                      )}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Informações Importantes</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <h4 className="font-semibold text-blue-900 mb-2">Como funciona o Agente IA</h4>
+                <ul className="text-sm text-blue-800 space-y-1">
+                  <li>• O agente utiliza as configurações globais de IA definidas pelo administrador</li>
+                  <li>• Seu prompt personalizado será usado em todas as conversas</li>
+                  <li>• As respostas são geradas com base no modelo de IA configurado</li>
+                  <li>• O agente pode ser integrado com WhatsApp e outros canais</li>
+                </ul>
+              </div>
+              
+              <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
+                <h4 className="font-semibold text-amber-900 mb-2">Dicas para um bom prompt</h4>
+                <ul className="text-sm text-amber-800 space-y-1">
+                  <li>• Seja específico sobre o papel do agente</li>
+                  <li>• Inclua instruções sobre como lidar com diferentes situações</li>
+                  <li>• Defina limites e diretrizes de comunicação</li>
+                  <li>• Teste diferentes versões para otimizar as respostas</li>
+                </ul>
               </div>
             </CardContent>
           </Card>
