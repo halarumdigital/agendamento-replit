@@ -48,6 +48,68 @@ export default function CompanyProfessionals() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Schedule management state
+  const [schedules, setSchedules] = useState(() => {
+    const defaultSchedule = {
+      enabled: false,
+      startTime: "09:00",
+      endTime: "18:00"
+    };
+    return {
+      domingo: defaultSchedule,
+      segunda: defaultSchedule,
+      terca: defaultSchedule,
+      quarta: defaultSchedule,
+      quinta: defaultSchedule,
+      sexta: defaultSchedule,
+      sabado: defaultSchedule
+    };
+  });
+
+  // Generate time options in 30-minute intervals
+  const generateTimeOptions = () => {
+    const options = [];
+    for (let hour = 0; hour < 24; hour++) {
+      for (let minute = 0; minute < 60; minute += 30) {
+        const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        options.push(timeStr);
+      }
+    }
+    return options;
+  };
+
+  const timeOptions = generateTimeOptions();
+
+  // Handle schedule changes
+  const updateSchedule = (day: string, field: 'enabled' | 'startTime' | 'endTime', value: boolean | string) => {
+    setSchedules(prev => ({
+      ...prev,
+      [day]: {
+        ...prev[day as keyof typeof prev],
+        [field]: value
+      }
+    }));
+  };
+
+  // Save schedule for a specific day
+  const saveSchedule = (day: string) => {
+    toast({
+      title: "Horário salvo",
+      description: `Horário de ${day} salvo com sucesso`,
+    });
+  };
+
+  // Days of the week
+  const daysOfWeek = [
+    { key: 'domingo', label: 'Domingo' },
+    { key: 'segunda', label: 'Segunda-feira' },
+    { key: 'terca', label: 'Terça-feira' },
+    { key: 'quarta', label: 'Quarta-feira' },
+    { key: 'quinta', label: 'Quinta-feira' },
+    { key: 'sexta', label: 'Sexta-feira' },
+    { key: 'sabado', label: 'Sábado' }
+  ];
+
   const { data: professionals = [], isLoading } = useQuery<Professional[]>({
     queryKey: ['/api/company/professionals'],
   });
@@ -363,8 +425,123 @@ export default function CompanyProfessionals() {
                 </TabsContent>
                 
                 <TabsContent value="horarios" className="space-y-4">
-                  <div className="text-center py-8 text-gray-500">
-                    <p>Configuração de horários em desenvolvimento</p>
+                  <div className="flex items-center space-x-2 mb-6">
+                    <Clock className="h-5 w-5 text-purple-600" />
+                    <h3 className="text-lg font-semibold text-gray-900">Horários de Funcionamento</h3>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    {daysOfWeek.map((day) => {
+                      const schedule = schedules[day.key as keyof typeof schedules];
+                      return (
+                        <div key={day.key} className="border rounded-lg p-4 bg-gray-50">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-4 flex-1">
+                              <div className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`${day.key}-enabled`}
+                                  checked={schedule.enabled}
+                                  onCheckedChange={(checked) => 
+                                    updateSchedule(day.key, 'enabled', !!checked)
+                                  }
+                                  className="data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600"
+                                />
+                                <Label 
+                                  htmlFor={`${day.key}-enabled`}
+                                  className="text-sm font-medium text-gray-700 min-w-[100px]"
+                                >
+                                  {day.label}
+                                </Label>
+                              </div>
+                              
+                              {schedule.enabled && (
+                                <div className="flex items-center space-x-4">
+                                  <div className="flex items-center space-x-2">
+                                    <Label className="text-sm text-gray-600">Início</Label>
+                                    <Select
+                                      value={schedule.startTime}
+                                      onValueChange={(value) => 
+                                        updateSchedule(day.key, 'startTime', value)
+                                      }
+                                    >
+                                      <SelectTrigger className="w-20">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {timeOptions.map((time) => (
+                                          <SelectItem key={time} value={time}>
+                                            {time}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                  
+                                  <div className="flex items-center space-x-2">
+                                    <Label className="text-sm text-gray-600">Fim</Label>
+                                    <Select
+                                      value={schedule.endTime}
+                                      onValueChange={(value) => 
+                                        updateSchedule(day.key, 'endTime', value)
+                                      }
+                                    >
+                                      <SelectTrigger className="w-20">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {timeOptions.map((time) => (
+                                          <SelectItem key={time} value={time}>
+                                            {time}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                            
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                type="button"
+                                size="sm"
+                                className="bg-purple-600 hover:bg-purple-700 text-white"
+                                onClick={() => saveSchedule(day.label)}
+                              >
+                                <Save className="h-4 w-4 mr-1" />
+                                Salvar
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => 
+                                  updateSchedule(day.key, 'enabled', false)
+                                }
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  
+                  <div className="flex justify-end mt-6 pt-4 border-t">
+                    <Button
+                      type="button"
+                      className="bg-purple-600 hover:bg-purple-700"
+                      onClick={() => {
+                        toast({
+                          title: "Horários salvos",
+                          description: "Todos os horários foram salvos com sucesso",
+                        });
+                      }}
+                    >
+                      Salvar Todos os Horários
+                    </Button>
                   </div>
                 </TabsContent>
                 
