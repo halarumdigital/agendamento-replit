@@ -526,6 +526,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/company/whatsapp/instances/:instanceName/connect', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const { instanceName } = req.params;
+
+      // Get Evolution API settings
+      const settings = await storage.getGlobalSettings();
+      if (!settings?.evolutionApiUrl || !settings?.evolutionApiGlobalKey) {
+        return res.status(400).json({ message: "Evolution API não configurada no sistema" });
+      }
+
+      // Call Evolution API to get connection info and QR code
+      const evolutionResponse = await fetch(`${settings.evolutionApiUrl}/instance/connect/${instanceName}`, {
+        method: 'GET',
+        headers: {
+          'apikey': settings.evolutionApiGlobalKey,
+        },
+      });
+
+      if (!evolutionResponse.ok) {
+        const errorData = await evolutionResponse.text();
+        console.error("Evolution API error:", errorData);
+        return res.status(400).json({ message: "Erro ao conectar com a Evolution API" });
+      }
+
+      const evolutionData = await evolutionResponse.json();
+
+      res.json({
+        instanceName,
+        status: 'connecting',
+        qrcode: evolutionData.base64 || evolutionData.qrcode,
+        ...evolutionData,
+      });
+    } catch (error) {
+      console.error("Error connecting WhatsApp instance:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
