@@ -9,6 +9,7 @@ import {
   services,
   professionals,
   appointments,
+  status,
   type Admin,
   type InsertAdmin,
   type Company,
@@ -29,6 +30,8 @@ import {
   type InsertProfessional,
   type Appointment,
   type InsertAppointment,
+  type Status,
+  type InsertStatus,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -99,6 +102,13 @@ export interface IStorage {
   createAppointment(appointment: InsertAppointment): Promise<Appointment>;
   updateAppointment(id: number, appointment: Partial<InsertAppointment>): Promise<Appointment>;
   deleteAppointment(id: number): Promise<void>;
+  
+  // Status operations
+  getStatus(): Promise<Status[]>;
+  getStatusById(id: number): Promise<Status | undefined>;
+  createStatus(status: InsertStatus): Promise<Status>;
+  updateStatus(id: number, status: Partial<InsertStatus>): Promise<Status>;
+  deleteStatus(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {

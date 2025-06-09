@@ -10,7 +10,7 @@ import {
   User,
   X,
   Menu,
-  MessageCircle
+  Circle
 } from "lucide-react";
 import { useState } from "react";
 
@@ -28,7 +28,7 @@ export default function Sidebar({ systemName = "AdminPro", logoUrl }: SidebarPro
     { name: "Dashboard", href: "/administrador", icon: BarChart3 },
     { name: "Empresas", href: "/administrador/empresas", icon: Building },
     { name: "Planos", href: "/administrador/planos", icon: Tags },
-    { name: "Chat IA", href: "/administrador/chat", icon: MessageCircle },
+    { name: "Status", href: "/administrador/status", icon: Circle },
     { name: "Configurações", href: "/administrador/configuracoes", icon: Settings },
   ];
 
