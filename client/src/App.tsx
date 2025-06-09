@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import { useCompanyAuth } from "@/hooks/useCompanyAuth";
 import AdminLayout from "@/components/layout/admin-layout";
+import CompanyLayout from "./components/layout/company-layout";
 import Landing from "@/pages/landing";
 import Login from "@/pages/login";
 import CompanyLogin from "@/pages/company-login";
@@ -26,10 +27,26 @@ function Router() {
     <Switch>
       {/* Company Routes */}
       <Route path="/" component={CompanyLogin} />
-      <Route path="/dashboard" component={CompanyDashboard} />
-      <Route path="/company/dashboard" component={CompanyDashboard} />
-      <Route path="/company/appointments" component={DashboardAppointments} />
-      <Route path="/configuracoes" component={CompanySettings} />
+      <Route path="/dashboard">
+        <CompanyLayout>
+          <CompanyDashboard />
+        </CompanyLayout>
+      </Route>
+      <Route path="/company/dashboard">
+        <CompanyLayout>
+          <CompanyDashboard />
+        </CompanyLayout>
+      </Route>
+      <Route path="/company/appointments">
+        <CompanyLayout>
+          <DashboardAppointments />
+        </CompanyLayout>
+      </Route>
+      <Route path="/configuracoes">
+        <CompanyLayout>
+          <CompanySettings />
+        </CompanyLayout>
+      </Route>
       
       {/* Admin Login Route */}
       <Route path="/administrador" component={isAdminAuthenticated ? () => <AdminLayout><Dashboard /></AdminLayout> : Login} />

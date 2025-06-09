@@ -16,6 +16,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import CompanyLayout from "@/components/layout/company-layout";
 
 // Types
 interface Appointment {
@@ -222,7 +223,7 @@ export default function DashboardAppointments() {
   }, [selectedDate, form]);
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Agendamentos</h1>
