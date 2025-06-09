@@ -45,6 +45,7 @@
     "@types/bcrypt": "^5.0.2",
     "@types/memoizee": "^0.4.12",
     "@types/pg": "^8.15.4",
+    "@types/qrcode": "^1.5.5",
     "bcrypt": "^6.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
