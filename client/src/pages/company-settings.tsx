@@ -660,14 +660,15 @@ export default function CompanySettings() {
                         <MessageSquare className="w-5 h-5 text-green-600" />
                         <div>
                           <h4 className="font-medium">{instance.instanceName}</h4>
-                          <p className="text-sm text-gray-500">
-                            Status: <Badge variant={instance.status === 'connected' || instance.status === 'open' ? 'default' : 'secondary'}>
+                          <div className="text-sm text-gray-500 flex items-center gap-2">
+                            <span>Status:</span>
+                            <Badge variant={instance.status === 'connected' || instance.status === 'open' ? 'default' : 'secondary'}>
                               {instance.status === 'connected' || instance.status === 'open' ? 'Conectado' : 
                                instance.status === 'close' ? 'Desconectado' :
                                instance.status === 'connecting' ? 'Conectando' :
                                instance.status || 'Desconhecido'}
                             </Badge>
-                          </p>
+                          </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -698,8 +699,9 @@ export default function CompanySettings() {
                               size="sm"
                               onClick={() => {
                                 setSelectedInstance(instance);
+                                // Pre-fill with instance data if available, otherwise use defaults
                                 webhookForm.reset({
-                                  apiUrl: instance.apiUrl || "",
+                                  apiUrl: instance.apiUrl || "https://sua-evolution-api.com",
                                   apiKey: instance.apiKey || "",
                                 });
                               }}
