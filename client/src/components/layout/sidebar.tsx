@@ -24,15 +24,15 @@ export default function Sidebar({ systemName = "AdminPro", logoUrl }: SidebarPro
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   const navigation = [
-    { name: "Dashboard", href: "/", icon: BarChart3 },
-    { name: "Empresas", href: "/companies", icon: Building },
-    { name: "Planos", href: "/plans", icon: Tags },
-    { name: "Configurações", href: "/settings", icon: Settings },
+    { name: "Dashboard", href: "/administrador", icon: BarChart3 },
+    { name: "Empresas", href: "/administrador/empresas", icon: Building },
+    { name: "Planos", href: "/administrador/planos", icon: Tags },
+    { name: "Configurações", href: "/administrador/configuracoes", icon: Settings },
   ];
 
   const isActive = (href: string) => {
-    if (href === "/") {
-      return location === "/";
+    if (href === "/administrador") {
+      return location === "/administrador";
     }
     return location.startsWith(href);
   };
@@ -40,10 +40,10 @@ export default function Sidebar({ systemName = "AdminPro", logoUrl }: SidebarPro
   const handleLogout = async () => {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
-      window.location.href = "/";
+      window.location.href = "/administrador";
     } catch (error) {
       console.error("Logout error:", error);
-      window.location.href = "/";
+      window.location.href = "/administrador";
     }
   };
 

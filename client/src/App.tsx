@@ -23,31 +23,31 @@ function Router() {
   return (
     <Switch>
       {/* Company Routes */}
-      <Route path="/empresa" component={CompanyLogin} />
-      <Route path="/empresa/dashboard" component={CompanyDashboard} />
-      <Route path="/empresa/configuracoes" component={CompanySettings} />
+      <Route path="/" component={CompanyLogin} />
+      <Route path="/dashboard" component={CompanyDashboard} />
+      <Route path="/configuracoes" component={CompanySettings} />
       
       {/* Admin Routes */}
       {isAdminLoading || !isAdminAuthenticated ? (
-        <Route path="/" component={Login} />
+        <Route path="/administrador" component={Login} />
       ) : (
         <>
-          <Route path="/">
+          <Route path="/administrador">
             <AdminLayout>
               <Dashboard />
             </AdminLayout>
           </Route>
-          <Route path="/companies">
+          <Route path="/administrador/empresas">
             <AdminLayout>
               <Companies />
             </AdminLayout>
           </Route>
-          <Route path="/plans">
+          <Route path="/administrador/planos">
             <AdminLayout>
               <Plans />
             </AdminLayout>
           </Route>
-          <Route path="/settings">
+          <Route path="/administrador/configuracoes">
             <AdminLayout>
               <SettingsPage />
             </AdminLayout>

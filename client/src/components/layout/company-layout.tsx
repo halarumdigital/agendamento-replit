@@ -14,7 +14,7 @@ export default function CompanyLayout({ children }: CompanyLayoutProps) {
   const handleLogout = async () => {
     try {
       await fetch("/api/company/auth/logout", { method: "POST" });
-      setLocation("/empresa");
+      setLocation("/");
     } catch (error) {
       console.error("Erro no logout:", error);
     }
@@ -24,27 +24,27 @@ export default function CompanyLayout({ children }: CompanyLayoutProps) {
     {
       icon: Home,
       label: "Dashboard",
-      path: "/empresa/dashboard",
+      path: "/dashboard",
     },
     {
       icon: Users,
       label: "Usuários",
-      path: "/empresa/usuarios",
+      path: "/usuarios",
     },
     {
       icon: MessageSquare,
       label: "WhatsApp",
-      path: "/empresa/whatsapp",
+      path: "/whatsapp",
     },
     {
       icon: BarChart3,
       label: "Relatórios",
-      path: "/empresa/relatorios",
+      path: "/relatorios",
     },
     {
       icon: Settings,
       label: "Configurações",
-      path: "/empresa/configuracoes",
+      path: "/configuracoes",
     },
   ];
 
