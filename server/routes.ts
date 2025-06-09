@@ -974,10 +974,17 @@ Importante: Você está representando a empresa "${company.fantasyName}" via Wha
         return res.status(401).json({ message: "Não autenticado" });
       }
 
-      const client = await storage.createClient({
+      // Clean up empty fields to prevent MySQL errors
+      const clientData = {
         ...req.body,
         companyId,
-      });
+        email: req.body.email === '' ? null : req.body.email,
+        phone: req.body.phone === '' ? null : req.body.phone,
+        birthDate: req.body.birthDate === '' ? null : req.body.birthDate,
+        notes: req.body.notes === '' ? null : req.body.notes,
+      };
+
+      const client = await storage.createClient(clientData);
       res.status(201).json(client);
     } catch (error) {
       console.error("Error creating client:", error);
@@ -992,8 +999,17 @@ Importante: Você está representando a empresa "${company.fantasyName}" via Wha
         return res.status(401).json({ message: "Não autenticado" });
       }
 
+      // Clean up empty fields to prevent MySQL errors
+      const clientData = {
+        ...req.body,
+        email: req.body.email === '' ? null : req.body.email,
+        phone: req.body.phone === '' ? null : req.body.phone,
+        birthDate: req.body.birthDate === '' ? null : req.body.birthDate,
+        notes: req.body.notes === '' ? null : req.body.notes,
+      };
+
       const id = parseInt(req.params.id);
-      const client = await storage.updateClient(id, req.body);
+      const client = await storage.updateClient(id, clientData);
       res.json(client);
     } catch (error) {
       console.error("Error updating client:", error);
