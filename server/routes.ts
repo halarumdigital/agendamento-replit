@@ -636,7 +636,117 @@ Importante: Você está representando a empresa "${company.fantasyName}" via Wha
     }
   });
 
-  // Configure webhook for WhatsApp instance
+  // Auto-configure webhook using global settings
+  app.post('/api/company/whatsapp/:instanceId/auto-configure-webhook', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const { instanceId } = req.params;
+
+      // Get the instance and verify ownership
+      const instance = await storage.getWhatsappInstance(parseInt(instanceId));
+      if (!instance || instance.companyId !== companyId) {
+        return res.status(404).json({ message: "Instância não encontrada" });
+      }
+
+      // Get global Evolution API settings
+      const globalSettings = await storage.getGlobalSettings();
+      if (!globalSettings?.evolutionApiUrl || !globalSettings?.evolutionApiGlobalKey) {
+        return res.status(400).json({ 
+          message: "Evolution API não configurada",
+          details: "Configure as credenciais globais da Evolution API nas configurações do administrador"
+        });
+      }
+
+      // Generate webhook URL for this instance
+      const webhookUrl = `${req.protocol}://${req.get('host')}/api/webhook/whatsapp/${instance.instanceName}`;
+
+      // Update instance with global API details and webhook
+      await storage.updateWhatsappInstance(parseInt(instanceId), {
+        apiUrl: globalSettings.evolutionApiUrl,
+        apiKey: globalSettings.evolutionApiGlobalKey,
+        webhook: webhookUrl
+      });
+
+      // Configure webhook in Evolution API
+      try {
+        const webhookResponse = await fetch(`${globalSettings.evolutionApiUrl}/webhook/set/${instance.instanceName}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': globalSettings.evolutionApiGlobalKey
+          },
+          body: JSON.stringify({
+            webhook: {
+              enabled: true,
+              url: webhookUrl,
+              headers: {
+                authorization: `Bearer ${globalSettings.evolutionApiGlobalKey}`,
+                "Content-Type": "application/json"
+              }
+            },
+            byEvents: false,
+            base64: false,
+            events: [
+              "APPLICATION_STARTUP",
+              "QRCODE_UPDATED",
+              "MESSAGES_SET",
+              "MESSAGES_UPSERT",
+              "MESSAGES_UPDATE",
+              "MESSAGES_DELETE",
+              "SEND_MESSAGE",
+              "CONTACTS_SET",
+              "CONTACTS_UPSERT",
+              "CONTACTS_UPDATE",
+              "PRESENCE_UPDATE",
+              "CHATS_SET",
+              "CHATS_UPSERT",
+              "CHATS_UPDATE",
+              "CHATS_DELETE",
+              "GROUPS_UPSERT",
+              "GROUP_UPDATE",
+              "GROUP_PARTICIPANTS_UPDATE",
+              "CONNECTION_UPDATE",
+              "LABELS_EDIT",
+              "LABELS_ASSOCIATION",
+              "CALL",
+              "TYPEBOT_START",
+              "TYPEBOT_CHANGE_STATUS"
+            ]
+          })
+        });
+
+        if (webhookResponse.ok) {
+          res.json({ 
+            message: "Agente IA configurado com sucesso",
+            webhookUrl,
+            configured: true
+          });
+        } else {
+          const errorText = await webhookResponse.text();
+          console.error('Evolution API webhook error:', errorText);
+          res.status(400).json({ 
+            message: "Erro ao configurar webhook na Evolution API",
+            error: errorText
+          });
+        }
+      } catch (webhookError: any) {
+        console.error('Webhook configuration error:', webhookError);
+        res.status(500).json({ 
+          message: "Erro ao conectar com a Evolution API",
+          error: webhookError?.message || 'Erro desconhecido'
+        });
+      }
+    } catch (error) {
+      console.error('Auto-configure webhook error:', error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  // Configure webhook for WhatsApp instance (manual)
   app.post('/api/company/whatsapp/:instanceId/configure-webhook', async (req: any, res) => {
     try {
       const companyId = req.session.companyId;

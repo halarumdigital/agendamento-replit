@@ -210,6 +210,28 @@ export default function CompanySettings() {
     updateAiAgentMutation.mutate(data);
   };
 
+  const autoConfigureWebhookMutation = useMutation({
+    mutationFn: async (instanceId: number) => {
+      const response = await apiRequest("POST", `/api/company/whatsapp/${instanceId}/auto-configure-webhook`);
+      return response;
+    },
+    onSuccess: (data: any) => {
+      toast({
+        title: "Agente IA configurado",
+        description: "O agente de IA foi conectado com sucesso ao WhatsApp usando as configurações globais.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/company/whatsapp/instances"] });
+      setSelectedInstance(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao configurar agente IA",
+        description: error.message || "Evolution API não configurada pelo administrador",
+        variant: "destructive",
+      });
+    },
+  });
+
   const configureWebhookMutation = useMutation({
     mutationFn: async ({ instanceId, data }: { instanceId: number; data: WebhookConfigData }) => {
       const response = await apiRequest("POST", `/api/company/whatsapp/${instanceId}/configure-webhook`, data);
@@ -674,6 +696,17 @@ export default function CompanySettings() {
                             <Button
                               variant="outline"
                               size="sm"
+                              onClick={() => autoConfigureWebhookMutation.mutate(instance.id)}
+                              disabled={autoConfigureWebhookMutation.isPending}
+                              className="flex items-center gap-1"
+                            >
+                              <Bot className="w-4 h-4" />
+                              {autoConfigureWebhookMutation.isPending ? "Configurando..." : 
+                               instance.webhook ? "Reconfigurar IA" : "Configurar IA"}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               onClick={() => {
                                 setSelectedInstance(instance);
                                 webhookForm.reset({
@@ -681,26 +714,11 @@ export default function CompanySettings() {
                                   apiKey: instance.apiKey || "",
                                 });
                               }}
-                              className="flex items-center gap-1"
+                              className="flex items-center gap-1 text-gray-600"
                             >
-                              <Bot className="w-4 h-4" />
-                              {instance.webhook ? "Reconfigurar IA" : "Configurar IA"}
+                              <Settings className="w-4 h-4" />
+                              Config Manual
                             </Button>
-                            {instance.apiUrl && instance.apiKey && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => configureWebhookMutation.mutate({ 
-                                  instanceId: instance.id, 
-                                  data: { apiUrl: instance.apiUrl, apiKey: instance.apiKey } 
-                                })}
-                                disabled={configureWebhookMutation.isPending}
-                                className="flex items-center gap-1 bg-green-50 hover:bg-green-100 border-green-200"
-                              >
-                                <Settings className="w-4 h-4" />
-                                {configureWebhookMutation.isPending ? "Configurando..." : "Auto Config"}
-                              </Button>
-                            )}
                           </>
                         ) : (
                           <Button
