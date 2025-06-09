@@ -693,6 +693,68 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
+
+  // Status operations
+  async getStatus(): Promise<Status[]> {
+    try {
+      return await db.select().from(status)
+        .orderBy(desc(status.createdAt));
+    } catch (error: any) {
+      console.error("Error getting status:", error);
+      return [];
+    }
+  }
+
+  async getStatusById(id: number): Promise<Status | undefined> {
+    try {
+      const [statusItem] = await db.select().from(status)
+        .where(eq(status.id, id));
+      return statusItem;
+    } catch (error: any) {
+      console.error("Error getting status:", error);
+      return undefined;
+    }
+  }
+
+  async createStatus(statusData: InsertStatus): Promise<Status> {
+    try {
+      await db.insert(status).values(statusData);
+      const [statusItem] = await db.select().from(status).where(
+        and(
+          eq(status.name, statusData.name),
+          eq(status.color, statusData.color)
+        )
+      );
+      return statusItem;
+    } catch (error: any) {
+      console.error("Error creating status:", error);
+      throw error;
+    }
+  }
+
+  async updateStatus(id: number, statusData: Partial<InsertStatus>): Promise<Status> {
+    try {
+      await db.update(status)
+        .set({ ...statusData, updatedAt: new Date() })
+        .where(eq(status.id, id));
+      
+      const [statusItem] = await db.select().from(status)
+        .where(eq(status.id, id));
+      return statusItem;
+    } catch (error: any) {
+      console.error("Error updating status:", error);
+      throw error;
+    }
+  }
+
+  async deleteStatus(id: number): Promise<void> {
+    try {
+      await db.delete(status).where(eq(status.id, id));
+    } catch (error: any) {
+      console.error("Error deleting status:", error);
+      throw error;
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();

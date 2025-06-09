@@ -17,7 +17,7 @@ import Dashboard from "@/pages/dashboard";
 import Companies from "@/pages/companies";
 import Plans from "@/pages/plans";
 import SettingsPage from "@/pages/settings";
-import Chat from "@/pages/chat";
+import Status from "@/pages/status";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -64,14 +64,14 @@ function Router() {
               <Plans />
             </AdminLayout>
           </Route>
+          <Route path="/administrador/status">
+            <AdminLayout>
+              <Status />
+            </AdminLayout>
+          </Route>
           <Route path="/administrador/configuracoes">
             <AdminLayout>
               <SettingsPage />
-            </AdminLayout>
-          </Route>
-          <Route path="/administrador/chat">
-            <AdminLayout>
-              <Chat />
             </AdminLayout>
           </Route>
         </>

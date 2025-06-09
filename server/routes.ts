@@ -876,6 +876,49 @@ Importante: Você está representando a empresa "${company.fantasyName}" via Wha
     }
   });
 
+  // Status API
+  app.get('/api/status', async (req, res) => {
+    try {
+      const statusList = await storage.getStatus();
+      res.json(statusList);
+    } catch (error) {
+      console.error("Error fetching status:", error);
+      res.status(500).json({ message: "Erro ao buscar status" });
+    }
+  });
+
+  app.post('/api/status', async (req, res) => {
+    try {
+      const status = await storage.createStatus(req.body);
+      res.status(201).json(status);
+    } catch (error) {
+      console.error("Error creating status:", error);
+      res.status(500).json({ message: "Erro ao criar status" });
+    }
+  });
+
+  app.put('/api/status/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const status = await storage.updateStatus(id, req.body);
+      res.json(status);
+    } catch (error) {
+      console.error("Error updating status:", error);
+      res.status(500).json({ message: "Erro ao atualizar status" });
+    }
+  });
+
+  app.delete('/api/status/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteStatus(id);
+      res.json({ message: "Status excluído com sucesso" });
+    } catch (error) {
+      console.error("Error deleting status:", error);
+      res.status(500).json({ message: "Erro ao excluir status" });
+    }
+  });
+
   // Initialize appointment tables
   app.post("/api/admin/init-appointments", async (req, res) => {
     try {
@@ -968,6 +1011,42 @@ Importante: Você está representando a empresa "${company.fantasyName}" via Wha
     } catch (error: any) {
       console.error("Error creating appointment tables:", error);
       res.status(500).json({ message: "Erro ao criar tabelas de agendamentos", error: error.message });
+    }
+  });
+
+  // Initialize status table
+  app.post("/api/admin/init-status", async (req, res) => {
+    try {
+      // Create status table
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS status (
+          id INT PRIMARY KEY AUTO_INCREMENT,
+          name VARCHAR(100) NOT NULL,
+          color VARCHAR(7) NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `);
+
+      // Add sample status
+      try {
+        await db.execute(`
+          INSERT IGNORE INTO status (name, color) VALUES
+          ('Novo', '#3b82f6'),
+          ('Em Andamento', '#f59e0b'),
+          ('Concluído', '#10b981'),
+          ('Cancelado', '#ef4444'),
+          ('Pausado', '#6b7280')
+        `);
+        console.log('✅ Sample status added successfully');
+      } catch (sampleError) {
+        console.log('ℹ️ Sample status may already exist:', sampleError);
+      }
+
+      res.json({ message: "Tabela de status criada com sucesso" });
+    } catch (error: any) {
+      console.error("Error creating status table:", error);
+      res.status(500).json({ message: "Erro ao criar tabela de status", error: error.message });
     }
   });
 
