@@ -489,7 +489,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           webhookUrl: "",
           webhookByEvents: false,
           webhookBase64: false,
-          chatwootAccountId: null,
+          chatwootAccountId: "",
           chatwootToken: "",
           chatwootUrl: "",
           chatwootSignMsg: false,
