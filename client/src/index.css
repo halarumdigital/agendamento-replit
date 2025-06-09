@@ -116,7 +116,7 @@
 }
 
 .data-table th {
-  @apply bg-muted/50 font-medium text-muted-foreground;
+  @apply bg-slate-50 font-medium text-slate-600;
 }
 
 .data-table td {
