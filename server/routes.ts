@@ -637,7 +637,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   companyId: company.id,
                   whatsappInstanceId: whatsappInstance.id,
                   phoneNumber: phoneNumber,
-                  contactName: messageData.pushName || undefined,
+                  contactName: message.pushName || undefined,
                   lastMessageAt: new Date(),
                 });
               } else {
@@ -645,7 +645,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 console.log('♻️ Updating existing conversation');
                 await storage.updateConversation(conversation.id, {
                   lastMessageAt: new Date(),
-                  contactName: messageData.pushName || conversation.contactName,
+                  contactName: message.pushName || conversation.contactName,
                 });
               }
 
@@ -653,11 +653,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
               console.log('💾 Saving user message to database');
               await storage.createMessage({
                 conversationId: conversation.id,
-                messageId: messageData.key?.id,
+                messageId: message.key?.id,
                 content: messageText,
                 role: 'user',
-                messageType: messageData.messageType || 'text',
-                timestamp: new Date(messageData.messageTimestamp * 1000),
+                messageType: message.messageType || 'text',
+                timestamp: new Date(message.messageTimestamp * 1000),
               });
 
               // Get conversation history (last 10 messages for context)
