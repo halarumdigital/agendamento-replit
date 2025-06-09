@@ -535,6 +535,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test AI agent with company's custom prompt
+  app.post('/api/company/ai-agent/test', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const { message } = req.body;
+      if (!message || message.trim().length === 0) {
+        return res.status(400).json({ message: "Mensagem é obrigatória" });
+      }
+
+      // Get company's AI agent prompt
+      const company = await storage.getCompany(companyId);
+      if (!company || !company.aiAgentPrompt) {
+        return res.status(400).json({ message: "Nenhum prompt de agente IA configurado" });
+      }
+
+      // Get global OpenAI settings
+      const globalSettings = await storage.getGlobalSettings();
+      if (!globalSettings || !globalSettings.openaiApiKey) {
+        return res.status(400).json({ message: "OpenAI não configurada pelo administrador" });
+      }
+
+      // Create OpenAI instance
+      const OpenAI = (await import('openai')).default;
+      const openai = new OpenAI({ 
+        apiKey: globalSettings.openaiApiKey 
+      });
+
+      // Build system prompt with company's custom prompt
+      const systemPrompt = `${company.aiAgentPrompt}
+
+Importante: Você está representando a empresa "${company.fantasyName}". Mantenha suas respostas consistentes com o contexto da empresa e sempre seja profissional.`;
+
+      // Make request to OpenAI
+      const completion = await openai.chat.completions.create({
+        model: globalSettings.openaiModel || 'gpt-4o',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: message.trim() }
+        ],
+        temperature: globalSettings.openaiTemperature || 0.7,
+        max_tokens: Math.min(globalSettings.openaiMaxTokens || 1000, 2000),
+      });
+
+      const response = completion.choices[0]?.message?.content || 'Desculpe, não consegui gerar uma resposta.';
+
+      res.json({
+        response,
+        usage: completion.usage,
+        model: completion.model
+      });
+
+    } catch (error: any) {
+      console.error("Error testing AI agent:", error);
+      
+      let errorMessage = "Erro interno do servidor";
+      if (error.code === 'insufficient_quota') {
+        errorMessage = "Cota da API OpenAI esgotada";
+      } else if (error.code === 'invalid_api_key') {
+        errorMessage = "Chave da API OpenAI inválida";
+      } else if (error.message?.includes('API key')) {
+        errorMessage = "Erro na autenticação com OpenAI";
+      }
+
+      res.status(500).json({ message: errorMessage });
+    }
+  });
+
   // WhatsApp instances routes
   app.get('/api/company/whatsapp/instances', async (req: any, res) => {
     try {

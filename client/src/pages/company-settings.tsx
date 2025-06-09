@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -62,9 +62,18 @@ export default function CompanySettings() {
   const aiAgentForm = useForm<CompanyAiAgentData>({
     resolver: zodResolver(companyAiAgentSchema),
     defaultValues: {
-      aiAgentPrompt: company?.aiAgentPrompt || "",
+      aiAgentPrompt: "",
     },
   });
+
+  // Update form when company data loads
+  useEffect(() => {
+    if (company?.aiAgentPrompt) {
+      aiAgentForm.reset({
+        aiAgentPrompt: company.aiAgentPrompt,
+      });
+    }
+  }, [company?.aiAgentPrompt, aiAgentForm]);
 
   // WhatsApp instances query
   const { data: whatsappInstances = [], isLoading: isLoadingInstances } = useQuery<any[]>({
@@ -272,6 +281,33 @@ export default function CompanySettings() {
       toast({
         title: "Erro ao desconectar",
         description: error.message || "Erro ao desconectar instância",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // State for AI agent testing
+  const [testMessage, setTestMessage] = useState("");
+  const [agentResponse, setAgentResponse] = useState("");
+
+  const testAgentMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/company/ai-agent/test", {
+        message: testMessage
+      });
+      return await response.json();
+    },
+    onSuccess: (data: any) => {
+      setAgentResponse(data.response);
+      toast({
+        title: "Teste realizado",
+        description: "O agente IA respondeu com sucesso.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro no teste",
+        description: error.message || "Erro ao testar o agente IA",
         variant: "destructive",
       });
     },
@@ -725,6 +761,59 @@ export default function CompanySettings() {
                   </div>
                 </form>
               </Form>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare className="w-5 h-5" />
+                Testar Agente IA
+              </CardTitle>
+              <CardDescription>
+                Teste seu agente IA para verificar como ele responde com o prompt configurado
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {company?.aiAgentPrompt ? (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Mensagem de teste</label>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Digite uma mensagem para testar o agente..."
+                        value={testMessage}
+                        onChange={(e) => setTestMessage(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && testAgentMutation.mutate()}
+                      />
+                      <Button 
+                        onClick={() => testAgentMutation.mutate()}
+                        disabled={testAgentMutation.isPending || !testMessage.trim()}
+                        className="min-w-[100px]"
+                      >
+                        {testAgentMutation.isPending ? (
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                        ) : (
+                          "Testar"
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {agentResponse && (
+                    <div className="bg-gray-50 p-4 rounded-lg border">
+                      <div className="text-sm font-medium text-gray-700 mb-2">Resposta do Agente:</div>
+                      <div className="text-sm text-gray-800 whitespace-pre-wrap">{agentResponse}</div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center p-6 bg-gray-50 rounded-lg border border-dashed">
+                  <Bot className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                  <p className="text-gray-600 mb-2">Nenhum prompt configurado</p>
+                  <p className="text-sm text-gray-500">Configure um prompt acima para testar o agente IA</p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
