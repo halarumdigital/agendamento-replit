@@ -35,8 +35,6 @@ async function testMySQLConnection() {
   }
 }
 
-if (require.main === module) {
-  testMySQLConnection();
-}
+// Remove CommonJS check for ES modules
 
 export { testMySQLConnection };
