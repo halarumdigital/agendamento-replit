@@ -1,10 +1,10 @@
 import {
-  users,
+  admins,
   companies,
   plans,
   globalSettings,
-  type User,
-  type UpsertUser,
+  type Admin,
+  type InsertAdmin,
   type Company,
   type InsertCompany,
   type Plan,
@@ -16,9 +16,12 @@ import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
 
 export interface IStorage {
-  // User operations (required for Replit Auth)
-  getUser(id: string): Promise<User | undefined>;
-  upsertUser(user: UpsertUser): Promise<User>;
+  // Admin operations
+  getAdmin(id: number): Promise<Admin | undefined>;
+  getAdminByUsername(username: string): Promise<Admin | undefined>;
+  getAdminByEmail(email: string): Promise<Admin | undefined>;
+  createAdmin(admin: InsertAdmin): Promise<Admin>;
+  updateAdmin(id: number, admin: Partial<InsertAdmin>): Promise<Admin>;
   
   // Company operations
   getCompanies(): Promise<Company[]>;
@@ -41,25 +44,32 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  // User operations (required for Replit Auth)
-  async getUser(id: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
+  // Admin operations
+  async getAdmin(id: number): Promise<Admin | undefined> {
+    const [admin] = await db.select().from(admins).where(eq(admins.id, id));
+    return admin;
   }
 
-  async upsertUser(userData: UpsertUser): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values(userData)
-      .onConflictDoUpdate({
-        target: users.id,
-        set: {
-          ...userData,
-          updatedAt: new Date(),
-        },
-      })
-      .returning();
-    return user;
+  async getAdminByUsername(username: string): Promise<Admin | undefined> {
+    const [admin] = await db.select().from(admins).where(eq(admins.username, username));
+    return admin;
+  }
+
+  async getAdminByEmail(email: string): Promise<Admin | undefined> {
+    const [admin] = await db.select().from(admins).where(eq(admins.email, email));
+    return admin;
+  }
+
+  async createAdmin(adminData: InsertAdmin): Promise<Admin> {
+    const result = await db.insert(admins).values(adminData);
+    const [admin] = await db.select().from(admins).where(eq(admins.id, result.insertId as number));
+    return admin;
+  }
+
+  async updateAdmin(id: number, adminData: Partial<InsertAdmin>): Promise<Admin> {
+    await db.update(admins).set(adminData).where(eq(admins.id, id));
+    const [admin] = await db.select().from(admins).where(eq(admins.id, id));
+    return admin;
   }
 
   // Company operations
@@ -77,21 +87,16 @@ export class DatabaseStorage implements IStorage {
     return company;
   }
 
-  async createCompany(company: InsertCompany): Promise<Company> {
-    const [newCompany] = await db
-      .insert(companies)
-      .values(company)
-      .returning();
-    return newCompany;
+  async createCompany(companyData: InsertCompany): Promise<Company> {
+    const result = await db.insert(companies).values(companyData);
+    const [company] = await db.select().from(companies).where(eq(companies.id, result.insertId as number));
+    return company;
   }
 
-  async updateCompany(id: number, company: Partial<InsertCompany>): Promise<Company> {
-    const [updatedCompany] = await db
-      .update(companies)
-      .set({ ...company, updatedAt: new Date() })
-      .where(eq(companies.id, id))
-      .returning();
-    return updatedCompany;
+  async updateCompany(id: number, companyData: Partial<InsertCompany>): Promise<Company> {
+    await db.update(companies).set(companyData).where(eq(companies.id, id));
+    const [company] = await db.select().from(companies).where(eq(companies.id, id));
+    return company;
   }
 
   async deleteCompany(id: number): Promise<void> {
@@ -108,21 +113,16 @@ export class DatabaseStorage implements IStorage {
     return plan;
   }
 
-  async createPlan(plan: InsertPlan): Promise<Plan> {
-    const [newPlan] = await db
-      .insert(plans)
-      .values(plan)
-      .returning();
-    return newPlan;
+  async createPlan(planData: InsertPlan): Promise<Plan> {
+    const result = await db.insert(plans).values(planData);
+    const [plan] = await db.select().from(plans).where(eq(plans.id, result.insertId as number));
+    return plan;
   }
 
-  async updatePlan(id: number, plan: Partial<InsertPlan>): Promise<Plan> {
-    const [updatedPlan] = await db
-      .update(plans)
-      .set({ ...plan, updatedAt: new Date() })
-      .where(eq(plans.id, id))
-      .returning();
-    return updatedPlan;
+  async updatePlan(id: number, planData: Partial<InsertPlan>): Promise<Plan> {
+    await db.update(plans).set(planData).where(eq(plans.id, id));
+    const [plan] = await db.select().from(plans).where(eq(plans.id, id));
+    return plan;
   }
 
   async deletePlan(id: number): Promise<void> {
@@ -135,31 +135,24 @@ export class DatabaseStorage implements IStorage {
     
     // Create default settings if none exist
     if (!settings) {
-      const [newSettings] = await db
-        .insert(globalSettings)
-        .values({})
-        .returning();
+      const result = await db.insert(globalSettings).values({});
+      const [newSettings] = await db.select().from(globalSettings).where(eq(globalSettings.id, result.insertId as number));
       return newSettings;
     }
     
     return settings;
   }
 
-  async updateGlobalSettings(settings: Partial<InsertGlobalSettings>): Promise<GlobalSettings> {
+  async updateGlobalSettings(settingsData: Partial<InsertGlobalSettings>): Promise<GlobalSettings> {
     const existingSettings = await this.getGlobalSettings();
     
     if (existingSettings) {
-      const [updatedSettings] = await db
-        .update(globalSettings)
-        .set({ ...settings, updatedAt: new Date() })
-        .where(eq(globalSettings.id, existingSettings.id))
-        .returning();
+      await db.update(globalSettings).set(settingsData).where(eq(globalSettings.id, existingSettings.id));
+      const [updatedSettings] = await db.select().from(globalSettings).where(eq(globalSettings.id, existingSettings.id));
       return updatedSettings;
     } else {
-      const [newSettings] = await db
-        .insert(globalSettings)
-        .values(settings)
-        .returning();
+      const result = await db.insert(globalSettings).values(settingsData);
+      const [newSettings] = await db.select().from(globalSettings).where(eq(globalSettings.id, result.insertId as number));
       return newSettings;
     }
   }

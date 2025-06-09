@@ -1,74 +1,75 @@
 import {
-  pgTable,
+  mysqlTable,
   text,
   varchar,
   timestamp,
-  jsonb,
+  json,
   index,
-  serial,
+  int,
   decimal,
   boolean,
-  integer,
-} from "drizzle-orm/pg-core";
+} from "drizzle-orm/mysql-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
 
-// Session storage table (required for Replit Auth)
-export const sessions = pgTable(
+// Session storage table for express-session
+export const sessions = mysqlTable(
   "sessions",
   {
-    sid: varchar("sid").primaryKey(),
-    sess: jsonb("sess").notNull(),
+    sid: varchar("sid", { length: 255 }).primaryKey(),
+    sess: json("sess").notNull(),
     expire: timestamp("expire").notNull(),
   },
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
-// User storage table (required for Replit Auth)
-export const users = pgTable("users", {
-  id: varchar("id").primaryKey().notNull(),
-  email: varchar("email").unique(),
-  firstName: varchar("first_name"),
-  lastName: varchar("last_name"),
-  profileImageUrl: varchar("profile_image_url"),
+// Admin users table
+export const admins = mysqlTable("admins", {
+  id: int("id").primaryKey().autoincrement(),
+  username: varchar("username", { length: 100 }).notNull().unique(),
+  email: varchar("email", { length: 255 }).notNull().unique(),
+  password: varchar("password", { length: 255 }).notNull(),
+  firstName: varchar("first_name", { length: 100 }),
+  lastName: varchar("last_name", { length: 100 }),
+  isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
 
 // Companies table
-export const companies = pgTable("companies", {
-  id: serial("id").primaryKey(),
-  fantasyName: varchar("fantasy_name").notNull(),
-  document: varchar("document").notNull().unique(), // CNPJ or CPF
+export const companies = mysqlTable("companies", {
+  id: int("id").primaryKey().autoincrement(),
+  fantasyName: varchar("fantasy_name", { length: 255 }).notNull(),
+  document: varchar("document", { length: 20 }).notNull().unique(), // CNPJ or CPF
   address: text("address").notNull(),
-  email: varchar("email").notNull().unique(),
-  password: varchar("password").notNull(),
+  email: varchar("email", { length: 255 }).notNull().unique(),
+  password: varchar("password", { length: 255 }).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
 
 // Subscription plans table
-export const plans = pgTable("plans", {
-  id: serial("id").primaryKey(),
-  name: varchar("name").notNull(),
-  freeDays: integer("free_days").notNull().default(0),
+export const plans = mysqlTable("plans", {
+  id: int("id").primaryKey().autoincrement(),
+  name: varchar("name", { length: 255 }).notNull(),
+  freeDays: int("free_days").notNull().default(0),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
 
 // Global settings table
-export const globalSettings = pgTable("global_settings", {
-  id: serial("id").primaryKey(),
-  systemName: varchar("system_name").notNull().default("AdminPro"),
-  logoUrl: varchar("logo_url"),
-  primaryColor: varchar("primary_color").notNull().default("#2563eb"),
-  secondaryColor: varchar("secondary_color").notNull().default("#64748b"),
-  backgroundColor: varchar("background_color").notNull().default("#f8fafc"),
-  textColor: varchar("text_color").notNull().default("#1e293b"),
-  updatedAt: timestamp("updated_at").defaultNow(),
+export const globalSettings = mysqlTable("global_settings", {
+  id: int("id").primaryKey().autoincrement(),
+  systemName: varchar("system_name", { length: 255 }).notNull().default("AdminPro"),
+  logoUrl: varchar("logo_url", { length: 500 }),
+  primaryColor: varchar("primary_color", { length: 7 }).notNull().default("#2563eb"),
+  secondaryColor: varchar("secondary_color", { length: 7 }).notNull().default("#64748b"),
+  backgroundColor: varchar("background_color", { length: 7 }).notNull().default("#f8fafc"),
+  textColor: varchar("text_color", { length: 7 }).notNull().default("#1e293b"),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
 
 // Relations
@@ -81,6 +82,12 @@ export const plansRelations = relations(plans, ({ many }) => ({
 }));
 
 // Insert schemas
+export const insertAdminSchema = createInsertSchema(admins).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertCompanySchema = createInsertSchema(companies).omit({
   id: true,
   createdAt: true,
@@ -99,8 +106,8 @@ export const insertGlobalSettingsSchema = createInsertSchema(globalSettings).omi
 });
 
 // Types
-export type UpsertUser = typeof users.$inferInsert;
-export type User = typeof users.$inferSelect;
+export type Admin = typeof admins.$inferSelect;
+export type InsertAdmin = z.infer<typeof insertAdminSchema>;
 export type Company = typeof companies.$inferSelect;
 export type InsertCompany = z.infer<typeof insertCompanySchema>;
 export type Plan = typeof plans.$inferSelect;
