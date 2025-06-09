@@ -535,6 +535,107 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Webhook endpoint for WhatsApp integration with AI agent
+  app.post('/api/webhook/whatsapp/:instanceName', async (req: any, res) => {
+    try {
+      const { instanceName } = req.params;
+      const webhookData = req.body;
+
+      // Log incoming webhook data for debugging
+      console.log('WhatsApp webhook received:', JSON.stringify(webhookData, null, 2));
+
+      // Check if it's a message event
+      if (webhookData.event === 'messages.upsert' && webhookData.data?.messages?.length > 0) {
+        const message = webhookData.data.messages[0];
+        
+        // Only process text messages from users (not from the bot itself)
+        if (message.messageType === 'textMessage' && !message.key.fromMe) {
+          const phoneNumber = message.key.remoteJid.replace('@s.whatsapp.net', '');
+          const messageText = message.message.conversation || message.message.extendedTextMessage?.text;
+          
+          if (messageText) {
+            // Find company by instance name
+            const whatsappInstance = await storage.getWhatsappInstanceByName(instanceName);
+            if (!whatsappInstance) {
+              console.log(`WhatsApp instance ${instanceName} not found`);
+              return res.status(404).json({ error: 'Instance not found' });
+            }
+
+            const company = await storage.getCompany(whatsappInstance.companyId);
+            if (!company || !company.aiAgentPrompt) {
+              console.log(`Company or AI prompt not found for instance ${instanceName}`);
+              return res.status(404).json({ error: 'Company or AI prompt not configured' });
+            }
+
+            // Get global OpenAI settings
+            const globalSettings = await storage.getGlobalSettings();
+            if (!globalSettings || !globalSettings.openaiApiKey) {
+              console.log('OpenAI not configured');
+              return res.status(400).json({ error: 'OpenAI not configured' });
+            }
+
+            try {
+              // Generate AI response
+              const OpenAI = (await import('openai')).default;
+              const openai = new OpenAI({ apiKey: globalSettings.openaiApiKey });
+
+              const systemPrompt = `${company.aiAgentPrompt}
+
+Importante: Você está representando a empresa "${company.fantasyName}" via WhatsApp. 
+- Mantenha respostas concisas e adequadas para mensagens de texto
+- Seja profissional mas amigável
+- Se necessário, peça informações de contato para seguimento
+- Limite respostas a no máximo 200 palavras por mensagem`;
+
+              const completion = await openai.chat.completions.create({
+                model: globalSettings.openaiModel || 'gpt-4o',
+                messages: [
+                  { role: 'system', content: systemPrompt },
+                  { role: 'user', content: messageText }
+                ],
+                temperature: parseFloat(globalSettings.openaiTemperature?.toString() || '0.7'),
+                max_tokens: Math.min(parseInt(globalSettings.openaiMaxTokens?.toString() || '300'), 300),
+              });
+
+              const aiResponse = completion.choices[0]?.message?.content || 'Desculpe, não consegui processar sua mensagem.';
+
+              // Send response back via Evolution API
+              if (whatsappInstance.apiUrl && whatsappInstance.apiKey) {
+                const evolutionResponse = await fetch(`${whatsappInstance.apiUrl}/message/sendText/${instanceName}`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': whatsappInstance.apiKey
+                  },
+                  body: JSON.stringify({
+                    number: phoneNumber,
+                    text: aiResponse
+                  })
+                });
+
+                if (evolutionResponse.ok) {
+                  console.log(`AI response sent to ${phoneNumber}: ${aiResponse}`);
+                } else {
+                  console.error('Failed to send message via Evolution API:', await evolutionResponse.text());
+                }
+              } else {
+                console.error('API URL or API key not configured for instance:', instanceName);
+              }
+
+            } catch (aiError) {
+              console.error('Error generating AI response:', aiError);
+            }
+          }
+        }
+      }
+
+      res.status(200).json({ received: true });
+    } catch (error) {
+      console.error('Webhook processing error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
   // Test AI agent with company's custom prompt
   app.post('/api/company/ai-agent/test', async (req: any, res) => {
     try {

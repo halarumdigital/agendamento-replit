@@ -87,6 +87,8 @@ export const whatsappInstances = mysqlTable("whatsapp_instances", {
   status: varchar("status", { length: 50 }).default("disconnected"),
   qrCode: text("qr_code"),
   webhook: varchar("webhook", { length: 500 }),
+  apiUrl: varchar("api_url", { length: 500 }),
+  apiKey: varchar("api_key", { length: 500 }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });

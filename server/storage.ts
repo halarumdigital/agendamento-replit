@@ -48,6 +48,7 @@ export interface IStorage {
   // WhatsApp instances operations
   getWhatsappInstancesByCompany(companyId: number): Promise<WhatsappInstance[]>;
   getWhatsappInstance(id: number): Promise<WhatsappInstance | undefined>;
+  getWhatsappInstanceByName(instanceName: string): Promise<WhatsappInstance | undefined>;
   createWhatsappInstance(instance: InsertWhatsappInstance): Promise<WhatsappInstance>;
   updateWhatsappInstance(id: number, instance: Partial<InsertWhatsappInstance>): Promise<WhatsappInstance>;
   deleteWhatsappInstance(id: number): Promise<void>;
@@ -282,6 +283,19 @@ export class DatabaseStorage implements IStorage {
     } catch (error: any) {
       console.error("Error deleting WhatsApp instance:", error);
       throw error;
+    }
+  }
+
+  async getWhatsappInstanceByName(instanceName: string): Promise<WhatsappInstance | undefined> {
+    try {
+      const [instance] = await db
+        .select()
+        .from(whatsappInstances)
+        .where(eq(whatsappInstances.instanceName, instanceName));
+      return instance;
+    } catch (error: any) {
+      console.error("Error getting WhatsApp instance by name:", error);
+      return undefined;
     }
   }
 }

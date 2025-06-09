@@ -16,7 +16,7 @@ const pool = mysql.createPool({
 
 export const db = drizzle(pool, { schema, mode: 'default' });
 
-// Add missing ai_agent_prompt column if it doesn't exist
+// Add missing columns if they don't exist
 (async () => {
   try {
     await pool.execute(`
@@ -32,6 +32,26 @@ export const db = drizzle(pool, { schema, mode: 'default' });
         console.log('✅ AI agent prompt column added successfully');
       } catch (alterError) {
         console.error('❌ Error adding AI agent column:', alterError);
+      }
+    }
+  }
+
+  // Add WhatsApp instance API fields
+  try {
+    await pool.execute(`
+      SELECT api_url, api_key FROM whatsapp_instances LIMIT 1
+    `);
+  } catch (error: any) {
+    if (error.code === 'ER_BAD_FIELD_ERROR') {
+      try {
+        await pool.execute(`
+          ALTER TABLE whatsapp_instances 
+          ADD COLUMN api_url VARCHAR(500) NULL,
+          ADD COLUMN api_key VARCHAR(500) NULL
+        `);
+        console.log('✅ WhatsApp API fields added successfully');
+      } catch (alterError) {
+        console.error('❌ Error adding WhatsApp API fields:', alterError);
       }
     }
   }
