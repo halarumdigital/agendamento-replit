@@ -981,19 +981,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Chave da API OpenAI não configurada nas configurações do sistema" });
       }
 
-      // Prepare messages for OpenAI
+      // Prepare messages for OpenAI - filter out any messages with null/empty content
+      const validMessages = conversationHistory.filter((msg: any) => 
+        msg.content && msg.content.trim().length > 0
+      );
+
       const messages = [
         {
           role: "system",
           content: "Você é um assistente virtual inteligente e prestativo. Responda sempre em português brasileiro de forma clara e útil."
         },
-        ...conversationHistory.map((msg: any) => ({
+        ...validMessages.map((msg: any) => ({
           role: msg.role,
-          content: msg.content
+          content: msg.content.trim()
         })),
         {
           role: "user",
-          content: message
+          content: message.trim()
         }
       ];
 
@@ -1022,7 +1026,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } else if (response.status === 402) {
           return res.status(402).json({ message: "Cota da API OpenAI esgotada. Verifique seu plano." });
         } else {
-          return res.status(500).json({ message: "Erro na API da OpenAI" });
+          const errorMessage = errorData?.error?.message || "Erro na API da OpenAI";
+          return res.status(response.status).json({ message: errorMessage });
         }
       }
 

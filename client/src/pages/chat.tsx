@@ -98,11 +98,13 @@ export default function Chat() {
     setMessages(prev => [...prev, userMessage]);
     setIsTyping(true);
     
-    // Prepare conversation history for API
-    const conversationHistory = messages.map(msg => ({
-      role: msg.role,
-      content: msg.content
-    }));
+    // Prepare conversation history for API - filter out any invalid messages
+    const conversationHistory = messages
+      .filter(msg => msg.content && msg.content.trim().length > 0)
+      .map(msg => ({
+        role: msg.role,
+        content: msg.content.trim()
+      }));
 
     chatMutation.mutate({
       message: input.trim(),

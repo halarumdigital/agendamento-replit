@@ -28,16 +28,12 @@ function Router() {
       <Route path="/dashboard" component={CompanyDashboard} />
       <Route path="/configuracoes" component={CompanySettings} />
       
-      {/* Admin Routes */}
-      {!isAdminAuthenticated ? (
-        <Route path="/administrador*" component={Login} />
-      ) : (
+      {/* Admin Login Route */}
+      <Route path="/administrador" component={isAdminAuthenticated ? () => <AdminLayout><Dashboard /></AdminLayout> : Login} />
+      
+      {/* Protected Admin Routes */}
+      {isAdminAuthenticated && (
         <>
-          <Route path="/administrador">
-            <AdminLayout>
-              <Dashboard />
-            </AdminLayout>
-          </Route>
           <Route path="/administrador/empresas">
             <AdminLayout>
               <Companies />
