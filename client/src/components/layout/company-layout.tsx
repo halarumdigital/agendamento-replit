@@ -40,6 +40,11 @@ const menuItems = [
     icon: Users,
   },
   {
+    title: "Clientes",
+    href: "/company/clients",
+    icon: Users,
+  },
+  {
     title: "WhatsApp",
     href: "/company/whatsapp",
     icon: MessageSquare,

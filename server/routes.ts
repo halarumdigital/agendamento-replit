@@ -951,6 +951,72 @@ Importante: Você está representando a empresa "${company.fantasyName}" via Wha
     }
   });
 
+  // Company Clients API
+  app.get('/api/company/clients', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const clients = await storage.getClientsByCompany(companyId);
+      res.json(clients);
+    } catch (error) {
+      console.error("Error fetching clients:", error);
+      res.status(500).json({ message: "Erro ao buscar clientes" });
+    }
+  });
+
+  app.post('/api/company/clients', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const client = await storage.createClient({
+        ...req.body,
+        companyId,
+      });
+      res.status(201).json(client);
+    } catch (error) {
+      console.error("Error creating client:", error);
+      res.status(500).json({ message: "Erro ao criar cliente" });
+    }
+  });
+
+  app.put('/api/company/clients/:id', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const id = parseInt(req.params.id);
+      const client = await storage.updateClient(id, req.body);
+      res.json(client);
+    } catch (error) {
+      console.error("Error updating client:", error);
+      res.status(500).json({ message: "Erro ao atualizar cliente" });
+    }
+  });
+
+  app.delete('/api/company/clients/:id', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const id = parseInt(req.params.id);
+      await storage.deleteClient(id);
+      res.json({ message: "Cliente excluído com sucesso" });
+    } catch (error) {
+      console.error("Error deleting client:", error);
+      res.status(500).json({ message: "Erro ao excluir cliente" });
+    }
+  });
+
   // Status API
   app.get('/api/status', async (req, res) => {
     try {
