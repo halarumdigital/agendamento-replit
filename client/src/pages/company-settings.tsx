@@ -176,7 +176,8 @@ export default function CompanySettings() {
 
   const connectInstanceMutation = useMutation({
     mutationFn: async (instanceName: string) => {
-      return await apiRequest("GET", `/api/company/whatsapp/instances/${instanceName}/connect`);
+      const response = await apiRequest("GET", `/api/company/whatsapp/instances/${instanceName}/connect`);
+      return await response.json();
     },
     onSuccess: (data: any) => {
       console.log("API Response:", data);
