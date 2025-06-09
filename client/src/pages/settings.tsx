@@ -318,6 +318,116 @@ export default function SettingsPage() {
                 </CardContent>
               </Card>
             </TabsContent>
+
+            <TabsContent value="openai" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Brain className="w-5 h-5" />
+                    Configuração OpenAI
+                  </CardTitle>
+                  <CardDescription>
+                    Configure a integração com a OpenAI para funcionalidades de IA.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="openaiApiKey"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Chave da API OpenAI</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="password" 
+                            placeholder="sk-..." 
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="openaiModel"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Modelo</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione o modelo" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="gpt-4o">GPT-4o (Mais avançado)</SelectItem>
+                            <SelectItem value="gpt-4o-mini">GPT-4o Mini (Mais rápido)</SelectItem>
+                            <SelectItem value="gpt-4-turbo">GPT-4 Turbo</SelectItem>
+                            <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo (Econômico)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="openaiTemperature"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Temperatura (0.0 - 2.0)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            step="0.01"
+                            min="0"
+                            max="2"
+                            placeholder="0.7" 
+                            {...field}
+                            onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="openaiMaxTokens"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Máximo de Tokens</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            min="1"
+                            max="200000"
+                            placeholder="4000" 
+                            {...field}
+                            onChange={(e) => field.onChange(parseInt(e.target.value))}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 mt-4">
+                    <h4 className="font-medium text-green-900 mb-2">Configuração OpenAI:</h4>
+                    <ul className="text-sm text-green-800 space-y-1">
+                      <li>• <strong>API Key:</strong> Obtenha em platform.openai.com</li>
+                      <li>• <strong>Temperatura:</strong> Controla a criatividade (0 = determinístico, 2 = muito criativo)</li>
+                      <li>• <strong>Tokens:</strong> Limite máximo de tokens por resposta</li>
+                      <li>• <strong>Modelo:</strong> GPT-4o recomendado para melhor performance</li>
+                    </ul>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
           </Tabs>
 
           <div className="flex justify-end">
