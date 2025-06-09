@@ -1,26 +1,12 @@
-import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Users, Calendar, CreditCard, LogOut, Settings } from "lucide-react";
-import { useLocation } from "wouter";
-import type { Company } from "@shared/schema";
+import { Building2, Users, Calendar, CreditCard, Settings } from "lucide-react";
+import { useCompanyAuth } from "@/hooks/useCompanyAuth";
+import CompanyLayout from "@/components/layout/company-layout";
 
 export default function CompanyDashboard() {
-  const [, setLocation] = useLocation();
-
-  const { data: company, isLoading } = useQuery<Company>({
-    queryKey: ["/api/company/auth/profile"],
-  });
-
-  const handleLogout = async () => {
-    try {
-      await fetch("/api/company/auth/logout", { method: "POST" });
-      setLocation("/empresa");
-    } catch (error) {
-      console.error("Erro no logout:", error);
-    }
-  };
+  const { company, isLoading } = useCompanyAuth();
 
   if (isLoading) {
     return (
@@ -41,55 +27,24 @@ export default function CompanyDashboard() {
 
   if (!company) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Card className="w-96">
-          <CardHeader>
-            <CardTitle>Acesso Negado</CardTitle>
-            <CardDescription>
-              Você não está autenticado como empresa.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={() => setLocation("/empresa")} className="w-full">
-              Fazer Login
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <CompanyLayout>
+        <div className="flex items-center justify-center h-96">
+          <Card className="w-96">
+            <CardHeader>
+              <CardTitle>Carregando...</CardTitle>
+              <CardDescription>
+                Obtendo informações da empresa.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        </div>
+      </CompanyLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                <Building2 className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">{company.fantasyName}</h1>
-                <p className="text-sm text-gray-500">Painel da Empresa</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <Button variant="outline" size="sm">
-                <Settings className="w-4 h-4 mr-2" />
-                Configurações
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleLogout}>
-                <LogOut className="w-4 h-4 mr-2" />
-                Sair
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+    <CompanyLayout>
+      <div className="container mx-auto px-4 py-8">
         {/* Company Info Card */}
         <Card className="mb-8">
           <CardHeader>
@@ -102,15 +57,15 @@ export default function CompanyDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <div>
                 <label className="text-sm font-medium text-gray-500">Nome Fantasia</label>
-                <p className="text-lg font-semibold">{company.fantasyName}</p>
+                <p className="text-lg font-semibold">{company?.fantasyName || "N/A"}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-500">Documento</label>
-                <p className="text-lg font-semibold">{company.document}</p>
+                <p className="text-lg font-semibold">{company?.document || "N/A"}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-500">Email</label>
-                <p className="text-lg font-semibold">{company.email}</p>
+                <p className="text-lg font-semibold">{company?.email || "N/A"}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-500">Status</label>
@@ -121,7 +76,7 @@ export default function CompanyDashboard() {
             </div>
             <div className="mt-4">
               <label className="text-sm font-medium text-gray-500">Endereço</label>
-              <p className="text-lg">{company.address}</p>
+              <p className="text-lg">{company?.address || "N/A"}</p>
             </div>
           </CardContent>
         </Card>
@@ -224,7 +179,7 @@ export default function CompanyDashboard() {
             </CardContent>
           </Card>
         </div>
-      </main>
-    </div>
+      </div>
+    </CompanyLayout>
   );
 }
