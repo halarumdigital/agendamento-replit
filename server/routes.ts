@@ -549,6 +549,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if it's a message event
       if (webhookData.event === 'messages.upsert' && webhookData.data?.messages?.length > 0) {
         console.log('✅ Processing messages.upsert event');
+      } else {
+        console.log('❌ Event not processed:', webhookData.event);
+        console.log('❌ Waiting for messages.upsert event with message data');
+        return res.status(200).json({ received: true, processed: false, reason: `Event: ${webhookData.event}` });
+      }
+
+      if (webhookData.event === 'messages.upsert' && webhookData.data?.messages?.length > 0) {
         const message = webhookData.data.messages[0];
         
         // Only process text messages from users (not from the bot itself)
