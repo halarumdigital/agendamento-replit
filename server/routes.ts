@@ -546,17 +546,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('📋 Webhook event:', webhookData.event);
       console.log('📄 Full webhook data:', JSON.stringify(webhookData, null, 2));
 
-      // Check if it's a message event
-      if (webhookData.event === 'messages.upsert' && webhookData.data?.messages?.length > 0) {
-        console.log('✅ Processing messages.upsert event');
-      } else {
+      // Check if it's a message event (handle both uppercase and lowercase)
+      const isMessageEvent = (webhookData.event === 'messages.upsert' || webhookData.event === 'MESSAGES_UPSERT') && webhookData.data?.messages?.length > 0;
+      
+      console.log('🔍 Debug - Event:', webhookData.event);
+      console.log('🔍 Debug - Has data:', !!webhookData.data);
+      console.log('🔍 Debug - Has messages:', !!webhookData.data?.messages);
+      console.log('🔍 Debug - Messages length:', webhookData.data?.messages?.length);
+      console.log('🔍 Debug - isMessageEvent:', isMessageEvent);
+      
+      if (!isMessageEvent) {
         console.log('❌ Event not processed:', webhookData.event);
-        console.log('❌ Waiting for messages.upsert event with message data');
+        console.log('❌ Waiting for MESSAGES_UPSERT event with message data');
         return res.status(200).json({ received: true, processed: false, reason: `Event: ${webhookData.event}` });
       }
 
-      if (webhookData.event === 'messages.upsert' && webhookData.data?.messages?.length > 0) {
-        const message = webhookData.data.messages[0];
+      console.log('✅ Processing message event:', webhookData.event);
+      const message = webhookData.data.messages[0];
         
         // Only process text messages from users (not from the bot itself)
         console.log('📱 Message type:', message.messageType);
@@ -656,8 +662,7 @@ Importante: Você está representando a empresa "${company.fantasyName}" via Wha
             }
           }
         }
-      }
-
+      
       res.status(200).json({ received: true });
     } catch (error) {
       console.error('Webhook processing error:', error);
