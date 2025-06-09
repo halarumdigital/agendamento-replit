@@ -267,26 +267,31 @@ export default function CompanySettings() {
       return response;
     },
     onSuccess: (data: any) => {
-      const apiKey = data.instance.apiKey;
-      const apiUrl = data.instance.apiUrl;
+      console.log('API Response:', data);
+      
+      const instance = data.instance || data;
+      const apiKey = instance?.apiKey;
+      const apiUrl = instance?.apiUrl;
       
       toast({
         title: "Detalhes da Instância",
-        description: `URL da API: ${apiUrl}\nChave da API: ${apiKey ? apiKey.substring(0, 20) + '...' : 'Não configurada'}`,
+        description: `URL da API: ${apiUrl || 'Não configurada'}\nChave da API: ${apiKey ? apiKey.substring(0, 20) + '...' : 'Não configurada'}`,
       });
 
       // Show detailed info in console for copying
       console.log('=== DETALHES DA INSTÂNCIA ===');
-      console.log('Nome da Instância:', data.instance.instanceName);
+      console.log('Resposta completa:', data);
+      console.log('Nome da Instância:', instance?.instanceName);
       console.log('URL da Evolution API:', apiUrl);
       console.log('Chave da API:', apiKey);
-      console.log('Status:', data.instance.status);
+      console.log('Status:', instance?.status);
       if (data.evolutionDetails) {
         console.log('Detalhes da Evolution API:', data.evolutionDetails);
       }
       console.log('==============================');
     },
     onError: (error: any) => {
+      console.error('Error fetching instance details:', error);
       toast({
         title: "Erro ao buscar detalhes",
         description: error.message || "Falha ao buscar detalhes da instância",
@@ -741,13 +746,23 @@ export default function CompanySettings() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => {
+                              onClick={async () => {
                                 setSelectedInstance(instance);
-                                // Pre-fill with instance data if available, otherwise use defaults
-                                webhookForm.reset({
-                                  apiUrl: instance.apiUrl || "https://sua-evolution-api.com",
-                                  apiKey: instance.apiKey || "",
-                                });
+                                
+                                // Try to fetch the latest instance details with API credentials
+                                try {
+                                  const details = await apiRequest("GET", `/api/company/whatsapp/instances/${instance.instanceName}/details`);
+                                  webhookForm.reset({
+                                    apiUrl: details.instance?.apiUrl || instance.apiUrl || "https://sua-evolution-api.com",
+                                    apiKey: details.instance?.apiKey || instance.apiKey || "",
+                                  });
+                                } catch (error) {
+                                  // Fallback to instance data if details fetch fails
+                                  webhookForm.reset({
+                                    apiUrl: instance.apiUrl || "https://sua-evolution-api.com",
+                                    apiKey: instance.apiKey || "",
+                                  });
+                                }
                               }}
                               className="flex items-center gap-1"
                             >
