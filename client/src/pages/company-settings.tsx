@@ -1030,6 +1030,14 @@ export default function CompanySettings() {
                   </ul>
                 </div>
 
+                <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
+                  <h4 className="font-semibold text-amber-900 mb-2">URL do Webhook gerada</h4>
+                  <p className="text-sm text-amber-800 mb-2">Esta URL será configurada automaticamente:</p>
+                  <code className="text-xs bg-white p-2 rounded border block">
+                    {window.location.origin}/api/webhook/whatsapp/{selectedInstance?.instanceName}
+                  </code>
+                </div>
+
                 <div className="flex justify-end gap-2">
                   <Button
                     type="button"
