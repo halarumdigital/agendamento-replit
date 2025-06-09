@@ -578,8 +578,8 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
           { role: 'system', content: systemPrompt },
           { role: 'user', content: message.trim() }
         ],
-        temperature: globalSettings.openaiTemperature || 0.7,
-        max_tokens: Math.min(globalSettings.openaiMaxTokens || 1000, 2000),
+        temperature: parseFloat(globalSettings.openaiTemperature?.toString() || '0.7'),
+        max_tokens: Math.min(parseInt(globalSettings.openaiMaxTokens?.toString() || '1000'), 2000),
       });
 
       const response = completion.choices[0]?.message?.content || 'Desculpe, não consegui gerar uma resposta.';
