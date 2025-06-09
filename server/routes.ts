@@ -819,6 +819,7 @@ Importante: Você está representando a empresa "${company.fantasyName}" via Wha
           },
           body: JSON.stringify({
             webhook: {
+              enabled: true,
               url: webhookUrl,
               events: [
                 "APPLICATION_STARTUP",
@@ -844,8 +845,7 @@ Importante: Você está representando a empresa "${company.fantasyName}" via Wha
                 "LABELS_ASSOCIATION",
                 "CALL",
                 "TYPEBOT_START",
-                "TYPEBOT_CHANGE_STATUS",
-                "NEW_JWT_TOKEN"
+                "TYPEBOT_CHANGE_STATUS"
               ]
             },
             webhook_by_events: false,
@@ -1067,6 +1067,7 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
           
           const webhookPayload = {
             webhook: {
+              enabled: true,
               url: webhookUrl,
               events: [
                 "APPLICATION_STARTUP",
@@ -1089,7 +1090,8 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
                 "GROUP_PARTICIPANTS_UPDATE",
                 "CONNECTION_UPDATE",
                 "CALL",
-                "NEW_JWT_TOKEN"
+                "TYPEBOT_START",
+                "TYPEBOT_CHANGE_STATUS"
               ]
             },
             webhook_by_events: false,
@@ -1148,6 +1150,7 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
             
             const webhookPayload = {
               webhook: {
+                enabled: true,
                 url: webhookUrl,
                 events: [
                   "APPLICATION_STARTUP",
@@ -1170,7 +1173,8 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
                   "GROUP_PARTICIPANTS_UPDATE",
                   "CONNECTION_UPDATE",
                   "CALL",
-                  "NEW_JWT_TOKEN"
+                  "TYPEBOT_START",
+                  "TYPEBOT_CHANGE_STATUS"
                 ]
               },
               webhook_by_events: false,
