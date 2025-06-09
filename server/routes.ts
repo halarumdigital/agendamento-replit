@@ -802,6 +802,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Disconnect WhatsApp instance
+  app.post("/api/company/whatsapp/instances/:instanceName/disconnect", async (req: any, res) => {
+    try {
+      const { instanceName } = req.params;
+      const companyId = req.session.companyId;
+      
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      // Get global settings for Evolution API configuration
+      const globalSettings = await storage.getGlobalSettings();
+      
+      if (!globalSettings?.evolutionApiUrl || !globalSettings?.evolutionApiGlobalKey) {
+        return res.status(400).json({ 
+          message: "Evolution API não configurada. Configure a URL e chave global nas configurações do administrador.",
+          status: "not_configured"
+        });
+      }
+
+      console.log(`Disconnecting WhatsApp instance: ${instanceName}`);
+
+      // Call Evolution API to disconnect the instance
+      const evolutionResponse = await fetch(
+        `${globalSettings.evolutionApiUrl}/instance/logout/${instanceName}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': globalSettings.evolutionApiGlobalKey
+          }
+        }
+      );
+
+      if (!evolutionResponse.ok) {
+        const errorText = await evolutionResponse.text();
+        console.error("Evolution API disconnect error:", errorText);
+        return res.status(evolutionResponse.status).json({ 
+          message: `Erro da Evolution API: ${errorText}`,
+          status: "error"
+        });
+      }
+
+      const disconnectData = await evolutionResponse.json();
+      console.log("Evolution API Disconnect Response:", JSON.stringify(disconnectData, null, 2));
+
+      // Update instance status in database
+      try {
+        const instances = await storage.getWhatsappInstancesByCompany(companyId);
+        const instance = instances.find(inst => inst.instanceName === instanceName);
+        if (instance) {
+          await storage.updateWhatsappInstance(instance.id, {
+            status: 'disconnected'
+          });
+          console.log(`Updated instance ${instanceName} status to: disconnected`);
+        }
+      } catch (dbError) {
+        console.error("Error updating instance status:", dbError);
+      }
+
+      res.json({
+        instanceName,
+        message: "Instância desconectada com sucesso",
+        status: "disconnected",
+        ...disconnectData
+      });
+    } catch (error: any) {
+      console.error("Error disconnecting WhatsApp instance:", error);
+      if (error.message && error.message.includes('fetch')) {
+        res.status(500).json({ 
+          message: `Erro ao conectar com Evolution API: ${error.message}`,
+          status: "connection_error"
+        });
+      } else {
+        res.status(500).json({ message: "Erro interno do servidor" });
+      }
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

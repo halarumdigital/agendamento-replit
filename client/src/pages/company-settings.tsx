@@ -242,6 +242,27 @@ export default function CompanySettings() {
     },
   });
 
+  const disconnectInstanceMutation = useMutation({
+    mutationFn: async (instanceName: string) => {
+      const response = await apiRequest("POST", `/api/company/whatsapp/instances/${instanceName}/disconnect`);
+      return await response.json();
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/company/whatsapp/instances"] });
+      toast({
+        title: "Instância desconectada",
+        description: "Instância do WhatsApp desconectada com sucesso.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao desconectar",
+        description: error.message || "Erro ao desconectar instância",
+        variant: "destructive",
+      });
+    },
+  });
+
   if (!company) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -546,7 +567,18 @@ export default function CompanySettings() {
                           <QrCode className="w-4 h-4" />
                           {checkStatusMutation.isPending ? "Verificando..." : "Status"}
                         </Button>
-                        {instance.status !== 'connected' && instance.status !== 'open' && (
+                        {instance.status === 'connected' || instance.status === 'open' ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => disconnectInstanceMutation.mutate(instance.instanceName)}
+                            disabled={disconnectInstanceMutation.isPending}
+                            className="flex items-center gap-1"
+                          >
+                            <Smartphone className="w-4 h-4" />
+                            {disconnectInstanceMutation.isPending ? "Desconectando..." : "Desconectar"}
+                          </Button>
+                        ) : (
                           <Button
                             variant="outline"
                             size="sm"
