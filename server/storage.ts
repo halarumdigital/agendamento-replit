@@ -4,6 +4,8 @@ import {
   plans,
   globalSettings,
   whatsappInstances,
+  conversations,
+  messages,
   type Admin,
   type InsertAdmin,
   type Company,
@@ -14,6 +16,10 @@ import {
   type InsertGlobalSettings,
   type WhatsappInstance,
   type InsertWhatsappInstance,
+  type Conversation,
+  type InsertConversation,
+  type Message,
+  type InsertMessage,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
@@ -52,6 +58,17 @@ export interface IStorage {
   createWhatsappInstance(instance: InsertWhatsappInstance): Promise<WhatsappInstance>;
   updateWhatsappInstance(id: number, instance: Partial<InsertWhatsappInstance>): Promise<WhatsappInstance>;
   deleteWhatsappInstance(id: number): Promise<void>;
+  
+  // Conversations operations
+  getConversation(companyId: number, whatsappInstanceId: number, phoneNumber: string): Promise<Conversation | undefined>;
+  createConversation(conversation: InsertConversation): Promise<Conversation>;
+  updateConversation(id: number, conversation: Partial<InsertConversation>): Promise<Conversation>;
+  getConversationsByCompany(companyId: number): Promise<Conversation[]>;
+  
+  // Messages operations
+  createMessage(message: InsertMessage): Promise<Message>;
+  getMessagesByConversation(conversationId: number, limit?: number): Promise<Message[]>;
+  getRecentMessages(conversationId: number, limit: number): Promise<Message[]>;
 }
 
 export class DatabaseStorage implements IStorage {

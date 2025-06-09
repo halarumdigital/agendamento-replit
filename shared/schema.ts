@@ -93,19 +93,65 @@ export const whatsappInstances = mysqlTable("whatsapp_instances", {
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
 
+// Conversations table
+export const conversations = mysqlTable("conversations", {
+  id: int("id").primaryKey().autoincrement(),
+  companyId: int("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+  whatsappInstanceId: int("whatsapp_instance_id").notNull().references(() => whatsappInstances.id, { onDelete: "cascade" }),
+  phoneNumber: varchar("phone_number", { length: 20 }).notNull(),
+  contactName: varchar("contact_name", { length: 100 }),
+  lastMessageAt: timestamp("last_message_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+});
+
+// Messages table
+export const messages = mysqlTable("messages", {
+  id: int("id").primaryKey().autoincrement(),
+  conversationId: int("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" }),
+  messageId: varchar("message_id", { length: 100 }),
+  content: text("content").notNull(),
+  role: varchar("role", { length: 20 }).notNull(), // 'user' or 'assistant'
+  messageType: varchar("message_type", { length: 50 }).default("text"), // 'text', 'image', etc.
+  delivered: boolean("delivered").default(false),
+  timestamp: timestamp("timestamp").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Relations
 export const companiesRelations = relations(companies, ({ many }) => ({
   whatsappInstances: many(whatsappInstances),
+  conversations: many(conversations),
 }));
 
 export const plansRelations = relations(plans, ({ many }) => ({
   // Add future relations here if needed
 }));
 
-export const whatsappInstancesRelations = relations(whatsappInstances, ({ one }) => ({
+export const whatsappInstancesRelations = relations(whatsappInstances, ({ one, many }) => ({
   company: one(companies, {
     fields: [whatsappInstances.companyId],
     references: [companies.id],
+  }),
+  conversations: many(conversations),
+}));
+
+export const conversationsRelations = relations(conversations, ({ one, many }) => ({
+  company: one(companies, {
+    fields: [conversations.companyId],
+    references: [companies.id],
+  }),
+  whatsappInstance: one(whatsappInstances, {
+    fields: [conversations.whatsappInstanceId],
+    references: [whatsappInstances.id],
+  }),
+  messages: many(messages),
+}));
+
+export const messagesRelations = relations(messages, ({ one }) => ({
+  conversation: one(conversations, {
+    fields: [messages.conversationId],
+    references: [conversations.id],
   }),
 }));
 
@@ -142,6 +188,17 @@ export const insertWhatsappInstanceSchema = createInsertSchema(whatsappInstances
   updatedAt: true,
 });
 
+export const insertConversationSchema = createInsertSchema(conversations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertMessageSchema = createInsertSchema(messages).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type Admin = typeof admins.$inferSelect;
 export type InsertAdmin = z.infer<typeof insertAdminSchema>;
@@ -153,3 +210,7 @@ export type GlobalSettings = typeof globalSettings.$inferSelect;
 export type InsertGlobalSettings = z.infer<typeof insertGlobalSettingsSchema>;
 export type WhatsappInstance = typeof whatsappInstances.$inferSelect;
 export type InsertWhatsappInstance = z.infer<typeof insertWhatsappInstanceSchema>;
+export type Conversation = typeof conversations.$inferSelect;
+export type InsertConversation = z.infer<typeof insertConversationSchema>;
+export type Message = typeof messages.$inferSelect;
+export type InsertMessage = z.infer<typeof insertMessageSchema>;
