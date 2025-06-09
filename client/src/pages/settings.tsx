@@ -116,11 +116,12 @@ export default function SettingsPage() {
   });
 
   const onSubmit = (data: SettingsFormData) => {
-    // Convert string values to numbers for OpenAI fields
+    // Convert string values to numbers for OpenAI fields and ensure required defaults
     const processedData = {
       ...data,
-      openaiTemperature: data.openaiTemperature ? parseFloat(data.openaiTemperature.toString()) : undefined,
-      openaiMaxTokens: data.openaiMaxTokens ? parseInt(data.openaiMaxTokens.toString()) : undefined,
+      openaiModel: data.openaiModel || "gpt-4o",
+      openaiTemperature: data.openaiTemperature ? parseFloat(data.openaiTemperature.toString()) : 0.7,
+      openaiMaxTokens: data.openaiMaxTokens ? parseInt(data.openaiMaxTokens.toString()) : 4000,
     };
     updateMutation.mutate(processedData);
   };
@@ -406,7 +407,7 @@ export default function SettingsPage() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {openaiModels?.models?.length > 0 ? (
+                            {openaiModels?.models && openaiModels.models.length > 0 ? (
                               openaiModels.models.map((model: any) => (
                                 <SelectItem key={model.id} value={model.id}>
                                   {model.name}
@@ -422,7 +423,7 @@ export default function SettingsPage() {
                             )}
                           </SelectContent>
                         </Select>
-                        {openaiModels?.models?.length > 0 && (
+                        {openaiModels?.models && openaiModels.models.length > 0 && (
                           <p className="text-xs text-green-600">
                             {openaiModels.models.length} modelos carregados da OpenAI API
                           </p>
