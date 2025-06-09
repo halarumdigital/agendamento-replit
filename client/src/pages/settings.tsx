@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { Settings, Palette, MessageSquare, Globe } from "lucide-react";
+import { Settings, Palette, MessageSquare, Globe, Brain } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { settingsSchema } from "@/lib/validations";
 import type { GlobalSettings } from "@shared/schema";
@@ -36,6 +37,10 @@ export default function SettingsPage() {
       textColor: "#1e293b",
       evolutionApiUrl: "",
       evolutionApiGlobalKey: "",
+      openaiApiKey: "",
+      openaiModel: "gpt-4o",
+      openaiTemperature: 0.7,
+      openaiMaxTokens: 4000,
     },
     values: settings ? {
       systemName: settings.systemName,
@@ -46,6 +51,10 @@ export default function SettingsPage() {
       textColor: settings.textColor,
       evolutionApiUrl: settings.evolutionApiUrl || "",
       evolutionApiGlobalKey: settings.evolutionApiGlobalKey || "",
+      openaiApiKey: (settings as any).openaiApiKey || "",
+      openaiModel: (settings as any).openaiModel || "gpt-4o",
+      openaiTemperature: parseFloat((settings as any).openaiTemperature) || 0.7,
+      openaiMaxTokens: (settings as any).openaiMaxTokens || 4000,
     } : undefined,
   });
 
@@ -109,7 +118,7 @@ export default function SettingsPage() {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <Tabs defaultValue="general" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="general" className="flex items-center gap-2">
                 <Settings className="w-4 h-4" />
                 Geral
@@ -121,6 +130,10 @@ export default function SettingsPage() {
               <TabsTrigger value="evolution" className="flex items-center gap-2">
                 <MessageSquare className="w-4 h-4" />
                 Evolution API
+              </TabsTrigger>
+              <TabsTrigger value="openai" className="flex items-center gap-2">
+                <Brain className="w-4 h-4" />
+                OpenAI
               </TabsTrigger>
             </TabsList>
 

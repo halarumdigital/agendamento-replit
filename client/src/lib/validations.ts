@@ -138,4 +138,8 @@ export const settingsSchema = z.object({
   textColor: z.string().regex(/^#[0-9A-F]{6}$/i, "Cor do texto deve ser um hex válido"),
   evolutionApiUrl: z.string().optional(),
   evolutionApiGlobalKey: z.string().optional(),
+  openaiApiKey: z.string().optional(),
+  openaiModel: z.string().min(1, "Modelo é obrigatório"),
+  openaiTemperature: z.number().min(0).max(2, "Temperatura deve estar entre 0 e 2"),
+  openaiMaxTokens: z.number().min(1).max(200000, "Tokens deve estar entre 1 e 200000"),
 });

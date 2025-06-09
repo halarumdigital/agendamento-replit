@@ -71,6 +71,10 @@ export const globalSettings = mysqlTable("global_settings", {
   textColor: varchar("text_color", { length: 7 }).notNull().default("#1e293b"),
   evolutionApiUrl: varchar("evolution_api_url", { length: 500 }),
   evolutionApiGlobalKey: varchar("evolution_api_global_key", { length: 500 }),
+  openaiApiKey: varchar("openai_api_key", { length: 500 }),
+  openaiModel: varchar("openai_model", { length: 100 }).notNull().default("gpt-4o"),
+  openaiTemperature: decimal("openai_temperature", { precision: 3, scale: 2 }).notNull().default("0.70"),
+  openaiMaxTokens: int("openai_max_tokens").notNull().default(4000),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
 
