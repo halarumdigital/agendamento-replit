@@ -818,36 +818,38 @@ Importante: Você está representando a empresa "${company.fantasyName}" via Wha
             'apikey': globalSettings.evolutionApiGlobalKey
           },
           body: JSON.stringify({
-            webhook: webhookUrl,
+            webhook: {
+              url: webhookUrl,
+              events: [
+                "APPLICATION_STARTUP",
+                "QRCODE_UPDATED",
+                "MESSAGES_SET",
+                "MESSAGES_UPSERT",
+                "MESSAGES_UPDATE",
+                "MESSAGES_DELETE",
+                "SEND_MESSAGE",
+                "CONTACTS_SET",
+                "CONTACTS_UPSERT",
+                "CONTACTS_UPDATE",
+                "PRESENCE_UPDATE",
+                "CHATS_SET",
+                "CHATS_UPSERT",
+                "CHATS_UPDATE",
+                "CHATS_DELETE",
+                "GROUPS_UPSERT",
+                "GROUP_UPDATE",
+                "GROUP_PARTICIPANTS_UPDATE",
+                "CONNECTION_UPDATE",
+                "LABELS_EDIT",
+                "LABELS_ASSOCIATION",
+                "CALL",
+                "TYPEBOT_START",
+                "TYPEBOT_CHANGE_STATUS",
+                "NEW_JWT_TOKEN"
+              ]
+            },
             webhook_by_events: false,
-            webhook_base64: false,
-            events: [
-              "APPLICATION_STARTUP",
-              "QRCODE_UPDATED",
-              "MESSAGES_SET",
-              "MESSAGES_UPSERT",
-              "MESSAGES_UPDATE",
-              "MESSAGES_DELETE",
-              "SEND_MESSAGE",
-              "CONTACTS_SET",
-              "CONTACTS_UPSERT",
-              "CONTACTS_UPDATE",
-              "PRESENCE_UPDATE",
-              "CHATS_SET",
-              "CHATS_UPSERT",
-              "CHATS_UPDATE",
-              "CHATS_DELETE",
-              "GROUPS_UPSERT",
-              "GROUP_UPDATE",
-              "GROUP_PARTICIPANTS_UPDATE",
-              "CONNECTION_UPDATE",
-              "LABELS_EDIT",
-              "LABELS_ASSOCIATION",
-              "CALL",
-              "TYPEBOT_START",
-              "TYPEBOT_CHANGE_STATUS",
-              "NEW_JWT_TOKEN"
-            ]
+            webhook_base64: false
           })
         });
 
@@ -1064,32 +1066,34 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
           const webhookUrl = `${req.protocol}://${req.get('host')}/api/webhook/whatsapp/${instanceName}`;
           
           const webhookPayload = {
-            webhook: webhookUrl,
+            webhook: {
+              url: webhookUrl,
+              events: [
+                "APPLICATION_STARTUP",
+                "QRCODE_UPDATED", 
+                "MESSAGES_SET",
+                "MESSAGES_UPSERT",
+                "MESSAGES_UPDATE",
+                "MESSAGES_DELETE",
+                "SEND_MESSAGE",
+                "CONTACTS_SET",
+                "CONTACTS_UPSERT",
+                "CONTACTS_UPDATE",
+                "PRESENCE_UPDATE",
+                "CHATS_SET",
+                "CHATS_UPSERT", 
+                "CHATS_UPDATE",
+                "CHATS_DELETE",
+                "GROUPS_UPSERT",
+                "GROUP_UPDATE",
+                "GROUP_PARTICIPANTS_UPDATE",
+                "CONNECTION_UPDATE",
+                "CALL",
+                "NEW_JWT_TOKEN"
+              ]
+            },
             webhook_by_events: false,
-            webhook_base64: false,
-            events: [
-              "APPLICATION_STARTUP",
-              "QRCODE_UPDATED", 
-              "MESSAGES_SET",
-              "MESSAGES_UPSERT",
-              "MESSAGES_UPDATE",
-              "MESSAGES_DELETE",
-              "SEND_MESSAGE",
-              "CONTACTS_SET",
-              "CONTACTS_UPSERT",
-              "CONTACTS_UPDATE",
-              "PRESENCE_UPDATE",
-              "CHATS_SET",
-              "CHATS_UPSERT", 
-              "CHATS_UPDATE",
-              "CHATS_DELETE",
-              "GROUPS_UPSERT",
-              "GROUP_UPDATE",
-              "GROUP_PARTICIPANTS_UPDATE",
-              "CONNECTION_UPDATE",
-              "CALL",
-              "NEW_JWT_TOKEN"
-            ]
+            webhook_base64: false
           };
 
           const webhookResponse = await fetch(`${settings.evolutionApiUrl}/webhook/set/${instanceName}`, {
@@ -1143,32 +1147,34 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
             const webhookUrl = `${req.protocol}://${req.get('host')}/api/webhook/whatsapp/${instanceName}`;
             
             const webhookPayload = {
-              webhook: webhookUrl,
+              webhook: {
+                url: webhookUrl,
+                events: [
+                  "APPLICATION_STARTUP",
+                  "QRCODE_UPDATED", 
+                  "MESSAGES_SET",
+                  "MESSAGES_UPSERT",
+                  "MESSAGES_UPDATE",
+                  "MESSAGES_DELETE",
+                  "SEND_MESSAGE",
+                  "CONTACTS_SET",
+                  "CONTACTS_UPSERT",
+                  "CONTACTS_UPDATE",
+                  "PRESENCE_UPDATE",
+                  "CHATS_SET",
+                  "CHATS_UPSERT", 
+                  "CHATS_UPDATE",
+                  "CHATS_DELETE",
+                  "GROUPS_UPSERT",
+                  "GROUP_UPDATE",
+                  "GROUP_PARTICIPANTS_UPDATE",
+                  "CONNECTION_UPDATE",
+                  "CALL",
+                  "NEW_JWT_TOKEN"
+                ]
+              },
               webhook_by_events: false,
-              webhook_base64: false,
-              events: [
-                "APPLICATION_STARTUP",
-                "QRCODE_UPDATED", 
-                "MESSAGES_SET",
-                "MESSAGES_UPSERT",
-                "MESSAGES_UPDATE",
-                "MESSAGES_DELETE",
-                "SEND_MESSAGE",
-                "CONTACTS_SET",
-                "CONTACTS_UPSERT",
-                "CONTACTS_UPDATE",
-                "PRESENCE_UPDATE",
-                "CHATS_SET",
-                "CHATS_UPSERT", 
-                "CHATS_UPDATE",
-                "CHATS_DELETE",
-                "GROUPS_UPSERT",
-                "GROUP_UPDATE",
-                "GROUP_PARTICIPANTS_UPDATE",
-                "CONNECTION_UPDATE",
-                "CALL",
-                "NEW_JWT_TOKEN"
-              ]
+              webhook_base64: false
             };
 
             const webhookResponse = await fetch(`${settings.evolutionApiUrl}/webhook/set/${instanceName}`, {
