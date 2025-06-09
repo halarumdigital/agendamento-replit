@@ -133,25 +133,20 @@ export default function Sidebar({ systemName = "AdminPro", logoUrl }: SidebarPro
           <div className="mt-8 pt-6 border-t border-slate-200">
             <div className="flex items-center px-3 py-2">
               <div className="w-8 h-8 bg-slate-300 rounded-full flex items-center justify-center">
-                {user?.profileImageUrl ? (
-                  <img 
-                    src={user.profileImageUrl} 
-                    alt="Avatar" 
-                    className="w-8 h-8 rounded-full object-cover"
-                  />
-                ) : (
-                  <User className="w-4 h-4 text-slate-600" />
-                )}
+                <User className="w-4 h-4 text-slate-600" />
               </div>
               <div className="ml-3 min-w-0 flex-1">
                 <p className="text-sm font-medium text-slate-800 truncate">
-                  {user?.firstName || user?.lastName 
-                    ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
-                    : 'Administrador'
+                  {user && typeof user === 'object' && 'firstName' in user ? 
+                    `${user.firstName || ''} ${(user as any).lastName || ''}`.trim() || 'Administrador' : 
+                    'Administrador'
                   }
                 </p>
                 <p className="text-xs text-slate-500 truncate">
-                  {user?.email || 'admin@sistema.com'}
+                  {user && typeof user === 'object' && 'email' in user ? 
+                    String((user as any).email) : 
+                    'admin@sistema.com'
+                  }
                 </p>
               </div>
             </div>
