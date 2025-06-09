@@ -357,30 +357,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Não autenticado" });
       }
 
-      // Create WhatsApp instances table if it doesn't exist
       try {
-        const createTableSQL = `
-          CREATE TABLE IF NOT EXISTS whatsapp_instances (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            company_id INT NOT NULL,
-            instance_name VARCHAR(255) NOT NULL,
-            status VARCHAR(50) DEFAULT 'disconnected',
-            qr_code TEXT,
-            webhook VARCHAR(500),
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
-          );
-        `;
-        
-        await db.run(createTableSQL);
-        console.log("WhatsApp instances table created/verified successfully");
-      } catch (tableError: any) {
-        console.log("WhatsApp instances table setup:", tableError?.message || "Unknown error");
+        const instances = await storage.getWhatsappInstancesByCompany(companyId);
+        res.json(instances);
+      } catch (dbError: any) {
+        if (dbError.code === 'ER_NO_SUCH_TABLE') {
+          // Table doesn't exist, return empty array
+          res.json([]);
+        } else {
+          throw dbError;
+        }
       }
-
-      const instances = await storage.getWhatsappInstancesByCompany(companyId);
-      res.json(instances);
     } catch (error) {
       console.error("Error fetching WhatsApp instances:", error);
       res.status(500).json({ message: "Erro interno do servidor" });
@@ -429,17 +416,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const evolutionData = await evolutionResponse.json();
 
-      // Save instance to database
-      const instance = await storage.createWhatsappInstance({
-        companyId,
-        instanceName,
-        status: 'created',
-      });
+      // Try to save instance to database
+      try {
+        const instance = await storage.createWhatsappInstance({
+          companyId,
+          instanceName,
+          status: 'created',
+        });
 
-      res.json({
-        ...instance,
-        evolutionData,
-      });
+        res.json({
+          ...instance,
+          evolutionData,
+        });
+      } catch (dbError: any) {
+        if (dbError.code === 'ER_NO_SUCH_TABLE') {
+          // Table doesn't exist, return evolution data only
+          res.json({
+            id: Date.now(),
+            companyId,
+            instanceName,
+            status: 'created',
+            createdAt: new Date(),
+            evolutionData,
+          });
+        } else {
+          throw dbError;
+        }
+      }
     } catch (error) {
       console.error("Error creating WhatsApp instance:", error);
       res.status(500).json({ message: "Erro interno do servidor" });

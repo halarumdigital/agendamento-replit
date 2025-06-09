@@ -1,7 +1,13 @@
 import mysql from 'mysql2/promise';
 
 async function initWhatsAppTable() {
-  const connection = await mysql.createConnection(process.env.DATABASE_URL);
+  const connection = await mysql.createConnection({
+    host: '69.62.101.23',
+    port: 3306,
+    user: 'gilliard_salao',
+    password: '$KeZT4#4ptL!9j',
+    database: 'gilliard_salao'
+  });
   
   try {
     const createTableSQL = `
