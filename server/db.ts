@@ -15,3 +15,24 @@ const pool = mysql.createPool({
 });
 
 export const db = drizzle(pool, { schema, mode: 'default' });
+
+// Add missing ai_agent_prompt column if it doesn't exist
+(async () => {
+  try {
+    await pool.execute(`
+      SELECT ai_agent_prompt FROM companies LIMIT 1
+    `);
+  } catch (error: any) {
+    if (error.code === 'ER_BAD_FIELD_ERROR') {
+      try {
+        await pool.execute(`
+          ALTER TABLE companies 
+          ADD COLUMN ai_agent_prompt TEXT NULL
+        `);
+        console.log('✅ AI agent prompt column added successfully');
+      } catch (alterError) {
+        console.error('❌ Error adding AI agent column:', alterError);
+      }
+    }
+  }
+})();
