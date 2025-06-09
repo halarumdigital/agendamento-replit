@@ -43,7 +43,7 @@ export default function Chat() {
 
   const chatMutation = useMutation({
     mutationFn: async (data: { message: string; conversationHistory: Array<{ role: string; content: string }> }) => {
-      return await apiRequest("POST", "/api/chat", data) as ChatResponse;
+      return await apiRequest("POST", "/api/chat", data) as unknown as ChatResponse;
     },
     onSuccess: (data) => {
       setMessages(prev => [...prev, {
