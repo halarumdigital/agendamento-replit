@@ -182,6 +182,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Global settings routes
   app.get('/api/settings', isAuthenticated, async (req, res) => {
     try {
+      // Try to add OpenAI columns if they don't exist
+      try {
+        await db.execute(`
+          ALTER TABLE global_settings 
+          ADD COLUMN openai_api_key VARCHAR(500) NULL,
+          ADD COLUMN openai_model VARCHAR(100) NOT NULL DEFAULT 'gpt-4o',
+          ADD COLUMN openai_temperature DECIMAL(3,2) NOT NULL DEFAULT 0.70,
+          ADD COLUMN openai_max_tokens INT NOT NULL DEFAULT 4000
+        `);
+        console.log('OpenAI columns added successfully');
+      } catch (dbError: any) {
+        if (dbError.code !== 'ER_DUP_FIELDNAME') {
+          console.log('OpenAI columns may already exist:', dbError.code);
+        }
+      }
+
       const settings = await storage.getGlobalSettings();
       res.json(settings);
     } catch (error) {

@@ -28,10 +28,29 @@ export default function SettingsPage() {
     queryKey: ["/api/settings"],
   });
 
-  const { data: openaiModels, isLoading: isLoadingModels } = useQuery({
+  const { data: openaiModels, isLoading: isLoadingModels, refetch: refetchModels } = useQuery({
     queryKey: ["/api/openai/models"],
     enabled: false, // Only fetch when explicitly triggered
   });
+
+  const fetchModels = async () => {
+    setFetchingModels(true);
+    try {
+      await refetchModels();
+      toast({
+        title: "Modelos carregados",
+        description: "Lista de modelos OpenAI atualizada com sucesso.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro ao carregar modelos",
+        description: error.message || "Não foi possível carregar os modelos da OpenAI",
+        variant: "destructive",
+      });
+    } finally {
+      setFetchingModels(false);
+    }
+  };
 
   const form = useForm<SettingsFormData>({
     resolver: zodResolver(settingsSchema),
@@ -361,7 +380,19 @@ export default function SettingsPage() {
                     name="openaiModel"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Modelo</FormLabel>
+                        <FormLabel className="flex items-center justify-between">
+                          <span>Modelo</span>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={fetchModels}
+                            disabled={fetchingModels || isLoadingModels}
+                            className="h-6 px-2 text-xs"
+                          >
+                            {fetchingModels || isLoadingModels ? "Carregando..." : "Carregar Modelos"}
+                          </Button>
+                        </FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger>
@@ -369,12 +400,27 @@ export default function SettingsPage() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="gpt-4o">GPT-4o (Mais avançado)</SelectItem>
-                            <SelectItem value="gpt-4o-mini">GPT-4o Mini (Mais rápido)</SelectItem>
-                            <SelectItem value="gpt-4-turbo">GPT-4 Turbo</SelectItem>
-                            <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo (Econômico)</SelectItem>
+                            {openaiModels?.models?.length > 0 ? (
+                              openaiModels.models.map((model: any) => (
+                                <SelectItem key={model.id} value={model.id}>
+                                  {model.name}
+                                </SelectItem>
+                              ))
+                            ) : (
+                              <>
+                                <SelectItem value="gpt-4o">GPT-4o (Mais avançado)</SelectItem>
+                                <SelectItem value="gpt-4o-mini">GPT-4o Mini (Mais rápido)</SelectItem>
+                                <SelectItem value="gpt-4-turbo">GPT-4 Turbo</SelectItem>
+                                <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo (Econômico)</SelectItem>
+                              </>
+                            )}
                           </SelectContent>
                         </Select>
+                        {openaiModels?.models?.length > 0 && (
+                          <p className="text-xs text-green-600">
+                            {openaiModels.models.length} modelos carregados da OpenAI API
+                          </p>
+                        )}
                         <FormMessage />
                       </FormItem>
                     )}
