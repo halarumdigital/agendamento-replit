@@ -29,8 +29,8 @@ function Router() {
       <Route path="/configuracoes" component={CompanySettings} />
       
       {/* Admin Routes */}
-      {isAdminLoading || !isAdminAuthenticated ? (
-        <Route path="/administrador" component={Login} />
+      {!isAdminAuthenticated ? (
+        <Route path="/administrador*" component={Login} />
       ) : (
         <>
           <Route path="/administrador">
