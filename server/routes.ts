@@ -485,7 +485,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           instanceName: instanceName,
           token: instanceName,
           qrcode: true,
-          integration: "WHATSAPP-BAILEYS"
+          integration: "WHATSAPP-BAILEYS",
+          webhookUrl: "",
+          webhookByEvents: false,
+          webhookBase64: false,
+          chatwootAccountId: null,
+          chatwootToken: "",
+          chatwootUrl: "",
+          chatwootSignMsg: false,
+          chatwootReopenConversation: false,
+          chatwootConversationPending: false
         }),
       });
 
