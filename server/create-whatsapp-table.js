@@ -1,4 +1,4 @@
-const { db } = require('./db');
+import { db } from './db.ts';
 
 async function createWhatsappTable() {
   try {
@@ -12,12 +12,12 @@ async function createWhatsappTable() {
         webhook VARCHAR(500),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
-      );
+        INDEX idx_company_id (company_id)
+      )
     `);
     console.log('WhatsApp instances table created successfully');
   } catch (error) {
-    console.error('Error creating WhatsApp instances table:', error);
+    console.error('Error creating WhatsApp table:', error.message);
   }
 }
 

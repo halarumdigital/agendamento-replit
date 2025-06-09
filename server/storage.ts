@@ -167,36 +167,75 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // WhatsApp instances operations
+  // WhatsApp instances operations using raw SQL
   async getWhatsappInstancesByCompany(companyId: number): Promise<WhatsappInstance[]> {
-    return await db
-      .select()
-      .from(whatsappInstances)
-      .where(eq(whatsappInstances.companyId, companyId))
-      .orderBy(desc(whatsappInstances.createdAt));
+    try {
+      // Create table if it doesn't exist
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS whatsapp_instances (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          company_id INT NOT NULL,
+          instance_name VARCHAR(255) NOT NULL,
+          status VARCHAR(50) DEFAULT 'disconnected',
+          qr_code TEXT,
+          webhook VARCHAR(500),
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          INDEX idx_company_id (company_id)
+        )
+      `);
+
+      const result = await db.execute(`
+        SELECT * FROM whatsapp_instances 
+        WHERE company_id = ? 
+        ORDER BY created_at DESC
+      `, [companyId]);
+      
+      return result as WhatsappInstance[];
+    } catch (error: any) {
+      console.error("Error getting WhatsApp instances:", error);
+      return [];
+    }
   }
 
   async getWhatsappInstance(id: number): Promise<WhatsappInstance | undefined> {
-    const [instance] = await db
-      .select()
-      .from(whatsappInstances)
-      .where(eq(whatsappInstances.id, id));
-    return instance;
+    try {
+      const result = await db.execute(`
+        SELECT * FROM whatsapp_instances WHERE id = ?
+      `, [id]);
+      
+      return (result as WhatsappInstance[])[0];
+    } catch (error: any) {
+      console.error("Error getting WhatsApp instance:", error);
+      return undefined;
+    }
   }
 
   async createWhatsappInstance(instanceData: InsertWhatsappInstance): Promise<WhatsappInstance> {
-    const [instance] = await db
-      .insert(whatsappInstances)
-      .values(instanceData);
-    
-    const [newInstance] = await db
-      .select()
-      .from(whatsappInstances)
-      .where(eq(whatsappInstances.companyId, instanceData.companyId))
-      .orderBy(desc(whatsappInstances.id))
-      .limit(1);
-    
-    return newInstance;
+    try {
+      await db.execute(`
+        INSERT INTO whatsapp_instances (company_id, instance_name, status, qr_code, webhook)
+        VALUES (?, ?, ?, ?, ?)
+      `, [
+        instanceData.companyId,
+        instanceData.instanceName,
+        instanceData.status || 'disconnected',
+        instanceData.qrCode || null,
+        instanceData.webhook || null
+      ]);
+
+      const result = await db.execute(`
+        SELECT * FROM whatsapp_instances 
+        WHERE company_id = ? 
+        ORDER BY id DESC 
+        LIMIT 1
+      `, [instanceData.companyId]);
+      
+      return (result as WhatsappInstance[])[0];
+    } catch (error: any) {
+      console.error("Error creating WhatsApp instance:", error);
+      throw error;
+    }
   }
 
   async updateWhatsappInstance(id: number, instanceData: Partial<InsertWhatsappInstance>): Promise<WhatsappInstance> {

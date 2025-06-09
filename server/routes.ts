@@ -361,6 +361,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Não autenticado" });
       }
 
+      // Create WhatsApp instances table if it doesn't exist
+      try {
+        await db.execute(`
+          CREATE TABLE IF NOT EXISTS whatsapp_instances (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            company_id INT NOT NULL,
+            instance_name VARCHAR(255) NOT NULL,
+            status VARCHAR(50) DEFAULT 'disconnected',
+            qr_code TEXT,
+            webhook VARCHAR(500),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            INDEX idx_company_id (company_id)
+          )
+        `);
+        console.log("WhatsApp instances table created/verified successfully");
+      } catch (tableError: any) {
+        console.log("Table creation error:", tableError.message);
+        // Continue with temporary storage if table creation fails
+      }
+
       try {
         const instances = await storage.getWhatsappInstancesByCompany(companyId);
         res.json(instances);
