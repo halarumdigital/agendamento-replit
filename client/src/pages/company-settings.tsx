@@ -71,6 +71,14 @@ export default function CompanySettings() {
     },
   });
 
+  const webhookForm = useForm<WebhookConfigData>({
+    resolver: zodResolver(webhookConfigSchema),
+    defaultValues: {
+      apiUrl: "",
+      apiKey: "",
+    },
+  });
+
   // Update form when company data loads
   useEffect(() => {
     if (company?.aiAgentPrompt) {
@@ -200,6 +208,35 @@ export default function CompanySettings() {
 
   const onAiAgentSubmit = (data: CompanyAiAgentData) => {
     updateAiAgentMutation.mutate(data);
+  };
+
+  const configureWebhookMutation = useMutation({
+    mutationFn: async ({ instanceId, data }: { instanceId: number; data: WebhookConfigData }) => {
+      const response = await apiRequest("POST", `/api/company/whatsapp/${instanceId}/configure-webhook`, data);
+      return response;
+    },
+    onSuccess: (data: any) => {
+      toast({
+        title: "Webhook configurado",
+        description: "O agente de IA foi conectado com sucesso ao WhatsApp.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/company/whatsapp/instances"] });
+      setSelectedInstance(null);
+      webhookForm.reset();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao configurar webhook",
+        description: error.message || "Erro interno do servidor",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onWebhookSubmit = (data: WebhookConfigData) => {
+    if (selectedInstance) {
+      configureWebhookMutation.mutate({ instanceId: selectedInstance.id, data });
+    }
   };
 
   const connectInstanceMutation = useMutation({
@@ -623,16 +660,33 @@ export default function CompanySettings() {
                           {checkStatusMutation.isPending ? "Verificando..." : "Status"}
                         </Button>
                         {instance.status === 'connected' || instance.status === 'open' ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => disconnectInstanceMutation.mutate(instance.instanceName)}
-                            disabled={disconnectInstanceMutation.isPending}
-                            className="flex items-center gap-1"
-                          >
-                            <Smartphone className="w-4 h-4" />
-                            {disconnectInstanceMutation.isPending ? "Desconectando..." : "Desconectar"}
-                          </Button>
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => disconnectInstanceMutation.mutate(instance.instanceName)}
+                              disabled={disconnectInstanceMutation.isPending}
+                              className="flex items-center gap-1"
+                            >
+                              <Smartphone className="w-4 h-4" />
+                              {disconnectInstanceMutation.isPending ? "Desconectando..." : "Desconectar"}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedInstance(instance);
+                                webhookForm.reset({
+                                  apiUrl: instance.apiUrl || "",
+                                  apiKey: instance.apiKey || "",
+                                });
+                              }}
+                              className="flex items-center gap-1"
+                            >
+                              <Bot className="w-4 h-4" />
+                              {instance.webhook ? "Reconfigurar IA" : "Configurar IA"}
+                            </Button>
+                          </>
                         ) : (
                           <Button
                             variant="outline"
@@ -895,6 +949,84 @@ export default function CompanySettings() {
                 </p>
               </div>
             </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Webhook Configuration Dialog */}
+        <Dialog open={!!selectedInstance} onOpenChange={() => setSelectedInstance(null)}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Configurar Agente IA - {selectedInstance?.instanceName}</DialogTitle>
+              <DialogDescription>
+                Configure as credenciais da Evolution API para conectar o agente IA ao WhatsApp.
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...webhookForm}>
+              <form onSubmit={webhookForm.handleSubmit(onWebhookSubmit)} className="space-y-4">
+                <FormField
+                  control={webhookForm.control}
+                  name="apiUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>URL da Evolution API</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="https://sua-evolution-api.com"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={webhookForm.control}
+                  name="apiKey"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Chave da API</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="password"
+                          placeholder="Sua chave da Evolution API"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <h4 className="font-semibold text-blue-900 mb-2">Como funciona</h4>
+                  <ul className="text-sm text-blue-800 space-y-1">
+                    <li>• O webhook será configurado automaticamente na Evolution API</li>
+                    <li>• Mensagens recebidas no WhatsApp serão processadas pelo agente IA</li>
+                    <li>• As respostas serão enviadas automaticamente usando seu prompt personalizado</li>
+                    <li>• Certifique-se de que a Evolution API esteja funcionando corretamente</li>
+                  </ul>
+                </div>
+
+                <div className="flex justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setSelectedInstance(null)}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={configureWebhookMutation.isPending}
+                    className="flex items-center gap-2"
+                  >
+                    <Bot className="w-4 h-4" />
+                    {configureWebhookMutation.isPending ? "Configurando..." : "Configurar Agente IA"}
+                  </Button>
+                </div>
+              </form>
+            </Form>
           </DialogContent>
         </Dialog>
       </div>
