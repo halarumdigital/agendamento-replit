@@ -18,7 +18,7 @@ interface Service {
   name: string;
   description?: string;
   duration: number;
-  price: number;
+  price: string | number;
   color: string;
   active: boolean;
   createdAt: string;
@@ -376,7 +376,7 @@ export default function CompanyServices() {
                     Duração: {service.duration}min
                   </p>
                   <p className="text-lg font-semibold text-green-600">
-                    R$ {service.price.toFixed(2)}
+                    R$ {Number(service.price).toFixed(2)}
                   </p>
                 </div>
                 <div className="flex space-x-2">
@@ -416,7 +416,7 @@ export default function CompanyServices() {
                   <div>
                     <h3 className="font-semibold">{service.name}</h3>
                     <p className="text-sm text-gray-600">
-                      {service.duration}min • R$ {service.price.toFixed(2)}
+                      {service.duration}min • R$ {parseFloat(service.price).toFixed(2)}
                     </p>
                   </div>
                 </div>
