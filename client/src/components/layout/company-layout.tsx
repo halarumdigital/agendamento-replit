@@ -1,130 +1,134 @@
+import { useState } from "react";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Building2, Home, Settings, Users, BarChart3, MessageSquare, LogOut } from "lucide-react";
-import { useLocation } from "wouter";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { 
+  Calendar, 
+  Settings, 
+  MessageSquare, 
+  Users, 
+  Briefcase,
+  Menu,
+  LogOut,
+  Home
+} from "lucide-react";
 import { useCompanyAuth } from "@/hooks/useCompanyAuth";
 
 interface CompanyLayoutProps {
   children: React.ReactNode;
 }
 
-export default function CompanyLayout({ children }: CompanyLayoutProps) {
-  const [location, setLocation] = useLocation();
+const menuItems = [
+  {
+    title: "Dashboard",
+    href: "/company/dashboard",
+    icon: Home,
+  },
+  {
+    title: "Agendamentos",
+    href: "/company/appointments",
+    icon: Calendar,
+  },
+  {
+    title: "Serviços",
+    href: "/company/services",
+    icon: Briefcase,
+  },
+  {
+    title: "Profissionais",
+    href: "/company/professionals",
+    icon: Users,
+  },
+  {
+    title: "WhatsApp",
+    href: "/company/whatsapp",
+    icon: MessageSquare,
+  },
+  {
+    title: "Configurações",
+    href: "/company/settings",
+    icon: Settings,
+  },
+];
+
+function SidebarContent() {
+  const [location] = useLocation();
   const { company } = useCompanyAuth();
 
-  const handleLogout = async () => {
-    try {
-      await fetch("/api/company/auth/logout", { method: "POST" });
-      setLocation("/");
-    } catch (error) {
-      console.error("Erro no logout:", error);
-    }
-  };
+  return (
+    <div className="flex h-full flex-col">
+      <div className="border-b p-6">
+        <h2 className="text-lg font-semibold">{company?.fantasyName || "Empresa"}</h2>
+        <p className="text-sm text-muted-foreground">Painel de Controle</p>
+      </div>
+      
+      <nav className="flex-1 space-y-2 p-4">
+        {menuItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = location === item.href;
+          
+          return (
+            <Link key={item.href} href={item.href}>
+              <Button
+                variant={isActive ? "default" : "ghost"}
+                className="w-full justify-start"
+              >
+                <Icon className="mr-2 h-4 w-4" />
+                {item.title}
+              </Button>
+            </Link>
+          );
+        })}
+      </nav>
+      
+      <div className="border-t p-4">
+        <Button
+          variant="ghost"
+          className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+          onClick={() => {
+            window.location.href = "/api/company/auth/logout";
+          }}
+        >
+          <LogOut className="mr-2 h-4 w-4" />
+          Sair
+        </Button>
+      </div>
+    </div>
+  );
+}
 
-  const menuItems = [
-    {
-      icon: Home,
-      label: "Dashboard",
-      path: "/dashboard",
-    },
-    {
-      icon: Users,
-      label: "Usuários",
-      path: "/usuarios",
-    },
-    {
-      icon: MessageSquare,
-      label: "WhatsApp",
-      path: "/whatsapp",
-    },
-    {
-      icon: BarChart3,
-      label: "Relatórios",
-      path: "/relatorios",
-    },
-    {
-      icon: Settings,
-      label: "Configurações",
-      path: "/configuracoes",
-    },
-  ];
+export default function CompanyLayout({ children }: CompanyLayoutProps) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
-        {/* Header */}
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-              <Building2 className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">
-                {company?.fantasyName || "Empresa"}
-              </h2>
-              <p className="text-sm text-gray-500">Painel da Empresa</p>
-            </div>
-          </div>
-        </div>
+    <div className="min-h-screen flex">
+      {/* Desktop Sidebar */}
+      <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 lg:border-r lg:bg-white">
+        <SidebarContent />
+      </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 px-4 py-6">
-          <div className="space-y-2">
-            {menuItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = location === item.path;
-              
-              return (
-                <button
-                  key={item.path}
-                  onClick={() => setLocation(item.path)}
-                  className={`w-full flex items-center gap-3 px-3 py-2 text-left rounded-lg transition-colors ${
-                    isActive
-                      ? "bg-blue-50 text-blue-700 border border-blue-200"
-                      : "text-gray-700 hover:bg-gray-50"
-                  }`}
-                >
-                  <Icon className={`w-5 h-5 ${isActive ? "text-blue-600" : "text-gray-500"}`} />
-                  <span className="font-medium">{item.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </nav>
-
-        {/* User Info & Logout */}
-        <div className="p-4 border-t border-gray-200">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                <Building2 className="w-4 h-4 text-gray-600" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-gray-900 truncate">
-                  {company?.fantasyName || "Empresa"}
-                </p>
-                <p className="text-xs text-gray-500 truncate">
-                  {company?.email || "empresa@email.com"}
-                </p>
-              </div>
-            </div>
-          </div>
+      {/* Mobile Sidebar */}
+      <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+        <SheetTrigger asChild>
           <Button
             variant="ghost"
-            size="sm"
-            onClick={handleLogout}
-            className="w-full justify-start text-gray-600 hover:text-gray-900"
+            size="icon"
+            className="lg:hidden fixed top-4 left-4 z-50"
           >
-            <LogOut className="w-4 h-4 mr-2" />
-            Sair
+            <Menu className="h-6 w-6" />
           </Button>
-        </div>
-      </aside>
+        </SheetTrigger>
+        <SheetContent side="left" className="w-64 p-0">
+          <SidebarContent />
+        </SheetContent>
+      </Sheet>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto">
-        {children}
-      </main>
+      <div className="flex-1 lg:ml-64">
+        <main className="flex-1">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

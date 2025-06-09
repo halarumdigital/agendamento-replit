@@ -11,6 +11,7 @@ import Login from "@/pages/login";
 import CompanyLogin from "@/pages/company-login";
 import CompanyDashboard from "@/pages/company-dashboard";
 import CompanySettings from "@/pages/company-settings";
+import DashboardAppointments from "@/pages/dashboard-appointments";
 import Dashboard from "@/pages/dashboard";
 import Companies from "@/pages/companies";
 import Plans from "@/pages/plans";
@@ -26,6 +27,8 @@ function Router() {
       {/* Company Routes */}
       <Route path="/" component={CompanyLogin} />
       <Route path="/dashboard" component={CompanyDashboard} />
+      <Route path="/company/dashboard" component={CompanyDashboard} />
+      <Route path="/company/appointments" component={DashboardAppointments} />
       <Route path="/configuracoes" component={CompanySettings} />
       
       {/* Admin Login Route */}

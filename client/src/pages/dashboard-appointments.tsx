@@ -77,7 +77,7 @@ export default function DashboardAppointments() {
   const queryClient = useQueryClient();
 
   // Fetch appointments for current month
-  const { data: appointments = [], isLoading: appointmentsLoading } = useQuery({
+  const { data: appointments = [], isLoading: appointmentsLoading } = useQuery<Appointment[]>({
     queryKey: ['/api/company/appointments', format(currentDate, 'yyyy-MM')],
   });
 
@@ -106,14 +106,25 @@ export default function DashboardAppointments() {
   const createAppointmentMutation = useMutation({
     mutationFn: async (data: AppointmentFormData) => {
       const selectedService = services.find(s => s.id === data.serviceId);
-      return await apiRequest('/api/company/appointments', {
+      const response = await fetch('/api/company/appointments', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
           ...data,
           duration: selectedService?.duration || 60,
           totalPrice: selectedService?.price || 0,
         }),
+        credentials: 'include',
       });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Erro ao criar agendamento');
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/company/appointments'] });

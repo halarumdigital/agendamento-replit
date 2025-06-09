@@ -69,6 +69,27 @@ export interface IStorage {
   createMessage(message: InsertMessage): Promise<Message>;
   getMessagesByConversation(conversationId: number, limit?: number): Promise<Message[]>;
   getRecentMessages(conversationId: number, limit: number): Promise<Message[]>;
+  
+  // Services operations
+  getServicesByCompany(companyId: number): Promise<Service[]>;
+  getService(id: number): Promise<Service | undefined>;
+  createService(service: InsertService): Promise<Service>;
+  updateService(id: number, service: Partial<InsertService>): Promise<Service>;
+  deleteService(id: number): Promise<void>;
+  
+  // Professionals operations
+  getProfessionalsByCompany(companyId: number): Promise<Professional[]>;
+  getProfessional(id: number): Promise<Professional | undefined>;
+  createProfessional(professional: InsertProfessional): Promise<Professional>;
+  updateProfessional(id: number, professional: Partial<InsertProfessional>): Promise<Professional>;
+  deleteProfessional(id: number): Promise<void>;
+  
+  // Appointments operations
+  getAppointmentsByCompany(companyId: number, month?: string): Promise<Appointment[]>;
+  getAppointment(id: number): Promise<Appointment | undefined>;
+  createAppointment(appointment: InsertAppointment): Promise<Appointment>;
+  updateAppointment(id: number, appointment: Partial<InsertAppointment>): Promise<Appointment>;
+  deleteAppointment(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
