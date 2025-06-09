@@ -783,11 +783,6 @@ Importante: Você está representando a empresa "${company.fantasyName}" via Wha
       }
 
       const { instanceId } = req.params;
-      const { apiUrl, apiKey } = req.body;
-
-      if (!apiUrl || !apiKey) {
-        return res.status(400).json({ message: "URL da API e chave são obrigatórias" });
-      }
 
       // Get the instance and verify ownership
       const instance = await storage.getWhatsappInstance(parseInt(instanceId));
@@ -795,26 +790,37 @@ Importante: Você está representando a empresa "${company.fantasyName}" via Wha
         return res.status(404).json({ message: "Instância não encontrada" });
       }
 
+      // Get global Evolution API settings
+      const globalSettings = await storage.getGlobalSettings();
+      if (!globalSettings?.evolutionApiUrl || !globalSettings?.evolutionApiGlobalKey) {
+        return res.status(400).json({ 
+          message: "Evolution API não configurada",
+          details: "Configure a Evolution API nas configurações do administrador primeiro"
+        });
+      }
+
       // Generate webhook URL for this instance
       const webhookUrl = `${req.protocol}://${req.get('host')}/api/webhook/whatsapp/${instance.instanceName}`;
 
-      // Update instance with API details and webhook
+      // Update instance with global API details and webhook
       await storage.updateWhatsappInstance(parseInt(instanceId), {
-        apiUrl,
-        apiKey,
+        apiUrl: globalSettings.evolutionApiUrl,
+        apiKey: globalSettings.evolutionApiGlobalKey,
         webhook: webhookUrl
       });
 
-      // Configure webhook in Evolution API
+      // Configure webhook in Evolution API using global credentials
       try {
-        const webhookResponse = await fetch(`${apiUrl}/webhook/set/${instance.instanceName}`, {
+        const webhookResponse = await fetch(`${globalSettings.evolutionApiUrl}/webhook/set/${instance.instanceName}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'apikey': apiKey
+            'apikey': globalSettings.evolutionApiGlobalKey
           },
           body: JSON.stringify({
-            url: webhookUrl,
+            webhook: webhookUrl,
+            webhook_by_events: false,
+            webhook_base64: false,
             events: [
               "APPLICATION_STARTUP",
               "QRCODE_UPDATED",
@@ -841,9 +847,7 @@ Importante: Você está representando a empresa "${company.fantasyName}" via Wha
               "TYPEBOT_START",
               "TYPEBOT_CHANGE_STATUS",
               "NEW_JWT_TOKEN"
-            ],
-            webhook_by_events: false,
-            webhook_base64: false
+            ]
           })
         });
 
@@ -1060,7 +1064,9 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
           const webhookUrl = `${req.protocol}://${req.get('host')}/api/webhook/whatsapp/${instanceName}`;
           
           const webhookPayload = {
-            url: webhookUrl,
+            webhook: webhookUrl,
+            webhook_by_events: false,
+            webhook_base64: false,
             events: [
               "APPLICATION_STARTUP",
               "QRCODE_UPDATED", 
@@ -1083,9 +1089,7 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
               "CONNECTION_UPDATE",
               "CALL",
               "NEW_JWT_TOKEN"
-            ],
-            webhook_by_events: false,
-            webhook_base64: false
+            ]
           };
 
           const webhookResponse = await fetch(`${settings.evolutionApiUrl}/webhook/set/${instanceName}`, {
@@ -1139,7 +1143,9 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
             const webhookUrl = `${req.protocol}://${req.get('host')}/api/webhook/whatsapp/${instanceName}`;
             
             const webhookPayload = {
-              url: webhookUrl,
+              webhook: webhookUrl,
+              webhook_by_events: false,
+              webhook_base64: false,
               events: [
                 "APPLICATION_STARTUP",
                 "QRCODE_UPDATED", 
@@ -1162,9 +1168,7 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
                 "CONNECTION_UPDATE",
                 "CALL",
                 "NEW_JWT_TOKEN"
-              ],
-              webhook_by_events: false,
-              webhook_base64: false
+              ]
             };
 
             const webhookResponse = await fetch(`${settings.evolutionApiUrl}/webhook/set/${instanceName}`, {
