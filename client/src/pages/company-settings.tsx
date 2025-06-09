@@ -179,12 +179,26 @@ export default function CompanySettings() {
       return await apiRequest("GET", `/api/company/whatsapp/instances/${instanceName}/connect`);
     },
     onSuccess: (data: any) => {
-      setQrCodeData(data.qrcode);
-      setShowQrDialog(true);
-      toast({
-        title: "Conectando instância",
-        description: "Escaneie o QR code com seu WhatsApp.",
-      });
+      console.log("API Response:", data);
+      // Try different QR code fields from Evolution API
+      const qrcode = data.qrcode || data.base64 || data.qr || data.qr_code;
+      
+      if (qrcode) {
+        // If it's base64 without data URL prefix, add it
+        const qrCodeUrl = qrcode.startsWith('data:') ? qrcode : `data:image/png;base64,${qrcode}`;
+        setQrCodeData(qrCodeUrl);
+        setShowQrDialog(true);
+        toast({
+          title: "Conectando instância",
+          description: "Escaneie o QR code com seu WhatsApp.",
+        });
+      } else {
+        toast({
+          title: "Erro",
+          description: "QR code não encontrado na resposta da API",
+          variant: "destructive",
+        });
+      }
     },
     onError: (error: any) => {
       toast({
