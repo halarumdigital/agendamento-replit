@@ -449,9 +449,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/company/auth/logout', (req: any, res) => {
-    req.session.companyId = null;
-    res.json({ message: "Logout realizado com sucesso" });
+  app.get('/api/company/auth/logout', async (req: any, res) => {
+    try {
+      req.session.destroy((err: any) => {
+        if (err) {
+          console.error("Session destroy error:", err);
+          return res.status(500).json({ message: "Erro ao fazer logout" });
+        }
+        res.clearCookie('connect.sid');
+        res.redirect('/');
+      });
+    } catch (error) {
+      console.error("Company logout error:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
   });
 
   app.put('/api/company/profile', async (req: any, res) => {
