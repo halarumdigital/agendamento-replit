@@ -61,8 +61,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createAdmin(adminData: InsertAdmin): Promise<Admin> {
-    const result = await db.insert(admins).values(adminData);
-    const [admin] = await db.select().from(admins).where(eq(admins.id, result.insertId as number));
+    await db.insert(admins).values(adminData);
+    const [admin] = await db.select().from(admins).where(eq(admins.username, adminData.username));
     return admin;
   }
 
@@ -88,8 +88,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createCompany(companyData: InsertCompany): Promise<Company> {
-    const result = await db.insert(companies).values(companyData);
-    const [company] = await db.select().from(companies).where(eq(companies.id, result.insertId as number));
+    await db.insert(companies).values(companyData);
+    const [company] = await db.select().from(companies).where(eq(companies.email, companyData.email));
     return company;
   }
 
@@ -114,8 +114,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createPlan(planData: InsertPlan): Promise<Plan> {
-    const result = await db.insert(plans).values(planData);
-    const [plan] = await db.select().from(plans).where(eq(plans.id, result.insertId as number));
+    await db.insert(plans).values(planData);
+    const [plan] = await db.select().from(plans).where(eq(plans.name, planData.name));
     return plan;
   }
 
@@ -135,8 +135,8 @@ export class DatabaseStorage implements IStorage {
     
     // Create default settings if none exist
     if (!settings) {
-      const result = await db.insert(globalSettings).values({});
-      const [newSettings] = await db.select().from(globalSettings).where(eq(globalSettings.id, result.insertId as number));
+      await db.insert(globalSettings).values({});
+      const [newSettings] = await db.select().from(globalSettings).limit(1);
       return newSettings;
     }
     
@@ -151,8 +151,8 @@ export class DatabaseStorage implements IStorage {
       const [updatedSettings] = await db.select().from(globalSettings).where(eq(globalSettings.id, existingSettings.id));
       return updatedSettings;
     } else {
-      const result = await db.insert(globalSettings).values(settingsData);
-      const [newSettings] = await db.select().from(globalSettings).where(eq(globalSettings.id, result.insertId as number));
+      await db.insert(globalSettings).values(settingsData);
+      const [newSettings] = await db.select().from(globalSettings).limit(1);
       return newSettings;
     }
   }
