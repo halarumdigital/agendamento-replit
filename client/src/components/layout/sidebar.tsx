@@ -37,8 +37,14 @@ export default function Sidebar({ systemName = "AdminPro", logoUrl }: SidebarPro
     return location.startsWith(href);
   };
 
-  const handleLogout = () => {
-    window.location.href = "/api/logout";
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Logout error:", error);
+      window.location.href = "/";
+    }
   };
 
   const toggleMobile = () => {

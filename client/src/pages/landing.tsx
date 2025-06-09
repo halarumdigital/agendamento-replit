@@ -59,17 +59,33 @@ export default function Landing() {
           </Card>
         </div>
 
-        <div className="text-center">
+        <div className="text-center space-y-6">
           <Button
             size="lg"
-            onClick={() => window.location.href = "/api/login"}
+            onClick={() => window.location.href = "/login"}
             className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3"
           >
             Fazer Login como Administrador
           </Button>
-          <p className="text-sm text-slate-500 mt-2">
-            Acesso restrito a administradores autenticados
-          </p>
+          
+          <div className="bg-white p-6 rounded-lg shadow-md max-w-md mx-auto">
+            <h3 className="text-lg font-semibold text-slate-900 mb-3">
+              Credenciais de Demonstração
+            </h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-slate-600">Usuário:</span>
+                <span className="font-mono bg-slate-100 px-2 py-1 rounded">admin</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-600">Senha:</span>
+                <span className="font-mono bg-slate-100 px-2 py-1 rounded">admin123</span>
+              </div>
+            </div>
+            <p className="text-xs text-slate-500 mt-3">
+              Utilize estas credenciais para acessar o sistema administrativo
+            </p>
+          </div>
         </div>
       </div>
     </div>
