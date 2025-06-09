@@ -72,7 +72,7 @@ export default function CompanySettings() {
   });
 
   // WhatsApp instances query
-  const { data: whatsappInstances = [], isLoading: isLoadingInstances } = useQuery({
+  const { data: whatsappInstances = [], isLoading: isLoadingInstances } = useQuery<any[]>({
     queryKey: ["/api/company/whatsapp/instances"],
   });
 
@@ -180,27 +180,32 @@ export default function CompanySettings() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex items-center gap-2 mb-6">
-        <Settings className="w-6 h-6" />
-        <h1 className="text-2xl font-bold">Configurações da Empresa</h1>
-      </div>
+    <CompanyLayout>
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center gap-2 mb-6">
+          <Settings className="w-6 h-6" />
+          <h1 className="text-2xl font-bold">Configurações da Empresa</h1>
+        </div>
 
-      <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="profile" className="flex items-center gap-2">
-            <Building2 className="w-4 h-4" />
-            Perfil
-          </TabsTrigger>
-          <TabsTrigger value="security" className="flex items-center gap-2">
-            <Lock className="w-4 h-4" />
-            Segurança
-          </TabsTrigger>
-          <TabsTrigger value="preferences" className="flex items-center gap-2">
-            <User className="w-4 h-4" />
-            Preferências
-          </TabsTrigger>
-        </TabsList>
+        <Tabs defaultValue="profile" className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="profile" className="flex items-center gap-2">
+              <Building2 className="w-4 h-4" />
+              Perfil
+            </TabsTrigger>
+            <TabsTrigger value="security" className="flex items-center gap-2">
+              <Lock className="w-4 h-4" />
+              Segurança
+            </TabsTrigger>
+            <TabsTrigger value="whatsapp" className="flex items-center gap-2">
+              <MessageSquare className="w-4 h-4" />
+              WhatsApp
+            </TabsTrigger>
+            <TabsTrigger value="preferences" className="flex items-center gap-2">
+              <User className="w-4 h-4" />
+              Preferências
+            </TabsTrigger>
+          </TabsList>
 
         <TabsContent value="profile" className="space-y-6">
           <Card>
@@ -375,6 +380,102 @@ export default function CompanySettings() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="whatsapp" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare className="w-5 h-5" />
+                Conexões WhatsApp
+              </CardTitle>
+              <CardDescription>
+                Crie e gerencie suas instâncias do WhatsApp Business.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...whatsappForm}>
+                <form onSubmit={whatsappForm.handleSubmit(onWhatsappSubmit)} className="space-y-4">
+                  <FormField
+                    control={whatsappForm.control}
+                    name="instanceName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nome da Instância</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Ex: WhatsApp Principal"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="flex gap-2">
+                    <Button 
+                      type="submit" 
+                      disabled={createInstanceMutation.isPending}
+                      className="flex items-center gap-2"
+                    >
+                      <Plus className="w-4 h-4" />
+                      {createInstanceMutation.isPending ? "Criando..." : "Criar Instância"}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Instâncias Ativas</CardTitle>
+              <CardDescription>
+                Lista de todas as suas instâncias do WhatsApp.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingInstances ? (
+                <div className="text-center py-4">
+                  <p className="text-gray-500">Carregando instâncias...</p>
+                </div>
+              ) : (whatsappInstances as any[]).length === 0 ? (
+                <div className="text-center py-8">
+                  <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500 mb-2">Nenhuma instância criada</p>
+                  <p className="text-sm text-gray-400">Crie sua primeira instância do WhatsApp acima.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {(whatsappInstances as any[]).map((instance: any) => (
+                    <div key={instance.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <MessageSquare className="w-5 h-5 text-green-600" />
+                        <div>
+                          <h4 className="font-medium">{instance.instanceName}</h4>
+                          <p className="text-sm text-gray-500">
+                            Status: <Badge variant={instance.status === 'connected' ? 'default' : 'secondary'}>
+                              {instance.status === 'connected' ? 'Conectado' : 'Desconectado'}
+                            </Badge>
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => deleteInstanceMutation.mutate(instance.id)}
+                        disabled={deleteInstanceMutation.isPending}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="preferences" className="space-y-6">
           <Card>
             <CardHeader>
@@ -421,7 +522,8 @@ export default function CompanySettings() {
             </CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
-    </div>
+        </Tabs>
+      </div>
+    </CompanyLayout>
   );
 }
