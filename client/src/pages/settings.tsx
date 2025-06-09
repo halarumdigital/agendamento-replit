@@ -28,7 +28,7 @@ export default function SettingsPage() {
     queryKey: ["/api/settings"],
   });
 
-  const { data: openaiModels, isLoading: isLoadingModels, refetch: refetchModels } = useQuery({
+  const { data: openaiModels, isLoading: isLoadingModels, refetch: refetchModels } = useQuery<{ models: Array<{ id: string; name: string }> }>({
     queryKey: ["/api/openai/models"],
     enabled: false, // Only fetch when explicitly triggered
   });
@@ -116,7 +116,13 @@ export default function SettingsPage() {
   });
 
   const onSubmit = (data: SettingsFormData) => {
-    updateMutation.mutate(data);
+    // Convert string values to numbers for OpenAI fields
+    const processedData = {
+      ...data,
+      openaiTemperature: data.openaiTemperature ? parseFloat(data.openaiTemperature.toString()) : undefined,
+      openaiMaxTokens: data.openaiMaxTokens ? parseInt(data.openaiMaxTokens.toString()) : undefined,
+    };
+    updateMutation.mutate(processedData);
   };
 
   if (isLoading) {

@@ -73,7 +73,7 @@ export const globalSettings = mysqlTable("global_settings", {
   evolutionApiGlobalKey: varchar("evolution_api_global_key", { length: 500 }),
   openaiApiKey: varchar("openai_api_key", { length: 500 }),
   openaiModel: varchar("openai_model", { length: 100 }).notNull().default("gpt-4o"),
-  openaiTemperature: decimal("openai_temperature", { precision: 3, scale: 2 }).notNull().default("0.70"),
+  openaiTemperature: decimal("openai_temperature", { precision: 3, scale: 2 }).notNull().default("0.70").$type<number>(),
   openaiMaxTokens: int("openai_max_tokens").notNull().default(4000),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
@@ -128,6 +128,9 @@ export const insertPlanSchema = createInsertSchema(plans).omit({
 export const insertGlobalSettingsSchema = createInsertSchema(globalSettings).omit({
   id: true,
   updatedAt: true,
+}).extend({
+  openaiTemperature: z.number().min(0).max(2).optional(),
+  openaiMaxTokens: z.number().min(1).max(200000).optional(),
 });
 
 export const insertWhatsappInstanceSchema = createInsertSchema(whatsappInstances).omit({

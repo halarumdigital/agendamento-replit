@@ -208,11 +208,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put('/api/settings', isAuthenticated, async (req, res) => {
     try {
-      const validatedData = insertGlobalSettingsSchema.partial().parse(req.body);
+      // Convert string values to numbers for OpenAI fields
+      const processedData = { ...req.body };
+      if (processedData.openaiTemperature) {
+        processedData.openaiTemperature = parseFloat(processedData.openaiTemperature);
+      }
+      if (processedData.openaiMaxTokens) {
+        processedData.openaiMaxTokens = parseInt(processedData.openaiMaxTokens);
+      }
+
+      const validatedData = insertGlobalSettingsSchema.partial().parse(processedData);
       const settings = await storage.updateGlobalSettings(validatedData);
       res.json(settings);
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.error("Validation errors:", error.errors);
         return res.status(400).json({ message: "Dados inválidos", errors: error.errors });
       }
       console.error("Error updating settings:", error);
