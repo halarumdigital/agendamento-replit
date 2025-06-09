@@ -842,6 +842,38 @@ Importante: Você está representando a empresa "${company.fantasyName}" via Wha
     }
   });
 
+  app.put('/api/company/services/:id', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const id = parseInt(req.params.id);
+      const service = await storage.updateService(id, req.body);
+      res.json(service);
+    } catch (error) {
+      console.error("Error updating service:", error);
+      res.status(500).json({ message: "Erro ao atualizar serviço" });
+    }
+  });
+
+  app.delete('/api/company/services/:id', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const id = parseInt(req.params.id);
+      await storage.deleteService(id);
+      res.json({ message: "Serviço excluído com sucesso" });
+    } catch (error) {
+      console.error("Error deleting service:", error);
+      res.status(500).json({ message: "Erro ao excluir serviço" });
+    }
+  });
+
   // Company Professionals API
   app.get('/api/company/professionals', async (req: any, res) => {
     try {
