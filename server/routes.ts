@@ -821,6 +821,8 @@ Importante: Você está representando a empresa "${company.fantasyName}" via Wha
             webhook: {
               enabled: true,
               url: webhookUrl,
+              webhook_by_events: false,
+              webhook_base64: true,
               events: [
                 "APPLICATION_STARTUP",
                 "QRCODE_UPDATED",
@@ -847,9 +849,7 @@ Importante: Você está representando a empresa "${company.fantasyName}" via Wha
                 "TYPEBOT_START",
                 "TYPEBOT_CHANGE_STATUS"
               ]
-            },
-            webhook_by_events: false,
-            webhook_base64: false
+            }
           })
         });
 
@@ -1069,6 +1069,8 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
             webhook: {
               enabled: true,
               url: webhookUrl,
+              webhook_by_events: false,
+              webhook_base64: true,
               events: [
                 "APPLICATION_STARTUP",
                 "QRCODE_UPDATED", 
@@ -1093,9 +1095,7 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
                 "TYPEBOT_START",
                 "TYPEBOT_CHANGE_STATUS"
               ]
-            },
-            webhook_by_events: false,
-            webhook_base64: false
+            }
           };
 
           const webhookResponse = await fetch(`${settings.evolutionApiUrl}/webhook/set/${instanceName}`, {
@@ -1152,6 +1152,8 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
               webhook: {
                 enabled: true,
                 url: webhookUrl,
+                webhook_by_events: false,
+                webhook_base64: true,
                 events: [
                   "APPLICATION_STARTUP",
                   "QRCODE_UPDATED", 
@@ -1176,9 +1178,7 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
                   "TYPEBOT_START",
                   "TYPEBOT_CHANGE_STATUS"
                 ]
-              },
-              webhook_by_events: false,
-              webhook_base64: false
+              }
             };
 
             const webhookResponse = await fetch(`${settings.evolutionApiUrl}/webhook/set/${instanceName}`, {
