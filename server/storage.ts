@@ -3,6 +3,7 @@ import {
   companies,
   plans,
   globalSettings,
+  whatsappInstances,
   type Admin,
   type InsertAdmin,
   type Company,
@@ -11,6 +12,8 @@ import {
   type InsertPlan,
   type GlobalSettings,
   type InsertGlobalSettings,
+  type WhatsappInstance,
+  type InsertWhatsappInstance,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
@@ -41,6 +44,13 @@ export interface IStorage {
   // Global settings operations
   getGlobalSettings(): Promise<GlobalSettings | undefined>;
   updateGlobalSettings(settings: Partial<InsertGlobalSettings>): Promise<GlobalSettings>;
+  
+  // WhatsApp instances operations
+  getWhatsappInstancesByCompany(companyId: number): Promise<WhatsappInstance[]>;
+  getWhatsappInstance(id: number): Promise<WhatsappInstance | undefined>;
+  createWhatsappInstance(instance: InsertWhatsappInstance): Promise<WhatsappInstance>;
+  updateWhatsappInstance(id: number, instance: Partial<InsertWhatsappInstance>): Promise<WhatsappInstance>;
+  deleteWhatsappInstance(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -155,6 +165,49 @@ export class DatabaseStorage implements IStorage {
       const [newSettings] = await db.select().from(globalSettings).limit(1);
       return newSettings;
     }
+  }
+
+  // WhatsApp instances operations
+  async getWhatsappInstancesByCompany(companyId: number): Promise<WhatsappInstance[]> {
+    return await db
+      .select()
+      .from(whatsappInstances)
+      .where(eq(whatsappInstances.companyId, companyId))
+      .orderBy(desc(whatsappInstances.createdAt));
+  }
+
+  async getWhatsappInstance(id: number): Promise<WhatsappInstance | undefined> {
+    const [instance] = await db
+      .select()
+      .from(whatsappInstances)
+      .where(eq(whatsappInstances.id, id));
+    return instance;
+  }
+
+  async createWhatsappInstance(instanceData: InsertWhatsappInstance): Promise<WhatsappInstance> {
+    const [instance] = await db
+      .insert(whatsappInstances)
+      .values(instanceData)
+      .returning();
+    return instance;
+  }
+
+  async updateWhatsappInstance(id: number, instanceData: Partial<InsertWhatsappInstance>): Promise<WhatsappInstance> {
+    const [instance] = await db
+      .update(whatsappInstances)
+      .set({
+        ...instanceData,
+        updatedAt: new Date(),
+      })
+      .where(eq(whatsappInstances.id, id))
+      .returning();
+    return instance;
+  }
+
+  async deleteWhatsappInstance(id: number): Promise<void> {
+    await db
+      .delete(whatsappInstances)
+      .where(eq(whatsappInstances.id, id));
   }
 }
 

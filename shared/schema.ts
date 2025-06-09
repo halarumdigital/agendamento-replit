@@ -74,13 +74,32 @@ export const globalSettings = mysqlTable("global_settings", {
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
 
+// WhatsApp instances table
+export const whatsappInstances = mysqlTable("whatsapp_instances", {
+  id: int("id").primaryKey().autoincrement(),
+  companyId: int("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+  instanceName: varchar("instance_name", { length: 255 }).notNull(),
+  status: varchar("status", { length: 50 }).default("disconnected"),
+  qrCode: text("qr_code"),
+  webhook: varchar("webhook", { length: 500 }),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+});
+
 // Relations
 export const companiesRelations = relations(companies, ({ many }) => ({
-  // Add future relations here if needed
+  whatsappInstances: many(whatsappInstances),
 }));
 
 export const plansRelations = relations(plans, ({ many }) => ({
   // Add future relations here if needed
+}));
+
+export const whatsappInstancesRelations = relations(whatsappInstances, ({ one }) => ({
+  company: one(companies, {
+    fields: [whatsappInstances.companyId],
+    references: [companies.id],
+  }),
 }));
 
 // Insert schemas
@@ -107,6 +126,12 @@ export const insertGlobalSettingsSchema = createInsertSchema(globalSettings).omi
   updatedAt: true,
 });
 
+export const insertWhatsappInstanceSchema = createInsertSchema(whatsappInstances).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type Admin = typeof admins.$inferSelect;
 export type InsertAdmin = z.infer<typeof insertAdminSchema>;
@@ -116,3 +141,5 @@ export type Plan = typeof plans.$inferSelect;
 export type InsertPlan = z.infer<typeof insertPlanSchema>;
 export type GlobalSettings = typeof globalSettings.$inferSelect;
 export type InsertGlobalSettings = z.infer<typeof insertGlobalSettingsSchema>;
+export type WhatsappInstance = typeof whatsappInstances.$inferSelect;
+export type InsertWhatsappInstance = z.infer<typeof insertWhatsappInstanceSchema>;
