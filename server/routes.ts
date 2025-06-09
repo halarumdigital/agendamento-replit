@@ -11,6 +11,15 @@ import QRCode from "qrcode";
 // Temporary in-memory storage for WhatsApp instances
 const tempWhatsappInstances: any[] = [];
 
+// Helper function to generate public webhook URLs
+function generateWebhookUrl(req: any, instanceName: string): string {
+  const host = req.get('host');
+  if (host?.includes('replit.dev') || host?.includes('replit.app')) {
+    return `https://${host}/api/webhook/whatsapp/${instanceName}`;
+  }
+  return `${req.protocol}://${host}/api/webhook/whatsapp/${instanceName}`;
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
@@ -722,7 +731,7 @@ Importante: Você está representando a empresa "${company.fantasyName}" via Wha
       }
 
       // Generate webhook URL for this instance
-      const webhookUrl = `${req.protocol}://${req.get('host')}/api/webhook/whatsapp/${instance.instanceName}`;
+      const webhookUrl = generateWebhookUrl(req, instance.instanceName);
 
       // Update instance with global API details and webhook
       await storage.updateWhatsappInstance(parseInt(instanceId), {
@@ -851,7 +860,7 @@ Importante: Você está representando a empresa "${company.fantasyName}" via Wha
       }
 
       // Generate webhook URL for this instance
-      const webhookUrl = `${req.protocol}://${req.get('host')}/api/webhook/whatsapp/${instance.instanceName}`;
+      const webhookUrl = generateWebhookUrl(req, instance.instanceName);
 
       // Update instance with global API details and webhook
       await storage.updateWhatsappInstance(parseInt(instanceId), {
@@ -1093,7 +1102,7 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
         try {
           console.log('🤖 Auto-configurando webhook para instância:', instanceName);
           
-          const webhookUrl = `${req.protocol}://${req.get('host')}/api/webhook/whatsapp/${instanceName}`;
+          const webhookUrl = generateWebhookUrl(req, instanceName);
           
           const webhookPayload = {
             webhook: {
@@ -1157,7 +1166,7 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
           try {
             console.log('🤖 Auto-configurando webhook para instância temporária:', instanceName);
             
-            const webhookUrl = `${req.protocol}://${req.get('host')}/api/webhook/whatsapp/${instanceName}`;
+            const webhookUrl = generateWebhookUrl(req, instanceName);
             
             const webhookPayload = {
               webhook: {
