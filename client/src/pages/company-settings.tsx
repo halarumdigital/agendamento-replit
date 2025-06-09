@@ -526,8 +526,11 @@ export default function CompanySettings() {
                         <div>
                           <h4 className="font-medium">{instance.instanceName}</h4>
                           <p className="text-sm text-gray-500">
-                            Status: <Badge variant={instance.status === 'connected' ? 'default' : 'secondary'}>
-                              {instance.status === 'connected' ? 'Conectado' : 'Desconectado'}
+                            Status: <Badge variant={instance.status === 'connected' || instance.status === 'open' ? 'default' : 'secondary'}>
+                              {instance.status === 'connected' || instance.status === 'open' ? 'Conectado' : 
+                               instance.status === 'close' ? 'Desconectado' :
+                               instance.status === 'connecting' ? 'Conectando' :
+                               instance.status || 'Desconhecido'}
                             </Badge>
                           </p>
                         </div>
@@ -543,7 +546,7 @@ export default function CompanySettings() {
                           <QrCode className="w-4 h-4" />
                           {checkStatusMutation.isPending ? "Verificando..." : "Status"}
                         </Button>
-                        {instance.status !== 'connected' && (
+                        {instance.status !== 'connected' && instance.status !== 'open' && (
                           <Button
                             variant="outline"
                             size="sm"
