@@ -529,8 +529,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/company/whatsapp/instances/:instanceName/connect', async (req: any, res) => {
     try {
+      console.log("Session data:", req.session);
+      console.log("Company ID from session:", req.session.companyId);
+      
       const companyId = req.session.companyId;
       if (!companyId) {
+        console.log("No company ID in session, authentication failed");
         return res.status(401).json({ message: "Não autenticado" });
       }
 
