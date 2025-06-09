@@ -187,20 +187,32 @@ export class DatabaseStorage implements IStorage {
   async createWhatsappInstance(instanceData: InsertWhatsappInstance): Promise<WhatsappInstance> {
     const [instance] = await db
       .insert(whatsappInstances)
-      .values(instanceData)
-      .returning();
-    return instance;
+      .values(instanceData);
+    
+    const [newInstance] = await db
+      .select()
+      .from(whatsappInstances)
+      .where(eq(whatsappInstances.companyId, instanceData.companyId))
+      .orderBy(desc(whatsappInstances.id))
+      .limit(1);
+    
+    return newInstance;
   }
 
   async updateWhatsappInstance(id: number, instanceData: Partial<InsertWhatsappInstance>): Promise<WhatsappInstance> {
-    const [instance] = await db
+    await db
       .update(whatsappInstances)
       .set({
         ...instanceData,
         updatedAt: new Date(),
       })
-      .where(eq(whatsappInstances.id, id))
-      .returning();
+      .where(eq(whatsappInstances.id, id));
+      
+    const [instance] = await db
+      .select()
+      .from(whatsappInstances)
+      .where(eq(whatsappInstances.id, id));
+    
     return instance;
   }
 

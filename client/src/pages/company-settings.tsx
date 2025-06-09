@@ -7,12 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Settings, Building2, Lock, User } from "lucide-react";
+import { Settings, Building2, Lock, User, MessageSquare, Trash2, Plus } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useCompanyAuth } from "@/hooks/useCompanyAuth";
 import { z } from "zod";
 import { formatDocument } from "@/lib/validations";
+import CompanyLayout from "@/components/layout/company-layout";
 
 const companyProfileSchema = z.object({
   fantasyName: z.string().min(1, "Nome fantasia é obrigatório"),

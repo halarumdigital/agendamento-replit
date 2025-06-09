@@ -348,6 +348,120 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // WhatsApp instances routes
+  app.get('/api/company/whatsapp/instances', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const instances = await storage.getWhatsappInstancesByCompany(companyId);
+      res.json(instances);
+    } catch (error) {
+      console.error("Error fetching WhatsApp instances:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  app.post('/api/company/whatsapp/instances', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const { instanceName } = req.body;
+      
+      if (!instanceName) {
+        return res.status(400).json({ message: "Nome da instância é obrigatório" });
+      }
+
+      // Get Evolution API settings
+      const settings = await storage.getGlobalSettings();
+      if (!settings?.evolutionApiUrl || !settings?.evolutionApiGlobalKey) {
+        return res.status(400).json({ message: "Evolution API não configurada no sistema" });
+      }
+
+      // Create instance in Evolution API
+      const evolutionResponse = await fetch(`${settings.evolutionApiUrl}/instance/create`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': settings.evolutionApiGlobalKey,
+        },
+        body: JSON.stringify({
+          instanceName: instanceName,
+          token: instanceName,
+          qrcode: true,
+          integration: "WHATSAPP-BAILEYS"
+        }),
+      });
+
+      if (!evolutionResponse.ok) {
+        const errorData = await evolutionResponse.text();
+        console.error("Evolution API error:", errorData);
+        return res.status(400).json({ message: "Erro ao criar instância na Evolution API" });
+      }
+
+      const evolutionData = await evolutionResponse.json();
+
+      // Save instance to database
+      const instance = await storage.createWhatsappInstance({
+        companyId,
+        instanceName,
+        status: 'created',
+      });
+
+      res.json({
+        ...instance,
+        evolutionData,
+      });
+    } catch (error) {
+      console.error("Error creating WhatsApp instance:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  app.delete('/api/company/whatsapp/instances/:id', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const instanceId = parseInt(req.params.id);
+      const instance = await storage.getWhatsappInstance(instanceId);
+
+      if (!instance || instance.companyId !== companyId) {
+        return res.status(404).json({ message: "Instância não encontrada" });
+      }
+
+      // Delete from Evolution API
+      const settings = await storage.getGlobalSettings();
+      if (settings?.evolutionApiUrl && settings?.evolutionApiGlobalKey) {
+        try {
+          await fetch(`${settings.evolutionApiUrl}/instance/delete/${instance.instanceName}`, {
+            method: 'DELETE',
+            headers: {
+              'apikey': settings.evolutionApiGlobalKey,
+            },
+          });
+        } catch (error) {
+          console.error("Error deleting from Evolution API:", error);
+        }
+      }
+
+      // Delete from database
+      await storage.deleteWhatsappInstance(instanceId);
+
+      res.json({ message: "Instância excluída com sucesso" });
+    } catch (error) {
+      console.error("Error deleting WhatsApp instance:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
