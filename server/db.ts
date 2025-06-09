@@ -55,4 +55,28 @@ export const db = drizzle(pool, { schema, mode: 'default' });
       }
     }
   }
+
+  // Create clients table if it doesn't exist
+  try {
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS clients (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        company_id INT NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NULL,
+        phone VARCHAR(50) NULL,
+        birth_date DATE NULL,
+        notes TEXT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
+        INDEX idx_company_id (company_id),
+        INDEX idx_name (name),
+        INDEX idx_email (email)
+      )
+    `);
+    console.log('✅ Clients table ready');
+  } catch (error) {
+    console.error('❌ Error creating clients table:', error);
+  }
 })();
