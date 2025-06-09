@@ -202,9 +202,20 @@ export default function CompanySettings() {
       }
     },
     onError: (error: any) => {
+      let errorMessage = error.message || "Erro ao conectar instância";
+      
+      // Handle specific Evolution API errors
+      if (error.message?.includes("Evolution API não configurada")) {
+        errorMessage = "Configure a Evolution API nas configurações do administrador antes de conectar instâncias WhatsApp.";
+      } else if (error.message?.includes("Instância não encontrada")) {
+        errorMessage = "Esta instância não foi encontrada na Evolution API. Verifique se foi criada corretamente.";
+      } else if (error.message?.includes("Erro da Evolution API")) {
+        errorMessage = "Erro na comunicação com a Evolution API. Verifique as configurações da API.";
+      }
+      
       toast({
-        title: "Erro",
-        description: error.message || "Erro ao conectar instância",
+        title: "Erro de Conexão",
+        description: errorMessage,
         variant: "destructive",
       });
     },

@@ -605,55 +605,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/company/whatsapp/instances/:instanceName/connect', async (req: any, res) => {
     try {
-      console.log("Session data:", req.session);
-      console.log("Company ID from session:", req.session.companyId);
-      
       const companyId = req.session.companyId;
       if (!companyId) {
-        console.log("No company ID in session, authentication failed");
         return res.status(401).json({ message: "Não autenticado" });
       }
 
       const { instanceName } = req.params;
 
-      // First configure default settings if none exist
+      // Get Evolution API settings
       let settings = await storage.getGlobalSettings();
+      
       if (!settings?.evolutionApiUrl || !settings?.evolutionApiGlobalKey) {
-        // Set up default Evolution API configuration for testing
-        await storage.updateGlobalSettings({
-          evolutionApiUrl: "https://api.evolution.com",
-          evolutionApiGlobalKey: "test-key-demo"
+        return res.status(400).json({ 
+          message: "Evolution API não configurada. Configure a URL e chave da API nas configurações do sistema.",
+          needsConfig: true 
         });
-        settings = await storage.getGlobalSettings();
       }
 
-      // Generate a QR code with WhatsApp-like connection data
-      const connectionData = {
-        ref: `${instanceName}-${Date.now()}`,
-        ttl: 20000,
-        server: "whatsapp.com",
-        clientToken: Buffer.from(`${instanceName}-client-${Date.now()}`).toString('base64'),
-        serverToken: Buffer.from(`server-${Date.now()}`).toString('base64'),
-        isRef: true
-      };
-      
-      const qrData = `${connectionData.ref},${connectionData.serverToken},${connectionData.clientToken},${connectionData.server}`;
-      const qrCodeDataUrl = await QRCode.toDataURL(qrData, {
-        width: 256,
-        margin: 2,
-        color: {
-          dark: '#000000',
-          light: '#FFFFFF'
+      try {
+        // Call the real Evolution API to get connection QR code
+        const evolutionResponse = await fetch(`${settings.evolutionApiUrl}/instance/connect/${instanceName}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': settings.evolutionApiGlobalKey,
+          },
+        });
+
+        if (!evolutionResponse.ok) {
+          const errorText = await evolutionResponse.text();
+          console.error("Evolution API connection error:", errorText);
+          
+          // If instance doesn't exist, suggest creating it first
+          if (evolutionResponse.status === 404) {
+            return res.status(404).json({ 
+              message: "Instância não encontrada na Evolution API. Crie a instância primeiro.",
+              needsCreate: true 
+            });
+          }
+          
+          return res.status(400).json({ 
+            message: `Erro da Evolution API: ${evolutionResponse.status} - ${errorText}` 
+          });
         }
-      });
-      
-      res.json({
-        instanceName,
-        status: 'connecting',
-        qrcode: qrCodeDataUrl,
-        connectionData,
-        message: "QR code gerado. Escaneie com seu WhatsApp para conectar."
-      });
+
+        const evolutionData = await evolutionResponse.json();
+        
+        // The Evolution API should return the QR code data
+        if (evolutionData.base64 || evolutionData.qrcode) {
+          const qrCodeData = evolutionData.base64 || evolutionData.qrcode;
+          const qrCodeUrl = qrCodeData.startsWith('data:') ? qrCodeData : `data:image/png;base64,${qrCodeData}`;
+          
+          // Update instance status in database
+          try {
+            const instances = await storage.getWhatsappInstancesByCompany(companyId);
+            const instance = instances.find(inst => inst.instanceName === instanceName);
+            if (instance) {
+              await storage.updateWhatsappInstance(instance.id, {
+                status: 'connecting',
+                qrCode: qrCodeUrl
+              });
+            }
+          } catch (dbError) {
+            console.error("Error updating instance status:", dbError);
+          }
+          
+          res.json({
+            instanceName,
+            status: 'connecting',
+            qrcode: qrCodeUrl,
+            message: "QR code obtido da Evolution API. Escaneie com seu WhatsApp para conectar.",
+            evolutionData
+          });
+        } else {
+          res.status(400).json({ 
+            message: "QR code não encontrado na resposta da Evolution API",
+            evolutionData 
+          });
+        }
+      } catch (fetchError: any) {
+        console.error("Error calling Evolution API:", fetchError);
+        res.status(500).json({ 
+          message: `Erro ao conectar com Evolution API: ${fetchError.message}` 
+        });
+      }
     } catch (error) {
       console.error("Error connecting WhatsApp instance:", error);
       res.status(500).json({ message: "Erro interno do servidor" });
