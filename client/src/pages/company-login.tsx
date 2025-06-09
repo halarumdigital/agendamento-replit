@@ -44,7 +44,7 @@ export default function CompanyLogin() {
         title: "Login realizado",
         description: "Bem-vindo ao painel da empresa!",
       });
-      setLocation("/empresa/dashboard");
+      setLocation("/dashboard");
     },
     onError: (error: any) => {
       const errorMessage = error.message || "Credenciais inválidas";
