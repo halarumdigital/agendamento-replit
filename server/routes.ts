@@ -570,7 +570,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('👤 From me:', message.key.fromMe);
         console.log('📞 Remote JID:', message.key.remoteJid);
         
-        if (message.messageType === 'textMessage' && !message.key.fromMe) {
+        // Handle both 'textMessage' and 'conversation' message types
+        const isTextMessage = (message.messageType === 'textMessage' || message.messageType === 'conversation') && !message.key.fromMe;
+        
+        console.log('🔍 Debug - isTextMessage:', isTextMessage);
+        console.log('🔍 Debug - messageType check:', message.messageType === 'textMessage' || message.messageType === 'conversation');
+        console.log('🔍 Debug - fromMe check:', !message.key.fromMe);
+        
+        if (isTextMessage) {
           const phoneNumber = message.key.remoteJid.replace('@s.whatsapp.net', '');
           const messageText = message.message.conversation || message.message.extendedTextMessage?.text;
           
@@ -578,6 +585,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log('💬 Message text:', messageText);
           
           if (messageText) {
+            console.log('✅ Message text found, proceeding with AI processing...');
             // Find company by instance name
             console.log('🔍 Searching for instance:', instanceName);
             const whatsappInstance = await storage.getWhatsappInstanceByName(instanceName);
