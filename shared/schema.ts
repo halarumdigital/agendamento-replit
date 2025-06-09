@@ -8,6 +8,7 @@ import {
   int,
   decimal,
   boolean,
+  date,
 } from "drizzle-orm/mysql-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -118,10 +119,63 @@ export const messages = mysqlTable("messages", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Services table
+export const services = mysqlTable("services", {
+  id: int("id").primaryKey().autoincrement(),
+  companyId: int("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  duration: int("duration").notNull(), // in minutes
+  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  color: varchar("color", { length: 7 }).default("#3b82f6"),
+  active: boolean("active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+});
+
+// Professionals table
+export const professionals = mysqlTable("professionals", {
+  id: int("id").primaryKey().autoincrement(),
+  companyId: int("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+  name: varchar("name", { length: 255 }).notNull(),
+  email: varchar("email", { length: 255 }),
+  phone: varchar("phone", { length: 20 }),
+  specialties: json("specialties").$type<string[]>().default([]),
+  workDays: json("work_days").$type<number[]>().default([1, 2, 3, 4, 5]), // 0=sunday, 1=monday, etc
+  workStartTime: varchar("work_start_time", { length: 5 }).default("09:00"),
+  workEndTime: varchar("work_end_time", { length: 5 }).default("18:00"),
+  active: boolean("active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+});
+
+// Appointments table
+export const appointments = mysqlTable("appointments", {
+  id: int("id").primaryKey().autoincrement(),
+  companyId: int("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+  serviceId: int("service_id").notNull().references(() => services.id, { onDelete: "cascade" }),
+  professionalId: int("professional_id").notNull().references(() => professionals.id, { onDelete: "cascade" }),
+  clientName: varchar("client_name", { length: 255 }).notNull(),
+  clientEmail: varchar("client_email", { length: 255 }),
+  clientPhone: varchar("client_phone", { length: 20 }).notNull(),
+  appointmentDate: date("appointment_date").notNull(),
+  appointmentTime: varchar("appointment_time", { length: 5 }).notNull(),
+  duration: int("duration").notNull(), // in minutes
+  notes: text("notes"),
+  status: varchar("status", { length: 20 }).default("scheduled"), // scheduled, confirmed, cancelled, completed
+  totalPrice: decimal("total_price", { precision: 10, scale: 2 }).notNull(),
+  reminderSent: boolean("reminder_sent").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+});
+
 // Relations
 export const companiesRelations = relations(companies, ({ many }) => ({
   whatsappInstances: many(whatsappInstances),
   conversations: many(conversations),
+  services: many(services),
+  professionals: many(professionals),
+  appointments: many(appointments),
 }));
 
 export const plansRelations = relations(plans, ({ many }) => ({
@@ -152,6 +206,37 @@ export const messagesRelations = relations(messages, ({ one }) => ({
   conversation: one(conversations, {
     fields: [messages.conversationId],
     references: [conversations.id],
+  }),
+}));
+
+export const servicesRelations = relations(services, ({ one, many }) => ({
+  company: one(companies, {
+    fields: [services.companyId],
+    references: [companies.id],
+  }),
+  appointments: many(appointments),
+}));
+
+export const professionalsRelations = relations(professionals, ({ one, many }) => ({
+  company: one(companies, {
+    fields: [professionals.companyId],
+    references: [companies.id],
+  }),
+  appointments: many(appointments),
+}));
+
+export const appointmentsRelations = relations(appointments, ({ one }) => ({
+  company: one(companies, {
+    fields: [appointments.companyId],
+    references: [companies.id],
+  }),
+  service: one(services, {
+    fields: [appointments.serviceId],
+    references: [services.id],
+  }),
+  professional: one(professionals, {
+    fields: [appointments.professionalId],
+    references: [professionals.id],
   }),
 }));
 
@@ -199,6 +284,24 @@ export const insertMessageSchema = createInsertSchema(messages).omit({
   createdAt: true,
 });
 
+export const insertServiceSchema = createInsertSchema(services).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertProfessionalSchema = createInsertSchema(professionals).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAppointmentSchema = createInsertSchema(appointments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type Admin = typeof admins.$inferSelect;
 export type InsertAdmin = z.infer<typeof insertAdminSchema>;
@@ -214,3 +317,9 @@ export type Conversation = typeof conversations.$inferSelect;
 export type InsertConversation = z.infer<typeof insertConversationSchema>;
 export type Message = typeof messages.$inferSelect;
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
+export type Service = typeof services.$inferSelect;
+export type InsertService = z.infer<typeof insertServiceSchema>;
+export type Professional = typeof professionals.$inferSelect;
+export type InsertProfessional = z.infer<typeof insertProfessionalSchema>;
+export type Appointment = typeof appointments.$inferSelect;
+export type InsertAppointment = z.infer<typeof insertAppointmentSchema>;

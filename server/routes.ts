@@ -773,48 +773,74 @@ Importante: Você está representando a empresa "${company.fantasyName}" via Wha
     res.status(200).send('Webhook endpoint is active');
   });
 
-  // Initialize conversation tables
-  app.post("/api/admin/init-conversations", async (req, res) => {
+  // Initialize appointment tables
+  app.post("/api/admin/init-appointments", async (req, res) => {
     try {
-      // Create conversations table
+      // Create services table
       await db.execute(`
-        CREATE TABLE IF NOT EXISTS conversations (
+        CREATE TABLE IF NOT EXISTS services (
           id INT AUTO_INCREMENT PRIMARY KEY,
           company_id INT NOT NULL,
-          whatsapp_instance_id INT NOT NULL,
-          phone_number VARCHAR(20) NOT NULL,
-          contact_name VARCHAR(100),
-          last_message_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          name VARCHAR(255) NOT NULL,
+          description TEXT,
+          duration INT NOT NULL,
+          price DECIMAL(10,2) NOT NULL,
+          color VARCHAR(7) DEFAULT '#3b82f6',
+          active BOOLEAN DEFAULT true,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-          INDEX idx_company_instance_phone (company_id, whatsapp_instance_id, phone_number),
-          INDEX idx_company_id (company_id),
-          INDEX idx_last_message_at (last_message_at)
+          INDEX idx_company_id (company_id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `);
 
-      // Create messages table
+      // Create professionals table
       await db.execute(`
-        CREATE TABLE IF NOT EXISTS messages (
+        CREATE TABLE IF NOT EXISTS professionals (
           id INT AUTO_INCREMENT PRIMARY KEY,
-          conversation_id INT NOT NULL,
-          message_id VARCHAR(100),
-          content TEXT NOT NULL,
-          role VARCHAR(20) NOT NULL,
-          message_type VARCHAR(50) DEFAULT 'text',
-          delivered BOOLEAN DEFAULT false,
-          timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          company_id INT NOT NULL,
+          name VARCHAR(255) NOT NULL,
+          email VARCHAR(255),
+          phone VARCHAR(20),
+          specialties JSON,
+          work_days JSON,
+          work_start_time VARCHAR(5) DEFAULT '09:00',
+          work_end_time VARCHAR(5) DEFAULT '18:00',
+          active BOOLEAN DEFAULT true,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          INDEX idx_conversation_id (conversation_id),
-          INDEX idx_timestamp (timestamp),
-          INDEX idx_role (role)
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          INDEX idx_company_id (company_id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `);
 
-      res.json({ message: "Tabelas de conversas criadas com sucesso" });
+      // Create appointments table
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS appointments (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          company_id INT NOT NULL,
+          service_id INT NOT NULL,
+          professional_id INT NOT NULL,
+          client_name VARCHAR(255) NOT NULL,
+          client_email VARCHAR(255),
+          client_phone VARCHAR(20) NOT NULL,
+          appointment_date DATE NOT NULL,
+          appointment_time VARCHAR(5) NOT NULL,
+          duration INT NOT NULL,
+          notes TEXT,
+          status VARCHAR(20) DEFAULT 'scheduled',
+          total_price DECIMAL(10,2) NOT NULL,
+          reminder_sent BOOLEAN DEFAULT false,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          INDEX idx_company_id (company_id),
+          INDEX idx_appointment_date (appointment_date),
+          INDEX idx_professional_date (professional_id, appointment_date)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `);
+
+      res.json({ message: "Tabelas de agendamentos criadas com sucesso" });
     } catch (error: any) {
-      console.error("Error creating conversation tables:", error);
-      res.status(500).json({ message: "Erro ao criar tabelas de conversas", error: error.message });
+      console.error("Error creating appointment tables:", error);
+      res.status(500).json({ message: "Erro ao criar tabelas de agendamentos", error: error.message });
     }
   });
 
