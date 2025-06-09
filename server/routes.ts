@@ -752,6 +752,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         const statusData = await evolutionResponse.json();
+        console.log("Evolution API Status Response:", JSON.stringify(statusData, null, 2));
+        
+        // Extract status information from various possible response formats
+        let connectionStatus = 'unknown';
+        if (statusData.state) {
+          connectionStatus = statusData.state;
+        } else if (statusData.status) {
+          connectionStatus = statusData.status;
+        } else if (statusData.instance && statusData.instance.state) {
+          connectionStatus = statusData.instance.state;
+        } else if (statusData.connectionState) {
+          connectionStatus = statusData.connectionState;
+        }
+        
+        console.log("Extracted connection status:", connectionStatus);
         
         // Update instance status in database
         try {
@@ -759,8 +774,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const instance = instances.find(inst => inst.instanceName === instanceName);
           if (instance) {
             await storage.updateWhatsappInstance(instance.id, {
-              status: statusData.state || statusData.status || 'unknown'
+              status: connectionStatus
             });
+            console.log(`Updated instance ${instanceName} status to: ${connectionStatus}`);
           }
         } catch (dbError) {
           console.error("Error updating instance status:", dbError);
@@ -768,10 +784,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         res.json({
           instanceName,
-          connectionStatus: statusData.state || statusData.status,
+          connectionStatus,
           instance: statusData.instance || {},
-          message: "Status obtido da Evolution API",
-          ...statusData
+          message: `Status da instância: ${connectionStatus}`,
+          rawResponse: statusData
         });
       } catch (fetchError: any) {
         console.error("Error calling Evolution API status:", fetchError);
