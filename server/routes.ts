@@ -413,6 +413,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Não autenticado" });
       }
 
+      // Add AI agent prompt column if it doesn't exist
+      try {
+        await db.execute(`
+          ALTER TABLE companies 
+          ADD COLUMN ai_agent_prompt TEXT NULL
+        `);
+        console.log('AI agent prompt column added successfully');
+      } catch (dbError: any) {
+        if (dbError.code !== 'ER_DUP_FIELDNAME') {
+          console.log('AI agent prompt column may already exist:', dbError.code);
+        }
+      }
+
       const company = await storage.getCompany(companyId);
       if (!company) {
         return res.status(404).json({ message: "Empresa não encontrada" });
@@ -490,6 +503,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Senha alterada com sucesso" });
     } catch (error) {
       console.error("Error updating company password:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  // Company AI agent configuration
+  app.put('/api/company/ai-agent', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const { aiAgentPrompt } = req.body;
+      
+      if (!aiAgentPrompt || aiAgentPrompt.trim().length < 10) {
+        return res.status(400).json({ message: "Prompt deve ter pelo menos 10 caracteres" });
+      }
+
+      const updatedCompany = await storage.updateCompany(companyId, {
+        aiAgentPrompt: aiAgentPrompt.trim()
+      });
+
+      res.json({ 
+        message: "Configuração do agente IA atualizada com sucesso",
+        aiAgentPrompt: updatedCompany.aiAgentPrompt
+      });
+    } catch (error) {
+      console.error("Error updating AI agent config:", error);
       res.status(500).json({ message: "Erro interno do servidor" });
     }
   });

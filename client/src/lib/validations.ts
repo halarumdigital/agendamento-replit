@@ -120,6 +120,37 @@ export const companySchema = z.object({
   password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
 });
 
+// Company profile validation schema
+export const companyProfileSchema = z.object({
+  fantasyName: z.string().min(1, "Nome fantasia é obrigatório"),
+  document: documentSchema,
+  address: z.string().min(1, "Endereço é obrigatório"),
+  email: z.string().email("Email inválido"),
+});
+
+// Company password validation schema
+export const companyPasswordSchema = z.object({
+  currentPassword: z.string().min(1, "Senha atual é obrigatória"),
+  newPassword: z.string().min(6, "Nova senha deve ter pelo menos 6 caracteres"),
+  confirmPassword: z.string().min(1, "Confirmação de senha é obrigatória"),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "Senhas não coincidem",
+  path: ["confirmPassword"],
+});
+
+// Company AI agent configuration schema
+export const companyAiAgentSchema = z.object({
+  aiAgentPrompt: z.string().min(10, "Prompt deve ter pelo menos 10 caracteres").max(2000, "Prompt não pode exceder 2000 caracteres"),
+});
+
+// WhatsApp instance validation schema
+export const whatsappInstanceSchema = z.object({
+  instanceName: z.string()
+    .min(3, "Nome da instância deve ter pelo menos 3 caracteres")
+    .max(50, "Nome da instância não pode exceder 50 caracteres")
+    .regex(/^[a-zA-Z0-9_-]+$/, "Nome da instância deve conter apenas letras, números, hífen e underscore"),
+});
+
 // Plan validation schema
 export const planSchema = z.object({
   name: z.string().min(1, "Nome do plano é obrigatório"),
