@@ -773,6 +773,109 @@ Importante: Você está representando a empresa "${company.fantasyName}" via Wha
     res.status(200).send('Webhook endpoint is active');
   });
 
+  // Company Appointments API
+  app.get('/api/company/appointments', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const month = req.query.month as string;
+      const appointments = await storage.getAppointmentsByCompany(companyId, month);
+      res.json(appointments);
+    } catch (error) {
+      console.error("Error fetching appointments:", error);
+      res.status(500).json({ message: "Erro ao buscar agendamentos" });
+    }
+  });
+
+  app.post('/api/company/appointments', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const appointment = await storage.createAppointment({
+        ...req.body,
+        companyId,
+      });
+      res.status(201).json(appointment);
+    } catch (error) {
+      console.error("Error creating appointment:", error);
+      res.status(500).json({ message: "Erro ao criar agendamento" });
+    }
+  });
+
+  // Company Services API
+  app.get('/api/company/services', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const services = await storage.getServicesByCompany(companyId);
+      res.json(services);
+    } catch (error) {
+      console.error("Error fetching services:", error);
+      res.status(500).json({ message: "Erro ao buscar serviços" });
+    }
+  });
+
+  app.post('/api/company/services', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const service = await storage.createService({
+        ...req.body,
+        companyId,
+      });
+      res.status(201).json(service);
+    } catch (error) {
+      console.error("Error creating service:", error);
+      res.status(500).json({ message: "Erro ao criar serviço" });
+    }
+  });
+
+  // Company Professionals API
+  app.get('/api/company/professionals', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const professionals = await storage.getProfessionalsByCompany(companyId);
+      res.json(professionals);
+    } catch (error) {
+      console.error("Error fetching professionals:", error);
+      res.status(500).json({ message: "Erro ao buscar profissionais" });
+    }
+  });
+
+  app.post('/api/company/professionals', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const professional = await storage.createProfessional({
+        ...req.body,
+        companyId,
+      });
+      res.status(201).json(professional);
+    } catch (error) {
+      console.error("Error creating professional:", error);
+      res.status(500).json({ message: "Erro ao criar profissional" });
+    }
+  });
+
   // Initialize appointment tables
   app.post("/api/admin/init-appointments", async (req, res) => {
     try {
@@ -836,6 +939,30 @@ Importante: Você está representando a empresa "${company.fantasyName}" via Wha
           INDEX idx_professional_date (professional_id, appointment_date)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `);
+
+      // Add sample data for first company
+      try {
+        // Add sample services
+        await db.execute(`
+          INSERT IGNORE INTO services (company_id, name, description, duration, price, color) VALUES
+          (1, 'Corte de Cabelo', 'Corte masculino e feminino', 60, 35.00, '#3b82f6'),
+          (1, 'Escova', 'Escova progressiva e modeladora', 90, 45.00, '#ef4444'),
+          (1, 'Manicure', 'Cuidados com as unhas das mãos', 45, 25.00, '#10b981'),
+          (1, 'Pedicure', 'Cuidados com as unhas dos pés', 60, 30.00, '#f59e0b')
+        `);
+
+        // Add sample professionals
+        await db.execute(`
+          INSERT IGNORE INTO professionals (company_id, name, email, phone, specialties, work_days, work_start_time, work_end_time) VALUES
+          (1, 'Maria Silva', 'maria@salao.com', '(11) 99999-1111', '["Corte de Cabelo", "Escova"]', '[1,2,3,4,5,6]', '08:00', '18:00'),
+          (1, 'Ana Santos', 'ana@salao.com', '(11) 99999-2222', '["Manicure", "Pedicure"]', '[1,2,3,4,5]', '09:00', '17:00'),
+          (1, 'João Costa', 'joao@salao.com', '(11) 99999-3333', '["Corte de Cabelo"]', '[2,3,4,5,6]', '09:00', '19:00')
+        `);
+
+        console.log('✅ Sample data added successfully');
+      } catch (sampleError) {
+        console.log('ℹ️ Sample data may already exist:', sampleError);
+      }
 
       res.json({ message: "Tabelas de agendamentos criadas com sucesso" });
     } catch (error: any) {

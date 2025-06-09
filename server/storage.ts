@@ -6,6 +6,9 @@ import {
   whatsappInstances,
   conversations,
   messages,
+  services,
+  professionals,
+  appointments,
   type Admin,
   type InsertAdmin,
   type Company,
@@ -20,6 +23,12 @@ import {
   type InsertConversation,
   type Message,
   type InsertMessage,
+  type Service,
+  type InsertService,
+  type Professional,
+  type InsertProfessional,
+  type Appointment,
+  type InsertAppointment,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -453,6 +462,225 @@ export class DatabaseStorage implements IStorage {
     } catch (error: any) {
       console.error("Error getting recent messages:", error);
       return [];
+    }
+  }
+
+  // Services operations
+  async getServicesByCompany(companyId: number): Promise<Service[]> {
+    try {
+      return await db.select().from(services)
+        .where(eq(services.companyId, companyId))
+        .orderBy(desc(services.createdAt));
+    } catch (error: any) {
+      console.error("Error getting services:", error);
+      return [];
+    }
+  }
+
+  async getService(id: number): Promise<Service | undefined> {
+    try {
+      const [service] = await db.select().from(services)
+        .where(eq(services.id, id));
+      return service;
+    } catch (error: any) {
+      console.error("Error getting service:", error);
+      return undefined;
+    }
+  }
+
+  async createService(serviceData: InsertService): Promise<Service> {
+    try {
+      await db.insert(services).values(serviceData);
+      const [service] = await db.select().from(services).where(
+        and(
+          eq(services.companyId, serviceData.companyId),
+          eq(services.name, serviceData.name)
+        )
+      );
+      return service;
+    } catch (error: any) {
+      console.error("Error creating service:", error);
+      throw error;
+    }
+  }
+
+  async updateService(id: number, serviceData: Partial<InsertService>): Promise<Service> {
+    try {
+      await db.update(services)
+        .set({ ...serviceData, updatedAt: new Date() })
+        .where(eq(services.id, id));
+      
+      const [service] = await db.select().from(services)
+        .where(eq(services.id, id));
+      return service;
+    } catch (error: any) {
+      console.error("Error updating service:", error);
+      throw error;
+    }
+  }
+
+  async deleteService(id: number): Promise<void> {
+    try {
+      await db.delete(services).where(eq(services.id, id));
+    } catch (error: any) {
+      console.error("Error deleting service:", error);
+      throw error;
+    }
+  }
+
+  // Professionals operations
+  async getProfessionalsByCompany(companyId: number): Promise<Professional[]> {
+    try {
+      return await db.select().from(professionals)
+        .where(eq(professionals.companyId, companyId))
+        .orderBy(desc(professionals.createdAt));
+    } catch (error: any) {
+      console.error("Error getting professionals:", error);
+      return [];
+    }
+  }
+
+  async getProfessional(id: number): Promise<Professional | undefined> {
+    try {
+      const [professional] = await db.select().from(professionals)
+        .where(eq(professionals.id, id));
+      return professional;
+    } catch (error: any) {
+      console.error("Error getting professional:", error);
+      return undefined;
+    }
+  }
+
+  async createProfessional(professionalData: InsertProfessional): Promise<Professional> {
+    try {
+      await db.insert(professionals).values(professionalData);
+      const [professional] = await db.select().from(professionals).where(
+        and(
+          eq(professionals.companyId, professionalData.companyId),
+          eq(professionals.name, professionalData.name)
+        )
+      );
+      return professional;
+    } catch (error: any) {
+      console.error("Error creating professional:", error);
+      throw error;
+    }
+  }
+
+  async updateProfessional(id: number, professionalData: Partial<InsertProfessional>): Promise<Professional> {
+    try {
+      await db.update(professionals)
+        .set({ ...professionalData, updatedAt: new Date() })
+        .where(eq(professionals.id, id));
+      
+      const [professional] = await db.select().from(professionals)
+        .where(eq(professionals.id, id));
+      return professional;
+    } catch (error: any) {
+      console.error("Error updating professional:", error);
+      throw error;
+    }
+  }
+
+  async deleteProfessional(id: number): Promise<void> {
+    try {
+      await db.delete(professionals).where(eq(professionals.id, id));
+    } catch (error: any) {
+      console.error("Error deleting professional:", error);
+      throw error;
+    }
+  }
+
+  // Appointments operations
+  async getAppointmentsByCompany(companyId: number, month?: string): Promise<Appointment[]> {
+    try {
+      let query = db.select({
+        id: appointments.id,
+        serviceId: appointments.serviceId,
+        professionalId: appointments.professionalId,
+        clientName: appointments.clientName,
+        clientEmail: appointments.clientEmail,
+        clientPhone: appointments.clientPhone,
+        appointmentDate: appointments.appointmentDate,
+        appointmentTime: appointments.appointmentTime,
+        duration: appointments.duration,
+        notes: appointments.notes,
+        status: appointments.status,
+        totalPrice: appointments.totalPrice,
+        reminderSent: appointments.reminderSent,
+        createdAt: appointments.createdAt,
+        updatedAt: appointments.updatedAt,
+        companyId: appointments.companyId,
+        service: {
+          name: services.name,
+          color: services.color,
+        },
+        professional: {
+          name: professionals.name,
+        },
+      })
+      .from(appointments)
+      .leftJoin(services, eq(appointments.serviceId, services.id))
+      .leftJoin(professionals, eq(appointments.professionalId, professionals.id))
+      .where(eq(appointments.companyId, companyId));
+      
+      return await query.orderBy(desc(appointments.appointmentDate));
+    } catch (error: any) {
+      console.error("Error getting appointments:", error);
+      return [];
+    }
+  }
+
+  async getAppointment(id: number): Promise<Appointment | undefined> {
+    try {
+      const [appointment] = await db.select().from(appointments)
+        .where(eq(appointments.id, id));
+      return appointment;
+    } catch (error: any) {
+      console.error("Error getting appointment:", error);
+      return undefined;
+    }
+  }
+
+  async createAppointment(appointmentData: InsertAppointment): Promise<Appointment> {
+    try {
+      await db.insert(appointments).values(appointmentData);
+      const [appointment] = await db.select().from(appointments).where(
+        and(
+          eq(appointments.companyId, appointmentData.companyId),
+          eq(appointments.clientPhone, appointmentData.clientPhone),
+          eq(appointments.appointmentDate, appointmentData.appointmentDate),
+          eq(appointments.appointmentTime, appointmentData.appointmentTime)
+        )
+      );
+      return appointment;
+    } catch (error: any) {
+      console.error("Error creating appointment:", error);
+      throw error;
+    }
+  }
+
+  async updateAppointment(id: number, appointmentData: Partial<InsertAppointment>): Promise<Appointment> {
+    try {
+      await db.update(appointments)
+        .set({ ...appointmentData, updatedAt: new Date() })
+        .where(eq(appointments.id, id));
+      
+      const [appointment] = await db.select().from(appointments)
+        .where(eq(appointments.id, id));
+      return appointment;
+    } catch (error: any) {
+      console.error("Error updating appointment:", error);
+      throw error;
+    }
+  }
+
+  async deleteAppointment(id: number): Promise<void> {
+    try {
+      await db.delete(appointments).where(eq(appointments.id, id));
+    } catch (error: any) {
+      console.error("Error deleting appointment:", error);
+      throw error;
     }
   }
 }
