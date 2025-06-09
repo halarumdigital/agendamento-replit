@@ -30,8 +30,13 @@ const companyPasswordSchema = z.object({
   path: ["confirmPassword"],
 });
 
+const whatsappInstanceSchema = z.object({
+  instanceName: z.string().min(1, "Nome da instância é obrigatório"),
+});
+
 type CompanyProfileData = z.infer<typeof companyProfileSchema>;
 type CompanyPasswordData = z.infer<typeof companyPasswordSchema>;
+type WhatsappInstanceData = z.infer<typeof whatsappInstanceSchema>;
 
 export default function CompanySettings() {
   const { toast } = useToast();
@@ -57,6 +62,18 @@ export default function CompanySettings() {
       newPassword: "",
       confirmPassword: "",
     },
+  });
+
+  const whatsappForm = useForm<WhatsappInstanceData>({
+    resolver: zodResolver(whatsappInstanceSchema),
+    defaultValues: {
+      instanceName: "",
+    },
+  });
+
+  // WhatsApp instances query
+  const { data: whatsappInstances = [], isLoading: isLoadingInstances } = useQuery({
+    queryKey: ["/api/company/whatsapp/instances"],
   });
 
   const updateProfileMutation = useMutation({
@@ -105,6 +122,51 @@ export default function CompanySettings() {
 
   const onPasswordSubmit = (data: CompanyPasswordData) => {
     updatePasswordMutation.mutate(data);
+  };
+
+  const createInstanceMutation = useMutation({
+    mutationFn: async (data: WhatsappInstanceData) => {
+      return await apiRequest("POST", "/api/company/whatsapp/instances", data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Instância criada",
+        description: "Instância do WhatsApp criada com sucesso.",
+      });
+      whatsappForm.reset();
+      queryClient.invalidateQueries({ queryKey: ["/api/company/whatsapp/instances"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao criar instância",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteInstanceMutation = useMutation({
+    mutationFn: async (instanceId: number) => {
+      await apiRequest("DELETE", `/api/company/whatsapp/instances/${instanceId}`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Instância excluída",
+        description: "Instância do WhatsApp excluída com sucesso.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/company/whatsapp/instances"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao excluir instância",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onWhatsappSubmit = (data: WhatsappInstanceData) => {
+    createInstanceMutation.mutate(data);
   };
 
   if (!company) {
