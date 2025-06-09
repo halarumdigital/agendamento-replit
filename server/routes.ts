@@ -679,6 +679,14 @@ Importante: Você está representando a empresa "${company.fantasyName}" via Wha
     }
   });
 
+  // GET endpoint for webhook verification
+  app.get('/api/webhook/whatsapp/:instanceName', (req, res) => {
+    const { instanceName } = req.params;
+    console.log('🔔 GET request to webhook for instance:', instanceName);
+    console.log('🔍 Query params:', req.query);
+    res.status(200).send('Webhook endpoint is active');
+  });
+
   // Auto-configure webhook using global settings
   app.post('/api/company/whatsapp/:instanceId/auto-configure-webhook', async (req: any, res) => {
     try {
