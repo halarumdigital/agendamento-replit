@@ -686,6 +686,21 @@ export default function CompanySettings() {
                               <Bot className="w-4 h-4" />
                               {instance.webhook ? "Reconfigurar IA" : "Configurar IA"}
                             </Button>
+                            {instance.apiUrl && instance.apiKey && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => configureWebhookMutation.mutate({ 
+                                  instanceId: instance.id, 
+                                  data: { apiUrl: instance.apiUrl, apiKey: instance.apiKey } 
+                                })}
+                                disabled={configureWebhookMutation.isPending}
+                                className="flex items-center gap-1 bg-green-50 hover:bg-green-100 border-green-200"
+                              >
+                                <Settings className="w-4 h-4" />
+                                {configureWebhookMutation.isPending ? "Configurando..." : "Auto Config"}
+                              </Button>
+                            )}
                           </>
                         ) : (
                           <Button

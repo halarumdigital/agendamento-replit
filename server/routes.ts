@@ -676,17 +676,41 @@ Importante: Você está representando a empresa "${company.fantasyName}" via Wha
             'apikey': apiKey
           },
           body: JSON.stringify({
-            url: webhookUrl,
-            webhook_by_events: false,
-            webhook_base64: false,
+            webhook: {
+              enabled: true,
+              url: webhookUrl,
+              headers: {
+                authorization: `Bearer ${apiKey}`,
+                "Content-Type": "application/json"
+              }
+            },
+            byEvents: false,
+            base64: false,
             events: [
               "APPLICATION_STARTUP",
-              "QRCODE_UPDATED", 
-              "CONNECTION_UPDATE",
+              "QRCODE_UPDATED",
+              "MESSAGES_SET",
               "MESSAGES_UPSERT",
               "MESSAGES_UPDATE",
               "MESSAGES_DELETE",
-              "SEND_MESSAGE"
+              "SEND_MESSAGE",
+              "CONTACTS_SET",
+              "CONTACTS_UPSERT",
+              "CONTACTS_UPDATE",
+              "PRESENCE_UPDATE",
+              "CHATS_SET",
+              "CHATS_UPSERT",
+              "CHATS_UPDATE",
+              "CHATS_DELETE",
+              "GROUPS_UPSERT",
+              "GROUP_UPDATE",
+              "GROUP_PARTICIPANTS_UPDATE",
+              "CONNECTION_UPDATE",
+              "LABELS_EDIT",
+              "LABELS_ASSOCIATION",
+              "CALL",
+              "TYPEBOT_START",
+              "TYPEBOT_CHANGE_STATUS"
             ]
           })
         });
