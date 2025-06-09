@@ -967,6 +967,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ChatGPT chat endpoint
+  app.post('/api/chat', isAuthenticated, async (req, res) => {
+    try {
+      const { message, conversationHistory = [] } = req.body;
+      
+      if (!message) {
+        return res.status(400).json({ message: "Mensagem é obrigatória" });
+      }
+
+      const settings = await storage.getGlobalSettings();
+      if (!settings?.openaiApiKey) {
+        return res.status(400).json({ message: "Chave da API OpenAI não configurada nas configurações do sistema" });
+      }
+
+      // Prepare messages for OpenAI
+      const messages = [
+        {
+          role: "system",
+          content: "Você é um assistente virtual inteligente e prestativo. Responda sempre em português brasileiro de forma clara e útil."
+        },
+        ...conversationHistory.map((msg: any) => ({
+          role: msg.role,
+          content: msg.content
+        })),
+        {
+          role: "user",
+          content: message
+        }
+      ];
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${settings.openaiApiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: settings.openaiModel || "gpt-4o",
+          messages: messages,
+          temperature: parseFloat(settings.openaiTemperature?.toString() || "0.7"),
+          max_tokens: settings.openaiMaxTokens || 4000,
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error("OpenAI API error:", errorData);
+        
+        if (response.status === 401) {
+          return res.status(401).json({ message: "Chave da API OpenAI inválida. Verifique as configurações." });
+        } else if (response.status === 429) {
+          return res.status(429).json({ message: "Limite de requisições atingido. Tente novamente em alguns minutos." });
+        } else if (response.status === 402) {
+          return res.status(402).json({ message: "Cota da API OpenAI esgotada. Verifique seu plano." });
+        } else {
+          return res.status(500).json({ message: "Erro na API da OpenAI" });
+        }
+      }
+
+      const completion = await response.json();
+      const aiResponse = completion.choices[0]?.message?.content || "Desculpe, não consegui gerar uma resposta.";
+
+      res.json({
+        response: aiResponse,
+        usage: completion.usage,
+        model: settings.openaiModel || "gpt-4o"
+      });
+
+    } catch (error) {
+      console.error("Error in chat endpoint:", error);
+      res.status(500).json({ message: "Erro interno do servidor ao processar chat" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
