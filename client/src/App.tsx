@@ -25,6 +25,7 @@ function Router() {
       {/* Company Routes */}
       <Route path="/empresa" component={CompanyLogin} />
       <Route path="/empresa/dashboard" component={CompanyDashboard} />
+      <Route path="/empresa/configuracoes" component={CompanySettings} />
       
       {/* Admin Routes */}
       {isAdminLoading || !isAdminAuthenticated ? (

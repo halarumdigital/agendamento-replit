@@ -286,6 +286,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ message: "Logout realizado com sucesso" });
   });
 
+  app.put('/api/company/profile', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const { fantasyName, address } = req.body;
+      
+      if (!fantasyName || !address) {
+        return res.status(400).json({ message: "Nome fantasia e endereço são obrigatórios" });
+      }
+
+      const company = await storage.updateCompany(companyId, {
+        fantasyName,
+        address,
+      });
+
+      // Remove password from response
+      const { password, ...companyData } = company;
+      res.json(companyData);
+    } catch (error) {
+      console.error("Error updating company profile:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  app.put('/api/company/password', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const { currentPassword, newPassword } = req.body;
+      
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ message: "Senha atual e nova senha são obrigatórias" });
+      }
+
+      const company = await storage.getCompany(companyId);
+      if (!company) {
+        return res.status(404).json({ message: "Empresa não encontrada" });
+      }
+
+      const isValidPassword = await bcrypt.compare(currentPassword, company.password);
+      if (!isValidPassword) {
+        return res.status(400).json({ message: "Senha atual incorreta" });
+      }
+
+      const hashedNewPassword = await bcrypt.hash(newPassword, 12);
+      await storage.updateCompany(companyId, {
+        password: hashedNewPassword,
+      });
+
+      res.json({ message: "Senha alterada com sucesso" });
+    } catch (error) {
+      console.error("Error updating company password:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
