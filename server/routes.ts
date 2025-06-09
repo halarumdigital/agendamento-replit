@@ -542,30 +542,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const webhookData = req.body;
 
       // Log incoming webhook data for debugging
-      console.log('WhatsApp webhook received:', JSON.stringify(webhookData, null, 2));
+      console.log('🔔 WhatsApp webhook received for instance:', instanceName);
+      console.log('📋 Webhook event:', webhookData.event);
+      console.log('📄 Full webhook data:', JSON.stringify(webhookData, null, 2));
 
       // Check if it's a message event
       if (webhookData.event === 'messages.upsert' && webhookData.data?.messages?.length > 0) {
+        console.log('✅ Processing messages.upsert event');
         const message = webhookData.data.messages[0];
         
         // Only process text messages from users (not from the bot itself)
+        console.log('📱 Message type:', message.messageType);
+        console.log('👤 From me:', message.key.fromMe);
+        console.log('📞 Remote JID:', message.key.remoteJid);
+        
         if (message.messageType === 'textMessage' && !message.key.fromMe) {
           const phoneNumber = message.key.remoteJid.replace('@s.whatsapp.net', '');
           const messageText = message.message.conversation || message.message.extendedTextMessage?.text;
           
+          console.log('📞 Phone number:', phoneNumber);
+          console.log('💬 Message text:', messageText);
+          
           if (messageText) {
             // Find company by instance name
+            console.log('🔍 Searching for instance:', instanceName);
             const whatsappInstance = await storage.getWhatsappInstanceByName(instanceName);
             if (!whatsappInstance) {
-              console.log(`WhatsApp instance ${instanceName} not found`);
+              console.log(`❌ WhatsApp instance ${instanceName} not found`);
               return res.status(404).json({ error: 'Instance not found' });
             }
+            console.log('✅ Found instance:', whatsappInstance.id);
 
+            console.log('🏢 Searching for company:', whatsappInstance.companyId);
             const company = await storage.getCompany(whatsappInstance.companyId);
             if (!company || !company.aiAgentPrompt) {
-              console.log(`Company or AI prompt not found for instance ${instanceName}`);
+              console.log(`❌ Company or AI prompt not found for instance ${instanceName}`);
+              console.log('Company:', company ? 'Found' : 'Not found');
+              console.log('AI Prompt:', company?.aiAgentPrompt ? 'Configured' : 'Not configured');
               return res.status(404).json({ error: 'Company or AI prompt not configured' });
             }
+            console.log('✅ Found company and AI prompt configured');
 
             // Get global OpenAI settings
             const globalSettings = await storage.getGlobalSettings();
@@ -599,27 +615,25 @@ Importante: Você está representando a empresa "${company.fantasyName}" via Wha
 
               const aiResponse = completion.choices[0]?.message?.content || 'Desculpe, não consegui processar sua mensagem.';
 
-              // Send response back via Evolution API
-              if (whatsappInstance.apiUrl && whatsappInstance.apiKey) {
-                const evolutionResponse = await fetch(`${whatsappInstance.apiUrl}/message/sendText/${instanceName}`, {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'apikey': whatsappInstance.apiKey
-                  },
-                  body: JSON.stringify({
-                    number: phoneNumber,
-                    text: aiResponse
-                  })
-                });
+              // Send response back via Evolution API using global settings
+              console.log('🚀 Sending AI response via Evolution API...');
+              const evolutionResponse = await fetch(`${globalSettings.evolutionApiUrl}/message/sendText/${instanceName}`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'apikey': globalSettings.evolutionApiGlobalKey
+                },
+                body: JSON.stringify({
+                  number: phoneNumber,
+                  text: aiResponse
+                })
+              });
 
-                if (evolutionResponse.ok) {
-                  console.log(`AI response sent to ${phoneNumber}: ${aiResponse}`);
-                } else {
-                  console.error('Failed to send message via Evolution API:', await evolutionResponse.text());
-                }
+              if (evolutionResponse.ok) {
+                console.log(`✅ AI response sent to ${phoneNumber}: ${aiResponse}`);
               } else {
-                console.error('API URL or API key not configured for instance:', instanceName);
+                const errorText = await evolutionResponse.text();
+                console.error('❌ Failed to send message via Evolution API:', errorText);
               }
 
             } catch (aiError) {
