@@ -226,6 +226,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Company Auth routes
+  app.post('/api/company/auth/login', async (req: any, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ message: "Email e senha são obrigatórios" });
+      }
+
+      const company = await storage.getCompanyByEmail(email);
+      if (!company) {
+        return res.status(401).json({ message: "Credenciais inválidas" });
+      }
+
+      const isValidPassword = await bcrypt.compare(password, company.password);
+      if (!isValidPassword) {
+        return res.status(401).json({ message: "Credenciais inválidas" });
+      }
+
+      req.session.companyId = company.id;
+      res.json({ 
+        message: "Login realizado com sucesso",
+        company: {
+          id: company.id,
+          fantasyName: company.fantasyName,
+          email: company.email
+        }
+      });
+    } catch (error) {
+      console.error("Company login error:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  app.get('/api/company/auth/profile', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const company = await storage.getCompany(companyId);
+      if (!company) {
+        return res.status(404).json({ message: "Empresa não encontrada" });
+      }
+
+      // Remove password from response
+      const { password, ...companyData } = company;
+      res.json(companyData);
+    } catch (error) {
+      console.error("Error fetching company profile:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  app.post('/api/company/auth/logout', (req: any, res) => {
+    req.session.companyId = null;
+    res.json({ message: "Logout realizado com sucesso" });
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
