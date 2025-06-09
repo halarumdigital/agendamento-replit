@@ -174,3 +174,8 @@ export const settingsSchema = z.object({
   openaiTemperature: z.number().min(0).max(2, "Temperatura deve estar entre 0 e 2").optional(),
   openaiMaxTokens: z.number().min(1).max(200000, "Tokens deve estar entre 1 e 200000").optional(),
 });
+
+export const webhookConfigSchema = z.object({
+  apiUrl: z.string().url("URL da API deve ser válida").min(1, "URL da API é obrigatória"),
+  apiKey: z.string().min(1, "Chave da API é obrigatória"),
+});

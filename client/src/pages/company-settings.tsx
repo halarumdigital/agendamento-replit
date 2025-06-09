@@ -15,13 +15,14 @@ import { Settings, Building2, Lock, User, MessageSquare, Trash2, Plus, Smartphon
 import { apiRequest } from "@/lib/queryClient";
 import { useCompanyAuth } from "@/hooks/useCompanyAuth";
 import { z } from "zod";
-import { formatDocument, companyProfileSchema, companyPasswordSchema, companyAiAgentSchema, whatsappInstanceSchema } from "@/lib/validations";
+import { formatDocument, companyProfileSchema, companyPasswordSchema, companyAiAgentSchema, whatsappInstanceSchema, webhookConfigSchema } from "@/lib/validations";
 import CompanyLayout from "@/components/layout/company-layout";
 
 type CompanyProfileData = z.infer<typeof companyProfileSchema>;
 type CompanyPasswordData = z.infer<typeof companyPasswordSchema>;
 type CompanyAiAgentData = z.infer<typeof companyAiAgentSchema>;
 type WhatsappInstanceData = z.infer<typeof whatsappInstanceSchema>;
+type WebhookConfigData = z.infer<typeof webhookConfigSchema>;
 
 export default function CompanySettings() {
   const { toast } = useToast();
@@ -35,11 +36,15 @@ export default function CompanySettings() {
     resolver: zodResolver(companyProfileSchema),
     defaultValues: {
       fantasyName: "",
+      document: "",
       address: "",
+      email: "",
     },
     values: company ? {
-      fantasyName: company.fantasyName,
-      address: company.address,
+      fantasyName: company.fantasyName || "",
+      document: company.document || "",
+      address: company.address || "",
+      email: company.email || "",
     } : undefined,
   });
 
