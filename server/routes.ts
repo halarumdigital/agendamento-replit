@@ -204,6 +204,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin authentication routes
+  app.post('/api/auth/login', async (req: any, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ message: "Usuário e senha são obrigatórios" });
+      }
+
+      // Check hardcoded admin credentials
+      if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
+        req.session.adminId = ADMIN_CREDENTIALS.id;
+        req.session.adminUsername = ADMIN_CREDENTIALS.username;
+        
+        const { password: _, ...adminData } = ADMIN_CREDENTIALS;
+        res.json({ message: "Login realizado com sucesso", admin: adminData });
+      } else {
+        res.status(401).json({ message: "Credenciais inválidas" });
+      }
+    } catch (error) {
+      console.error("Error during admin login:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  app.get('/api/auth/user', async (req: any, res) => {
+    try {
+      const adminId = req.session.adminId;
+      if (!adminId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const { password: _, ...adminData } = ADMIN_CREDENTIALS;
+      res.json(adminData);
+    } catch (error) {
+      console.error("Error fetching admin user:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  app.post('/api/auth/logout', async (req: any, res) => {
+    try {
+      req.session.destroy((err: any) => {
+        if (err) {
+          console.error("Error destroying session:", err);
+          return res.status(500).json({ message: "Erro ao fazer logout" });
+        }
+        res.json({ message: "Logout realizado com sucesso" });
+      });
+    } catch (error) {
+      console.error("Error during admin logout:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
   // Dashboard stats
   app.get('/api/dashboard/stats', isAuthenticated, async (req, res) => {
     try {
