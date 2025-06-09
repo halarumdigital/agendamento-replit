@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,8 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Settings, Building2, Lock, User, MessageSquare, Trash2, Plus } from "lucide-react";
+import { Settings, Building2, Lock, User, MessageSquare, Trash2, Plus, Smartphone, QrCode } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useCompanyAuth } from "@/hooks/useCompanyAuth";
 import { z } from "zod";
@@ -42,6 +44,9 @@ export default function CompanySettings() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { company } = useCompanyAuth();
+  const [selectedInstance, setSelectedInstance] = useState<any>(null);
+  const [qrCodeData, setQrCodeData] = useState<string>("");
+  const [showQrDialog, setShowQrDialog] = useState(false);
 
   const profileForm = useForm<CompanyProfileData>({
     resolver: zodResolver(companyProfileSchema),
@@ -168,6 +173,27 @@ export default function CompanySettings() {
   const onWhatsappSubmit = (data: WhatsappInstanceData) => {
     createInstanceMutation.mutate(data);
   };
+
+  const connectInstanceMutation = useMutation({
+    mutationFn: async (instanceName: string) => {
+      return await apiRequest("GET", `/api/company/whatsapp/instances/${instanceName}/connect`);
+    },
+    onSuccess: (data: any) => {
+      setQrCodeData(data.qrcode);
+      setShowQrDialog(true);
+      toast({
+        title: "Conectando instância",
+        description: "Escaneie o QR code com seu WhatsApp.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao conectar instância",
+        variant: "destructive",
+      });
+    },
+  });
 
   if (!company) {
     return (
@@ -459,15 +485,29 @@ export default function CompanySettings() {
                           </p>
                         </div>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => deleteInstanceMutation.mutate(instance.id)}
-                        disabled={deleteInstanceMutation.isPending}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        {instance.status !== 'connected' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => connectInstanceMutation.mutate(instance.instanceName)}
+                            disabled={connectInstanceMutation.isPending}
+                            className="flex items-center gap-1"
+                          >
+                            <Smartphone className="w-4 h-4" />
+                            {connectInstanceMutation.isPending ? "Conectando..." : "Conectar"}
+                          </Button>
+                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => deleteInstanceMutation.mutate(instance.id)}
+                          disabled={deleteInstanceMutation.isPending}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -523,6 +563,53 @@ export default function CompanySettings() {
           </Card>
         </TabsContent>
         </Tabs>
+
+        {/* QR Code Dialog */}
+        <Dialog open={showQrDialog} onOpenChange={setShowQrDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <QrCode className="w-5 h-5" />
+                Conectar WhatsApp
+              </DialogTitle>
+              <DialogDescription>
+                Escaneie o QR code abaixo com seu WhatsApp para conectar a instância.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-col items-center space-y-4">
+              {qrCodeData ? (
+                <div className="bg-white p-4 rounded-lg border">
+                  <img 
+                    src={qrCodeData} 
+                    alt="QR Code WhatsApp" 
+                    className="w-64 h-64 object-contain"
+                  />
+                </div>
+              ) : (
+                <div className="w-64 h-64 bg-gray-100 flex items-center justify-center rounded-lg">
+                  <div className="text-center">
+                    <QrCode className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                    <p className="text-gray-500">Gerando QR code...</p>
+                  </div>
+                </div>
+              )}
+              <div className="text-center space-y-2">
+                <p className="text-sm text-gray-600">
+                  1. Abra o WhatsApp no seu celular
+                </p>
+                <p className="text-sm text-gray-600">
+                  2. Toque em Menu (⋮) &gt; Dispositivos conectados
+                </p>
+                <p className="text-sm text-gray-600">
+                  3. Toque em "Conectar um dispositivo"
+                </p>
+                <p className="text-sm text-gray-600">
+                  4. Aponte seu celular para esta tela para capturar o código
+                </p>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </CompanyLayout>
   );
