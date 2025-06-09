@@ -1247,6 +1247,73 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
     }
   });
 
+  // Get instance details including API key
+  app.get('/api/company/whatsapp/instances/:instanceName/details', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const { instanceName } = req.params;
+      
+      // Get the instance from database
+      const instance = await storage.getWhatsappInstanceByName(instanceName);
+      if (!instance || instance.companyId !== companyId) {
+        return res.status(404).json({ message: "Instância não encontrada" });
+      }
+
+      // Get Evolution API settings
+      const settings = await storage.getGlobalSettings();
+      
+      if (!settings?.evolutionApiUrl || !settings?.evolutionApiGlobalKey) {
+        return res.status(400).json({ 
+          message: "Evolution API não configurada.",
+          needsConfig: true 
+        });
+      }
+
+      try {
+        // Get instance details from Evolution API
+        const evolutionResponse = await fetch(`${settings.evolutionApiUrl}/instance/connect/${instanceName}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': settings.evolutionApiGlobalKey,
+          }
+        });
+
+        let evolutionData = null;
+        if (evolutionResponse.ok) {
+          evolutionData = await evolutionResponse.json();
+        }
+
+        res.json({
+          instance: {
+            ...instance,
+            apiUrl: settings.evolutionApiUrl,
+            apiKey: settings.evolutionApiGlobalKey
+          },
+          evolutionDetails: evolutionData
+        });
+      } catch (error) {
+        console.error('Error fetching Evolution API details:', error);
+        res.json({
+          instance: {
+            ...instance,
+            apiUrl: settings.evolutionApiUrl,
+            apiKey: settings.evolutionApiGlobalKey
+          },
+          evolutionDetails: null,
+          error: 'Não foi possível conectar com a Evolution API'
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching instance details:', error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
   // Get WhatsApp instance connection status
   app.get('/api/company/whatsapp/instances/:instanceName/status', async (req: any, res) => {
     try {

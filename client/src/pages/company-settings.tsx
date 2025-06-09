@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Settings, Building2, Lock, User, MessageSquare, Trash2, Plus, Smartphone, QrCode, RefreshCw, Bot } from "lucide-react";
+import { Settings, Building2, Lock, User, MessageSquare, Trash2, Plus, Smartphone, QrCode, RefreshCw, Bot, Key } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useCompanyAuth } from "@/hooks/useCompanyAuth";
 import { z } from "zod";
@@ -260,6 +260,40 @@ export default function CompanySettings() {
       configureWebhookMutation.mutate({ instanceId: selectedInstance.id, data });
     }
   };
+
+  const fetchInstanceDetailsMutation = useMutation({
+    mutationFn: async (instanceName: string) => {
+      const response = await apiRequest("GET", `/api/company/whatsapp/instances/${instanceName}/details`);
+      return response;
+    },
+    onSuccess: (data: any) => {
+      const apiKey = data.instance.apiKey;
+      const apiUrl = data.instance.apiUrl;
+      
+      toast({
+        title: "Detalhes da Instância",
+        description: `URL da API: ${apiUrl}\nChave da API: ${apiKey ? apiKey.substring(0, 20) + '...' : 'Não configurada'}`,
+      });
+
+      // Show detailed info in console for copying
+      console.log('=== DETALHES DA INSTÂNCIA ===');
+      console.log('Nome da Instância:', data.instance.instanceName);
+      console.log('URL da Evolution API:', apiUrl);
+      console.log('Chave da API:', apiKey);
+      console.log('Status:', data.instance.status);
+      if (data.evolutionDetails) {
+        console.log('Detalhes da Evolution API:', data.evolutionDetails);
+      }
+      console.log('==============================');
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao buscar detalhes",
+        description: error.message || "Falha ao buscar detalhes da instância",
+        variant: "destructive",
+      });
+    },
+  });
 
   const connectInstanceMutation = useMutation({
     mutationFn: async (instanceName: string) => {
@@ -681,6 +715,16 @@ export default function CompanySettings() {
                         >
                           <QrCode className="w-4 h-4" />
                           {checkStatusMutation.isPending ? "Verificando..." : "Status"}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => fetchInstanceDetailsMutation.mutate(instance.instanceName)}
+                          disabled={fetchInstanceDetailsMutation.isPending}
+                          className="flex items-center gap-1"
+                        >
+                          <Key className="w-4 h-4" />
+                          {fetchInstanceDetailsMutation.isPending ? "Buscando..." : "Ver Chave"}
                         </Button>
                         {instance.status === 'connected' || instance.status === 'open' ? (
                           <>
