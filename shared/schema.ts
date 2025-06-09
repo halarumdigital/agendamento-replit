@@ -178,6 +178,19 @@ export const status = mysqlTable("status", {
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
 
+// Clients table
+export const clients = mysqlTable("clients", {
+  id: int("id").primaryKey().autoincrement(),
+  companyId: int("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+  name: varchar("name", { length: 255 }).notNull(),
+  email: varchar("email", { length: 255 }),
+  phone: varchar("phone", { length: 20 }),
+  birthDate: date("birth_date"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+});
+
 // Relations
 export const companiesRelations = relations(companies, ({ many }) => ({
   whatsappInstances: many(whatsappInstances),
@@ -185,6 +198,14 @@ export const companiesRelations = relations(companies, ({ many }) => ({
   services: many(services),
   professionals: many(professionals),
   appointments: many(appointments),
+  clients: many(clients),
+}));
+
+export const clientsRelations = relations(clients, ({ one }) => ({
+  company: one(companies, {
+    fields: [clients.companyId],
+    references: [companies.id],
+  }),
 }));
 
 export const plansRelations = relations(plans, ({ many }) => ({
@@ -317,6 +338,12 @@ export const insertStatusSchema = createInsertSchema(status).omit({
   updatedAt: true,
 });
 
+export const insertClientSchema = createInsertSchema(clients).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type Admin = typeof admins.$inferSelect;
 export type InsertAdmin = z.infer<typeof insertAdminSchema>;
@@ -340,3 +367,5 @@ export type Appointment = typeof appointments.$inferSelect;
 export type InsertAppointment = z.infer<typeof insertAppointmentSchema>;
 export type Status = typeof status.$inferSelect;
 export type InsertStatus = z.infer<typeof insertStatusSchema>;
+export type Client = typeof clients.$inferSelect;
+export type InsertClient = z.infer<typeof insertClientSchema>;

@@ -10,6 +10,7 @@ import {
   professionals,
   appointments,
   status,
+  clients,
   type Admin,
   type InsertAdmin,
   type Company,
@@ -32,6 +33,8 @@ import {
   type InsertAppointment,
   type Status,
   type InsertStatus,
+  type Client,
+  type InsertClient,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -109,6 +112,13 @@ export interface IStorage {
   createStatus(status: InsertStatus): Promise<Status>;
   updateStatus(id: number, status: Partial<InsertStatus>): Promise<Status>;
   deleteStatus(id: number): Promise<void>;
+  
+  // Clients operations
+  getClientsByCompany(companyId: number): Promise<Client[]>;
+  getClient(id: number): Promise<Client | undefined>;
+  createClient(client: InsertClient): Promise<Client>;
+  updateClient(id: number, client: Partial<InsertClient>): Promise<Client>;
+  deleteClient(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -752,6 +762,69 @@ export class DatabaseStorage implements IStorage {
       await db.delete(status).where(eq(status.id, id));
     } catch (error: any) {
       console.error("Error deleting status:", error);
+      throw error;
+    }
+  }
+
+  // Clients operations
+  async getClientsByCompany(companyId: number): Promise<Client[]> {
+    try {
+      return await db.select().from(clients)
+        .where(eq(clients.companyId, companyId))
+        .orderBy(desc(clients.createdAt));
+    } catch (error: any) {
+      console.error("Error getting clients:", error);
+      return [];
+    }
+  }
+
+  async getClient(id: number): Promise<Client | undefined> {
+    try {
+      const [client] = await db.select().from(clients)
+        .where(eq(clients.id, id));
+      return client;
+    } catch (error: any) {
+      console.error("Error getting client:", error);
+      return undefined;
+    }
+  }
+
+  async createClient(clientData: InsertClient): Promise<Client> {
+    try {
+      await db.insert(clients).values(clientData);
+      const [client] = await db.select().from(clients).where(
+        and(
+          eq(clients.companyId, clientData.companyId),
+          eq(clients.name, clientData.name)
+        )
+      ).orderBy(desc(clients.createdAt));
+      return client;
+    } catch (error: any) {
+      console.error("Error creating client:", error);
+      throw error;
+    }
+  }
+
+  async updateClient(id: number, clientData: Partial<InsertClient>): Promise<Client> {
+    try {
+      await db.update(clients)
+        .set({ ...clientData, updatedAt: new Date() })
+        .where(eq(clients.id, id));
+      
+      const [client] = await db.select().from(clients)
+        .where(eq(clients.id, id));
+      return client;
+    } catch (error: any) {
+      console.error("Error updating client:", error);
+      throw error;
+    }
+  }
+
+  async deleteClient(id: number): Promise<void> {
+    try {
+      await db.delete(clients).where(eq(clients.id, id));
+    } catch (error: any) {
+      console.error("Error deleting client:", error);
       throw error;
     }
   }
