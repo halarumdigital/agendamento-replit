@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./auth";
+import { db } from "./db";
 import { insertCompanySchema, insertPlanSchema, insertGlobalSettingsSchema, insertAdminSchema } from "@shared/schema";
 import bcrypt from "bcrypt";
 import { z } from "zod";
@@ -358,7 +359,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create WhatsApp instances table if it doesn't exist
       try {
-        await db.execute(`
+        const createTableSQL = `
           CREATE TABLE IF NOT EXISTS whatsapp_instances (
             id INT AUTO_INCREMENT PRIMARY KEY,
             company_id INT NOT NULL,
@@ -370,9 +371,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
           );
-        `);
-      } catch (tableError) {
-        console.log("WhatsApp instances table already exists or error:", tableError);
+        `;
+        
+        await db.run(createTableSQL);
+        console.log("WhatsApp instances table created/verified successfully");
+      } catch (tableError: any) {
+        console.log("WhatsApp instances table setup:", tableError?.message || "Unknown error");
       }
 
       const instances = await storage.getWhatsappInstancesByCompany(companyId);
