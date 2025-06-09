@@ -7,6 +7,9 @@ import { insertCompanySchema, insertPlanSchema, insertGlobalSettingsSchema, inse
 import bcrypt from "bcrypt";
 import { z } from "zod";
 
+// Temporary in-memory storage for WhatsApp instances
+const tempWhatsappInstances: any[] = [];
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
@@ -362,8 +365,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json(instances);
       } catch (dbError: any) {
         if (dbError.code === 'ER_NO_SUCH_TABLE') {
-          // Table doesn't exist, return empty array
-          res.json([]);
+          // Table doesn't exist, use temporary storage
+          const companyInstances = tempWhatsappInstances.filter(instance => instance.companyId === companyId);
+          res.json(companyInstances);
         } else {
           throw dbError;
         }
@@ -430,13 +434,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       } catch (dbError: any) {
         if (dbError.code === 'ER_NO_SUCH_TABLE') {
-          // Table doesn't exist, return evolution data only
-          res.json({
+          // Table doesn't exist, use temporary storage
+          const newInstance = {
             id: Date.now(),
             companyId,
             instanceName,
             status: 'created',
             createdAt: new Date(),
+            updatedAt: new Date(),
+          };
+          
+          tempWhatsappInstances.push(newInstance);
+          
+          res.json({
+            ...newInstance,
             evolutionData,
           });
         } else {
@@ -457,7 +468,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const instanceId = parseInt(req.params.id);
-      const instance = await storage.getWhatsappInstance(instanceId);
+      let instance;
+
+      try {
+        instance = await storage.getWhatsappInstance(instanceId);
+      } catch (dbError: any) {
+        if (dbError.code === 'ER_NO_SUCH_TABLE') {
+          // Table doesn't exist, check temporary storage
+          instance = tempWhatsappInstances.find(inst => 
+            inst.id === instanceId && inst.companyId === companyId
+          );
+        } else {
+          throw dbError;
+        }
+      }
 
       if (!instance || instance.companyId !== companyId) {
         return res.status(404).json({ message: "Instância não encontrada" });
@@ -478,8 +502,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Delete from database
-      await storage.deleteWhatsappInstance(instanceId);
+      // Delete from database or temporary storage
+      try {
+        await storage.deleteWhatsappInstance(instanceId);
+      } catch (dbError: any) {
+        if (dbError.code === 'ER_NO_SUCH_TABLE') {
+          // Table doesn't exist, remove from temporary storage
+          const index = tempWhatsappInstances.findIndex(inst => 
+            inst.id === instanceId && inst.companyId === companyId
+          );
+          if (index > -1) {
+            tempWhatsappInstances.splice(index, 1);
+          }
+        } else {
+          throw dbError;
+        }
+      }
 
       res.json({ message: "Instância excluída com sucesso" });
     } catch (error) {
