@@ -170,7 +170,7 @@ export default function CompanyServices() {
     form.setValue('name', service.name);
     form.setValue('description', service.description || '');
     form.setValue('duration', service.duration);
-    form.setValue('price', service.price);
+    form.setValue('price', typeof service.price === 'string' ? parseFloat(service.price) : service.price);
     form.setValue('color', service.color);
     form.setValue('active', service.active);
     setIsDialogOpen(true);
@@ -416,7 +416,7 @@ export default function CompanyServices() {
                   <div>
                     <h3 className="font-semibold">{service.name}</h3>
                     <p className="text-sm text-gray-600">
-                      {service.duration}min • R$ {parseFloat(service.price).toFixed(2)}
+                      {service.duration}min • R$ {Number(service.price).toFixed(2)}
                     </p>
                   </div>
                 </div>
