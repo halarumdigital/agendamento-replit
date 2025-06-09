@@ -546,23 +546,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('📋 Webhook event:', webhookData.event);
       console.log('📄 Full webhook data:', JSON.stringify(webhookData, null, 2));
 
-      // Check if it's a message event (handle both uppercase and lowercase)
-      const isMessageEvent = (webhookData.event === 'messages.upsert' || webhookData.event === 'MESSAGES_UPSERT') && webhookData.data?.messages?.length > 0;
+      // Check if it's a message event (handle both formats)
+      const isMessageEventArray = (webhookData.event === 'messages.upsert' || webhookData.event === 'MESSAGES_UPSERT') && webhookData.data?.messages?.length > 0;
+      const isMessageEventDirect = (webhookData.event === 'messages.upsert' || webhookData.event === 'MESSAGES_UPSERT') && webhookData.data?.key && webhookData.data?.message;
+      const isMessageEvent = isMessageEventArray || isMessageEventDirect;
       
-      console.log('🔍 Debug - Event:', webhookData.event);
-      console.log('🔍 Debug - Has data:', !!webhookData.data);
-      console.log('🔍 Debug - Has messages:', !!webhookData.data?.messages);
-      console.log('🔍 Debug - Messages length:', webhookData.data?.messages?.length);
-      console.log('🔍 Debug - isMessageEvent:', isMessageEvent);
+      console.log('🔍 Debug - isMessageEventArray:', isMessageEventArray);
+      console.log('🔍 Debug - isMessageEventDirect:', isMessageEventDirect);
+      console.log('🔍 Debug - Has key:', !!webhookData.data?.key);
+      console.log('🔍 Debug - Has message:', !!webhookData.data?.message);
       
       if (!isMessageEvent) {
         console.log('❌ Event not processed:', webhookData.event);
-        console.log('❌ Waiting for MESSAGES_UPSERT event with message data');
         return res.status(200).json({ received: true, processed: false, reason: `Event: ${webhookData.event}` });
       }
 
       console.log('✅ Processing message event:', webhookData.event);
-      const message = webhookData.data.messages[0];
+      // Handle both formats: array format and direct format
+      const message = isMessageEventArray ? webhookData.data.messages[0] : webhookData.data;
         
         // Only process text messages from users (not from the bot itself)
         console.log('📱 Message type:', message.messageType);
