@@ -17,11 +17,16 @@ import SettingsPage from "@/pages/settings";
 import NotFound from "@/pages/not-found";
 
 function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated: isAdminAuthenticated, isLoading: isAdminLoading } = useAuth();
 
   return (
     <Switch>
-      {isLoading || !isAuthenticated ? (
+      {/* Company Routes */}
+      <Route path="/empresa" component={CompanyLogin} />
+      <Route path="/empresa/dashboard" component={CompanyDashboard} />
+      
+      {/* Admin Routes */}
+      {isAdminLoading || !isAdminAuthenticated ? (
         <Route path="/" component={Login} />
       ) : (
         <>
