@@ -54,7 +54,7 @@ function Router() {
           <CompanyProfessionals />
         </CompanyLayout>
       </Route>
-      <Route path="/configuracoes">
+      <Route path="/company/settings">
         <CompanyLayout>
           <CompanySettings />
         </CompanyLayout>

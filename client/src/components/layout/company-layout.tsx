@@ -101,10 +101,12 @@ export default function CompanyLayout({ children }: CompanyLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen bg-gray-50">
       {/* Desktop Sidebar */}
-      <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 lg:border-r lg:bg-white">
-        <SidebarContent />
+      <div className="hidden lg:block lg:w-64 lg:fixed lg:inset-y-0 lg:z-50">
+        <div className="flex h-full flex-col bg-white border-r">
+          <SidebarContent />
+        </div>
       </div>
 
       {/* Mobile Sidebar */}
@@ -113,7 +115,7 @@ export default function CompanyLayout({ children }: CompanyLayoutProps) {
           <Button
             variant="ghost"
             size="icon"
-            className="lg:hidden fixed top-4 left-4 z-50"
+            className="lg:hidden fixed top-4 left-4 z-50 bg-white shadow-md"
           >
             <Menu className="h-6 w-6" />
           </Button>
@@ -124,8 +126,8 @@ export default function CompanyLayout({ children }: CompanyLayoutProps) {
       </Sheet>
 
       {/* Main Content */}
-      <div className="flex-1 lg:ml-64">
-        <main className="flex-1">
+      <div className="lg:ml-64">
+        <main className="min-h-screen">
           {children}
         </main>
       </div>
