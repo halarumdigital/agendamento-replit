@@ -654,6 +654,12 @@ Importante: Você está representando a empresa "${company.fantasyName}" via Wha
 
       // Get global Evolution API settings
       const globalSettings = await storage.getGlobalSettings();
+      console.log('Global settings:', { 
+        hasUrl: !!globalSettings?.evolutionApiUrl, 
+        hasKey: !!globalSettings?.evolutionApiGlobalKey,
+        url: globalSettings?.evolutionApiUrl 
+      });
+      
       if (!globalSettings?.evolutionApiUrl || !globalSettings?.evolutionApiGlobalKey) {
         return res.status(400).json({ 
           message: "Evolution API não configurada",
@@ -673,64 +679,76 @@ Importante: Você está representando a empresa "${company.fantasyName}" via Wha
 
       // Configure webhook in Evolution API
       try {
+        const webhookPayload = {
+          webhook: {
+            enabled: true,
+            url: webhookUrl,
+            headers: {
+              authorization: `Bearer ${globalSettings.evolutionApiGlobalKey}`,
+              "Content-Type": "application/json"
+            }
+          },
+          byEvents: false,
+          base64: false,
+          events: [
+            "APPLICATION_STARTUP",
+            "QRCODE_UPDATED",
+            "MESSAGES_SET",
+            "MESSAGES_UPSERT",
+            "MESSAGES_UPDATE",
+            "MESSAGES_DELETE",
+            "SEND_MESSAGE",
+            "CONTACTS_SET",
+            "CONTACTS_UPSERT",
+            "CONTACTS_UPDATE",
+            "PRESENCE_UPDATE",
+            "CHATS_SET",
+            "CHATS_UPSERT",
+            "CHATS_UPDATE",
+            "CHATS_DELETE",
+            "GROUPS_UPSERT",
+            "GROUP_UPDATE",
+            "GROUP_PARTICIPANTS_UPDATE",
+            "CONNECTION_UPDATE",
+            "LABELS_EDIT",
+            "LABELS_ASSOCIATION",
+            "CALL",
+            "TYPEBOT_START",
+            "TYPEBOT_CHANGE_STATUS"
+          ]
+        };
+
+        console.log('Configuring webhook for instance:', instance.instanceName);
+        console.log('Evolution API URL:', globalSettings.evolutionApiUrl);
+        console.log('Webhook URL:', webhookUrl);
+        console.log('Payload:', JSON.stringify(webhookPayload, null, 2));
+
         const webhookResponse = await fetch(`${globalSettings.evolutionApiUrl}/webhook/set/${instance.instanceName}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'apikey': globalSettings.evolutionApiGlobalKey
           },
-          body: JSON.stringify({
-            webhook: {
-              enabled: true,
-              url: webhookUrl,
-              headers: {
-                authorization: `Bearer ${globalSettings.evolutionApiGlobalKey}`,
-                "Content-Type": "application/json"
-              }
-            },
-            byEvents: false,
-            base64: false,
-            events: [
-              "APPLICATION_STARTUP",
-              "QRCODE_UPDATED",
-              "MESSAGES_SET",
-              "MESSAGES_UPSERT",
-              "MESSAGES_UPDATE",
-              "MESSAGES_DELETE",
-              "SEND_MESSAGE",
-              "CONTACTS_SET",
-              "CONTACTS_UPSERT",
-              "CONTACTS_UPDATE",
-              "PRESENCE_UPDATE",
-              "CHATS_SET",
-              "CHATS_UPSERT",
-              "CHATS_UPDATE",
-              "CHATS_DELETE",
-              "GROUPS_UPSERT",
-              "GROUP_UPDATE",
-              "GROUP_PARTICIPANTS_UPDATE",
-              "CONNECTION_UPDATE",
-              "LABELS_EDIT",
-              "LABELS_ASSOCIATION",
-              "CALL",
-              "TYPEBOT_START",
-              "TYPEBOT_CHANGE_STATUS"
-            ]
-          })
+          body: JSON.stringify(webhookPayload)
         });
+
+        const responseText = await webhookResponse.text();
+        console.log('Evolution API response status:', webhookResponse.status);
+        console.log('Evolution API response:', responseText);
 
         if (webhookResponse.ok) {
           res.json({ 
             message: "Agente IA configurado com sucesso",
             webhookUrl,
-            configured: true
+            configured: true,
+            evolutionResponse: responseText
           });
         } else {
-          const errorText = await webhookResponse.text();
-          console.error('Evolution API webhook error:', errorText);
+          console.error('Evolution API webhook error:', responseText);
           res.status(400).json({ 
             message: "Erro ao configurar webhook na Evolution API",
-            error: errorText
+            error: responseText,
+            status: webhookResponse.status
           });
         }
       } catch (webhookError: any) {
