@@ -627,7 +627,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
 
             try {
-              // Generate AI response
+              // Find or create conversation
+              console.log('💬 Managing conversation for:', phoneNumber);
+              let conversation = await storage.getConversation(company.id, whatsappInstance.id, phoneNumber);
+              
+              if (!conversation) {
+                console.log('🆕 Creating new conversation');
+                conversation = await storage.createConversation({
+                  companyId: company.id,
+                  whatsappInstanceId: whatsappInstance.id,
+                  phoneNumber: phoneNumber,
+                  contactName: messageData.pushName || undefined,
+                  lastMessageAt: new Date(),
+                });
+              } else {
+                // Update last message timestamp
+                console.log('♻️ Updating existing conversation');
+                await storage.updateConversation(conversation.id, {
+                  lastMessageAt: new Date(),
+                  contactName: messageData.pushName || conversation.contactName,
+                });
+              }
+
+              // Save user message
+              console.log('💾 Saving user message to database');
+              await storage.createMessage({
+                conversationId: conversation.id,
+                messageId: messageData.key?.id,
+                content: messageText,
+                role: 'user',
+                messageType: messageData.messageType || 'text',
+                timestamp: new Date(messageData.messageTimestamp * 1000),
+              });
+
+              // Get conversation history (last 10 messages for context)
+              console.log('📚 Loading conversation history');
+              const recentMessages = await storage.getRecentMessages(conversation.id, 10);
+              
+              // Build conversation context for AI
+              const conversationHistory = recentMessages
+                .reverse() // Oldest first
+                .map(msg => ({
+                  role: msg.role as 'user' | 'assistant',
+                  content: msg.content
+                }));
+
+              // Generate AI response with conversation context
               const OpenAI = (await import('openai')).default;
               const openai = new OpenAI({ apiKey: globalSettings.openaiApiKey });
 
@@ -636,15 +681,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 Importante: Você está representando a empresa "${company.fantasyName}" via WhatsApp. 
 - Mantenha respostas concisas e adequadas para mensagens de texto
 - Seja profissional mas amigável
+- Use o histórico da conversa para dar respostas contextualizadas
 - Se necessário, peça informações de contato para seguimento
-- Limite respostas a no máximo 200 palavras por mensagem`;
+- Limite respostas a no máximo 200 palavras por mensagem
+- Lembre-se do que já foi discutido anteriormente na conversa`;
+
+              // Prepare messages for OpenAI with conversation history
+              const messages = [
+                { role: 'system' as const, content: systemPrompt },
+                ...conversationHistory.slice(-8), // Last 8 messages for context
+                { role: 'user' as const, content: messageText }
+              ];
+
+              console.log('🤖 Generating AI response with conversation context');
+              console.log('📖 Using', conversationHistory.length, 'previous messages for context');
 
               const completion = await openai.chat.completions.create({
                 model: globalSettings.openaiModel || 'gpt-4o',
-                messages: [
-                  { role: 'system', content: systemPrompt },
-                  { role: 'user', content: messageText }
-                ],
+                messages: messages,
                 temperature: parseFloat(globalSettings.openaiTemperature?.toString() || '0.7'),
                 max_tokens: Math.min(parseInt(globalSettings.openaiMaxTokens?.toString() || '300'), 300),
               });
@@ -669,10 +723,33 @@ Importante: Você está representando a empresa "${company.fantasyName}" via Wha
 
               if (evolutionResponse.ok) {
                 console.log(`✅ AI response sent to ${phoneNumber}: ${aiResponse}`);
+                
+                // Save AI response to database
+                console.log('💾 Saving AI response to database');
+                await storage.createMessage({
+                  conversationId: conversation.id,
+                  content: aiResponse,
+                  role: 'assistant',
+                  messageType: 'text',
+                  delivered: true,
+                  timestamp: new Date(),
+                });
+                console.log('✅ AI response saved to conversation history');
+                
               } else {
                 const errorText = await evolutionResponse.text();
                 console.error('❌ Failed to send message via Evolution API:', errorText);
                 console.log('ℹ️  Note: This is normal for test numbers. Real WhatsApp numbers will work.');
+                
+                // Still save the AI response even if sending failed (for debugging)
+                await storage.createMessage({
+                  conversationId: conversation.id,
+                  content: aiResponse,
+                  role: 'assistant',
+                  messageType: 'text',
+                  delivered: false,
+                  timestamp: new Date(),
+                });
               }
 
             } catch (aiError) {
@@ -694,6 +771,51 @@ Importante: Você está representando a empresa "${company.fantasyName}" via Wha
     console.log('🔔 GET request to webhook for instance:', instanceName);
     console.log('🔍 Query params:', req.query);
     res.status(200).send('Webhook endpoint is active');
+  });
+
+  // Initialize conversation tables
+  app.post("/api/admin/init-conversations", async (req, res) => {
+    try {
+      // Create conversations table
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS conversations (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          company_id INT NOT NULL,
+          whatsapp_instance_id INT NOT NULL,
+          phone_number VARCHAR(20) NOT NULL,
+          contact_name VARCHAR(100),
+          last_message_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          INDEX idx_company_instance_phone (company_id, whatsapp_instance_id, phone_number),
+          INDEX idx_company_id (company_id),
+          INDEX idx_last_message_at (last_message_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `);
+
+      // Create messages table
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS messages (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          conversation_id INT NOT NULL,
+          message_id VARCHAR(100),
+          content TEXT NOT NULL,
+          role VARCHAR(20) NOT NULL,
+          message_type VARCHAR(50) DEFAULT 'text',
+          delivered BOOLEAN DEFAULT false,
+          timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          INDEX idx_conversation_id (conversation_id),
+          INDEX idx_timestamp (timestamp),
+          INDEX idx_role (role)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `);
+
+      res.json({ message: "Tabelas de conversas criadas com sucesso" });
+    } catch (error: any) {
+      console.error("Error creating conversation tables:", error);
+      res.status(500).json({ message: "Erro ao criar tabelas de conversas", error: error.message });
+    }
   });
 
   // Auto-configure webhook using global settings
