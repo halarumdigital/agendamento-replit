@@ -22,7 +22,7 @@ import {
   type InsertMessage,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 
 export interface IStorage {
   // Admin operations
@@ -313,6 +313,125 @@ export class DatabaseStorage implements IStorage {
     } catch (error: any) {
       console.error("Error getting WhatsApp instance by name:", error);
       return undefined;
+    }
+  }
+
+  // Conversations operations
+  async getConversation(companyId: number, whatsappInstanceId: number, phoneNumber: string): Promise<Conversation | undefined> {
+    try {
+      const [conversation] = await db.select().from(conversations).where(
+        and(
+          eq(conversations.companyId, companyId),
+          eq(conversations.whatsappInstanceId, whatsappInstanceId),
+          eq(conversations.phoneNumber, phoneNumber)
+        )
+      );
+      return conversation;
+    } catch (error: any) {
+      console.error("Error getting conversation:", error);
+      return undefined;
+    }
+  }
+
+  async createConversation(conversationData: InsertConversation): Promise<Conversation> {
+    try {
+      await db
+        .insert(conversations)
+        .values(conversationData);
+      
+      // Get the created conversation by unique fields
+      const [conversation] = await db.select().from(conversations).where(
+        and(
+          eq(conversations.companyId, conversationData.companyId),
+          eq(conversations.whatsappInstanceId, conversationData.whatsappInstanceId),
+          eq(conversations.phoneNumber, conversationData.phoneNumber)
+        )
+      );
+      return conversation;
+    } catch (error: any) {
+      console.error("Error creating conversation:", error);
+      throw error;
+    }
+  }
+
+  async updateConversation(id: number, conversationData: Partial<InsertConversation>): Promise<Conversation> {
+    try {
+      await db
+        .update(conversations)
+        .set({ ...conversationData, updatedAt: new Date() })
+        .where(eq(conversations.id, id));
+      
+      // Get the updated conversation
+      const [conversation] = await db.select().from(conversations)
+        .where(eq(conversations.id, id));
+      return conversation;
+    } catch (error: any) {
+      console.error("Error updating conversation:", error);
+      throw error;
+    }
+  }
+
+  async getConversationsByCompany(companyId: number): Promise<Conversation[]> {
+    try {
+      return await db.select().from(conversations)
+        .where(eq(conversations.companyId, companyId))
+        .orderBy(desc(conversations.lastMessageAt));
+    } catch (error: any) {
+      console.error("Error getting conversations by company:", error);
+      return [];
+    }
+  }
+
+  // Messages operations
+  async createMessage(messageData: InsertMessage): Promise<Message> {
+    try {
+      await db
+        .insert(messages)
+        .values(messageData);
+      
+      // Get the created message by timestamp and conversation
+      const [message] = await db.select().from(messages)
+        .where(
+          and(
+            eq(messages.conversationId, messageData.conversationId),
+            eq(messages.content, messageData.content),
+            eq(messages.role, messageData.role)
+          )
+        )
+        .orderBy(desc(messages.timestamp))
+        .limit(1);
+      return message;
+    } catch (error: any) {
+      console.error("Error creating message:", error);
+      throw error;
+    }
+  }
+
+  async getMessagesByConversation(conversationId: number, limit?: number): Promise<Message[]> {
+    try {
+      const query = db.select().from(messages)
+        .where(eq(messages.conversationId, conversationId))
+        .orderBy(desc(messages.timestamp));
+      
+      if (limit) {
+        return await query.limit(limit);
+      }
+      return await query;
+    } catch (error: any) {
+      console.error("Error getting messages by conversation:", error);
+      return [];
+    }
+  }
+
+  async getRecentMessages(conversationId: number, limit: number): Promise<Message[]> {
+    try {
+      return await db.select().from(messages)
+        .where(eq(messages.conversationId, conversationId))
+        .orderBy(desc(messages.timestamp))
+        .limit(limit);
+    } catch (error: any) {
+      console.error("Error getting recent messages:", error);
+      return [];
     }
   }
 }
