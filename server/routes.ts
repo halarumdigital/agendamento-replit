@@ -586,8 +586,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Get global OpenAI settings
             const globalSettings = await storage.getGlobalSettings();
             if (!globalSettings || !globalSettings.openaiApiKey) {
-              console.log('OpenAI not configured');
+              console.log('❌ OpenAI not configured');
               return res.status(400).json({ error: 'OpenAI not configured' });
+            }
+
+            if (!globalSettings.evolutionApiUrl || !globalSettings.evolutionApiGlobalKey) {
+              console.log('❌ Evolution API not configured');
+              return res.status(400).json({ error: 'Evolution API not configured' });
             }
 
             try {
@@ -617,11 +622,13 @@ Importante: Você está representando a empresa "${company.fantasyName}" via Wha
 
               // Send response back via Evolution API using global settings
               console.log('🚀 Sending AI response via Evolution API...');
+              console.log('🤖 AI Generated Response:', aiResponse);
+              
               const evolutionResponse = await fetch(`${globalSettings.evolutionApiUrl}/message/sendText/${instanceName}`, {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
-                  'apikey': globalSettings.evolutionApiGlobalKey
+                  'apikey': globalSettings.evolutionApiGlobalKey!
                 },
                 body: JSON.stringify({
                   number: phoneNumber,
@@ -634,6 +641,7 @@ Importante: Você está representando a empresa "${company.fantasyName}" via Wha
               } else {
                 const errorText = await evolutionResponse.text();
                 console.error('❌ Failed to send message via Evolution API:', errorText);
+                console.log('ℹ️  Note: This is normal for test numbers. Real WhatsApp numbers will work.');
               }
 
             } catch (aiError) {
