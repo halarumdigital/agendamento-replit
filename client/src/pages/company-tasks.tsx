@@ -141,12 +141,33 @@ export default function CompanyTasks() {
     },
   });
 
+  const sendReminderMutation = useMutation({
+    mutationFn: (taskId: number) => apiRequest("POST", `/api/company/tasks/${taskId}/send-reminder`),
+    onSuccess: () => {
+      toast({
+        title: "Sucesso",
+        description: "Lembrete enviado com sucesso!",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: error.message || "Erro ao enviar lembrete",
+      });
+    },
+  });
+
   const handleSubmit = (data: TaskFormData) => {
     if (selectedTask) {
       updateTaskMutation.mutate({ id: selectedTask.id, data });
     } else {
       createTaskMutation.mutate(data);
     }
+  };
+
+  const sendManualReminder = (taskId: number) => {
+    sendReminderMutation.mutate(taskId);
   };
 
   const handleEdit = (task: Task) => {
@@ -440,7 +461,7 @@ export default function CompanyTasks() {
                         <span>WhatsApp: {task.whatsappNumber}</span>
                       </div>
                     )}
-                    <div className="pt-2">
+                    <div className="pt-2 space-y-2">
                       <Button
                         variant={task.isActive ? "outline" : "default"}
                         size="sm"
@@ -459,6 +480,19 @@ export default function CompanyTasks() {
                           </>
                         )}
                       </Button>
+                      
+                      {task.isActive && task.whatsappNumber && (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => sendManualReminder(task.id)}
+                          disabled={sendReminderMutation.isPending}
+                          className="w-full text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300"
+                        >
+                          <MessageCircle className="w-4 h-4 mr-2" />
+                          {sendReminderMutation.isPending ? "Enviando..." : "Enviar Lembrete"}
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </CardContent>
