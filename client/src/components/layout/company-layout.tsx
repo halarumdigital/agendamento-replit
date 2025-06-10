@@ -120,9 +120,9 @@ export default function CompanyLayout({ children }: CompanyLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <>
       {/* Desktop Sidebar */}
-      <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 lg:z-50">
+      <div className="hidden lg:flex lg:w-64 lg:fixed lg:inset-y-0 lg:z-50">
         <div className="flex h-full w-full flex-col bg-white border-r">
           <SidebarContent />
         </div>
@@ -145,11 +145,11 @@ export default function CompanyLayout({ children }: CompanyLayoutProps) {
       </Sheet>
 
       {/* Main Content */}
-      <div className="flex-1 lg:ml-64">
-        <main className="min-h-screen w-full">
+      <div className="min-h-screen bg-gray-50 lg:ml-64">
+        <main className="min-h-screen">
           {children}
         </main>
       </div>
-    </div>
+    </>
   );
 }
