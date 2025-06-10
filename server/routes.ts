@@ -831,29 +831,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isQrCodeEvent) {
         console.log('📱 QR code updated for instance:', instanceName);
         
-        // Extract QR code from Evolution API webhook
-        // The QR code comes in the 'data.base64' field as a complete data URL
+        // Debug: Log complete webhook structure
+        console.log('=== DEBUGGING QR CODE WEBHOOK ===');
+        console.log('Event:', webhookData.event);
+        console.log('Instance:', instanceName);
+        console.log('Webhook keys:', Object.keys(webhookData));
+        console.log('Data object:', webhookData.data);
+        
+        // Extract QR code - Evolution API sends it in different formats
         let qrCodeUrl = null;
         
-        if (webhookData.data && webhookData.data.base64) {
-          qrCodeUrl = webhookData.data.base64;
-          console.log('QR code found in webhook, length:', qrCodeUrl.length);
+        // Check all possible locations for QR code
+        if (webhookData.data) {
+          if (webhookData.data.base64) {
+            qrCodeUrl = webhookData.data.base64;
+            console.log('✅ QR found in data.base64');
+          } else if (webhookData.data.qrcode) {
+            qrCodeUrl = webhookData.data.qrcode;
+            console.log('✅ QR found in data.qrcode');
+          } else {
+            console.log('❌ QR not found in data object');
+            console.log('Available data keys:', Object.keys(webhookData.data));
+          }
+        } else if (webhookData.qrcode) {
+          qrCodeUrl = webhookData.qrcode;
+          console.log('✅ QR found in root.qrcode');
+        } else if (webhookData.base64) {
+          qrCodeUrl = webhookData.base64;
+          console.log('✅ QR found in root.base64');
+        }
+        
+        if (qrCodeUrl) {
+          console.log('QR code URL length:', qrCodeUrl.length);
+          console.log('QR code preview:', qrCodeUrl.substring(0, 100) + '...');
           
           try {
-            // Update instance with new QR code
             const whatsappInstance = await storage.getWhatsappInstanceByName(instanceName);
             if (whatsappInstance) {
               await storage.updateWhatsappInstance(whatsappInstance.id, {
                 qrCode: qrCodeUrl,
                 status: 'connecting'
               });
-              console.log('QR code updated successfully for instance:', instanceName);
+              console.log('✅ QR code saved to database for instance:', instanceName);
+            } else {
+              console.log('❌ Instance not found:', instanceName);
             }
           } catch (error) {
-            console.error('Error updating QR code:', error);
+            console.error('❌ Database error:', error);
           }
         } else {
-          console.log('No QR code data found in webhook');
+          console.log('❌ No QR code found anywhere in webhook data');
         }
         
         return res.json({ received: true, processed: true, type: 'qrcode' });
