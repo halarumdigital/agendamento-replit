@@ -1592,6 +1592,9 @@ export default function CompanySettings() {
                       )}
                     </CardContent>
                   </Card>
+                </div>
+              </div>
+            </div>
           </div>
         </TabsContent>
 
