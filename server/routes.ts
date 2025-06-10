@@ -96,7 +96,33 @@ async function createAppointmentFromConversation(conversationId: number, company
     
     const openai = new OpenAI({ apiKey: globalSettings.openaiApiKey });
     
+    // Calculate correct dates for relative day names
+    const today = new Date();
+    const dayMap = {
+      'domingo': 0, 'segunda': 1, 'terça': 2, 'quarta': 3, 
+      'quinta': 4, 'sexta': 5, 'sábado': 6
+    };
+    
+    function getNextWeekdayDate(dayName: string): string {
+      const targetDay = dayMap[dayName.toLowerCase()];
+      if (targetDay === undefined) return '';
+      
+      const date = new Date();
+      const currentDay = date.getDay();
+      let daysUntilTarget = targetDay - currentDay;
+      
+      // If target day is today or has passed, get next week's occurrence
+      if (daysUntilTarget <= 0) {
+        daysUntilTarget += 7;
+      }
+      
+      date.setDate(date.getDate() + daysUntilTarget);
+      return date.toISOString().split('T')[0];
+    }
+
     const extractionPrompt = `Analise esta conversa de WhatsApp e extraia os dados do agendamento em formato JSON.
+
+HOJE É: ${today.toLocaleDateString('pt-BR')} (${['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'][today.getDay()]})
 
 PROFISSIONAIS DISPONÍVEIS:
 ${professionals.map(p => `- ${p.name} (ID: ${p.id})`).join('\n')}
@@ -107,12 +133,20 @@ ${services.map(s => `- ${s.name} (ID: ${s.id})`).join('\n')}
 CONVERSA:
 ${conversationText}
 
+INSTRUÇÕES IMPORTANTES PARA DATAS:
+- Se mencionado "sexta-feira" ou "sexta", use: ${getNextWeekdayDate('sexta')}
+- Se mencionado "segunda-feira" ou "segunda", use: ${getNextWeekdayDate('segunda')}
+- Se mencionado "terça-feira" ou "terça", use: ${getNextWeekdayDate('terça')}
+- Se mencionado "quarta-feira" ou "quarta", use: ${getNextWeekdayDate('quarta')}
+- Se mencionado "quinta-feira" ou "quinta", use: ${getNextWeekdayDate('quinta')}
+- Se mencionado "sábado", use: ${getNextWeekdayDate('sábado')}
+
 Extraia APENAS se TODOS os dados estiverem presentes na conversa:
 - Nome do cliente
 - Telefone do cliente  
 - Profissional escolhido (use o ID correto da lista acima)
 - Serviço escolhido (use o ID correto da lista acima)
-- Data e hora do agendamento (formato: YYYY-MM-DD HH:MM)
+- Data e hora do agendamento (use as datas calculadas acima para dias da semana)
 
 Responda APENAS em formato JSON válido ou "DADOS_INCOMPLETOS" se algum dado estiver faltando:
 {
@@ -120,8 +154,8 @@ Responda APENAS em formato JSON válido ou "DADOS_INCOMPLETOS" se algum dado est
   "clientPhone": "Telefone",
   "professionalId": 123,
   "serviceId": 456,
-  "appointmentDate": "2025-06-10",
-  "appointmentTime": "10:00"
+  "appointmentDate": "YYYY-MM-DD",
+  "appointmentTime": "HH:MM"
 }`;
 
     const extraction = await openai.chat.completions.create({
