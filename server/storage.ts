@@ -39,6 +39,46 @@ import {
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
 
+// Helper function to create conversation and message tables
+async function ensureConversationTables() {
+  try {
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS conversations (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        company_id INT NOT NULL,
+        whatsapp_instance_id INT NOT NULL,
+        phone_number VARCHAR(50) NOT NULL,
+        contact_name VARCHAR(255),
+        last_message_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_company_phone (company_id, phone_number),
+        INDEX idx_instance_phone (whatsapp_instance_id, phone_number)
+      )
+    `);
+    
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS messages (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        conversation_id INT NOT NULL,
+        role ENUM('user', 'assistant') NOT NULL,
+        content TEXT NOT NULL,
+        message_id VARCHAR(255),
+        message_type VARCHAR(50),
+        delivered BOOLEAN DEFAULT false,
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_conversation (conversation_id),
+        INDEX idx_timestamp (timestamp)
+      )
+    `);
+    
+    console.log("✅ Conversation and message tables created/verified");
+  } catch (error) {
+    console.error("Error creating conversation tables:", error);
+  }
+}
+
 export interface IStorage {
   // Admin operations
   getAdmin(id: number): Promise<Admin | undefined>;
@@ -369,6 +409,9 @@ export class DatabaseStorage implements IStorage {
   // Conversations operations
   async getConversation(companyId: number, whatsappInstanceId: number, phoneNumber: string): Promise<Conversation | undefined> {
     try {
+      // Ensure tables exist first
+      await ensureConversationTables();
+      
       const [conversation] = await db.select().from(conversations).where(
         and(
           eq(conversations.companyId, companyId),
@@ -385,6 +428,9 @@ export class DatabaseStorage implements IStorage {
 
   async createConversation(conversationData: InsertConversation): Promise<Conversation> {
     try {
+      // Ensure tables exist first
+      await ensureConversationTables();
+      
       await db
         .insert(conversations)
         .values(conversationData);
