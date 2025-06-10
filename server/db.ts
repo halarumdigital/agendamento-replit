@@ -186,6 +186,25 @@ async function initializeDatabase() {
       console.error('❌ Error creating clients table:', error);
     }
 
+    // Add points column to services table
+    try {
+      await pool.execute(`
+        SELECT points FROM services LIMIT 1
+      `);
+    } catch (error: any) {
+      if (error.code === 'ER_BAD_FIELD_ERROR') {
+        try {
+          await pool.execute(`
+            ALTER TABLE services 
+            ADD COLUMN points INT DEFAULT 0
+          `);
+          console.log('✅ Points column added to services table');
+        } catch (alterError) {
+          console.error('❌ Error adding points column:', alterError);
+        }
+      }
+    }
+
   } catch (error: any) {
     console.error('❌ Database connection failed:', error.message);
     console.log('📝 Please check your MySQL credentials and ensure the database server is running');

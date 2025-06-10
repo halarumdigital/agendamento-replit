@@ -1,2 +1,1 @@
--- Add points column to services table
-ALTER TABLE services ADD COLUMN points INT DEFAULT 0 AFTER color;
+ALTER TABLE services ADD COLUMN IF NOT EXISTS points INT DEFAULT 0;
