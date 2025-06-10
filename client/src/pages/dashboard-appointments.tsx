@@ -455,9 +455,19 @@ export default function DashboardAppointments() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Nome do Cliente</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="Nome completo" />
-                        </FormControl>
+                        <div className="flex gap-2">
+                          <FormControl className="flex-1">
+                            <Input {...field} placeholder="Nome completo" />
+                          </FormControl>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={() => setIsNewClientOpen(true)}
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -513,7 +523,26 @@ export default function DashboardAppointments() {
                         <FormItem>
                           <FormLabel>Horário</FormLabel>
                           <FormControl>
-                            <Input {...field} type="time" />
+                            <Select
+                              value={field.value}
+                              onValueChange={(value) => field.onChange(value)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="--:--" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {Array.from({ length: 28 }, (_, i) => {
+                                  const hour = Math.floor(i / 2) + 8;
+                                  const minute = (i % 2) * 30;
+                                  const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+                                  return (
+                                    <SelectItem key={timeString} value={timeString}>
+                                      {timeString}
+                                    </SelectItem>
+                                  );
+                                })}
+                              </SelectContent>
+                            </Select>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -567,7 +596,7 @@ export default function DashboardAppointments() {
                       <FormItem>
                         <FormLabel>Nome *</FormLabel>
                         <FormControl>
-                          <Input placeholder="Nome completo do cliente" {...field} />
+                          <Input placeholder="Nome do cliente" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -579,7 +608,7 @@ export default function DashboardAppointments() {
                     name="phone"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Telefone *</FormLabel>
+                        <FormLabel>Telefone</FormLabel>
                         <FormControl>
                           <Input placeholder="(11) 99999-9999" {...field} />
                         </FormControl>
@@ -593,7 +622,7 @@ export default function DashboardAppointments() {
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Email</FormLabel>
+                        <FormLabel>E-mail</FormLabel>
                         <FormControl>
                           <Input type="email" placeholder="cliente@email.com" {...field} />
                         </FormControl>
@@ -609,9 +638,9 @@ export default function DashboardAppointments() {
                     <Button 
                       type="submit" 
                       disabled={createClientMutation.isPending}
-                      className="bg-purple-600 hover:bg-purple-700"
+                      className="bg-purple-600 hover:bg-purple-700 text-white"
                     >
-                      {createClientMutation.isPending ? "Criando..." : "Criar Cliente"}
+                      {createClientMutation.isPending ? "Adicionando..." : "Adicionar Cliente"}
                     </Button>
                   </div>
                 </form>
