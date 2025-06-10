@@ -364,22 +364,6 @@ export default function DashboardAppointments() {
       // Update the editing appointment with new data
       setEditingAppointment(updatedAppointment);
       
-      // Update form with the fresh data from server
-      const statusObj = statuses.find(s => s.name.toLowerCase() === updatedAppointment.status.toLowerCase());
-      editForm.reset({
-        clientId: undefined,
-        serviceId: updatedAppointment.serviceId,
-        professionalId: updatedAppointment.professionalId,
-        statusId: statusObj?.id || 0,
-        clientName: updatedAppointment.clientName,
-        clientEmail: updatedAppointment.clientEmail || "",
-        clientPhone: updatedAppointment.clientPhone,
-        appointmentDate: format(new Date(updatedAppointment.appointmentDate), 'yyyy-MM-dd'),
-        appointmentTime: updatedAppointment.appointmentTime,
-        notes: updatedAppointment.notes || "",
-        confirmed: false,
-      });
-      
       toast({
         title: "Agendamento atualizado",
         description: "O agendamento foi atualizado com sucesso.",
