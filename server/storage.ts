@@ -742,17 +742,13 @@ export class DatabaseStorage implements IStorage {
         clientPhone: appointments.clientPhone,
         appointmentDate: appointments.appointmentDate,
         appointmentTime: appointments.appointmentTime,
-        duration: appointments.duration,
         notes: appointments.notes,
         status: appointments.status,
-        totalPrice: appointments.totalPrice,
-        reminderSent: appointments.reminderSent,
         createdAt: appointments.createdAt,
         updatedAt: appointments.updatedAt,
         companyId: appointments.companyId,
         service: {
           name: services.name,
-          color: services.color,
         },
         professional: {
           name: professionals.name,
