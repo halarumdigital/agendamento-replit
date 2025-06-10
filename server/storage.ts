@@ -15,6 +15,8 @@ import {
   birthdayMessageHistory,
   reminderSettings,
   reminderHistory,
+  professionalReviews,
+  reviewInvitations,
   type Admin,
   type InsertAdmin,
   type Company,
@@ -47,6 +49,10 @@ import {
   type InsertReminderSettings,
   type ReminderHistory,
   type InsertReminderHistory,
+  type ProfessionalReview,
+  type InsertProfessionalReview,
+  type ReviewInvitation,
+  type InsertReviewInvitation,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -1240,6 +1246,269 @@ export class DatabaseStorage implements IStorage {
     } catch (error: any) {
       console.error("Error creating birthday message history:", error);
       throw error;
+    }
+  }
+
+  // Professional Reviews operations
+  async getProfessionalReviews(professionalId: number): Promise<ProfessionalReview[]> {
+    try {
+      return await db.select().from(professionalReviews)
+        .where(and(
+          eq(professionalReviews.professionalId, professionalId),
+          eq(professionalReviews.isVisible, true)
+        ))
+        .orderBy(desc(professionalReviews.reviewDate));
+    } catch (error: any) {
+      console.error("Error getting professional reviews:", error);
+      return [];
+    }
+  }
+
+  async getProfessionalReviewsByCompany(companyId: number): Promise<ProfessionalReview[]> {
+    try {
+      return await db.select({
+        id: professionalReviews.id,
+        professionalId: professionalReviews.professionalId,
+        appointmentId: professionalReviews.appointmentId,
+        clientName: professionalReviews.clientName,
+        clientPhone: professionalReviews.clientPhone,
+        rating: professionalReviews.rating,
+        comment: professionalReviews.comment,
+        reviewDate: professionalReviews.reviewDate,
+        isVisible: professionalReviews.isVisible,
+        createdAt: professionalReviews.createdAt,
+        professionalName: professionals.name,
+      }).from(professionalReviews)
+        .leftJoin(professionals, eq(professionalReviews.professionalId, professionals.id))
+        .where(and(
+          eq(professionals.companyId, companyId),
+          eq(professionalReviews.isVisible, true)
+        ))
+        .orderBy(desc(professionalReviews.reviewDate));
+    } catch (error: any) {
+      console.error("Error getting professional reviews by company:", error);
+      return [];
+    }
+  }
+
+  async createProfessionalReview(reviewData: InsertProfessionalReview): Promise<ProfessionalReview> {
+    try {
+      await db.insert(professionalReviews).values(reviewData);
+      const [review] = await db.select().from(professionalReviews)
+        .where(and(
+          eq(professionalReviews.professionalId, reviewData.professionalId),
+          eq(professionalReviews.appointmentId, reviewData.appointmentId)
+        ))
+        .orderBy(desc(professionalReviews.id))
+        .limit(1);
+      return review;
+    } catch (error: any) {
+      console.error("Error creating professional review:", error);
+      throw error;
+    }
+  }
+
+  async updateProfessionalReview(id: number, reviewData: Partial<InsertProfessionalReview>): Promise<ProfessionalReview> {
+    try {
+      await db.update(professionalReviews)
+        .set(reviewData)
+        .where(eq(professionalReviews.id, id));
+      
+      const [review] = await db.select().from(professionalReviews)
+        .where(eq(professionalReviews.id, id));
+      return review;
+    } catch (error: any) {
+      console.error("Error updating professional review:", error);
+      throw error;
+    }
+  }
+
+  async deleteProfessionalReview(id: number): Promise<void> {
+    try {
+      await db.delete(professionalReviews).where(eq(professionalReviews.id, id));
+    } catch (error: any) {
+      console.error("Error deleting professional review:", error);
+      throw error;
+    }
+  }
+
+  // Review Invitations operations
+  async getReviewInvitations(companyId: number): Promise<ReviewInvitation[]> {
+    try {
+      return await db.select({
+        id: reviewInvitations.id,
+        appointmentId: reviewInvitations.appointmentId,
+        professionalId: reviewInvitations.professionalId,
+        clientPhone: reviewInvitations.clientPhone,
+        invitationToken: reviewInvitations.invitationToken,
+        sentAt: reviewInvitations.sentAt,
+        reviewSubmittedAt: reviewInvitations.reviewSubmittedAt,
+        status: reviewInvitations.status,
+        whatsappInstanceId: reviewInvitations.whatsappInstanceId,
+        professionalName: professionals.name,
+        clientName: appointments.clientName,
+        appointmentDate: appointments.appointmentDate,
+      }).from(reviewInvitations)
+        .leftJoin(professionals, eq(reviewInvitations.professionalId, professionals.id))
+        .leftJoin(appointments, eq(reviewInvitations.appointmentId, appointments.id))
+        .where(eq(professionals.companyId, companyId))
+        .orderBy(desc(reviewInvitations.sentAt));
+    } catch (error: any) {
+      console.error("Error getting review invitations:", error);
+      return [];
+    }
+  }
+
+  async getReviewInvitationByToken(token: string): Promise<ReviewInvitation | undefined> {
+    try {
+      const [invitation] = await db.select().from(reviewInvitations)
+        .where(eq(reviewInvitations.invitationToken, token));
+      return invitation;
+    } catch (error: any) {
+      console.error("Error getting review invitation by token:", error);
+      return undefined;
+    }
+  }
+
+  async createReviewInvitation(invitationData: InsertReviewInvitation): Promise<ReviewInvitation> {
+    try {
+      await db.insert(reviewInvitations).values(invitationData);
+      const [invitation] = await db.select().from(reviewInvitations)
+        .where(eq(reviewInvitations.invitationToken, invitationData.invitationToken))
+        .limit(1);
+      return invitation;
+    } catch (error: any) {
+      console.error("Error creating review invitation:", error);
+      throw error;
+    }
+  }
+
+  async updateReviewInvitation(id: number, invitationData: Partial<InsertReviewInvitation>): Promise<ReviewInvitation> {
+    try {
+      await db.update(reviewInvitations)
+        .set(invitationData)
+        .where(eq(reviewInvitations.id, id));
+      
+      const [invitation] = await db.select().from(reviewInvitations)
+        .where(eq(reviewInvitations.id, id));
+      return invitation;
+    } catch (error: any) {
+      console.error("Error updating review invitation:", error);
+      throw error;
+    }
+  }
+
+  async sendReviewInvitation(appointmentId: number): Promise<{ success: boolean; message: string }> {
+    try {
+      // Get appointment details with professional and service
+      const [appointment] = await db.select({
+        id: appointments.id,
+        companyId: appointments.companyId,
+        professionalId: appointments.professionalId,
+        clientName: appointments.clientName,
+        clientPhone: appointments.clientPhone,
+        appointmentDate: appointments.appointmentDate,
+        appointmentTime: appointments.appointmentTime,
+        serviceName: services.name,
+        professionalName: professionals.name,
+      }).from(appointments)
+        .leftJoin(services, eq(appointments.serviceId, services.id))
+        .leftJoin(professionals, eq(appointments.professionalId, professionals.id))
+        .where(eq(appointments.id, appointmentId));
+
+      if (!appointment) {
+        return { success: false, message: "Agendamento não encontrado" };
+      }
+
+      // Check if review invitation already exists
+      const [existingInvitation] = await db.select().from(reviewInvitations)
+        .where(eq(reviewInvitations.appointmentId, appointmentId));
+
+      if (existingInvitation) {
+        return { success: false, message: "Convite de avaliação já foi enviado para este agendamento" };
+      }
+
+      // Generate unique token
+      const token = `review_${appointmentId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+      // Get company details
+      const [company] = await db.select().from(companies)
+        .where(eq(companies.id, appointment.companyId));
+
+      if (!company) {
+        return { success: false, message: "Empresa não encontrada" };
+      }
+
+      // Get WhatsApp instance
+      const [whatsappInstance] = await db.select().from(whatsappInstances)
+        .where(eq(whatsappInstances.companyId, appointment.companyId));
+
+      if (!whatsappInstance) {
+        return { success: false, message: "Instância do WhatsApp não configurada" };
+      }
+
+      // Create review invitation
+      await this.createReviewInvitation({
+        appointmentId: appointmentId,
+        professionalId: appointment.professionalId,
+        clientPhone: appointment.clientPhone,
+        invitationToken: token,
+        status: 'sent',
+        whatsappInstanceId: whatsappInstance.id
+      });
+
+      // Generate review URL
+      const reviewUrl = `${process.env.REPLIT_DOMAINS || 'http://localhost:5000'}/review/${token}`;
+
+      // Format message
+      const message = `Olá ${appointment.clientName}! 👋
+
+Esperamos que tenha ficado satisfeito(a) com o atendimento de ${appointment.professionalName} na ${company.fantasyName}.
+
+Sua opinião é muito importante para nós! Por favor, avalie nosso serviço clicando no link abaixo:
+
+🔗 ${reviewUrl}
+
+Obrigado pela preferência! 🙏`;
+
+      // Format phone number
+      const cleanPhone = appointment.clientPhone.replace(/\D/g, '');
+      let formattedPhone = cleanPhone;
+      
+      if (!formattedPhone.startsWith('55')) {
+        formattedPhone = '55' + formattedPhone;
+      }
+
+      // Send WhatsApp message
+      const evolutionApiUrl = whatsappInstance.apiUrl || process.env.EVOLUTION_API_URL;
+      const apiKey = whatsappInstance.apiKey || process.env.EVOLUTION_API_KEY;
+
+      if (!evolutionApiUrl || !apiKey) {
+        return { success: false, message: "Configuração da API do WhatsApp não encontrada" };
+      }
+
+      const response = await fetch(`${evolutionApiUrl}/message/sendText/${whatsappInstance.instanceName}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': apiKey
+        },
+        body: JSON.stringify({
+          number: formattedPhone,
+          text: message
+        })
+      });
+
+      if (response.ok) {
+        return { success: true, message: "Convite de avaliação enviado com sucesso!" };
+      } else {
+        const error = await response.json();
+        return { success: false, message: `Erro ao enviar mensagem: ${error.message || 'Erro desconhecido'}` };
+      }
+
+    } catch (error: any) {
+      console.error("Error sending review invitation:", error);
+      return { success: false, message: "Erro interno ao enviar convite de avaliação" };
     }
   }
 }

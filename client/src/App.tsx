@@ -22,6 +22,7 @@ import Companies from "@/pages/companies";
 import Plans from "@/pages/plans";
 import SettingsPage from "@/pages/settings";
 import Status from "@/pages/status";
+import PublicReview from "@/pages/public-review";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -71,6 +72,9 @@ function Router() {
           <CompanyReminders />
         </CompanyLayout>
       </Route>
+      
+      {/* Public Review Route (no authentication required) */}
+      <Route path="/review/:token" component={PublicReview} />
       
       {/* Admin Login Route */}
       <Route path="/administrador" component={isAdminAuthenticated ? () => <AdminLayout><Dashboard /></AdminLayout> : Login} />

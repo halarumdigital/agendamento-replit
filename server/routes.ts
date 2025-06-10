@@ -3390,6 +3390,161 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
     }
   });
 
+  // Professional Reviews API Routes
+  app.get("/api/company/reviews", isAuthenticated, async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const reviews = await storage.getProfessionalReviewsByCompany(companyId);
+      res.json(reviews);
+    } catch (error) {
+      console.error("Error getting reviews:", error);
+      res.status(500).json({ message: "Erro ao buscar avaliações" });
+    }
+  });
+
+  app.get("/api/company/reviews/professional/:professionalId", isAuthenticated, async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const { professionalId } = req.params;
+      const reviews = await storage.getProfessionalReviews(parseInt(professionalId));
+      res.json(reviews);
+    } catch (error) {
+      console.error("Error getting professional reviews:", error);
+      res.status(500).json({ message: "Erro ao buscar avaliações do profissional" });
+    }
+  });
+
+  app.get("/api/company/review-invitations", isAuthenticated, async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const invitations = await storage.getReviewInvitations(companyId);
+      res.json(invitations);
+    } catch (error) {
+      console.error("Error getting review invitations:", error);
+      res.status(500).json({ message: "Erro ao buscar convites de avaliação" });
+    }
+  });
+
+  app.post("/api/company/send-review-invitation/:appointmentId", isAuthenticated, async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const { appointmentId } = req.params;
+      const result = await storage.sendReviewInvitation(parseInt(appointmentId));
+      
+      if (result.success) {
+        res.json(result);
+      } else {
+        res.status(400).json(result);
+      }
+    } catch (error) {
+      console.error("Error sending review invitation:", error);
+      res.status(500).json({ message: "Erro ao enviar convite de avaliação" });
+    }
+  });
+
+  // Public review submission route (no authentication required)
+  app.get("/api/public/review/:token", async (req, res) => {
+    try {
+      const { token } = req.params;
+      const invitation = await storage.getReviewInvitationByToken(token);
+      
+      if (!invitation) {
+        return res.status(404).json({ message: "Convite de avaliação não encontrado" });
+      }
+
+      // Get professional and appointment details
+      const professional = await storage.getProfessional(invitation.professionalId);
+      const appointment = await storage.getAppointment(invitation.appointmentId);
+      
+      if (!professional || !appointment) {
+        return res.status(404).json({ message: "Dados do agendamento não encontrados" });
+      }
+
+      res.json({
+        invitation,
+        professional: {
+          id: professional.id,
+          name: professional.name,
+          specialties: professional.specialties
+        },
+        appointment: {
+          id: appointment.id,
+          clientName: appointment.clientName,
+          appointmentDate: appointment.appointmentDate,
+          appointmentTime: appointment.appointmentTime
+        }
+      });
+    } catch (error) {
+      console.error("Error getting review data:", error);
+      res.status(500).json({ message: "Erro ao buscar dados da avaliação" });
+    }
+  });
+
+  app.post("/api/public/review/:token", async (req, res) => {
+    try {
+      const { token } = req.params;
+      const { rating, comment } = req.body;
+
+      if (!rating || rating < 1 || rating > 5) {
+        return res.status(400).json({ message: "Avaliação deve ser entre 1 e 5 estrelas" });
+      }
+
+      const invitation = await storage.getReviewInvitationByToken(token);
+      
+      if (!invitation) {
+        return res.status(404).json({ message: "Convite de avaliação não encontrado" });
+      }
+
+      if (invitation.reviewSubmittedAt) {
+        return res.status(400).json({ message: "Avaliação já foi enviada para este agendamento" });
+      }
+
+      // Get appointment details
+      const appointment = await storage.getAppointment(invitation.appointmentId);
+      if (!appointment) {
+        return res.status(404).json({ message: "Agendamento não encontrado" });
+      }
+
+      // Create the review
+      await storage.createProfessionalReview({
+        professionalId: invitation.professionalId,
+        appointmentId: invitation.appointmentId,
+        clientName: appointment.clientName,
+        clientPhone: appointment.clientPhone,
+        rating: parseInt(rating),
+        comment: comment || null,
+        isVisible: true
+      });
+
+      // Update invitation status
+      await storage.updateReviewInvitation(invitation.id, {
+        reviewSubmittedAt: new Date(),
+        status: 'completed'
+      });
+
+      res.json({ message: "Avaliação enviada com sucesso! Obrigado pelo seu feedback." });
+    } catch (error) {
+      console.error("Error submitting review:", error);
+      res.status(500).json({ message: "Erro ao enviar avaliação" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
