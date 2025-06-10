@@ -1694,6 +1694,119 @@ INSTRUÇÕES OBRIGATÓRIAS:
     }
   });
 
+  // Send birthday message to specific client
+  app.post('/api/company/send-birthday-message/:clientId', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const { clientId } = req.params;
+
+      // Get client information
+      const client = await storage.getClient(parseInt(clientId));
+      if (!client || client.companyId !== companyId) {
+        return res.status(404).json({ message: "Cliente não encontrado" });
+      }
+
+      if (!client.phone) {
+        return res.status(400).json({ message: "Cliente não possui telefone cadastrado" });
+      }
+
+      // Get company information
+      const company = await storage.getCompany(companyId);
+      if (!company) {
+        return res.status(404).json({ message: "Empresa não encontrada" });
+      }
+
+      // Get active birthday message template
+      const birthdayMessages = await storage.getBirthdayMessagesByCompany(companyId);
+      const activeMessage = birthdayMessages.find(msg => msg.isActive);
+      
+      if (!activeMessage) {
+        return res.status(400).json({ message: "Nenhuma mensagem de aniversário ativa configurada" });
+      }
+
+      // Get WhatsApp instance for the company
+      const whatsappInstances = await storage.getWhatsappInstancesByCompany(companyId);
+      const activeInstance = whatsappInstances.find(instance => instance.status === 'connected' && instance.apiUrl && instance.apiKey);
+      
+      if (!activeInstance) {
+        return res.status(400).json({ message: "Nenhuma instância WhatsApp conectada encontrada" });
+      }
+
+      // Replace placeholders in message template
+      let messageText = activeMessage.messageTemplate;
+      messageText = messageText.replace(/{NOME}/g, client.name);
+      messageText = messageText.replace(/{EMPRESA}/g, company.fantasyName);
+
+      // Clean phone number (remove non-digits)
+      const cleanPhone = client.phone.replace(/\D/g, '');
+      
+      // Send message via Evolution API
+      const sendMessageUrl = `${activeInstance.apiUrl}/message/sendText/${activeInstance.instanceName}`;
+      
+      const messageData = {
+        number: cleanPhone,
+        text: messageText
+      };
+
+      console.log('=== SENDING BIRTHDAY MESSAGE ===');
+      console.log('API URL:', sendMessageUrl);
+      console.log('Client:', client.name);
+      console.log('Phone:', cleanPhone);
+      console.log('Message:', messageText);
+
+      const response = await fetch(sendMessageUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': activeInstance.apiKey || ''
+        },
+        body: JSON.stringify(messageData)
+      });
+
+      const responseData = await response.json();
+      console.log('Evolution API Response:', responseData);
+
+      let status = 'sent';
+      if (!response.ok) {
+        status = 'error';
+        console.error('Error sending birthday message:', responseData);
+      }
+
+      // Save to history
+      await storage.createBirthdayMessageHistory({
+        companyId,
+        clientId: client.id,
+        clientName: client.name,
+        clientPhone: client.phone,
+        message: messageText,
+        status,
+        whatsappInstanceId: activeInstance.id
+      });
+
+      if (status === 'sent') {
+        res.json({ 
+          message: "Mensagem de aniversário enviada com sucesso",
+          client: client.name,
+          phone: client.phone,
+          messageText
+        });
+      } else {
+        res.status(500).json({ 
+          message: "Erro ao enviar mensagem de aniversário",
+          error: responseData.message || 'Erro desconhecido'
+        });
+      }
+
+    } catch (error: any) {
+      console.error('Error sending birthday message:', error);
+      res.status(500).json({ message: "Erro interno do servidor", error: error.message });
+    }
+  });
+
   // Auto-configure webhook using global settings
   app.post('/api/company/whatsapp/:instanceId/auto-configure-webhook', async (req: any, res) => {
     try {

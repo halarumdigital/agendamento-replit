@@ -416,7 +416,7 @@ export default function CompanySettings() {
     queryKey: ["/api/company/birthday-messages"],
   });
 
-  const { data: birthdayHistory = [] } = useQuery({
+  const { data: birthdayHistory = [] } = useQuery<any[]>({
     queryKey: ["/api/company/birthday-message-history"],
   });
 
@@ -440,6 +440,27 @@ export default function CompanySettings() {
       toast({
         title: "Erro ao salvar mensagem",
         description: error.message || "Erro ao configurar mensagem de aniversário",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const sendBirthdayMessageMutation = useMutation({
+    mutationFn: async (clientId: number) => {
+      const response = await apiRequest("POST", `/api/company/send-birthday-message/${clientId}`);
+      return await response.json();
+    },
+    onSuccess: (data: any) => {
+      toast({
+        title: "Mensagem enviada",
+        description: `Mensagem de aniversário enviada para ${data.client}`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/company/birthday-message-history"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao enviar mensagem",
+        description: error.message || "Erro ao enviar mensagem de aniversário",
         variant: "destructive",
       });
     },
@@ -1155,8 +1176,13 @@ export default function CompanySettings() {
                                 <p className="font-medium text-pink-900">{client.name}</p>
                                 <p className="text-sm text-pink-600">{client.phone || 'Sem telefone'}</p>
                               </div>
-                              <Button size="sm" className="bg-pink-600 hover:bg-pink-700">
-                                <MessageCircle className="w-4 h-4" />
+                              <Button 
+                                size="sm" 
+                                className="bg-pink-600 hover:bg-pink-700"
+                                onClick={() => sendBirthdayMessageMutation.mutate(client.id)}
+                                disabled={sendBirthdayMessageMutation.isPending}
+                              >
+                                <MessageSquare className="w-4 h-4" />
                               </Button>
                             </div>
                           </div>
@@ -1239,7 +1265,7 @@ export default function CompanySettings() {
                 <CardContent>
                   {birthdayHistory.length > 0 ? (
                     <div className="space-y-3 max-h-60 overflow-y-auto">
-                      {birthdayHistory.map((history: any) => (
+                      {(birthdayHistory as any[]).map((history: any) => (
                         <div key={history.id} className="bg-green-50 p-3 rounded-lg border border-green-200">
                           <div className="flex justify-between items-start">
                             <div className="flex-1">
