@@ -91,6 +91,8 @@ export default function DashboardAppointments() {
   const [isNewAppointmentOpen, setIsNewAppointmentOpen] = useState(false);
   const [isNewClientOpen, setIsNewClientOpen] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<string>('');
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [isAppointmentDetailsOpen, setIsAppointmentDetailsOpen] = useState(false);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -275,9 +277,14 @@ export default function DashboardAppointments() {
             {dayAppointments.slice(0, 3).map((appointment: Appointment) => (
               <div
                 key={appointment.id}
-                className="text-xs p-1 rounded text-white truncate"
+                className="text-xs p-1 rounded text-white truncate cursor-pointer hover:opacity-80 transition-opacity"
                 style={{ backgroundColor: appointment.service.color }}
                 title={`${appointment.appointmentTime} - ${appointment.clientName}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedAppointment(appointment);
+                  setIsAppointmentDetailsOpen(true);
+                }}
               >
                 {appointment.appointmentTime} {appointment.clientName}
               </div>
@@ -705,6 +712,64 @@ export default function DashboardAppointments() {
               </Form>
             </DialogContent>
           </Dialog>
+
+          {/* Modal de Detalhes do Agendamento */}
+          <Dialog open={isAppointmentDetailsOpen} onOpenChange={setIsAppointmentDetailsOpen}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Detalhes do Agendamento</DialogTitle>
+              </DialogHeader>
+              {selectedAppointment && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-4 h-4 rounded"
+                      style={{ backgroundColor: selectedAppointment.service.color }}
+                    />
+                    <div>
+                      <h3 className="font-semibold text-lg">{selectedAppointment.clientName}</h3>
+                      <p className="text-sm text-gray-600">{selectedAppointment.clientPhone}</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Data</label>
+                      <p className="text-sm">{format(new Date(selectedAppointment.appointmentDate), 'dd/MM/yyyy')}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Horário</label>
+                      <p className="text-sm">{selectedAppointment.appointmentTime}</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Serviço</label>
+                    <p className="text-sm">{selectedAppointment.service.name}</p>
+                    <p className="text-xs text-gray-500">{selectedAppointment.service.duration} minutos - R$ {selectedAppointment.service.price}</p>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Profissional</label>
+                    <p className="text-sm">{selectedAppointment.professional.name}</p>
+                  </div>
+
+                  {selectedAppointment.notes && (
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Observações</label>
+                      <p className="text-sm">{selectedAppointment.notes}</p>
+                    </div>
+                  )}
+
+                  <div className="flex justify-end">
+                    <Button variant="outline" onClick={() => setIsAppointmentDetailsOpen(false)}>
+                      Fechar
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
@@ -818,6 +883,10 @@ export default function DashboardAppointments() {
                         <div
                           key={appointment.id}
                           className="p-3 bg-white border rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                          onClick={() => {
+                            setSelectedAppointment(appointment);
+                            setIsAppointmentDetailsOpen(true);
+                          }}
                         >
                           <div className="flex items-start justify-between mb-2">
                             <h4 className="font-medium text-sm">{appointment.clientName}</h4>
