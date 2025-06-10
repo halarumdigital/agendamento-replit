@@ -3532,9 +3532,8 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
         isVisible: true
       });
 
-      // Update invitation status
+      // Update invitation status using storage method
       await storage.updateReviewInvitation(invitation.id, {
-        reviewSubmittedAt: new Date(),
         status: 'completed'
       });
 
