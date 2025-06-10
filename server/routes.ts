@@ -3544,7 +3544,27 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
     }
   });
 
+  // Add the missing review invitation route
+  app.post("/api/appointments/:id/send-review-invitation", async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
 
+      const appointmentId = parseInt(req.params.id);
+      const result = await storage.sendReviewInvitation(appointmentId);
+      
+      if (result.success) {
+        res.json({ message: result.message });
+      } else {
+        res.status(400).json({ message: result.message });
+      }
+    } catch (error) {
+      console.error("Error sending review invitation:", error);
+      res.status(500).json({ message: "Erro ao enviar convite de avaliação" });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
