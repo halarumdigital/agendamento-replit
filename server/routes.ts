@@ -23,20 +23,27 @@ function generateWebhookUrl(req: any, instanceName: string): string {
 async function generateAvailabilityInfo(professionals: any[], existingAppointments: any[]): Promise<string> {
   const dayNames = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
   
-  let availabilityText = 'DISPONIBILIDADE REAL DOS PROFISSIONAIS:\n\n';
+  let availabilityText = 'DISPONIBILIDADE REAL DOS PROFISSIONAIS (CONSULTE ANTES DE CONFIRMAR):\n\n';
   
   for (const prof of professionals) {
     if (!prof.active) continue;
     
-    availabilityText += `${prof.name}:\n`;
+    availabilityText += `${prof.name} (ID: ${prof.id}):\n`;
     
     // Work days and hours
     const workDays = prof.workDays || [1, 2, 3, 4, 5, 6]; // Default: Monday to Saturday
     const workStart = prof.workStartTime || '09:00';
     const workEnd = prof.workEndTime || '18:00';
     
-    availabilityText += `- Dias de trabalho: ${workDays.map(day => dayNames[day]).join(', ')}\n`;
+    availabilityText += `- Trabalha: ${workDays.map((day: number) => dayNames[day]).join(', ')}\n`;
     availabilityText += `- Horário: ${workStart} às ${workEnd}\n`;
+    
+    // Check if works on Friday (day 5)
+    if (workDays.includes(5)) {
+      availabilityText += `- SEXTA-FEIRA: DISPONÍVEL (${workStart} às ${workEnd})\n`;
+    } else {
+      availabilityText += `- SEXTA-FEIRA: NÃO TRABALHA\n`;
+    }
     
     // Check existing appointments for this week
     const today = new Date();
@@ -50,14 +57,14 @@ async function generateAvailabilityInfo(professionals: any[], existingAppointmen
     );
     
     if (profAppointments.length > 0) {
-      availabilityText += `- Agendamentos existentes esta semana:\n`;
+      availabilityText += `- Agendamentos ocupados:\n`;
       profAppointments.forEach(apt => {
         const date = new Date(apt.appointmentDate);
         const dayName = dayNames[date.getDay()];
-        availabilityText += `  • ${dayName} às ${apt.appointmentTime}\n`;
+        availabilityText += `  • ${dayName} ${apt.appointmentTime} - OCUPADO\n`;
       });
     } else {
-      availabilityText += `- Sem agendamentos esta semana\n`;
+      availabilityText += `- Esta semana: LIVRE (sem agendamentos)\n`;
     }
     
     availabilityText += '\n';
@@ -886,8 +893,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // Get existing appointments to check availability
               const existingAppointments = await storage.getAppointmentsByCompany(company.id);
               
-              // Create availability context for AI
+              // Create availability context for AI with detailed schedule info
               const availabilityInfo = await generateAvailabilityInfo(professionals, existingAppointments);
+              
+              console.log('📋 Professional availability info generated:', availabilityInfo);
 
               // Generate AI response with conversation context
               const OpenAI = (await import('openai')).default;
