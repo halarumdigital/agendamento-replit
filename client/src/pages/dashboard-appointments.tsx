@@ -451,13 +451,35 @@ export default function DashboardAppointments() {
 
                   <FormField
                     control={form.control}
-                    name="clientName"
+                    name="clientId"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Nome do Cliente</FormLabel>
                         <div className="flex gap-2">
                           <FormControl className="flex-1">
-                            <Input {...field} placeholder="Nome completo" />
+                            <Select
+                              value={field.value?.toString()}
+                              onValueChange={(value) => {
+                                field.onChange(parseInt(value));
+                                const selectedClient = clients.find(c => c.id === parseInt(value));
+                                if (selectedClient) {
+                                  form.setValue('clientName', selectedClient.name);
+                                  form.setValue('clientPhone', selectedClient.phone || '');
+                                  form.setValue('clientEmail', selectedClient.email || '');
+                                }
+                              }}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione um cliente" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {clients.map((client) => (
+                                  <SelectItem key={client.id} value={client.id.toString()}>
+                                    {client.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </FormControl>
                           <Button
                             type="button"
