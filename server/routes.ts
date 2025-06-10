@@ -591,11 +591,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('📞 Remote JID:', message.key.remoteJid);
         
         // Handle both 'textMessage' and 'conversation' message types
-        const isTextMessage = (message.messageType === 'textMessage' || message.messageType === 'conversation') && !message.key.fromMe;
+        const hasTextContent = message.message?.conversation || message.message?.extendedTextMessage?.text;
+        const isTextMessage = hasTextContent && !message.key.fromMe;
         
-        console.log('🔍 Debug - isTextMessage:', isTextMessage);
-        console.log('🔍 Debug - messageType check:', message.messageType === 'textMessage' || message.messageType === 'conversation');
-        console.log('🔍 Debug - fromMe check:', !message.key.fromMe);
+        console.log('🔍 Debug - message object:', JSON.stringify(message.message, null, 2));
+        console.log('🔍 Debug - conversation field:', message.message?.conversation);
+        console.log('🔍 Debug - extendedTextMessage:', message.message?.extendedTextMessage?.text);
+        console.log('🔍 Debug - hasTextContent:', hasTextContent);
+        console.log('🔍 Debug - fromMe value:', message.key.fromMe);
+        console.log('🔍 Debug - isTextMessage final:', isTextMessage);
         
         if (isTextMessage) {
           const phoneNumber = message.key.remoteJid.replace('@s.whatsapp.net', '');
