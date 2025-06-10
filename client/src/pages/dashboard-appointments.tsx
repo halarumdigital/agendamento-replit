@@ -16,7 +16,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import CompanyLayout from "@/components/layout/company-layout";
+
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 
 // Types
@@ -560,7 +560,6 @@ export default function DashboardAppointments() {
   }, [selectedDate, form]);
 
   return (
-    <CompanyLayout>
       <div className="p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -1553,7 +1552,6 @@ export default function DashboardAppointments() {
           </Form>
         </DialogContent>
       </Dialog>
-      </div>
-    </CompanyLayout>
+    </div>
   );
 }
