@@ -66,6 +66,7 @@ export default function CompanySettings() {
   const [selectedInstance, setSelectedInstance] = useState<any>(null);
   const [qrCodeData, setQrCodeData] = useState<string>("");
   const [showQrDialog, setShowQrDialog] = useState(false);
+  const [showWebhookDialog, setShowWebhookDialog] = useState(false);
   const [editingSettings, setEditingSettings] = useState<{ [key: string]: ReminderSettings }>({});
 
   const profileForm = useForm<CompanyProfileData>({
@@ -259,23 +260,24 @@ export default function CompanySettings() {
     createBirthdayMessageMutation.mutate(data);
   };
 
-  const autoConfigureWebhookMutation = useMutation({
+  const configureWebhookMutation = useMutation({
     mutationFn: async (instanceId: number) => {
-      const response = await apiRequest("POST", `/api/company/whatsapp/${instanceId}/auto-configure-webhook`);
-      return response;
+      const response = await apiRequest("POST", `/api/company/whatsapp/instances/${instanceId}/configure-webhook`);
+      return await response.json();
     },
     onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/company/whatsapp/instances"] });
+      setShowWebhookDialog(false);
+      setSelectedInstance(null);
       toast({
         title: "Agente IA configurado",
-        description: "O agente de IA foi conectado com sucesso ao WhatsApp usando as configurações globais.",
+        description: "Webhook configurado com sucesso na Evolution API.",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/company/whatsapp/instances"] });
-      setSelectedInstance(null);
     },
     onError: (error: any) => {
       toast({
-        title: "Erro ao configurar agente IA",
-        description: error.message || "Evolution API não configurada pelo administrador",
+        title: "Erro na configuração",
+        description: error.message || "Erro ao configurar webhook do agente IA",
         variant: "destructive",
       });
     },
@@ -972,6 +974,18 @@ export default function CompanySettings() {
                               Conectar
                             </Button>
                           )}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedInstance(instance);
+                              setShowWebhookDialog(true);
+                            }}
+                            className="flex items-center gap-2"
+                          >
+                            <Bot className="w-4 h-4" />
+                            Configurar IA
+                          </Button>
                           <Button
                             variant="destructive"
                             size="sm"
@@ -1819,7 +1833,7 @@ export default function CompanySettings() {
         </Dialog>
 
         {/* Webhook Configuration Dialog */}
-        <Dialog open={!!selectedInstance} onOpenChange={() => setSelectedInstance(null)}>
+        <Dialog open={showWebhookDialog} onOpenChange={setShowWebhookDialog}>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle>Configurar Agente IA - {selectedInstance?.instanceName}</DialogTitle>
@@ -1851,12 +1865,16 @@ export default function CompanySettings() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setSelectedInstance(null)}
+                  onClick={() => setShowWebhookDialog(false)}
                 >
                   Cancelar
                 </Button>
                 <Button
-                  onClick={onWebhookSubmit}
+                  onClick={() => {
+                    if (selectedInstance) {
+                      configureWebhookMutation.mutate(selectedInstance.id);
+                    }
+                  }}
                   disabled={configureWebhookMutation.isPending}
                   className="flex items-center gap-2"
                 >
