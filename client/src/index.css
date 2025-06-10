@@ -145,3 +145,27 @@
 .status-pending {
   @apply bg-blue-100 text-blue-800;
 }
+
+/* Custom scrollbar styles for Kanban columns */
+.kanban-column::-webkit-scrollbar {
+  width: 6px;
+}
+
+.kanban-column::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.kanban-column::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 3px;
+}
+
+.kanban-column::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
+}
+
+/* Firefox scrollbar */
+.kanban-column {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--border)) transparent;
+}

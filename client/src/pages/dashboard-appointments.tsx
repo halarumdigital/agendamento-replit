@@ -1072,13 +1072,13 @@ export default function DashboardAppointments() {
                       </Badge>
                     </div>
                   </CardHeader>
-                  <CardContent className="flex-1 pt-0">
+                  <CardContent className="flex-1 pt-0 overflow-hidden">
                     <Droppable droppableId={status.name}>
                       {(provided, snapshot) => (
                         <div
                           ref={provided.innerRef}
                           {...provided.droppableProps}
-                          className={`space-y-3 min-h-[200px] ${
+                          className={`kanban-column space-y-3 min-h-[200px] max-h-[600px] overflow-y-auto pr-2 ${
                             snapshot.isDraggingOver ? 'bg-blue-50' : ''
                           }`}
                         >
