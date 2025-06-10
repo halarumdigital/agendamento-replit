@@ -1,5 +1,5 @@
-const mysql = require('mysql2/promise');
-const bcrypt = require('bcrypt');
+import mysql from 'mysql2/promise';
+import bcrypt from 'bcrypt';
 
 async function setupMySQLCompany() {
   const connection = await mysql.createConnection({

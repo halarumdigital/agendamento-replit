@@ -1,6 +1,4 @@
 import mysql from 'mysql2/promise';
-import { drizzle } from 'drizzle-orm/mysql2';
-import * as schema from "@shared/schema";
 
 const pool = mysql.createPool({
   host: process.env.MYSQL_HOST || 'localhost',
@@ -13,9 +11,5 @@ const pool = mysql.createPool({
   queueLimit: 0
 });
 
-export const db = drizzle(pool, { 
-  schema, 
-  mode: 'default' as const
-});
 export { pool };
-
+export const db = pool;
