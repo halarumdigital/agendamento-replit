@@ -832,8 +832,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('📱 QR code updated for instance:', instanceName);
         
         // Extract QR code from webhook data
-        // Based on Evolution API format: data.base64 contains the QR code
-        const qrCodeData = webhookData.data?.base64;
+        // Log the complete structure to understand the format
+        console.log('🔍 Complete webhook structure:', JSON.stringify(webhookData, null, 2));
+        
+        // Try multiple paths for QR code data
+        const qrCodeData = webhookData.data?.base64 || 
+                          webhookData.data?.qrcode || 
+                          webhookData.qrcode ||
+                          webhookData.base64;
+        
+        console.log('🔍 QR code data found:', !!qrCodeData);
+        console.log('🔍 QR code type:', typeof qrCodeData);
         
         if (qrCodeData) {
           try {
@@ -855,6 +864,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         } else {
           console.log('⚠️ No QR code found in webhook data');
+          console.log('🔍 Available keys in data:', Object.keys(webhookData.data || {}));
+          console.log('🔍 Available keys in root:', Object.keys(webhookData || {}));
         }
         
         return res.json({ received: true, processed: true, type: 'qrcode' });
