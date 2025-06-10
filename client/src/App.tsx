@@ -15,6 +15,7 @@ import CompanySettings from "@/pages/company-settings";
 import CompanyServices from "@/pages/company-services";
 import CompanyProfessionals from "@/pages/company-professionals";
 import CompanyClients from "@/pages/company-clients";
+import CompanyReminders from "@/pages/company-reminders";
 import DashboardAppointments from "@/pages/dashboard-appointments";
 import Dashboard from "@/pages/dashboard";
 import Companies from "@/pages/companies";
@@ -63,6 +64,11 @@ function Router() {
       <Route path="/company/settings">
         <CompanyLayout>
           <CompanySettings />
+        </CompanyLayout>
+      </Route>
+      <Route path="/company/reminders">
+        <CompanyLayout>
+          <CompanyReminders />
         </CompanyLayout>
       </Route>
       

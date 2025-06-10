@@ -1521,6 +1521,70 @@ INSTRUÇÕES OBRIGATÓRIAS:
     }
   });
 
+  // Reminder Settings API
+  app.get('/api/company/reminder-settings', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const settings = await storage.getReminderSettings(companyId);
+      res.json(settings);
+    } catch (error) {
+      console.error("Error fetching reminder settings:", error);
+      res.status(500).json({ message: "Erro ao buscar configurações de lembrete" });
+    }
+  });
+
+  app.put('/api/company/reminder-settings/:id', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const id = parseInt(req.params.id);
+      const settings = await storage.updateReminderSettings(id, req.body);
+      res.json(settings);
+    } catch (error) {
+      console.error("Error updating reminder settings:", error);
+      res.status(500).json({ message: "Erro ao atualizar configurações de lembrete" });
+    }
+  });
+
+  // Reminder History API
+  app.get('/api/company/reminder-history', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const history = await storage.getReminderHistory(companyId);
+      res.json(history);
+    } catch (error) {
+      console.error("Error fetching reminder history:", error);
+      res.status(500).json({ message: "Erro ao buscar histórico de lembretes" });
+    }
+  });
+
+  // Test reminder function
+  app.post('/api/company/test-reminder', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const result = await storage.testReminderFunction(companyId);
+      res.json(result);
+    } catch (error) {
+      console.error("Error testing reminder function:", error);
+      res.status(500).json({ message: "Erro ao testar função de lembrete" });
+    }
+  });
+
   // Initialize appointment tables
   app.post("/api/admin/init-appointments", async (req, res) => {
     try {

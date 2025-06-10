@@ -10,7 +10,8 @@ import {
   Briefcase,
   Menu,
   LogOut,
-  Home
+  Home,
+  Bell
 } from "lucide-react";
 import { useCompanyAuth } from "@/hooks/useCompanyAuth";
 
@@ -43,6 +44,11 @@ const menuItems = [
     title: "Clientes",
     href: "/company/clients",
     icon: Users,
+  },
+  {
+    title: "Lembretes",
+    href: "/company/reminders",
+    icon: Bell,
   },
   {
     title: "WhatsApp",
