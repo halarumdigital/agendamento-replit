@@ -333,18 +333,24 @@ export default function CompanyClients() {
   const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return '';
     
+    console.log('formatDate input:', dateString, typeof dateString);
+    
     // Handle both ISO date strings and Date objects from the database
     let date: Date;
     if (typeof dateString === 'string' && dateString.includes('T')) {
       // ISO string from database
+      console.log('Processing as ISO string');
       date = new Date(dateString);
     } else {
       // Date string in YYYY-MM-DD format - parse as local date
+      console.log('Processing as date string');
       const parts = dateString.toString().split('-');
       if (parts.length === 3) {
         date = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+        console.log('Created date from parts:', parts, 'Result:', date);
       } else {
         date = new Date(dateString);
+        console.log('Created date directly:', date);
       }
     }
     
@@ -355,7 +361,10 @@ export default function CompanyClients() {
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = date.getFullYear();
     
-    return `${day}/${month}/${year}`;
+    const result = `${day}/${month}/${year}`;
+    console.log('formatDate result:', result);
+    
+    return result;
   };
 
   if (isLoading) {
