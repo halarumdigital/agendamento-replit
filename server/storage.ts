@@ -1361,7 +1361,17 @@ export class DatabaseStorage implements IStorage {
       
       // Transform the result to match the expected structure
       return (result as any[]).map((row: any) => ({
-        ...row,
+        id: row.id,
+        appointmentId: row.appointmentId,
+        professionalId: row.professionalId,
+        clientPhone: row.clientPhone,
+        clientName: row.clientName,
+        appointmentDate: row.appointmentDate,
+        appointmentTime: row.appointmentTime,
+        invitationToken: row.invitationToken,
+        reviewSubmittedAt: row.reviewSubmittedAt,
+        status: row.status,
+        createdAt: row.sentAt,
         professional: { name: row.professionalName },
         appointment: { 
           clientName: row.clientName,
