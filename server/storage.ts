@@ -19,6 +19,9 @@ import {
   reviewInvitations,
   tasks,
   taskReminders,
+  clientPoints,
+  pointsCampaigns,
+  pointsHistory,
   type Admin,
   type InsertAdmin,
   type Company,
@@ -57,6 +60,12 @@ import {
   type InsertReviewInvitation,
   type Task,
   type InsertTask,
+  type ClientPoints,
+  type InsertClientPoints,
+  type PointsCampaign,
+  type InsertPointsCampaign,
+  type PointsHistory,
+  type InsertPointsHistory,
 } from "@shared/schema";
 
 // Add missing types for task reminders
@@ -1681,6 +1690,100 @@ Obrigado pela preferência! 🙏`;
 
   async getWhatsAppInstancesByCompany(companyId: number): Promise<WhatsappInstance[]> {
     return await db.select().from(whatsappInstances).where(eq(whatsappInstances.companyId, companyId));
+  }
+
+  // Points management methods
+  async getClientPointsByCompany(companyId: number): Promise<any[]> {
+    return await db
+      .select({
+        id: clients.id,
+        name: clients.name,
+        email: clients.email,
+        phone: clients.phone,
+        totalPoints: sql`COALESCE(${clientPoints.totalPoints}, 0)`.as('totalPoints')
+      })
+      .from(clients)
+      .leftJoin(clientPoints, eq(clients.id, clientPoints.clientId))
+      .where(eq(clients.companyId, companyId));
+  }
+
+  async updateClientPoints(clientId: number, pointsChange: number, description: string, companyId: number): Promise<any> {
+    // First, ensure the client exists in the points table
+    const [existingPoints] = await db
+      .select()
+      .from(clientPoints)
+      .where(and(eq(clientPoints.clientId, clientId), eq(clientPoints.companyId, companyId)));
+
+    if (!existingPoints) {
+      // Create initial record
+      await db.insert(clientPoints).values({
+        clientId,
+        companyId,
+        totalPoints: Math.max(0, pointsChange),
+      });
+    } else {
+      // Update existing record
+      const newTotal = Math.max(0, existingPoints.totalPoints + pointsChange);
+      await db
+        .update(clientPoints)
+        .set({ 
+          totalPoints: newTotal,
+          updatedAt: new Date()
+        })
+        .where(and(eq(clientPoints.clientId, clientId), eq(clientPoints.companyId, companyId)));
+    }
+
+    // Record the transaction in history
+    await db.insert(pointsHistory).values({
+      companyId,
+      clientId,
+      pointsChange,
+      description,
+    });
+
+    return { success: true };
+  }
+
+  async getPointsCampaignsByCompany(companyId: number): Promise<any[]> {
+    return await db
+      .select({
+        id: pointsCampaigns.id,
+        name: pointsCampaigns.name,
+        requiredPoints: pointsCampaigns.requiredPoints,
+        rewardServiceId: pointsCampaigns.rewardServiceId,
+        active: pointsCampaigns.active,
+        rewardService: {
+          name: services.name,
+          price: services.price,
+        }
+      })
+      .from(pointsCampaigns)
+      .innerJoin(services, eq(pointsCampaigns.rewardServiceId, services.id))
+      .where(eq(pointsCampaigns.companyId, companyId));
+  }
+
+  async createPointsCampaign(campaign: InsertPointsCampaign): Promise<PointsCampaign> {
+    const result = await db.insert(pointsCampaigns).values(campaign);
+    const [created] = await db.select().from(pointsCampaigns)
+      .where(eq(pointsCampaigns.id, result.insertId))
+      .limit(1);
+    return created;
+  }
+
+  async updatePointsCampaign(id: number, updates: Partial<InsertPointsCampaign>): Promise<PointsCampaign> {
+    await db
+      .update(pointsCampaigns)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(pointsCampaigns.id, id));
+    
+    const [updated] = await db.select().from(pointsCampaigns)
+      .where(eq(pointsCampaigns.id, id))
+      .limit(1);
+    return updated;
+  }
+
+  async deletePointsCampaign(id: number): Promise<void> {
+    await db.delete(pointsCampaigns).where(eq(pointsCampaigns.id, id));
   }
 }
 

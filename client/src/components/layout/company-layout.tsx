@@ -59,6 +59,11 @@ const menuItems = [
     icon: CheckSquare,
   },
   {
+    title: "Programa de pontos",
+    href: "/company/points-program",
+    icon: Gift,
+  },
+  {
     title: "Configurações",
     href: "/company/settings",
     icon: Settings,

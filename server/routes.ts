@@ -3968,6 +3968,127 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
     }
   });
 
+  // Points System Routes
+  app.get("/api/company/client-points", async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const clientsWithPoints = await storage.getClientPointsByCompany(companyId);
+      res.json(clientsWithPoints);
+    } catch (error) {
+      console.error("Error getting client points:", error);
+      res.status(500).json({ message: "Erro ao buscar pontos dos clientes" });
+    }
+  });
+
+  app.post("/api/company/client-points/:clientId", async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const { clientId } = req.params;
+      const { pointsChange, description } = req.body;
+
+      if (!pointsChange || !description) {
+        return res.status(400).json({ message: "Alteração de pontos e descrição são obrigatórios" });
+      }
+
+      await storage.updateClientPoints(parseInt(clientId), pointsChange, description, companyId);
+      res.json({ message: "Pontos atualizados com sucesso" });
+    } catch (error) {
+      console.error("Error updating client points:", error);
+      res.status(500).json({ message: "Erro ao atualizar pontos do cliente" });
+    }
+  });
+
+  app.get("/api/company/points-campaigns", async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const campaigns = await storage.getPointsCampaignsByCompany(companyId);
+      res.json(campaigns);
+    } catch (error) {
+      console.error("Error getting points campaigns:", error);
+      res.status(500).json({ message: "Erro ao buscar campanhas de pontos" });
+    }
+  });
+
+  app.post("/api/company/points-campaigns", async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const { name, requiredPoints, rewardServiceId } = req.body;
+
+      if (!name || !requiredPoints || !rewardServiceId) {
+        return res.status(400).json({ message: "Nome, pontos necessários e serviço de recompensa são obrigatórios" });
+      }
+
+      const campaign = await storage.createPointsCampaign({
+        companyId,
+        name,
+        requiredPoints: parseInt(requiredPoints),
+        rewardServiceId: parseInt(rewardServiceId),
+        active: true
+      });
+
+      res.json(campaign);
+    } catch (error) {
+      console.error("Error creating points campaign:", error);
+      res.status(500).json({ message: "Erro ao criar campanha de pontos" });
+    }
+  });
+
+  app.put("/api/company/points-campaigns/:campaignId", async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const { campaignId } = req.params;
+      const { name, requiredPoints, rewardServiceId, active } = req.body;
+
+      const updates: any = {};
+      if (name !== undefined) updates.name = name;
+      if (requiredPoints !== undefined) updates.requiredPoints = parseInt(requiredPoints);
+      if (rewardServiceId !== undefined) updates.rewardServiceId = parseInt(rewardServiceId);
+      if (active !== undefined) updates.active = active;
+
+      const updatedCampaign = await storage.updatePointsCampaign(parseInt(campaignId), updates);
+      res.json(updatedCampaign);
+    } catch (error) {
+      console.error("Error updating points campaign:", error);
+      res.status(500).json({ message: "Erro ao atualizar campanha de pontos" });
+    }
+  });
+
+  app.delete("/api/company/points-campaigns/:campaignId", async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const { campaignId } = req.params;
+      await storage.deletePointsCampaign(parseInt(campaignId));
+      res.json({ message: "Campanha removida com sucesso" });
+    } catch (error) {
+      console.error("Error deleting points campaign:", error);
+      res.status(500).json({ message: "Erro ao remover campanha de pontos" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
