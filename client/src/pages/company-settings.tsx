@@ -16,7 +16,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useCompanyAuth } from "@/hooks/useCompanyAuth";
 import { z } from "zod";
 import { formatDocument, companyProfileSchema, companyPasswordSchema, companyAiAgentSchema, whatsappInstanceSchema, webhookConfigSchema } from "@/lib/validations";
-import CompanyLayout from "@/components/layout/company-layout";
+
 
 type CompanyProfileData = z.infer<typeof companyProfileSchema>;
 type CompanyPasswordData = z.infer<typeof companyPasswordSchema>;
@@ -426,7 +426,6 @@ export default function CompanySettings() {
   }
 
   return (
-    <CompanyLayout>
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center gap-2 mb-6">
           <Settings className="w-6 h-6" />
@@ -1084,6 +1083,5 @@ export default function CompanySettings() {
           </DialogContent>
         </Dialog>
       </div>
-    </CompanyLayout>
   );
 }
