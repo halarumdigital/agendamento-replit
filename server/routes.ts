@@ -825,6 +825,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('📋 Webhook event:', webhookData.event);
       console.log('📄 Full webhook data:', JSON.stringify(webhookData, null, 2));
 
+      // Check if it's a QR code update event
+      const isQrCodeEvent = webhookData.event === 'qrcode.updated' || webhookData.event === 'QRCODE_UPDATED';
+      
+      if (isQrCodeEvent) {
+        console.log('📱 QR code updated for instance:', instanceName);
+        
+        // Extract QR code from webhook data
+        const qrCodeBase64 = webhookData.data?.qrcode || webhookData.data?.base64 || webhookData.data?.qr;
+        
+        if (qrCodeBase64) {
+          try {
+            // Update instance with new QR code
+            const whatsappInstance = await storage.getWhatsappInstanceByName(instanceName);
+            if (whatsappInstance) {
+              const qrCodeUrl = qrCodeBase64.startsWith('data:') ? qrCodeBase64 : `data:image/png;base64,${qrCodeBase64}`;
+              await storage.updateWhatsappInstance(whatsappInstance.id, {
+                qrCode: qrCodeUrl,
+                status: 'connecting'
+              });
+              console.log('✅ QR code updated in database for instance:', instanceName);
+            }
+          } catch (error) {
+            console.error('❌ Error updating QR code:', error);
+          }
+        }
+        
+        return res.json({ received: true, processed: true, type: 'qrcode' });
+      }
+
       // Check if it's a message event (handle both formats)
       const isMessageEventArray = (webhookData.event === 'messages.upsert' || webhookData.event === 'MESSAGES_UPSERT') && webhookData.data?.messages?.length > 0;
       const isMessageEventDirect = (webhookData.event === 'messages.upsert' || webhookData.event === 'MESSAGES_UPSERT') && webhookData.data?.key && webhookData.data?.message;
