@@ -7,6 +7,7 @@ import { insertCompanySchema, insertPlanSchema, insertGlobalSettingsSchema, inse
 import bcrypt from "bcrypt";
 import { z } from "zod";
 import QRCode from "qrcode";
+import { reminderScheduler, rescheduleRemindersForAppointment } from "./reminder-scheduler";
 
 // Temporary in-memory storage for WhatsApp instances
 const tempWhatsappInstances: any[] = [];
