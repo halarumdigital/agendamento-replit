@@ -835,6 +835,22 @@ Importante: Você está representando a empresa "${company.fantasyName}" via Wha
     }
   });
 
+  app.patch('/api/company/appointments/:id', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const id = parseInt(req.params.id);
+      const appointment = await storage.updateAppointment(id, req.body);
+      res.json(appointment);
+    } catch (error) {
+      console.error("Error updating appointment:", error);
+      res.status(500).json({ message: "Erro ao atualizar agendamento" });
+    }
+  });
+
   // Company Services API
   app.get('/api/company/services', async (req: any, res) => {
     try {

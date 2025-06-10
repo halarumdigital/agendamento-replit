@@ -241,11 +241,21 @@ export default function DashboardAppointments() {
   // Update appointment status mutation
   const updateAppointmentStatusMutation = useMutation({
     mutationFn: async ({ appointmentId, status }: { appointmentId: number; status: string }) => {
-      const response = await apiRequest(`/api/company/appointments/${appointmentId}`, {
+      const response = await fetch(`/api/company/appointments/${appointmentId}`, {
         method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
         body: JSON.stringify({ status }),
       });
-      return response;
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Erro ao atualizar status');
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/company/appointments'] });
@@ -803,7 +813,7 @@ export default function DashboardAppointments() {
                   <div>
                     <label className="text-sm font-medium text-gray-700">Serviço</label>
                     <p className="text-sm">{selectedAppointment.service.name}</p>
-                    <p className="text-xs text-gray-500">{selectedAppointment.service.duration} minutos - R$ {selectedAppointment.service.price}</p>
+                    <p className="text-xs text-gray-500">{selectedAppointment.duration} minutos - R$ {selectedAppointment.totalPrice.toFixed(2)}</p>
                   </div>
 
                   <div>
