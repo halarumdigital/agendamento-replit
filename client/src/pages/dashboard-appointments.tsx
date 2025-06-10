@@ -560,8 +560,9 @@ export default function DashboardAppointments() {
   }, [selectedDate, form]);
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
+    <CompanyLayout>
+      <div className="p-6">
+        <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Agendamentos</h1>
           <p className="text-gray-600">Gerencie seus agendamentos e horários</p>
@@ -1169,13 +1170,41 @@ export default function DashboardAppointments() {
         </Card>
       ) : (
         // Kanban View
-        <DragDropContext onDragEnd={handleDragEnd}>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div>
+          {/* Date Filter Indicator for Kanban */}
+          {selectedDate && (
+            <Card className="mb-6">
+              <CardContent className="flex items-center justify-between p-4">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm font-medium">Mostrando agendamentos de:</span>
+                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                    {format(selectedDate, 'dd/MM/yyyy', { locale: ptBR })}
+                  </Badge>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedDate(null)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  Mostrar todos
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+          
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {statuses.map((status) => {
-              const statusAppointments = appointments.filter((apt: Appointment) => 
-                apt.status === status.name &&
-                (filterProfessional === 'all' || apt.professionalId.toString() === filterProfessional)
-              );
+              const statusAppointments = appointments.filter((apt: Appointment) => {
+                const appointmentDate = new Date(apt.appointmentDate);
+                const isDateMatch = selectedDate ? isSameDay(appointmentDate, selectedDate) : true;
+                
+                return apt.status === status.name &&
+                  (filterProfessional === 'all' || apt.professionalId.toString() === filterProfessional) &&
+                  isDateMatch;
+              });
               
               return (
                 <Card key={status.id} className="flex flex-col">
@@ -1289,8 +1318,9 @@ export default function DashboardAppointments() {
                 </Card>
               );
             })}
-          </div>
-        </DragDropContext>
+            </div>
+          </DragDropContext>
+        </div>
       )}
 
       {/* Edit Appointment Modal */}
@@ -1520,6 +1550,7 @@ export default function DashboardAppointments() {
           </Form>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </CompanyLayout>
   );
 }
