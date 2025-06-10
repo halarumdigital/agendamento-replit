@@ -1520,7 +1520,6 @@ export default function CompanySettings() {
                       </p>
                     </CardContent>
                   </Card>
-                </div>
               )}
             </TabsContent>
 
@@ -1550,8 +1549,8 @@ export default function CompanySettings() {
                     <div className="space-y-4">
                       {(reminderHistory as ReminderHistory[]).map((history) => (
                         <div key={history.id} className="border rounded-lg p-4">
-                              <div className="flex items-center justify-between mb-3">
-                                <div className="flex items-center gap-3">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-3">
                                   <div className={`p-2 rounded-full ${
                                     history.reminderType === 'confirmation' ? 'bg-green-100' :
                                     history.reminderType === 'day_before' ? 'bg-yellow-100' :
@@ -1596,12 +1595,11 @@ export default function CompanySettings() {
                   </Card>
                 </TabsContent>
               </Tabs>
-        </TabsContent>
-        </Tabs>
-      </div>
+            </TabsContent>
+          </Tabs>
 
-        {/* QR Code Dialog */}
-        <Dialog open={showQrDialog} onOpenChange={setShowQrDialog}>
+          {/* QR Code Dialog */}
+          <Dialog open={showQrDialog} onOpenChange={setShowQrDialog}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
