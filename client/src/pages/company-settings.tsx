@@ -1344,18 +1344,18 @@ export default function CompanySettings() {
         </TabsContent>
 
         <TabsContent value="reminders" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Bell className="w-5 h-5" />
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold flex items-center gap-2 mb-2">
+                <Bell className="w-6 h-6" />
                 Sistema de Lembretes Automáticos
-              </CardTitle>
-              <CardDescription>
+              </h2>
+              <p className="text-gray-600 mb-6">
                 Configure templates de mensagens automáticas para confirmação e lembretes de agendamentos via WhatsApp
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Tabs defaultValue="settings" className="w-full">
+              </p>
+            </div>
+            
+            <Tabs defaultValue="settings" className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="settings" className="flex items-center gap-2">
                     <Settings className="w-4 h-4" />
@@ -1600,8 +1600,7 @@ export default function CompanySettings() {
                   </Card>
                 </TabsContent>
               </Tabs>
-            </CardContent>
-          </Card>
+            </div>
         </TabsContent>
         </Tabs>
 
