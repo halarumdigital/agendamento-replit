@@ -338,45 +338,60 @@ export default function CompanySettings() {
   const connectInstanceMutation = useMutation({
     mutationFn: async (instanceName: string) => {
       // Trigger connection in Evolution API
-      const response = await apiRequest("POST", `/api/company/whatsapp/instances/${instanceName}/connect`);
-      return { instanceName };
+      const response = await apiRequest("GET", `/api/company/whatsapp/instances/${instanceName}/connect`);
+      return await response.json();
     },
     onSuccess: async (data: any) => {
-      const { instanceName } = data;
+      console.log("Connect API Response:", data);
       
       // Show modal immediately
       setShowQrDialog(true);
-      setQrCodeData("");
       
-      toast({
-        title: "Gerando QR code",
-        description: "Aguarde enquanto o QR code é gerado...",
-      });
+      // Check if QR code was returned directly
+      const qrCode = data.qrcode || data.base64 || data.qr || data.qr_code;
       
-      // Poll for QR code with timeout
-      let attempts = 0;
-      const maxAttempts = 15; // 30 seconds total
-      
-      const pollInterval = setInterval(async () => {
-        attempts++;
-        const qrCode = await pollForQrCode(instanceName);
+      if (qrCode && qrCode.length > 100) {
+        // QR code received directly from API
+        setQrCodeData(qrCode);
+        toast({
+          title: "QR code gerado",
+          description: "Escaneie o QR code com seu WhatsApp.",
+        });
+      } else {
+        // QR code not available yet, start polling
+        setQrCodeData("");
+        toast({
+          title: "Gerando QR code",
+          description: "Aguarde enquanto o QR code é gerado...",
+        });
         
-        if (qrCode && qrCode.length > 100) {
-          clearInterval(pollInterval);
-          setQrCodeData(qrCode);
-          toast({
-            title: "QR code gerado",
-            description: "Escaneie o QR code com seu WhatsApp.",
-          });
-        } else if (attempts >= maxAttempts) {
-          clearInterval(pollInterval);
-          toast({
-            title: "Timeout",
-            description: "QR code não foi gerado. Tente novamente.",
-            variant: "destructive",
-          });
-        }
-      }, 2000); // Check every 2 seconds
+        const instanceName = data.instanceName || selectedInstance?.instanceName;
+        
+        // Poll for QR code with timeout
+        let attempts = 0;
+        const maxAttempts = 15; // 30 seconds total
+        
+        const pollInterval = setInterval(async () => {
+          attempts++;
+          const updatedQrCode = await pollForQrCode(instanceName);
+          
+          if (updatedQrCode && updatedQrCode.length > 100) {
+            clearInterval(pollInterval);
+            setQrCodeData(updatedQrCode);
+            toast({
+              title: "QR code gerado",
+              description: "Escaneie o QR code com seu WhatsApp.",
+            });
+          } else if (attempts >= maxAttempts) {
+            clearInterval(pollInterval);
+            toast({
+              title: "Timeout",
+              description: "QR code não foi gerado. Tente novamente.",
+              variant: "destructive",
+            });
+          }
+        }, 2000); // Check every 2 seconds
+      }
     },
     onError: (error: any) => {
       let errorMessage = error.message || "Erro ao conectar instância";
