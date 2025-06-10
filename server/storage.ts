@@ -1512,8 +1512,18 @@ Obrigado pela preferência! 🙏`;
       });
 
       console.log('Response status:', response.status);
-      const responseData = await response.json();
-      console.log('Response data:', responseData);
+      
+      let responseData;
+      const responseText = await response.text();
+      
+      try {
+        responseData = JSON.parse(responseText);
+        console.log('Response data:', responseData);
+      } catch (parseError) {
+        console.error('❌ Failed to parse response as JSON. Response text:', responseText.substring(0, 500));
+        console.error('Parse error:', parseError);
+        return { success: false, message: "Erro na configuração da Evolution API. Verifique a URL e chave da API nas configurações globais." };
+      }
 
       if (response.ok && responseData.key) {
         console.log('✅ Review invitation sent successfully!');
