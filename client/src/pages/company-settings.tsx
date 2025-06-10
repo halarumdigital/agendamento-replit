@@ -1520,6 +1520,7 @@ export default function CompanySettings() {
                       </p>
                     </CardContent>
                   </Card>
+                </div>
               )}
             </TabsContent>
 
@@ -1597,9 +1598,10 @@ export default function CompanySettings() {
               </Tabs>
             </TabsContent>
           </Tabs>
+        </div>
 
-          {/* QR Code Dialog */}
-          <Dialog open={showQrDialog} onOpenChange={setShowQrDialog}>
+        {/* QR Code Dialog */}
+        <Dialog open={showQrDialog} onOpenChange={setShowQrDialog}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">

@@ -11,7 +11,7 @@ import Landing from "@/pages/landing";
 import Login from "@/pages/login";
 import CompanyLogin from "@/pages/company-login";
 import CompanyDashboard from "@/pages/company-dashboard";
-import CompanySettings from "@/pages/company-settings";
+import CompanySettings from "@/pages/company-settings-fixed";
 import CompanyServices from "@/pages/company-services";
 import CompanyProfessionals from "@/pages/company-professionals";
 import CompanyClients from "@/pages/company-clients";
