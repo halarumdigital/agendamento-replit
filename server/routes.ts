@@ -3702,13 +3702,22 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
   // Update tasks table schema
   app.post("/api/admin/update-tasks-schema", async (req, res) => {
     try {
-      // Add whatsapp_number column if it doesn't exist
-      await db.execute(`
-        ALTER TABLE tasks 
-        ADD COLUMN IF NOT EXISTS whatsapp_number VARCHAR(20)
-      `);
+      // Check if column exists first
+      const [columns] = await db.execute(`
+        SHOW COLUMNS FROM tasks LIKE 'whatsapp_number'
+      `) as any;
+      
+      if (columns.length === 0) {
+        // Add whatsapp_number column if it doesn't exist
+        await db.execute(`
+          ALTER TABLE tasks 
+          ADD COLUMN whatsapp_number VARCHAR(20)
+        `);
+        console.log('✅ WhatsApp column added to tasks table');
+      } else {
+        console.log('✅ WhatsApp column already exists in tasks table');
+      }
 
-      console.log('✅ Tasks table schema updated successfully');
       res.json({ message: "Schema da tabela de tarefas atualizado com sucesso" });
     } catch (error: any) {
       console.error("Error updating tasks table schema:", error);
