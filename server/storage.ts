@@ -481,6 +481,9 @@ export class DatabaseStorage implements IStorage {
   // Messages operations
   async createMessage(messageData: InsertMessage): Promise<Message> {
     try {
+      // Ensure tables exist first
+      await ensureConversationTables();
+      
       await db
         .insert(messages)
         .values(messageData);
@@ -877,3 +880,13 @@ export class DatabaseStorage implements IStorage {
 }
 
 export const storage = new DatabaseStorage();
+
+// Initialize conversation tables on startup
+(async () => {
+  try {
+    await ensureConversationTables();
+    console.log("✅ Conversation tables initialized");
+  } catch (error) {
+    console.error("❌ Error initializing conversation tables:", error);
+  }
+})();
