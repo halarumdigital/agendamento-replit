@@ -279,11 +279,16 @@ export default function CompanyClients() {
     setEditingClient(client);
     
     // Format birth date for HTML date input (YYYY-MM-DD)
+    // Handle timezone issues by using local date components
     let formattedBirthDate = "";
     if (client.birthDate) {
       const date = new Date(client.birthDate);
       if (!isNaN(date.getTime())) {
-        formattedBirthDate = date.toISOString().split('T')[0];
+        // Use local date components to avoid timezone issues
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        formattedBirthDate = `${year}-${month}-${day}`;
       }
     }
     
@@ -315,7 +320,13 @@ export default function CompanyClients() {
     if (!dateString) return '';
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return '';
-    return date.toLocaleDateString('pt-BR');
+    
+    // Use local date components to avoid timezone issues
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    
+    return `${day}/${month}/${year}`;
   };
 
   if (isLoading) {
