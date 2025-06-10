@@ -279,30 +279,26 @@ export default function CompanyClients() {
     setEditingClient(client);
     
     // Format birth date for HTML date input (YYYY-MM-DD)
-    // Handle timezone issues by using local date components
+    // Extract date components directly from ISO string to avoid timezone issues
     let formattedBirthDate = "";
     if (client.birthDate) {
       const dateString = client.birthDate.toString();
       
-      // Handle both ISO date strings and Date objects from the database
-      let date: Date;
       if (dateString.includes('T')) {
-        // ISO string from database - parse as UTC but use local components
-        date = new Date(dateString);
+        // Extract YYYY-MM-DD part from ISO string (before the 'T')
+        formattedBirthDate = dateString.split('T')[0];
       } else if (dateString.includes('-') && dateString.length === 10) {
-        // Date string in YYYY-MM-DD format - parse as local date
-        const parts = dateString.split('-');
-        date = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+        // Already in YYYY-MM-DD format
+        formattedBirthDate = dateString;
       } else {
-        date = new Date(dateString);
-      }
-      
-      if (!isNaN(date.getTime())) {
-        // Use local date components to avoid timezone issues
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        formattedBirthDate = `${year}-${month}-${day}`;
+        // Fallback to date conversion
+        const date = new Date(dateString);
+        if (!isNaN(date.getTime())) {
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          formattedBirthDate = `${year}-${month}-${day}`;
+        }
       }
     }
     
@@ -333,38 +329,31 @@ export default function CompanyClients() {
   const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return '';
     
-    console.log('formatDate input:', dateString, typeof dateString);
-    
-    // Handle both ISO date strings and Date objects from the database
-    let date: Date;
+    // For birthday dates, extract the date components from the ISO string directly
+    // to avoid timezone conversion issues
     if (typeof dateString === 'string' && dateString.includes('T')) {
-      // ISO string from database
-      console.log('Processing as ISO string');
-      date = new Date(dateString);
-    } else {
-      // Date string in YYYY-MM-DD format - parse as local date
-      console.log('Processing as date string');
-      const parts = dateString.toString().split('-');
+      // Extract YYYY-MM-DD part from ISO string (before the 'T')
+      const datePart = dateString.split('T')[0];
+      const parts = datePart.split('-');
+      
       if (parts.length === 3) {
-        date = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-        console.log('Created date from parts:', parts, 'Result:', date);
-      } else {
-        date = new Date(dateString);
-        console.log('Created date directly:', date);
+        const year = parts[0];
+        const month = parts[1];
+        const day = parts[2];
+        
+        return `${day}/${month}/${year}`;
       }
     }
     
+    // Fallback for other date formats
+    const date = new Date(dateString);
     if (isNaN(date.getTime())) return '';
     
-    // Use local date components to avoid timezone issues
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = date.getFullYear();
     
-    const result = `${day}/${month}/${year}`;
-    console.log('formatDate result:', result);
-    
-    return result;
+    return `${day}/${month}/${year}`;
   };
 
   if (isLoading) {
