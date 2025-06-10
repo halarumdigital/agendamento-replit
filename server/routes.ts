@@ -698,16 +698,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 Importante: Você está representando a empresa "${company.fantasyName}" via WhatsApp. 
 
-PROFISSIONAIS DISPONÍVEIS:
+PROFISSIONAIS DISPONÍVEIS PARA AGENDAMENTO:
 ${availableProfessionals || 'Nenhum profissional cadastrado no momento'}
 
-INSTRUÇÕES ESPECÍFICAS:
-- Quando o cliente quiser agendar um horário, SEMPRE ofereça a lista de profissionais disponíveis
-- Use o formato: "Temos os seguintes profissionais disponíveis: [lista dos profissionais]"
+INSTRUÇÕES OBRIGATÓRIAS:
+- SEMPRE que o cliente mencionar "agendar", "horário", "agendamento" ou similar, ofereça IMEDIATAMENTE a lista completa de profissionais
+- Use o formato exato: "Temos os seguintes profissionais disponíveis:\n[lista dos profissionais]\n\nCom qual profissional você gostaria de agendar?"
+- NÃO pergunte apenas "com qual profissional" sem mostrar a lista
+- SEMPRE mostre todos os profissionais disponíveis antes de pedir para escolher
 - Mantenha respostas concisas e adequadas para mensagens de texto
 - Seja profissional mas amigável
 - Use o histórico da conversa para dar respostas contextualizadas
-- Se necessário, peça informações de contato para seguimento
 - Limite respostas a no máximo 200 palavras por mensagem
 - Lembre-se do que já foi discutido anteriormente na conversa`;
 
