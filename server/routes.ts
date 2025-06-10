@@ -831,41 +831,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isQrCodeEvent) {
         console.log('📱 QR code updated for instance:', instanceName);
         
-        // Extract QR code from webhook data
-        // Log the complete structure to understand the format
-        console.log('🔍 Complete webhook structure:', JSON.stringify(webhookData, null, 2));
+        // Extract QR code from Evolution API webhook
+        // The QR code comes in the 'data.base64' field as a complete data URL
+        let qrCodeUrl = null;
         
-        // Try multiple paths for QR code data
-        const qrCodeData = webhookData.data?.base64 || 
-                          webhookData.data?.qrcode || 
-                          webhookData.qrcode ||
-                          webhookData.base64;
-        
-        console.log('🔍 QR code data found:', !!qrCodeData);
-        console.log('🔍 QR code type:', typeof qrCodeData);
-        
-        if (qrCodeData) {
+        if (webhookData.data && webhookData.data.base64) {
+          qrCodeUrl = webhookData.data.base64;
+          console.log('QR code found in webhook, length:', qrCodeUrl.length);
+          
           try {
             // Update instance with new QR code
             const whatsappInstance = await storage.getWhatsappInstanceByName(instanceName);
             if (whatsappInstance) {
-              // The base64 data is already a complete data URL
-              const qrCodeUrl = qrCodeData;
-              
               await storage.updateWhatsappInstance(whatsappInstance.id, {
                 qrCode: qrCodeUrl,
                 status: 'connecting'
               });
-              console.log('✅ QR code updated in database for instance:', instanceName);
-              console.log('📱 QR code URL length:', qrCodeUrl.length);
+              console.log('QR code updated successfully for instance:', instanceName);
             }
           } catch (error) {
-            console.error('❌ Error updating QR code:', error);
+            console.error('Error updating QR code:', error);
           }
         } else {
-          console.log('⚠️ No QR code found in webhook data');
-          console.log('🔍 Available keys in data:', Object.keys(webhookData.data || {}));
-          console.log('🔍 Available keys in root:', Object.keys(webhookData || {}));
+          console.log('No QR code data found in webhook');
         }
         
         return res.json({ received: true, processed: true, type: 'qrcode' });
