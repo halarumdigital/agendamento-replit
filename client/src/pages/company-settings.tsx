@@ -79,8 +79,6 @@ export default function CompanySettings() {
     resolver: zodResolver(whatsappInstanceSchema),
     defaultValues: {
       instanceName: "",
-      apiUrl: "",
-      apiKey: "",
     },
   });
 
@@ -390,33 +388,7 @@ export default function CompanySettings() {
                     )}
                   />
 
-                  <FormField
-                    control={whatsappForm.control}
-                    name="apiUrl"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>URL da API</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="https://sua-api.com" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
 
-                  <FormField
-                    control={whatsappForm.control}
-                    name="apiKey"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Chave da API</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="password" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
 
                   <Button type="submit" disabled={whatsappMutation.isPending}>
                     {whatsappMutation.isPending ? "Criando..." : "Criar Instância"}
