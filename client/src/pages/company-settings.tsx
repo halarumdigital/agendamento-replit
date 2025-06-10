@@ -335,6 +335,22 @@ export default function CompanySettings() {
     }
   };
 
+  // Function to refresh instance status from database
+  const refreshInstanceStatus = async (instanceName: string) => {
+    try {
+      const response = await apiRequest("GET", `/api/company/whatsapp/instances/${instanceName}/refresh-status`);
+      if (response.ok) {
+        const statusData = await response.json();
+        // Refresh the instances list to update UI
+        queryClient.invalidateQueries({ queryKey: ["/api/company/whatsapp/instances"] });
+        return statusData.status;
+      }
+    } catch (error) {
+      console.error("Error refreshing instance status:", error);
+    }
+    return null;
+  };
+
   const connectInstanceMutation = useMutation({
     mutationFn: async (instanceName: string) => {
       console.log(`🚀 Connecting instance: ${instanceName}`);
@@ -409,6 +425,27 @@ export default function CompanySettings() {
             });
           }
         }, 2000); // Check every 2 seconds
+      }
+
+      // Start status polling to detect when connection is established
+      const instanceName = data.instanceName || selectedInstance?.instanceName;
+      if (instanceName) {
+        const statusPollInterval = setInterval(async () => {
+          const currentStatus = await refreshInstanceStatus(instanceName);
+          if (currentStatus === 'connected') {
+            clearInterval(statusPollInterval);
+            setShowQrDialog(false);
+            toast({
+              title: "WhatsApp conectado!",
+              description: "Sua instância WhatsApp foi conectada com sucesso.",
+            });
+          }
+        }, 3000); // Check every 3 seconds
+
+        // Clear status polling after 2 minutes
+        setTimeout(() => {
+          clearInterval(statusPollInterval);
+        }, 120000);
       }
     },
     onError: (error: any) => {

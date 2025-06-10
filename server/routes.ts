@@ -3162,6 +3162,35 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
     }
   });
 
+  // Real-time status refresh endpoint
+  app.get('/api/company/whatsapp/instances/:instanceName/refresh-status', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const { instanceName } = req.params;
+      
+      // Get the instance from database
+      const instance = await storage.getWhatsappInstanceByName(instanceName);
+      if (!instance || instance.companyId !== companyId) {
+        return res.status(404).json({ message: "Instância não encontrada" });
+      }
+
+      // Return current database status immediately
+      res.json({
+        instanceName,
+        status: instance.status || 'disconnected',
+        qrCode: instance.qrCode,
+        lastUpdated: instance.updatedAt || new Date()
+      });
+    } catch (error) {
+      console.error("Error refreshing WhatsApp instance status:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
   // Disconnect WhatsApp instance
   app.post("/api/company/whatsapp/instances/:instanceName/disconnect", async (req: any, res) => {
     try {
