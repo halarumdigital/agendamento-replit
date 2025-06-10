@@ -2345,7 +2345,34 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
     }
   });
 
-  // WhatsApp instances routes
+  // WhatsApp instances routes - Company-specific endpoint
+  app.get('/api/companies/:companyId/whatsapp-instances', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      // Ensure the requested companyId matches the authenticated company
+      const requestedCompanyId = parseInt(req.params.companyId);
+      if (requestedCompanyId !== companyId) {
+        return res.status(403).json({ message: "Acesso negado" });
+      }
+
+      try {
+        const instances = await storage.getWhatsappInstancesByCompany(companyId);
+        res.json(instances);
+      } catch (error: any) {
+        console.error("Error getting WhatsApp instances:", error);
+        res.status(500).json({ message: "Erro ao buscar instâncias WhatsApp" });
+      }
+    } catch (error) {
+      console.error("Error in WhatsApp instances endpoint:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  // Original WhatsApp instances routes
   app.get('/api/company/whatsapp/instances', async (req: any, res) => {
     try {
       const companyId = req.session.companyId;
