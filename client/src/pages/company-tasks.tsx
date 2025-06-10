@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { CalendarIcon, CheckCircle, Clock, Edit2, Plus, Trash2, XCircle } from "lucide-react";
+import { CalendarIcon, CheckCircle, Clock, Edit2, MessageCircle, Plus, Trash2, XCircle } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -434,15 +434,30 @@ export default function CompanyTasks() {
                       <Clock className="w-4 h-4" />
                       <span>{getRecurrenceLabel(task.recurrence)}</span>
                     </div>
+                    {task.whatsappNumber && (
+                      <div className="flex items-center gap-2 text-sm text-green-600">
+                        <MessageCircle className="w-4 h-4" />
+                        <span>WhatsApp: {task.whatsappNumber}</span>
+                      </div>
+                    )}
                     <div className="pt-2">
                       <Button
-                        variant="outline"
+                        variant={task.isActive ? "outline" : "default"}
                         size="sm"
                         onClick={() => toggleTaskStatus(task)}
-                        className="w-full"
+                        className={`w-full ${task.isActive ? 'text-red-600 hover:text-red-800 hover:bg-red-50' : 'bg-green-600 hover:bg-green-700 text-white'}`}
                       >
-                        <XCircle className="w-4 h-4 mr-2" />
-                        Desativar
+                        {task.isActive ? (
+                          <>
+                            <XCircle className="w-4 h-4 mr-2" />
+                            Desativar
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            Ativar
+                          </>
+                        )}
                       </Button>
                     </div>
                   </div>
