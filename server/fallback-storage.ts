@@ -404,6 +404,32 @@ class FallbackStorage implements IStorage {
     return this.appointments.filter(apt => apt.companyId === companyId);
   }
 
+  async getAppointmentsByClient(clientId: number, companyId: number): Promise<any[]> {
+    const client = this.clients.find(c => c.id === clientId && c.companyId === companyId);
+    if (!client) return [];
+
+    return this.appointments
+      .filter(apt => apt.companyId === companyId && apt.clientPhone === client.phone)
+      .map(apt => {
+        const service = this.services.find(s => s.id === apt.serviceId);
+        const professional = this.professionals.find(p => p.id === apt.professionalId);
+        const status = this.statuses.find(st => st.id === parseInt(apt.status || '1'));
+        
+        return {
+          id: apt.id,
+          appointmentDate: apt.appointmentDate,
+          appointmentTime: apt.appointmentTime,
+          price: apt.totalPrice,
+          notes: apt.notes,
+          serviceName: service?.name || 'Serviço não encontrado',
+          professionalName: professional?.name || 'Profissional não encontrado',
+          statusName: status?.name || 'Pendente',
+          statusColor: status?.color || '#A0A0A0'
+        };
+      })
+      .sort((a, b) => new Date(b.appointmentDate).getTime() - new Date(a.appointmentDate).getTime());
+  }
+
   async getAppointment(id: number): Promise<Appointment | undefined> {
     return this.appointments.find(apt => apt.id === id);
   }

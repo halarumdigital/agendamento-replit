@@ -141,6 +141,7 @@ export interface IStorage {
   
   // Appointments operations
   getAppointmentsByCompany(companyId: number, month?: string): Promise<Appointment[]>;
+  getAppointmentsByClient(clientId: number, companyId: number): Promise<any[]>;
   getAppointment(id: number): Promise<Appointment | undefined>;
   createAppointment(appointment: InsertAppointment): Promise<Appointment>;
   updateAppointment(id: number, appointment: Partial<InsertAppointment>): Promise<Appointment>;
@@ -696,6 +697,34 @@ export class DatabaseStorage implements IStorage {
       return await query.orderBy(desc(appointments.appointmentDate));
     } catch (error: any) {
       console.error("Error getting appointments:", error);
+      return [];
+    }
+  }
+
+  async getAppointmentsByClient(clientId: number, companyId: number): Promise<any[]> {
+    try {
+      const results = await db.execute(`
+        SELECT 
+          a.id,
+          a.appointment_date as appointmentDate,
+          a.appointment_time as appointmentTime,
+          a.total_price as price,
+          a.notes,
+          s.name as serviceName,
+          p.name as professionalName,
+          st.name as statusName,
+          st.color as statusColor
+        FROM appointments a
+        LEFT JOIN services s ON a.service_id = s.id
+        LEFT JOIN professionals p ON a.professional_id = p.id
+        LEFT JOIN status st ON a.status = st.id
+        LEFT JOIN clients c ON (a.client_phone = c.phone AND a.company_id = c.company_id)
+        WHERE c.id = ${clientId} AND a.company_id = ${companyId}
+        ORDER BY a.appointment_date DESC, a.appointment_time DESC
+      `);
+      return results as any[];
+    } catch (error: any) {
+      console.error("Error getting appointments by client:", error);
       return [];
     }
   }

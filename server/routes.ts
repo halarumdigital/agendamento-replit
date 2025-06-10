@@ -1129,6 +1129,27 @@ INSTRUÇÕES OBRIGATÓRIAS:
     }
   });
 
+  // Get appointments by client
+  app.get('/api/company/appointments/client/:clientId', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const clientId = parseInt(req.params.clientId);
+      if (isNaN(clientId)) {
+        return res.status(400).json({ message: "ID do cliente inválido" });
+      }
+
+      const appointments = await storage.getAppointmentsByClient(clientId, companyId);
+      res.json(appointments);
+    } catch (error) {
+      console.error("Error fetching client appointments:", error);
+      res.status(500).json({ message: "Erro ao buscar histórico do cliente" });
+    }
+  });
+
   app.post('/api/company/appointments', async (req: any, res) => {
     try {
       const companyId = req.session.companyId;
