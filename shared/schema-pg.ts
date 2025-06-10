@@ -1,21 +1,22 @@
 import {
-  mysqlTable,
+  pgTable,
   text,
   varchar,
   timestamp,
   json,
   index,
-  int,
+  integer,
   decimal,
   boolean,
   date,
-} from "drizzle-orm/mysql-core";
+  serial,
+} from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
 
 // Session storage table for express-session
-export const sessions = mysqlTable(
+export const sessions = pgTable(
   "sessions",
   {
     sid: varchar("sid", { length: 255 }).primaryKey(),
@@ -26,8 +27,8 @@ export const sessions = mysqlTable(
 );
 
 // Admin users table
-export const admins = mysqlTable("admins", {
-  id: int("id").primaryKey().autoincrement(),
+export const admins = pgTable("admins", {
+  id: serial("id").primaryKey(),
   username: varchar("username", { length: 100 }).notNull().unique(),
   email: varchar("email", { length: 255 }).notNull().unique(),
   password: varchar("password", { length: 255 }).notNull(),
@@ -35,12 +36,12 @@ export const admins = mysqlTable("admins", {
   lastName: varchar("last_name", { length: 100 }),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Companies table
-export const companies = mysqlTable("companies", {
-  id: int("id").primaryKey().autoincrement(),
+export const companies = pgTable("companies", {
+  id: serial("id").primaryKey(),
   fantasyName: varchar("fantasy_name", { length: 255 }).notNull(),
   document: varchar("document", { length: 20 }).notNull().unique(),
   address: text("address").notNull(),
@@ -48,23 +49,23 @@ export const companies = mysqlTable("companies", {
   password: varchar("password", { length: 255 }).notNull(),
   aiAgentPrompt: text("ai_agent_prompt"),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Subscription plans table
-export const plans = mysqlTable("plans", {
-  id: int("id").primaryKey().autoincrement(),
+export const plans = pgTable("plans", {
+  id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
-  freeDays: int("free_days").notNull().default(0),
+  freeDays: integer("free_days").notNull().default(0),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Global settings table
-export const globalSettings = mysqlTable("global_settings", {
-  id: int("id").primaryKey().autoincrement(),
+export const globalSettings = pgTable("global_settings", {
+  id: serial("id").primaryKey(),
   systemName: varchar("system_name", { length: 255 }).notNull().default("AdminPro"),
   logoUrl: varchar("logo_url", { length: 500 }),
   primaryColor: varchar("primary_color", { length: 7 }).notNull().default("#2563eb"),
@@ -75,15 +76,15 @@ export const globalSettings = mysqlTable("global_settings", {
   evolutionApiGlobalKey: varchar("evolution_api_global_key", { length: 500 }),
   openaiApiKey: varchar("openai_api_key", { length: 500 }),
   openaiModel: varchar("openai_model", { length: 100 }).notNull().default("gpt-4o"),
-  openaiTemperature: decimal("openai_temperature", { precision: 3, scale: 2 }).notNull().default("0.70").$type<number>(),
-  openaiMaxTokens: int("openai_max_tokens").notNull().default(4000),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  openaiTemperature: decimal("openai_temperature", { precision: 3, scale: 2 }).notNull().default("0.70"),
+  openaiMaxTokens: integer("openai_max_tokens").notNull().default(4000),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // WhatsApp instances table
-export const whatsappInstances = mysqlTable("whatsapp_instances", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
+export const whatsappInstances = pgTable("whatsapp_instances", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
   instanceName: varchar("instance_name", { length: 255 }).notNull(),
   status: varchar("status", { length: 50 }),
   qrCode: text("qr_code"),
@@ -91,25 +92,25 @@ export const whatsappInstances = mysqlTable("whatsapp_instances", {
   apiUrl: varchar("api_url", { length: 500 }),
   apiKey: varchar("api_key", { length: 500 }),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Conversations table
-export const conversations = mysqlTable("conversations", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
-  whatsappInstanceId: int("whatsapp_instance_id").notNull(),
+export const conversations = pgTable("conversations", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
+  whatsappInstanceId: integer("whatsapp_instance_id").notNull(),
   phoneNumber: varchar("phone_number", { length: 50 }).notNull(),
   contactName: varchar("contact_name", { length: 255 }),
   lastMessageAt: timestamp("last_message_at").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Messages table
-export const messages = mysqlTable("messages", {
-  id: int("id").primaryKey().autoincrement(),
-  conversationId: int("conversation_id").notNull(),
+export const messages = pgTable("messages", {
+  id: serial("id").primaryKey(),
+  conversationId: integer("conversation_id").notNull(),
   role: varchar("role", { length: 20 }).notNull(),
   content: text("content").notNull(),
   messageId: varchar("message_id", { length: 255 }),
@@ -120,41 +121,41 @@ export const messages = mysqlTable("messages", {
 });
 
 // Services table
-export const services = mysqlTable("services", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
+export const services = pgTable("services", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
-  duration: int("duration").notNull(),
+  duration: integer("duration").notNull(),
   isActive: boolean("is_active").notNull().default(true),
-  points: int("points").default(0),
+  points: integer("points").default(0),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Professionals table
-export const professionals = mysqlTable("professionals", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
+export const professionals = pgTable("professionals", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }),
   phone: varchar("phone", { length: 50 }),
-  specialties: json("specialties").$type<string[]>(),
+  specialties: text("specialties").array(),
   workDays: json("work_days"),
   workStartTime: varchar("work_start_time", { length: 10 }),
   workEndTime: varchar("work_end_time", { length: 10 }),
   active: boolean("active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Appointments table
-export const appointments = mysqlTable("appointments", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
-  professionalId: int("professional_id").notNull(),
-  serviceId: int("service_id").notNull(),
+export const appointments = pgTable("appointments", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
+  professionalId: integer("professional_id").notNull(),
+  serviceId: integer("service_id").notNull(),
   clientName: varchar("client_name", { length: 255 }).notNull(),
   clientPhone: varchar("client_phone", { length: 50 }),
   clientEmail: varchar("client_email", { length: 255 }),
@@ -163,93 +164,93 @@ export const appointments = mysqlTable("appointments", {
   status: varchar("status", { length: 50 }).notNull().default("agendado"),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Status table
-export const status = mysqlTable("status", {
-  id: int("id").primaryKey().autoincrement(),
+export const status = pgTable("status", {
+  id: serial("id").primaryKey(),
   name: varchar("name", { length: 100 }).notNull(),
   color: varchar("color", { length: 7 }).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Birthday messages table
+export const birthdayMessages = pgTable("birthday_messages", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
+  message: text("message").notNull(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Birthday message history table
+export const birthdayMessageHistory = pgTable("birthday_message_history", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
+  clientId: integer("client_id").notNull(),
+  message: text("message").notNull(),
+  sentAt: timestamp("sent_at").defaultNow(),
+});
+
 // Clients table
-export const clients = mysqlTable("clients", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
+export const clients = pgTable("clients", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }),
   phone: varchar("phone", { length: 50 }),
   birthDate: date("birth_date"),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
-});
-
-// Birthday messages table
-export const birthdayMessages = mysqlTable("birthday_messages", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
-  message: text("message").notNull(),
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
-});
-
-// Birthday message history table
-export const birthdayMessageHistory = mysqlTable("birthday_message_history", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
-  clientId: int("client_id").notNull(),
-  message: text("message").notNull(),
-  sentAt: timestamp("sent_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Reminder settings table
-export const reminderSettings = mysqlTable("reminder_settings", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
+export const reminderSettings = pgTable("reminder_settings", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
   reminderType: varchar("reminder_type", { length: 50 }).notNull(),
   isActive: boolean("is_active").default(true),
   messageTemplate: text("message_template").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Reminder history table
-export const reminderHistory = mysqlTable("reminder_history", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
-  appointmentId: int("appointment_id").notNull(),
+export const reminderHistory = pgTable("reminder_history", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
+  appointmentId: integer("appointment_id").notNull(),
   reminderType: varchar("reminder_type", { length: 50 }).notNull(),
   clientPhone: varchar("client_phone", { length: 20 }).notNull(),
   message: text("message").notNull(),
   sentAt: timestamp("sent_at").defaultNow(),
   status: varchar("status", { length: 20 }).default("sent"),
-  whatsappInstanceId: int("whatsapp_instance_id"),
+  whatsappInstanceId: integer("whatsapp_instance_id"),
 });
 
 // Professional reviews table
-export const professionalReviews = mysqlTable("professional_reviews", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
-  professionalId: int("professional_id").notNull(),
-  appointmentId: int("appointment_id").notNull(),
+export const professionalReviews = pgTable("professional_reviews", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
+  professionalId: integer("professional_id").notNull(),
+  appointmentId: integer("appointment_id").notNull(),
   clientPhone: varchar("client_phone", { length: 50 }).notNull(),
   clientName: varchar("client_name", { length: 255 }).notNull(),
-  rating: int("rating").notNull(),
+  rating: integer("rating").notNull(),
   comment: text("comment"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Review invitations table
-export const reviewInvitations = mysqlTable("review_invitations", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
-  whatsappInstanceId: int("whatsapp_instance_id"),
-  professionalId: int("professional_id").notNull(),
-  appointmentId: int("appointment_id").notNull(),
+export const reviewInvitations = pgTable("review_invitations", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
+  whatsappInstanceId: integer("whatsapp_instance_id"),
+  professionalId: integer("professional_id").notNull(),
+  appointmentId: integer("appointment_id").notNull(),
   clientPhone: varchar("client_phone", { length: 50 }).notNull(),
   invitationToken: varchar("invitation_token", { length: 255 }).notNull().unique(),
   sentAt: timestamp("sent_at"),
@@ -259,9 +260,9 @@ export const reviewInvitations = mysqlTable("review_invitations", {
 });
 
 // Tasks table
-export const tasks = mysqlTable("tasks", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
+export const tasks = pgTable("tasks", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   dueDate: date("due_date").notNull(),
@@ -270,46 +271,46 @@ export const tasks = mysqlTable("tasks", {
   whatsappNumber: varchar("whatsapp_number", { length: 50 }),
   active: boolean("active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Task reminders table
-export const taskReminders = mysqlTable("task_reminders", {
-  id: int("id").primaryKey().autoincrement(),
-  taskId: int("task_id").notNull(),
+export const taskReminders = pgTable("task_reminders", {
+  id: serial("id").primaryKey(),
+  taskId: integer("task_id").notNull(),
   whatsappNumber: varchar("whatsapp_number", { length: 50 }).notNull(),
   message: text("message").notNull(),
   sentAt: timestamp("sent_at").defaultNow(),
 });
 
 // Client points table
-export const clientPoints = mysqlTable("client_points", {
-  id: int("id").primaryKey().autoincrement(),
-  clientId: int("client_id").notNull(),
-  companyId: int("company_id").notNull(),
-  totalPoints: int("total_points").default(0),
+export const clientPoints = pgTable("client_points", {
+  id: serial("id").primaryKey(),
+  clientId: integer("client_id").notNull(),
+  companyId: integer("company_id").notNull(),
+  totalPoints: integer("total_points").default(0),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Points campaigns table
-export const pointsCampaigns = mysqlTable("points_campaigns", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
+export const pointsCampaigns = pgTable("points_campaigns", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
-  requiredPoints: int("required_points").notNull(),
-  rewardServiceId: int("reward_service_id").notNull(),
+  requiredPoints: integer("required_points").notNull(),
+  rewardServiceId: integer("reward_service_id").notNull(),
   active: boolean("active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Points history table
-export const pointsHistory = mysqlTable("points_history", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
-  clientId: int("client_id").notNull(),
-  pointsChange: int("points_change").notNull(),
+export const pointsHistory = pgTable("points_history", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
+  clientId: integer("client_id").notNull(),
+  pointsChange: integer("points_change").notNull(),
   description: text("description").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -332,6 +333,96 @@ export const clientsRelations = relations(clients, ({ one }) => ({
   company: one(companies, {
     fields: [clients.companyId],
     references: [companies.id],
+  }),
+}));
+
+export const plansRelations = relations(plans, ({ many }) => ({
+  companies: many(companies),
+}));
+
+export const whatsappInstancesRelations = relations(whatsappInstances, ({ one, many }) => ({
+  company: one(companies, {
+    fields: [whatsappInstances.companyId],
+    references: [companies.id],
+  }),
+  conversations: many(conversations),
+}));
+
+export const conversationsRelations = relations(conversations, ({ one, many }) => ({
+  whatsappInstance: one(whatsappInstances, {
+    fields: [conversations.whatsappInstanceId],
+    references: [whatsappInstances.id],
+  }),
+  messages: many(messages),
+}));
+
+export const messagesRelations = relations(messages, ({ one }) => ({
+  conversation: one(conversations, {
+    fields: [messages.conversationId],
+    references: [conversations.id],
+  }),
+}));
+
+export const servicesRelations = relations(services, ({ one, many }) => ({
+  company: one(companies, {
+    fields: [services.companyId],
+    references: [companies.id],
+  }),
+  appointments: many(appointments),
+}));
+
+export const professionalsRelations = relations(professionals, ({ one, many }) => ({
+  company: one(companies, {
+    fields: [professionals.companyId],
+    references: [companies.id],
+  }),
+  appointments: many(appointments),
+  reviews: many(professionalReviews),
+}));
+
+export const appointmentsRelations = relations(appointments, ({ one, many }) => ({
+  company: one(companies, {
+    fields: [appointments.companyId],
+    references: [companies.id],
+  }),
+  professional: one(professionals, {
+    fields: [appointments.professionalId],
+    references: [professionals.id],
+  }),
+  service: one(services, {
+    fields: [appointments.serviceId],
+    references: [services.id],
+  }),
+  reviews: many(professionalReviews),
+}));
+
+export const professionalReviewsRelations = relations(professionalReviews, ({ one }) => ({
+  company: one(companies, {
+    fields: [professionalReviews.companyId],
+    references: [companies.id],
+  }),
+  professional: one(professionals, {
+    fields: [professionalReviews.professionalId],
+    references: [professionals.id],
+  }),
+  appointment: one(appointments, {
+    fields: [professionalReviews.appointmentId],
+    references: [appointments.id],
+  }),
+}));
+
+export const reviewInvitationsRelations = relations(reviewInvitations, ({ one }) => ({
+  company: one(companies, {
+    fields: [reviewInvitations.companyId],
+    references: [companies.id],
+  }),
+  professional: one(professionals, {
+    fields: [reviewInvitations.professionalId],
+    references: [professionals.id],
+  }),
+  appointment: one(appointments, {
+    fields: [reviewInvitations.appointmentId],
+    references: [appointments.id],
   }),
 }));
 
