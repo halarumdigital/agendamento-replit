@@ -40,7 +40,7 @@ import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
 
 // Helper function to create conversation and message tables
-async function ensureConversationTables() {
+export async function ensureConversationTables() {
   try {
     await db.execute(`
       CREATE TABLE IF NOT EXISTS conversations (
@@ -57,12 +57,15 @@ async function ensureConversationTables() {
       )
     `);
     
+    // Drop and recreate messages table with proper UTF-8 support
+    await db.execute(`DROP TABLE IF EXISTS messages`);
+    
     await db.execute(`
-      CREATE TABLE IF NOT EXISTS messages (
+      CREATE TABLE messages (
         id INT AUTO_INCREMENT PRIMARY KEY,
         conversation_id INT NOT NULL,
         role ENUM('user', 'assistant') NOT NULL,
-        content TEXT NOT NULL,
+        content TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
         message_id VARCHAR(255),
         message_type VARCHAR(50),
         delivered BOOLEAN DEFAULT false,
@@ -70,7 +73,7 @@ async function ensureConversationTables() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         INDEX idx_conversation (conversation_id),
         INDEX idx_timestamp (timestamp)
-      )
+      ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
     `);
     
     console.log("✅ Conversation and message tables created/verified");
