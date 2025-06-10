@@ -18,6 +18,7 @@ import {
   professionalReviews,
   reviewInvitations,
   tasks,
+  taskReminders,
   type Admin,
   type InsertAdmin,
   type Company,
@@ -57,6 +58,10 @@ import {
   type Task,
   type InsertTask,
 } from "@shared/schema";
+
+// Add missing types for task reminders
+export type TaskReminder = typeof taskReminders.$inferSelect;
+export type InsertTaskReminder = typeof taskReminders.$inferInsert;
 import { db } from "./db";
 import { eq, desc, and, sql } from "drizzle-orm";
 
@@ -1639,6 +1644,39 @@ Obrigado pela preferência! 🙏`;
       console.error("Error deleting task:", error);
       throw error;
     }
+  }
+
+  // Task reminder functions
+  async createTaskReminder(reminder: InsertTaskReminder): Promise<TaskReminder> {
+    const [created] = await db.insert(taskReminders).values(reminder).returning();
+    return created;
+  }
+
+  async getLastTaskReminder(taskId: number): Promise<TaskReminder | undefined> {
+    const [reminder] = await db
+      .select()
+      .from(taskReminders)
+      .where(eq(taskReminders.taskId, taskId))
+      .orderBy(desc(taskReminders.sentAt))
+      .limit(1);
+    return reminder;
+  }
+
+  async getTaskById(id: number): Promise<Task | undefined> {
+    const [task] = await db.select().from(tasks).where(eq(tasks.id, id));
+    return task;
+  }
+
+  async getTasksByCompany(companyId: number): Promise<Task[]> {
+    return await db.select().from(tasks).where(eq(tasks.companyId, companyId));
+  }
+
+  async getAllCompanies(): Promise<Company[]> {
+    return await db.select().from(companies);
+  }
+
+  async getWhatsAppInstancesByCompany(companyId: number): Promise<WhatsappInstance[]> {
+    return await db.select().from(whatsappInstances).where(eq(whatsappInstances.companyId, companyId));
   }
 }
 

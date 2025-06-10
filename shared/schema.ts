@@ -280,6 +280,16 @@ export const tasks = mysqlTable("tasks", {
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
 
+// Task reminders table
+export const taskReminders = mysqlTable("task_reminders", {
+  id: int("id").primaryKey().autoincrement(),
+  taskId: int("task_id").notNull().references(() => tasks.id, { onDelete: "cascade" }),
+  whatsappNumber: varchar("whatsapp_number", { length: 20 }).notNull(),
+  message: text("message").notNull(),
+  sentAt: timestamp("sent_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Relations
 export const companiesRelations = relations(companies, ({ many }) => ({
   whatsappInstances: many(whatsappInstances),

@@ -3725,6 +3725,222 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
     }
   });
 
+  // Task reminder functions
+  async function checkTaskRecurrence(task: any): Promise<boolean> {
+    const now = new Date();
+    const dueDate = new Date(task.dueDate);
+    
+    // Get the last reminder sent for this task
+    const lastReminder = await storage.getLastTaskReminder(task.id);
+    const lastReminderDate = lastReminder ? new Date(lastReminder.sentAt) : null;
+    
+    switch (task.recurrence) {
+      case 'daily':
+        // Send if it's past due date and no reminder sent today
+        if (now >= dueDate) {
+          if (!lastReminderDate || !isSameDay(now, lastReminderDate)) {
+            return true;
+          }
+        }
+        break;
+        
+      case 'weekly':
+        // Send if it's past due date and no reminder sent this week
+        if (now >= dueDate) {
+          if (!lastReminderDate || !isSameWeek(now, lastReminderDate)) {
+            return true;
+          }
+        }
+        break;
+        
+      case 'biweekly':
+        // Send if it's past due date and no reminder sent in the last 2 weeks
+        if (now >= dueDate) {
+          if (!lastReminderDate || (now.getTime() - lastReminderDate.getTime()) >= (14 * 24 * 60 * 60 * 1000)) {
+            return true;
+          }
+        }
+        break;
+        
+      case 'monthly':
+        // Send if it's past due date and no reminder sent this month
+        if (now >= dueDate) {
+          if (!lastReminderDate || !isSameMonth(now, lastReminderDate)) {
+            return true;
+          }
+        }
+        break;
+    }
+    
+    return false;
+  }
+
+  function isSameDay(date1: Date, date2: Date): boolean {
+    return date1.getFullYear() === date2.getFullYear() &&
+           date1.getMonth() === date2.getMonth() &&
+           date1.getDate() === date2.getDate();
+  }
+
+  function isSameWeek(date1: Date, date2: Date): boolean {
+    const oneWeek = 7 * 24 * 60 * 60 * 1000;
+    const startOfWeek1 = new Date(date1.getTime() - (date1.getDay() * 24 * 60 * 60 * 1000));
+    const startOfWeek2 = new Date(date2.getTime() - (date2.getDay() * 24 * 60 * 60 * 1000));
+    return Math.abs(startOfWeek1.getTime() - startOfWeek2.getTime()) < oneWeek;
+  }
+
+  function isSameMonth(date1: Date, date2: Date): boolean {
+    return date1.getFullYear() === date2.getFullYear() &&
+           date1.getMonth() === date2.getMonth();
+  }
+
+  async function sendTaskReminder(task: any, whatsappInstance: any): Promise<boolean> {
+    try {
+      if (!task.whatsappNumber || !whatsappInstance) {
+        return false;
+      }
+
+      const message = `🔔 *Lembrete de Tarefa*\n\n📋 *${task.name}*\n\n📅 Vencimento: ${new Date(task.dueDate).toLocaleDateString('pt-BR')}\n🔄 Recorrência: ${getRecurrenceText(task.recurrence)}`;
+
+      const response = await fetch(`${whatsappInstance.apiUrl}/message/sendText/${whatsappInstance.instanceName}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': whatsappInstance.apiKey
+        },
+        body: JSON.stringify({
+          number: task.whatsappNumber,
+          text: message
+        })
+      });
+
+      if (response.ok) {
+        // Record the reminder sent
+        await storage.createTaskReminder({
+          taskId: task.id,
+          whatsappNumber: task.whatsappNumber,
+          sentAt: new Date(),
+          message: message
+        });
+        console.log(`✅ Task reminder sent to ${task.whatsappNumber} for task: ${task.name}`);
+        return true;
+      } else {
+        console.error(`❌ Failed to send task reminder: ${response.status}`);
+        return false;
+      }
+    } catch (error) {
+      console.error('Error sending task reminder:', error);
+      return false;
+    }
+  }
+
+  function getRecurrenceText(recurrence: string): string {
+    switch (recurrence) {
+      case 'daily': return 'Diária';
+      case 'weekly': return 'Semanal';
+      case 'biweekly': return 'Quinzenal';
+      case 'monthly': return 'Mensal';
+      default: return recurrence;
+    }
+  }
+
+  // Check and send task reminders
+  app.post("/api/admin/check-task-reminders", async (req, res) => {
+    try {
+      console.log('🔍 Checking task reminders...');
+      
+      // Get all active tasks from all companies
+      const companies = await storage.getAllCompanies();
+      let totalReminders = 0;
+      
+      for (const company of companies) {
+        try {
+          // Get active tasks for this company
+          const tasks = await storage.getTasksByCompany(company.id);
+          const activeTasks = tasks.filter(task => task.isActive);
+          
+          if (activeTasks.length === 0) {
+            continue;
+          }
+          
+          // Get WhatsApp instance for this company
+          const whatsappInstances = await storage.getWhatsAppInstancesByCompany(company.id);
+          const whatsappInstance = whatsappInstances.find(instance => instance.status === 'connected');
+          
+          if (!whatsappInstance) {
+            console.log(`⚠️ No connected WhatsApp instance for company: ${company.fantasyName}`);
+            continue;
+          }
+          
+          // Check each task
+          for (const task of activeTasks) {
+            if (task.whatsappNumber) {
+              const shouldSendReminder = await checkTaskRecurrence(task);
+              
+              if (shouldSendReminder) {
+                const sent = await sendTaskReminder(task, whatsappInstance);
+                if (sent) {
+                  totalReminders++;
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.error(`Error processing tasks for company ${company.fantasyName}:`, error);
+        }
+      }
+      
+      console.log(`✅ Task reminder check completed. ${totalReminders} reminders sent.`);
+      res.json({ 
+        message: `Verificação de lembretes concluída. ${totalReminders} lembretes enviados.`,
+        remindersSent: totalReminders
+      });
+    } catch (error: any) {
+      console.error("Error checking task reminders:", error);
+      res.status(500).json({ message: "Erro ao verificar lembretes de tarefas", error: error.message });
+    }
+  });
+
+  // Manual task reminder trigger
+  app.post("/api/company/tasks/:taskId/send-reminder", async (req: any, res) => {
+    try {
+      const { taskId } = req.params;
+      const companyId = req.user?.companyId;
+      
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+      
+      // Get task
+      const task = await storage.getTaskById(taskId);
+      if (!task || task.companyId !== companyId) {
+        return res.status(404).json({ message: "Tarefa não encontrada" });
+      }
+      
+      if (!task.whatsappNumber) {
+        return res.status(400).json({ message: "Tarefa não possui número WhatsApp configurado" });
+      }
+      
+      // Get WhatsApp instance
+      const whatsappInstances = await storage.getWhatsAppInstancesByCompany(companyId);
+      const whatsappInstance = whatsappInstances.find(instance => instance.status === 'connected');
+      
+      if (!whatsappInstance) {
+        return res.status(400).json({ message: "Nenhuma instância WhatsApp conectada" });
+      }
+      
+      const sent = await sendTaskReminder(task, whatsappInstance);
+      
+      if (sent) {
+        res.json({ message: "Lembrete enviado com sucesso" });
+      } else {
+        res.status(500).json({ message: "Erro ao enviar lembrete" });
+      }
+    } catch (error: any) {
+      console.error("Error sending manual task reminder:", error);
+      res.status(500).json({ message: "Erro ao enviar lembrete", error: error.message });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
