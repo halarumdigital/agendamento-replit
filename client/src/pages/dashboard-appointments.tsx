@@ -394,7 +394,9 @@ export default function DashboardAppointments() {
                 <DialogTitle>Novo Agendamento</DialogTitle>
               </DialogHeader>
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <form onSubmit={form.handleSubmit(onSubmit, (errors) => {
+                  console.log("Form validation errors:", errors);
+                })} className="space-y-4">
                   <FormField
                     control={form.control}
                     name="serviceId"
@@ -596,7 +598,15 @@ export default function DashboardAppointments() {
                     >
                       Cancelar
                     </Button>
-                    <Button type="submit" disabled={createAppointmentMutation.isPending}>
+                    <Button 
+                      type="submit" 
+                      disabled={createAppointmentMutation.isPending}
+                      onClick={() => {
+                        console.log("Button clicked!");
+                        console.log("Form values:", form.getValues());
+                        console.log("Form state:", form.formState);
+                      }}
+                    >
                       {createAppointmentMutation.isPending ? "Criando..." : "Criar Agendamento"}
                     </Button>
                   </div>
