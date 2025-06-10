@@ -161,8 +161,11 @@ export const appointments = mysqlTable("appointments", {
   clientEmail: varchar("client_email", { length: 255 }),
   appointmentDate: date("appointment_date").notNull(),
   appointmentTime: varchar("appointment_time", { length: 10 }).notNull(),
+  duration: int("duration").default(30),
+  totalPrice: decimal("total_price", { precision: 10, scale: 2 }).default("0.00"),
   status: varchar("status", { length: 50 }).notNull().default("agendado"),
   notes: text("notes"),
+  reminderSent: boolean("reminder_sent").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
