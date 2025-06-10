@@ -129,7 +129,7 @@ Responda APENAS em formato JSON válido ou "DADOS_INCOMPLETOS" se algum dado est
       // Create appointment
       const appointmentDate = new Date(appointmentData.appointmentDate);
       
-      const appointment = await storage.createAppointment({
+      const appointmentPayload = {
         companyId,
         serviceId: appointmentData.serviceId,
         professionalId: appointmentData.professionalId,
@@ -142,7 +142,11 @@ Responda APENAS em formato JSON válido ou "DADOS_INCOMPLETOS" se algum dado est
         totalPrice: String(service.price || 0),
         notes: 'Agendamento criado via WhatsApp',
         reminderSent: false
-      });
+      };
+
+      console.log('📋 Appointment payload before creation:', JSON.stringify(appointmentPayload, null, 2));
+      
+      const appointment = await storage.createAppointment(appointmentPayload);
 
       console.log('✅ Appointment created successfully:', appointment.id);
       console.log(`📅 ${appointmentData.clientName} - ${service.name} - ${appointmentDate.toLocaleString('pt-BR')}`);

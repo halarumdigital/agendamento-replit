@@ -713,6 +713,8 @@ export class DatabaseStorage implements IStorage {
 
   async createAppointment(appointmentData: InsertAppointment): Promise<Appointment> {
     try {
+      console.log('📅 Creating appointment with data:', JSON.stringify(appointmentData, null, 2));
+      
       await db.insert(appointments).values(appointmentData);
       const [appointment] = await db.select().from(appointments).where(
         and(
