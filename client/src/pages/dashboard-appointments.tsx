@@ -1300,6 +1300,9 @@ export default function DashboardAppointments() {
                                         />
                                         <span className="text-xs text-gray-600">{appointment.service.name}</span>
                                       </div>
+                                      <div className="text-xs text-gray-500 mb-1">
+                                        {services.find(s => s.id === appointment.serviceId)?.duration} minutos - R$ {services.find(s => s.id === appointment.serviceId)?.price}
+                                      </div>
                                       <div className="text-xs text-gray-500">
                                         {appointment.professional.name}
                                       </div>
