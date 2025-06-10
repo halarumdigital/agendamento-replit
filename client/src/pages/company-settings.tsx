@@ -1453,10 +1453,10 @@ export default function CompanySettings() {
                                 <div className="mt-2 text-sm text-gray-500 space-y-1">
                                   <p><strong>Variáveis disponíveis:</strong></p>
                                   <div className="grid grid-cols-2 gap-2">
-                                    <span>• {{cliente}} - Nome do cliente</span>
-                                    <span>• {{empresa}} - Nome da empresa</span>
-                                    <span>• {{servico}} - Nome do serviço</span>
-                                    <span>• {{profissional}} - Nome do profissional</span>
+                                    <span>• &#123;&#123;cliente&#125;&#125; - Nome do cliente</span>
+                                    <span>• &#123;&#123;empresa&#125;&#125; - Nome da empresa</span>
+                                    <span>• &#123;&#123;servico&#125;&#125; - Nome do serviço</span>
+                                    <span>• &#123;&#123;profissional&#125;&#125; - Nome do profissional</span>
                                     <span>• &#123;&#123;data&#125;&#125; - Data do agendamento</span>
                                     <span>• &#123;&#123;hora&#125;&#125; - Hora do agendamento</span>
                                   </div>
