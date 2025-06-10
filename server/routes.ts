@@ -683,11 +683,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   content: msg.content
                 }));
 
-              // Get available professionals for this company
+              // Get available professionals and services for this company
               const professionals = await storage.getProfessionalsByCompany(company.id);
               const availableProfessionals = professionals
                 .filter(prof => prof.active)
                 .map(prof => `- ${prof.name}`)
+                .join('\n');
+
+              const services = await storage.getServicesByCompany(company.id);
+              const availableServices = services
+                .filter(service => service.active)
+                .map(service => `- ${service.name}${service.price ? ` (R$ ${service.price})` : ''}`)
                 .join('\n');
 
               // Generate AI response with conversation context
@@ -701,11 +707,17 @@ Importante: Você está representando a empresa "${company.fantasyName}" via Wha
 PROFISSIONAIS DISPONÍVEIS PARA AGENDAMENTO:
 ${availableProfessionals || 'Nenhum profissional cadastrado no momento'}
 
+SERVIÇOS DISPONÍVEIS:
+${availableServices || 'Nenhum serviço cadastrado no momento'}
+
 INSTRUÇÕES OBRIGATÓRIAS:
 - SEMPRE que o cliente mencionar "agendar", "horário", "agendamento" ou similar, ofereça IMEDIATAMENTE a lista completa de profissionais
-- Use o formato exato: "Temos os seguintes profissionais disponíveis:\n[lista dos profissionais]\n\nCom qual profissional você gostaria de agendar?"
-- NÃO pergunte apenas "com qual profissional" sem mostrar a lista
-- SEMPRE mostre todos os profissionais disponíveis antes de pedir para escolher
+- Use o formato: "Temos os seguintes profissionais disponíveis:\n[lista dos profissionais]\n\nCom qual profissional você gostaria de agendar?"
+- Após a escolha do profissional, ofereça IMEDIATAMENTE a lista completa de serviços disponíveis
+- Use o formato: "Aqui estão os serviços disponíveis:\n[lista dos serviços]\n\nQual serviço você gostaria de agendar?"
+- NÃO invente serviços - use APENAS os serviços listados acima
+- NÃO pergunte sem mostrar as listas completas
+- SEMPRE mostre todos os profissionais/serviços disponíveis antes de pedir para escolher
 - Mantenha respostas concisas e adequadas para mensagens de texto
 - Seja profissional mas amigável
 - Use o histórico da conversa para dar respostas contextualizadas
