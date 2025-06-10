@@ -2718,6 +2718,61 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
     }
   });
 
+  // POST route to trigger QR code generation for connecting instance
+  app.post('/api/company/whatsapp/instances/:instanceName/connect', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const { instanceName } = req.params;
+      
+      // Get instance by name and verify ownership
+      const instance = await storage.getWhatsappInstanceByName(instanceName);
+      if (!instance || instance.companyId !== companyId) {
+        return res.status(404).json({ message: "Instância não encontrada" });
+      }
+
+      // Get global Evolution API settings
+      const settings = await storage.getGlobalSettings();
+      if (!settings?.evolutionApiUrl || !settings?.evolutionApiGlobalKey) {
+        return res.status(400).json({ message: "Evolution API não configurada" });
+      }
+
+      console.log(`🔗 Triggering connection for instance: ${instanceName}`);
+
+      // Trigger QR code generation by requesting instance connection
+      const evolutionResponse = await fetch(`${settings.evolutionApiUrl}/instance/connect/${instanceName}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': settings.evolutionApiGlobalKey,
+        },
+      });
+
+      if (!evolutionResponse.ok) {
+        const errorData = await evolutionResponse.text();
+        console.error("Evolution API connect error:", errorData);
+        return res.status(400).json({ message: "Erro ao conectar instância na Evolution API" });
+      }
+
+      console.log(`✅ Connection request sent for instance: ${instanceName}`);
+      console.log(`📱 QR code will be received via webhook and saved to database`);
+
+      // Return success - QR code will come via webhook
+      res.json({
+        message: "Solicitação de conexão enviada. QR code será gerado em breve.",
+        instanceName,
+        status: "connecting"
+      });
+
+    } catch (error: any) {
+      console.error("Error connecting WhatsApp instance:", error);
+      res.status(500).json({ message: "Erro interno do servidor", error: error.message });
+    }
+  });
+
   app.get('/api/company/whatsapp/instances/:instanceName/connect', async (req: any, res) => {
     try {
       const companyId = req.session.companyId;

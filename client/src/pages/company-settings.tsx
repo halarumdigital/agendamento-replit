@@ -346,7 +346,7 @@ export default function CompanySettings() {
       
       // Show modal immediately
       setShowQrDialog(true);
-      setQrCodeData(null);
+      setQrCodeData("");
       
       toast({
         title: "Gerando QR code",
