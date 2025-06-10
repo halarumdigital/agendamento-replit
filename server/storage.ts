@@ -55,7 +55,7 @@ import {
   type InsertReviewInvitation,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, sql } from "drizzle-orm";
 
 // Helper function to create conversation and message tables
 export async function ensureConversationTables() {
@@ -1266,25 +1266,26 @@ export class DatabaseStorage implements IStorage {
 
   async getProfessionalReviewsByCompany(companyId: number): Promise<ProfessionalReview[]> {
     try {
-      return await db.select({
-        id: professionalReviews.id,
-        professionalId: professionalReviews.professionalId,
-        appointmentId: professionalReviews.appointmentId,
-        clientName: professionalReviews.clientName,
-        clientPhone: professionalReviews.clientPhone,
-        rating: professionalReviews.rating,
-        comment: professionalReviews.comment,
-        reviewDate: professionalReviews.createdAt, // Use createdAt instead of reviewDate
-        isVisible: professionalReviews.isVisible,
-        createdAt: professionalReviews.createdAt,
-        professionalName: professionals.name,
-      }).from(professionalReviews)
-        .leftJoin(professionals, eq(professionalReviews.professionalId, professionals.id))
-        .where(and(
-          eq(professionals.companyId, companyId),
-          eq(professionalReviews.isVisible, true)
-        ))
-        .orderBy(desc(professionalReviews.createdAt));
+      // Use raw SQL to handle column name differences
+      const result = await db.execute(sql`
+        SELECT 
+          pr.id,
+          pr.professional_id as professionalId,
+          pr.appointment_id as appointmentId,
+          pr.client_name as clientName,
+          pr.client_phone as clientPhone,
+          pr.rating,
+          pr.comment,
+          pr.submitted_at as reviewDate,
+          pr.is_public as isVisible,
+          pr.submitted_at as createdAt,
+          p.name as professionalName
+        FROM professional_reviews pr
+        LEFT JOIN professionals p ON pr.professional_id = p.id
+        WHERE p.company_id = ${companyId} AND pr.is_public = true
+        ORDER BY pr.submitted_at DESC
+      `);
+      return result as any[];
     } catch (error: any) {
       console.error("Error getting professional reviews by company:", error);
       return [];
@@ -1335,25 +1336,40 @@ export class DatabaseStorage implements IStorage {
   // Review Invitations operations
   async getReviewInvitations(companyId: number): Promise<ReviewInvitation[]> {
     try {
-      return await db.select({
-        id: reviewInvitations.id,
-        appointmentId: reviewInvitations.appointmentId,
-        professionalId: reviewInvitations.professionalId,
-        companyId: reviewInvitations.companyId,
-        clientPhone: reviewInvitations.clientPhone,
-        invitationToken: reviewInvitations.invitationToken,
-        sentAt: reviewInvitations.sentAt,
-        reviewSubmittedAt: reviewInvitations.reviewSubmittedAt,
-        status: reviewInvitations.status,
-        whatsappInstanceId: reviewInvitations.whatsappInstanceId,
-        professionalName: professionals.name,
-        clientName: appointments.clientName,
-        appointmentDate: appointments.appointmentDate,
-      }).from(reviewInvitations)
-        .leftJoin(professionals, eq(reviewInvitations.professionalId, professionals.id))
-        .leftJoin(appointments, eq(reviewInvitations.appointmentId, appointments.id))
-        .where(eq(reviewInvitations.companyId, companyId))
-        .orderBy(desc(reviewInvitations.sentAt));
+      const result = await db.execute(sql`
+        SELECT 
+          ri.id,
+          ri.appointment_id as appointmentId,
+          ri.professional_id as professionalId,
+          ri.company_id as companyId,
+          ri.client_phone as clientPhone,
+          ri.invitation_token as invitationToken,
+          ri.sent_at as sentAt,
+          ri.created_at as createdAt,
+          ri.review_submitted_at as reviewSubmittedAt,
+          ri.status,
+          ri.whatsapp_instance_id as whatsappInstanceId,
+          p.name as professionalName,
+          a.client_name as clientName,
+          a.appointment_date as appointmentDate,
+          a.appointment_time as appointmentTime
+        FROM review_invitations ri
+        LEFT JOIN professionals p ON ri.professional_id = p.id
+        LEFT JOIN appointments a ON ri.appointment_id = a.id
+        WHERE ri.company_id = ${companyId}
+        ORDER BY ri.sent_at DESC
+      `);
+      
+      // Transform the result to match the expected structure
+      return (result as any[]).map((row: any) => ({
+        ...row,
+        professional: { name: row.professionalName },
+        appointment: { 
+          clientName: row.clientName,
+          appointmentDate: row.appointmentDate,
+          appointmentTime: row.appointmentTime
+        }
+      }));
     } catch (error: any) {
       console.error("Error getting review invitations:", error);
       return [];
