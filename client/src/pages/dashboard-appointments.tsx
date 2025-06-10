@@ -107,9 +107,9 @@ export default function DashboardAppointments() {
   const queryClient = useQueryClient();
   const { showNewAppointmentNotification, NotificationContainer } = useNotifications();
 
-  // Fetch appointments for current month
+  // Fetch appointments (show all, not filtered by month)
   const { data: appointments = [], isLoading: appointmentsLoading } = useQuery<Appointment[]>({
-    queryKey: ['/api/company/appointments', format(currentDate, 'yyyy-MM')],
+    queryKey: ['/api/company/appointments'],
   });
 
   // Fetch services
