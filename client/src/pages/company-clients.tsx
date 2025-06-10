@@ -35,7 +35,7 @@ const clientSchema = z.object({
 
 type ClientFormData = z.infer<typeof clientSchema>;
 
-interface Appointment {
+interface AppointmentHistory {
   id: number;
   serviceName: string;
   professionalName: string;
@@ -53,7 +53,7 @@ interface ClientServiceHistoryProps {
 }
 
 function ClientServiceHistory({ clientId, clientName }: ClientServiceHistoryProps) {
-  const { data: appointments = [], isLoading } = useQuery<Appointment[]>({
+  const { data: appointments = [], isLoading } = useQuery<AppointmentHistory[]>({
     queryKey: ['/api/company/appointments/client', clientId],
   });
 
