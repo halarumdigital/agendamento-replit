@@ -3725,6 +3725,29 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
     }
   });
 
+  // Create task reminders table
+  app.post("/api/admin/create-task-reminders-table", async (req, res) => {
+    try {
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS task_reminders (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          task_id INT NOT NULL,
+          whatsapp_number VARCHAR(20) NOT NULL,
+          message TEXT NOT NULL,
+          sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
+        )
+      `);
+
+      console.log('✅ Task reminders table created/verified');
+      res.json({ message: "Tabela de lembretes de tarefas criada com sucesso" });
+    } catch (error: any) {
+      console.error("Error creating task reminders table:", error);
+      res.status(500).json({ message: "Erro ao criar tabela de lembretes", error: error.message });
+    }
+  });
+
   // Task reminder functions
   async function checkTaskRecurrence(task: any): Promise<boolean> {
     const now = new Date();
@@ -3732,7 +3755,7 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
     
     // Get the last reminder sent for this task
     const lastReminder = await storage.getLastTaskReminder(task.id);
-    const lastReminderDate = lastReminder ? new Date(lastReminder.sentAt) : null;
+    const lastReminderDate = lastReminder && lastReminder.sentAt ? new Date(lastReminder.sentAt) : null;
     
     switch (task.recurrence) {
       case 'daily':
@@ -3849,7 +3872,7 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
       console.log('🔍 Checking task reminders...');
       
       // Get all active tasks from all companies
-      const companies = await storage.getAllCompanies();
+      const companies = await storage.getCompanies();
       let totalReminders = 0;
       
       for (const company of companies) {

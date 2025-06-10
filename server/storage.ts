@@ -1648,7 +1648,11 @@ Obrigado pela preferência! 🙏`;
 
   // Task reminder functions
   async createTaskReminder(reminder: InsertTaskReminder): Promise<TaskReminder> {
-    const [created] = await db.insert(taskReminders).values(reminder).returning();
+    await db.insert(taskReminders).values(reminder);
+    const [created] = await db.select().from(taskReminders)
+      .where(eq(taskReminders.taskId, reminder.taskId))
+      .orderBy(desc(taskReminders.id))
+      .limit(1);
     return created;
   }
 
