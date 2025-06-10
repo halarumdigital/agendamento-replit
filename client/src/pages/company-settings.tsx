@@ -1209,9 +1209,17 @@ export default function CompanySettings() {
                         {clients.filter(client => {
                           if (!client.birthDate) return false;
                           const today = new Date();
-                          const birthDate = new Date(client.birthDate);
-                          return birthDate.getMonth() === today.getMonth() && 
-                                 birthDate.getDate() === today.getDate();
+                          const todayMonth = today.getMonth() + 1; // 1-12
+                          const todayDay = today.getDate();
+                          
+                          // Extract date components directly from ISO string
+                          const dateString = client.birthDate.toString();
+                          if (dateString.includes('T')) {
+                            const datePart = dateString.split('T')[0];
+                            const [year, month, day] = datePart.split('-').map(Number);
+                            return month === todayMonth && day === todayDay;
+                          }
+                          return false;
                         }).length}
                       </Badge>
                     </CardTitle>
@@ -1220,17 +1228,33 @@ export default function CompanySettings() {
                     {clients.filter(client => {
                       if (!client.birthDate) return false;
                       const today = new Date();
-                      const birthDate = new Date(client.birthDate);
-                      return birthDate.getMonth() === today.getMonth() && 
-                             birthDate.getDate() === today.getDate();
+                      const todayMonth = today.getMonth() + 1; // 1-12
+                      const todayDay = today.getDate();
+                      
+                      // Extract date components directly from ISO string
+                      const dateString = client.birthDate.toString();
+                      if (dateString.includes('T')) {
+                        const datePart = dateString.split('T')[0];
+                        const [year, month, day] = datePart.split('-').map(Number);
+                        return month === todayMonth && day === todayDay;
+                      }
+                      return false;
                     }).length > 0 ? (
                       <div className="space-y-3">
                         {clients.filter(client => {
                           if (!client.birthDate) return false;
                           const today = new Date();
-                          const birthDate = new Date(client.birthDate);
-                          return birthDate.getMonth() === today.getMonth() && 
-                                 birthDate.getDate() === today.getDate();
+                          const todayMonth = today.getMonth() + 1; // 1-12
+                          const todayDay = today.getDate();
+                          
+                          // Extract date components directly from ISO string
+                          const dateString = client.birthDate.toString();
+                          if (dateString.includes('T')) {
+                            const datePart = dateString.split('T')[0];
+                            const [year, month, day] = datePart.split('-').map(Number);
+                            return month === todayMonth && day === todayDay;
+                          }
+                          return false;
                         }).map(client => (
                           <div key={client.id} className="bg-pink-50 p-3 rounded-lg border border-pink-200">
                             <div className="flex justify-between items-center">
@@ -1267,8 +1291,16 @@ export default function CompanySettings() {
                         {clients.filter(client => {
                           if (!client.birthDate) return false;
                           const today = new Date();
-                          const birthDate = new Date(client.birthDate);
-                          return birthDate.getMonth() === today.getMonth();
+                          const todayMonth = today.getMonth() + 1; // 1-12
+                          
+                          // Extract date components directly from ISO string
+                          const dateString = client.birthDate.toString();
+                          if (dateString.includes('T')) {
+                            const datePart = dateString.split('T')[0];
+                            const [year, month, day] = datePart.split('-').map(Number);
+                            return month === todayMonth;
+                          }
+                          return false;
                         }).length}
                       </Badge>
                     </CardTitle>
@@ -1277,25 +1309,54 @@ export default function CompanySettings() {
                     {clients.filter(client => {
                       if (!client.birthDate) return false;
                       const today = new Date();
-                      const birthDate = new Date(client.birthDate);
-                      return birthDate.getMonth() === today.getMonth();
+                      const todayMonth = today.getMonth() + 1; // 1-12
+                      
+                      // Extract date components directly from ISO string
+                      const dateString = client.birthDate.toString();
+                      if (dateString.includes('T')) {
+                        const datePart = dateString.split('T')[0];
+                        const [year, month, day] = datePart.split('-').map(Number);
+                        return month === todayMonth;
+                      }
+                      return false;
                     }).length > 0 ? (
                       <div className="space-y-2 max-h-40 overflow-y-auto">
                         {clients.filter(client => {
                           if (!client.birthDate) return false;
                           const today = new Date();
-                          const birthDate = new Date(client.birthDate);
-                          return birthDate.getMonth() === today.getMonth();
+                          const todayMonth = today.getMonth() + 1; // 1-12
+                          
+                          // Extract date components directly from ISO string
+                          const dateString = client.birthDate.toString();
+                          if (dateString.includes('T')) {
+                            const datePart = dateString.split('T')[0];
+                            const [year, month, day] = datePart.split('-').map(Number);
+                            return month === todayMonth;
+                          }
+                          return false;
                         }).map(client => {
-                          const birthDate = new Date(client.birthDate!);
-                          const isToday = birthDate.getDate() === new Date().getDate();
+                          // Extract date for display
+                          const dateString = client.birthDate!.toString();
+                          let displayDate = '';
+                          let isToday = false;
+                          if (dateString.includes('T')) {
+                            const datePart = dateString.split('T')[0];
+                            const [year, month, day] = datePart.split('-').map(Number);
+                            displayDate = `${day.toString().padStart(2, '0')} de ${['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'][month - 1]}`;
+                            
+                            // Check if it's today
+                            const today = new Date();
+                            const todayMonth = today.getMonth() + 1;
+                            const todayDay = today.getDate();
+                            isToday = month === todayMonth && day === todayDay;
+                          }
                           return (
                             <div key={client.id} className={`p-2 rounded border ${isToday ? 'bg-pink-50 border-pink-200' : 'bg-blue-50 border-blue-200'}`}>
                               <div className="flex justify-between items-center">
                                 <div>
                                   <p className={`font-medium ${isToday ? 'text-pink-900' : 'text-blue-900'}`}>{client.name}</p>
                                   <p className={`text-sm ${isToday ? 'text-pink-600' : 'text-blue-600'}`}>
-                                    {birthDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}
+                                    {displayDate}
                                     {isToday && ' - Hoje!'}
                                   </p>
                                 </div>
