@@ -832,23 +832,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('📱 QR code updated for instance:', instanceName);
         
         // Extract QR code from webhook data
-        const qrCodeBase64 = webhookData.data?.qrcode || webhookData.data?.base64 || webhookData.data?.qr;
+        // Based on Evolution API format: data.base64 contains the QR code
+        const qrCodeData = webhookData.data?.base64;
         
-        if (qrCodeBase64) {
+        if (qrCodeData) {
           try {
             // Update instance with new QR code
             const whatsappInstance = await storage.getWhatsappInstanceByName(instanceName);
             if (whatsappInstance) {
-              const qrCodeUrl = qrCodeBase64.startsWith('data:') ? qrCodeBase64 : `data:image/png;base64,${qrCodeBase64}`;
+              // The base64 data is already a complete data URL
+              const qrCodeUrl = qrCodeData;
+              
               await storage.updateWhatsappInstance(whatsappInstance.id, {
                 qrCode: qrCodeUrl,
                 status: 'connecting'
               });
               console.log('✅ QR code updated in database for instance:', instanceName);
+              console.log('📱 QR code URL length:', qrCodeUrl.length);
             }
           } catch (error) {
             console.error('❌ Error updating QR code:', error);
           }
+        } else {
+          console.log('⚠️ No QR code found in webhook data');
         }
         
         return res.json({ received: true, processed: true, type: 'qrcode' });
