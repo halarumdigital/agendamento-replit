@@ -853,30 +853,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         if (qrCodeData) {
           try {
-            // Convert to string safely
-            const qrCodeString = String(qrCodeData);
-            console.log('QR code length:', qrCodeString.length);
             console.log('QR code data type:', typeof qrCodeData);
+            console.log('QR code raw data:', qrCodeData);
             
-            if (qrCodeString && qrCodeString.length > 50) { // Minimum length for valid QR
+            let qrCodeString = '';
+            
+            // Handle different data formats from Evolution API
+            if (typeof qrCodeData === 'string') {
+              qrCodeString = qrCodeData;
+            } else if (typeof qrCodeData === 'object' && qrCodeData !== null) {
+              // Check if it's a buffer or has base64 property
+              if (qrCodeData.base64) {
+                qrCodeString = qrCodeData.base64;
+              } else if (qrCodeData.data) {
+                qrCodeString = qrCodeData.data;
+              } else if (Buffer.isBuffer(qrCodeData)) {
+                qrCodeString = qrCodeData.toString('base64');
+                qrCodeString = `data:image/png;base64,${qrCodeString}`;
+              } else {
+                // Try to convert object to JSON and see if it contains the QR
+                console.log('Object keys:', Object.keys(qrCodeData));
+                qrCodeString = JSON.stringify(qrCodeData);
+              }
+            } else {
+              qrCodeString = String(qrCodeData);
+            }
+            
+            console.log('Processed QR code length:', qrCodeString.length);
+            
+            if (qrCodeString && qrCodeString.length > 50) {
               const whatsappInstance = await storage.getWhatsappInstanceByName(instanceName);
               if (whatsappInstance) {
                 await storage.updateWhatsappInstance(whatsappInstance.id, {
                   qrCode: qrCodeString,
                   status: 'connecting'
                 });
-                console.log('QR code saved successfully for instance:', instanceName);
+                console.log('✅ QR code saved successfully for instance:', instanceName);
+                console.log('QR code preview:', qrCodeString.substring(0, 100) + '...');
               } else {
-                console.log('Instance not found:', instanceName);
+                console.log('❌ Instance not found:', instanceName);
               }
             } else {
-              console.log('QR code data is too short or invalid');
+              console.log('❌ QR code data is too short or invalid:', qrCodeString.length);
             }
           } catch (error) {
-            console.error('Error processing QR code:', error);
+            console.error('❌ Error processing QR code:', error);
           }
         } else {
-          console.log('No QR code found in webhook data');
+          console.log('❌ No QR code found in webhook data');
         }
         
         return res.json({ received: true, processed: true, type: 'qrcode' });
