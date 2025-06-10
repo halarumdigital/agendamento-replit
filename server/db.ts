@@ -1,31 +1,18 @@
-import mysql, { PoolOptions } from 'mysql2/promise';
-import { drizzle } from 'drizzle-orm/mysql2';
+import { Pool, neonConfig } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/neon-serverless';
+import ws from "ws";
 import * as schema from "@shared/schema";
 
-// Check if MySQL credentials are provided
-const requiredEnvVars = ['MYSQL_HOST', 'MYSQL_USER', 'MYSQL_PASSWORD', 'MYSQL_DATABASE'];
-const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
+neonConfig.webSocketConstructor = ws;
 
-if (missingEnvVars.length > 0) {
-  console.log('⚠️  Missing MySQL environment variables:', missingEnvVars.join(', '));
-  console.log('📝 Please configure your MySQL credentials in the .env file');
+if (!process.env.DATABASE_URL) {
+  throw new Error(
+    "DATABASE_URL must be set. Did you forget to provision a database?",
+  );
 }
 
-// MySQL connection pool using credentials from .env
-const poolConfig: PoolOptions = {
-  host: process.env.MYSQL_HOST || 'localhost',
-  port: parseInt(process.env.MYSQL_PORT || '3306'),
-  user: process.env.MYSQL_USER || '',
-  password: process.env.MYSQL_PASSWORD || '',
-  database: process.env.MYSQL_DATABASE || '',
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
-};
-
-const pool = mysql.createPool(poolConfig);
-
-export const db = drizzle(pool, { schema, mode: 'default' });
+export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+export const db = drizzle({ client: pool, schema });
 
 // Database initialization function
 async function initializeDatabase() {
