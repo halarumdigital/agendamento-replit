@@ -563,56 +563,56 @@ export default function DashboardAppointments() {
     <CompanyLayout>
       <div className="p-6">
         <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Agendamentos</h1>
-          <p className="text-gray-600">Gerencie seus agendamentos e horários</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <Select value={filterProfessional} onValueChange={setFilterProfessional}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Filtrar por profissional" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os profissionais</SelectItem>
-              {professionals.map((prof) => (
-                <SelectItem key={prof.id} value={prof.id.toString()}>
-                  {prof.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
-          <div className="flex items-center bg-gray-100 rounded-lg p-1">
-            <Button
-              variant={viewMode === 'calendar' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('calendar')}
-            >
-              <Calendar className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={viewMode === 'list' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('list')}
-            >
-              <List className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={viewMode === 'kanban' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('kanban')}
-            >
-              <Kanban className="h-4 w-4" />
-            </Button>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Agendamentos</h1>
+            <p className="text-gray-600">Gerencie seus agendamentos e horários</p>
           </div>
-
-          <Dialog open={isNewAppointmentOpen} onOpenChange={setIsNewAppointmentOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Novo Agendamento
+          <div className="flex items-center gap-4">
+            <Select value={filterProfessional} onValueChange={setFilterProfessional}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Filtrar por profissional" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os profissionais</SelectItem>
+                {professionals.map((prof) => (
+                  <SelectItem key={prof.id} value={prof.id.toString()}>
+                    {prof.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            <div className="flex items-center bg-gray-100 rounded-lg p-1">
+              <Button
+                variant={viewMode === 'calendar' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('calendar')}
+              >
+                <Calendar className="h-4 w-4" />
               </Button>
-            </DialogTrigger>
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+              >
+                <List className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'kanban' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('kanban')}
+              >
+                <Kanban className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <Dialog open={isNewAppointmentOpen} onOpenChange={setIsNewAppointmentOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Novo Agendamento
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-lg">
               <DialogHeader>
                 <DialogTitle>Novo Agendamento</DialogTitle>
