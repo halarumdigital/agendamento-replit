@@ -877,6 +877,48 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async getAppointmentById(id: number, companyId: number): Promise<any | undefined> {
+    try {
+      const [appointment] = await db.select({
+        id: appointments.id,
+        serviceId: appointments.serviceId,
+        professionalId: appointments.professionalId,
+        clientName: appointments.clientName,
+        clientEmail: appointments.clientEmail,
+        clientPhone: appointments.clientPhone,
+        appointmentDate: appointments.appointmentDate,
+        appointmentTime: appointments.appointmentTime,
+        duration: appointments.duration,
+        notes: appointments.notes,
+        status: appointments.status,
+        totalPrice: appointments.totalPrice,
+        reminderSent: appointments.reminderSent,
+        createdAt: appointments.createdAt,
+        updatedAt: appointments.updatedAt,
+        companyId: appointments.companyId,
+        service: {
+          name: services.name,
+          color: services.color,
+        },
+        professional: {
+          name: professionals.name,
+        },
+      })
+      .from(appointments)
+      .leftJoin(services, eq(appointments.serviceId, services.id))
+      .leftJoin(professionals, eq(appointments.professionalId, professionals.id))
+      .where(and(
+        eq(appointments.id, id),
+        eq(appointments.companyId, companyId)
+      ));
+      
+      return appointment;
+    } catch (error: any) {
+      console.error("Error getting appointment by ID:", error);
+      return undefined;
+    }
+  }
+
   async createAppointment(appointmentData: InsertAppointment): Promise<Appointment> {
     try {
       console.log('📅 Creating appointment with data:', JSON.stringify(appointmentData, null, 2));

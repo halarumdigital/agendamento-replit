@@ -1259,6 +1259,31 @@ INSTRUÇÕES OBRIGATÓRIAS:
     }
   });
 
+  // Get single appointment by ID
+  app.get('/api/company/appointments/:id', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "ID do agendamento inválido" });
+      }
+
+      const appointment = await storage.getAppointmentById(id, companyId);
+      if (!appointment) {
+        return res.status(404).json({ message: "Agendamento não encontrado" });
+      }
+
+      res.json(appointment);
+    } catch (error) {
+      console.error("Error fetching appointment:", error);
+      res.status(500).json({ message: "Erro ao buscar agendamento" });
+    }
+  });
+
   // Get appointments by client
   app.get('/api/company/appointments/client/:clientId', async (req: any, res) => {
     try {

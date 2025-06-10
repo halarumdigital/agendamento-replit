@@ -552,28 +552,46 @@ export default function DashboardAppointments() {
     });
   };
 
-  const handleEditAppointment = (appointment: Appointment) => {
-    setEditingAppointment(appointment);
-    
-    // Find status ID by status name
-    const statusObj = statuses.find(s => s.name.toLowerCase() === appointment.status.toLowerCase());
-    
-    // Populate form with appointment data
-    editForm.reset({
-      clientId: undefined,
-      serviceId: appointment.serviceId,
-      professionalId: appointment.professionalId,
-      statusId: statusObj?.id || 0,
-      clientName: appointment.clientName,
-      clientEmail: appointment.clientEmail || "",
-      clientPhone: appointment.clientPhone,
-      appointmentDate: format(new Date(appointment.appointmentDate), 'yyyy-MM-dd'),
-      appointmentTime: appointment.appointmentTime,
-      notes: appointment.notes || "",
-      confirmed: false,
-    });
-    
-    setIsEditAppointmentOpen(true);
+  const handleEditAppointment = async (appointment: Appointment) => {
+    try {
+      // Fetch fresh appointment data from server
+      const response = await fetch(`/api/company/appointments/${appointment.id}`, {
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Erro ao buscar dados do agendamento');
+      }
+      
+      const freshAppointment = await response.json();
+      setEditingAppointment(freshAppointment);
+      
+      // Find status ID by status name
+      const statusObj = statuses.find(s => s.name.toLowerCase() === freshAppointment.status.toLowerCase());
+      
+      // Populate form with fresh appointment data
+      editForm.reset({
+        clientId: undefined,
+        serviceId: freshAppointment.serviceId,
+        professionalId: freshAppointment.professionalId,
+        statusId: statusObj?.id || 0,
+        clientName: freshAppointment.clientName,
+        clientEmail: freshAppointment.clientEmail || "",
+        clientPhone: freshAppointment.clientPhone,
+        appointmentDate: format(new Date(freshAppointment.appointmentDate), 'yyyy-MM-dd'),
+        appointmentTime: freshAppointment.appointmentTime,
+        notes: freshAppointment.notes || "",
+        confirmed: false,
+      });
+      
+      setIsEditAppointmentOpen(true);
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os dados do agendamento",
+        variant: "destructive"
+      });
+    }
   };
 
   // Update form date when selectedDate changes
