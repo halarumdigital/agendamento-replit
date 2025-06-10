@@ -277,11 +277,21 @@ export default function CompanyClients() {
 
   const handleEdit = (client: Client) => {
     setEditingClient(client);
+    
+    // Format birth date for HTML date input (YYYY-MM-DD)
+    let formattedBirthDate = "";
+    if (client.birthDate) {
+      const date = new Date(client.birthDate);
+      if (!isNaN(date.getTime())) {
+        formattedBirthDate = date.toISOString().split('T')[0];
+      }
+    }
+    
     form.reset({
       name: client.name,
       email: client.email || "",
       phone: client.phone || "",
-      birthDate: client.birthDate || "",
+      birthDate: formattedBirthDate,
       notes: client.notes || "",
     });
     setIsDialogOpen(true);
@@ -301,8 +311,11 @@ export default function CompanyClients() {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
+  const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '';
+    return date.toLocaleDateString('pt-BR');
   };
 
   if (isLoading) {
