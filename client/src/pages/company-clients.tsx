@@ -6,11 +6,13 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, Grid, List, User, Mail, Phone, Calendar } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
 
 interface Client {
   id: number;
@@ -32,6 +34,131 @@ const clientSchema = z.object({
 });
 
 type ClientFormData = z.infer<typeof clientSchema>;
+
+interface Appointment {
+  id: number;
+  serviceName: string;
+  professionalName: string;
+  appointmentDate: string;
+  appointmentTime: string;
+  price: number;
+  statusName: string;
+  statusColor: string;
+  notes?: string;
+}
+
+interface ClientServiceHistoryProps {
+  clientId: number;
+  clientName: string;
+}
+
+function ClientServiceHistory({ clientId, clientName }: ClientServiceHistoryProps) {
+  const { data: appointments = [], isLoading } = useQuery<Appointment[]>({
+    queryKey: ['/api/company/appointments/client', clientId],
+  });
+
+  const totalSpent = appointments
+    .filter(apt => apt.statusName !== 'Cancelado')
+    .reduce((total, apt) => total + apt.price, 0);
+
+  const completedAppointments = appointments.filter(apt => 
+    apt.statusName === 'Concluído' || apt.statusName === 'Finalizado'
+  );
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="text-gray-500">Carregando histórico...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">
+                R$ {totalSpent.toFixed(2).replace('.', ',')}
+              </div>
+              <div className="text-sm text-gray-500">Total Gasto</div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600">
+                {completedAppointments.length}
+              </div>
+              <div className="text-sm text-gray-500">Serviços Concluídos</div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Service History List */}
+      <div className="space-y-3 max-h-64 overflow-y-auto">
+        {appointments.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <Calendar className="mx-auto h-12 w-12 mb-3 text-gray-300" />
+            <p>Nenhum serviço encontrado para {clientName}</p>
+          </div>
+        ) : (
+          appointments.map((appointment) => (
+            <Card key={appointment.id} className="border-l-4" style={{ borderLeftColor: appointment.statusColor }}>
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h4 className="font-semibold text-gray-900">{appointment.serviceName}</h4>
+                      <Badge 
+                        style={{ 
+                          backgroundColor: appointment.statusColor + '20',
+                          color: appointment.statusColor,
+                          border: `1px solid ${appointment.statusColor}40`
+                        }}
+                      >
+                        {appointment.statusName}
+                      </Badge>
+                    </div>
+                    
+                    <div className="space-y-1 text-sm text-gray-600">
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4" />
+                        <span>{appointment.professionalName}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        <span>
+                          {format(new Date(appointment.appointmentDate), 'dd/MM/yyyy')} às {appointment.appointmentTime}
+                        </span>
+                      </div>
+                      {appointment.notes && (
+                        <div className="text-xs text-gray-500 mt-2 italic">
+                          {appointment.notes}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="text-right">
+                    <div className="font-bold text-green-600">
+                      R$ {appointment.price.toFixed(2).replace('.', ',')}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function CompanyClients() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -310,9 +437,13 @@ export default function CompanyClients() {
               </TabsContent>
               
               <TabsContent value="servicos" className="space-y-4">
-                <div className="text-center py-8 text-gray-500">
-                  <p>Histórico de serviços em desenvolvimento</p>
-                </div>
+                {editingClient ? (
+                  <ClientServiceHistory clientId={editingClient.id} clientName={editingClient.name} />
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <p>Salve o cliente primeiro para ver o histórico de serviços</p>
+                  </div>
+                )}
               </TabsContent>
             </Tabs>
           </DialogContent>
