@@ -890,44 +890,14 @@ export default function CompanySettings() {
             <CardContent>
               <Form {...whatsappForm}>
                 <form onSubmit={whatsappForm.handleSubmit(onWhatsappSubmit)} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={whatsappForm.control}
-                      name="instanceName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Nome da Instância</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Ex: principal" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={whatsappForm.control}
-                      name="apiUrl"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>URL da API Evolution</FormLabel>
-                          <FormControl>
-                            <Input placeholder="https://api.evolution.com" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
                   <FormField
                     control={whatsappForm.control}
-                    name="apiKey"
+                    name="instanceName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Chave da API</FormLabel>
+                        <FormLabel>Nome da Instância</FormLabel>
                         <FormControl>
-                          <Input type="password" placeholder="Sua chave da API Evolution" {...field} />
+                          <Input placeholder="Ex: principal" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -980,9 +950,7 @@ export default function CompanySettings() {
                               {instance.status === "open" ? "Conectado" : "Desconectado"}
                             </Badge>
                           </div>
-                          <p className="text-sm text-gray-600 mt-1">
-                            API: {instance.apiUrl}
-                          </p>
+
                           {instance.webhook && (
                             <p className="text-xs text-blue-600 mt-1">
                               Webhook: {instance.webhook}
