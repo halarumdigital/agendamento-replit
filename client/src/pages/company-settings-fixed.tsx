@@ -418,30 +418,30 @@ export default function CompanySettings() {
       </div>
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="profile" className="flex items-center gap-2">
+        <TabsList className="grid w-full grid-cols-3 md:grid-cols-6 gap-1">
+          <TabsTrigger value="profile" className="flex items-center gap-1 text-xs p-2">
             <Building2 className="w-4 h-4" />
-            Perfil
+            <span className="hidden sm:inline">Perfil</span>
           </TabsTrigger>
-          <TabsTrigger value="security" className="flex items-center gap-2">
+          <TabsTrigger value="security" className="flex items-center gap-1 text-xs p-2">
             <Lock className="w-4 h-4" />
-            Segurança
+            <span className="hidden sm:inline">Segurança</span>
           </TabsTrigger>
-          <TabsTrigger value="whatsapp" className="flex items-center gap-2">
+          <TabsTrigger value="whatsapp" className="flex items-center gap-1 text-xs p-2">
             <Smartphone className="w-4 h-4" />
-            WhatsApp
+            <span className="hidden sm:inline">WhatsApp</span>
           </TabsTrigger>
-          <TabsTrigger value="ai-agent" className="flex items-center gap-2">
+          <TabsTrigger value="ai-agent" className="flex items-center gap-1 text-xs p-2">
             <MessageSquare className="w-4 h-4" />
-            Agente AI
+            <span className="hidden sm:inline">Agente AI</span>
           </TabsTrigger>
-          <TabsTrigger value="birthdays" className="flex items-center gap-2">
+          <TabsTrigger value="birthdays" className="flex items-center gap-1 text-xs p-2">
             <Calendar className="w-4 h-4" />
-            Aniversários
+            <span className="hidden sm:inline">Aniversários</span>
           </TabsTrigger>
-          <TabsTrigger value="reminders" className="flex items-center gap-2">
+          <TabsTrigger value="reminders" className="flex items-center gap-1 text-xs p-2">
             <Bell className="w-4 h-4" />
-            Lembretes
+            <span className="hidden sm:inline">Lembretes</span>
           </TabsTrigger>
         </TabsList>
 
