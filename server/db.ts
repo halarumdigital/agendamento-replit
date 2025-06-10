@@ -79,6 +79,89 @@ async function initializeDatabase() {
       }
     }
 
+    // Create reminder_settings table
+    try {
+      await pool.execute(`
+        CREATE TABLE IF NOT EXISTS reminder_settings (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          company_id INT NOT NULL,
+          reminder_type VARCHAR(50) NOT NULL,
+          is_active BOOLEAN DEFAULT TRUE,
+          message_template TEXT NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+        )
+      `);
+      console.log('✅ Reminder settings table created/verified');
+    } catch (error) {
+      console.error('❌ Error creating reminder_settings table:', error);
+    }
+
+    // Create reminder_history table
+    try {
+      await pool.execute(`
+        CREATE TABLE IF NOT EXISTS reminder_history (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          company_id INT NOT NULL,
+          appointment_id INT NOT NULL,
+          reminder_type VARCHAR(50) NOT NULL,
+          client_phone VARCHAR(20) NOT NULL,
+          message TEXT NOT NULL,
+          sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          status VARCHAR(20) DEFAULT 'sent',
+          whatsapp_instance_id INT,
+          FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
+          FOREIGN KEY (appointment_id) REFERENCES appointments(id) ON DELETE CASCADE,
+          FOREIGN KEY (whatsapp_instance_id) REFERENCES whatsapp_instances(id)
+        )
+      `);
+      console.log('✅ Reminder history table created/verified');
+    } catch (error) {
+      console.error('❌ Error creating reminder_history table:', error);
+    }
+
+    // Insert default reminder templates for existing companies
+    try {
+      const [companies] = await pool.execute('SELECT id FROM companies');
+      
+      for (const company of companies as any[]) {
+        // Check if reminder settings already exist
+        const [existing] = await pool.execute(
+          'SELECT id FROM reminder_settings WHERE company_id = ?',
+          [company.id]
+        );
+
+        if ((existing as any[]).length === 0) {
+          // Insert default reminder templates
+          const reminderTemplates = [
+            {
+              type: 'confirmation',
+              template: '*Agendamento Confirmado!*\n\n*{companyName}*\n*Servico:* {serviceName}\n*Profissional:* {professionalName}\n*Data e Hora:* {appointmentDate} as {appointmentTime}\n\nObrigado por escolher nossos servicos!'
+            },
+            {
+              type: '24h',
+              template: '*Lembrete de Agendamento*\n\n*{companyName}*\n*Servico:* {serviceName}\n*Profissional:* {professionalName}\n*Data e Hora:* {appointmentDate} as {appointmentTime}\n\n*Seu agendamento e amanha!*\nNos vemos em breve!'
+            },
+            {
+              type: '1h',
+              template: '*Lembrete Final*\n\n*{companyName}*\n*Servico:* {serviceName}\n*Profissional:* {professionalName}\n*Data e Hora:* {appointmentDate} as {appointmentTime}\n\n*Seu agendamento e em 1 hora!*\nEstamos te esperando!'
+            }
+          ];
+
+          for (const reminder of reminderTemplates) {
+            await pool.execute(
+              'INSERT INTO reminder_settings (company_id, reminder_type, message_template) VALUES (?, ?, ?)',
+              [company.id, reminder.type, reminder.template]
+            );
+          }
+        }
+      }
+      console.log('✅ Default reminder templates verified for all companies');
+    } catch (error) {
+      console.error('❌ Error setting up default reminder templates:', error);
+    }
+
     // Create clients table if it doesn't exist
     try {
       await pool.execute(`

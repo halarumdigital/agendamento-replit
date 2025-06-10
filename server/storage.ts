@@ -13,6 +13,8 @@ import {
   clients,
   birthdayMessages,
   birthdayMessageHistory,
+  reminderSettings,
+  reminderHistory,
   type Admin,
   type InsertAdmin,
   type Company,
@@ -41,6 +43,10 @@ import {
   type InsertBirthdayMessage,
   type BirthdayMessageHistory,
   type InsertBirthdayMessageHistory,
+  type ReminderSettings,
+  type InsertReminderSettings,
+  type ReminderHistory,
+  type InsertReminderHistory,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -787,6 +793,12 @@ export class DatabaseStorage implements IStorage {
           eq(appointments.appointmentTime, appointmentData.appointmentTime)
         )
       );
+
+      // Send confirmation reminder after creating appointment
+      if (appointment) {
+        await this.sendAppointmentReminder(appointment.id, 'confirmation');
+      }
+
       return appointment;
     } catch (error: any) {
       console.error("Error creating appointment:", error);
@@ -877,6 +889,199 @@ export class DatabaseStorage implements IStorage {
     } catch (error: any) {
       console.error("Error deleting status:", error);
       throw error;
+    }
+  }
+
+  // Reminder System Operations
+  async getReminderSettings(companyId: number): Promise<ReminderSettings[]> {
+    try {
+      return await db.select().from(reminderSettings)
+        .where(eq(reminderSettings.companyId, companyId));
+    } catch (error: any) {
+      console.error("Error getting reminder settings:", error);
+      return [];
+    }
+  }
+
+  async updateReminderSettings(id: number, settingsData: Partial<InsertReminderSettings>): Promise<ReminderSettings> {
+    try {
+      await db.update(reminderSettings)
+        .set({ ...settingsData, updatedAt: new Date() })
+        .where(eq(reminderSettings.id, id));
+      
+      const [settings] = await db.select().from(reminderSettings)
+        .where(eq(reminderSettings.id, id));
+      return settings;
+    } catch (error: any) {
+      console.error("Error updating reminder settings:", error);
+      throw error;
+    }
+  }
+
+  async getReminderHistory(companyId: number): Promise<ReminderHistory[]> {
+    try {
+      return await db.select().from(reminderHistory)
+        .where(eq(reminderHistory.companyId, companyId))
+        .orderBy(desc(reminderHistory.sentAt));
+    } catch (error: any) {
+      console.error("Error getting reminder history:", error);
+      return [];
+    }
+  }
+
+  async sendAppointmentReminder(appointmentId: number, reminderType: string): Promise<void> {
+    try {
+      // Get appointment details with related data
+      const [appointment] = await db.select({
+        id: appointments.id,
+        companyId: appointments.companyId,
+        clientName: appointments.clientName,
+        clientPhone: appointments.clientPhone,
+        appointmentDate: appointments.appointmentDate,
+        appointmentTime: appointments.appointmentTime,
+        serviceName: services.name,
+        professionalName: professionals.name,
+      }).from(appointments)
+        .leftJoin(services, eq(appointments.serviceId, services.id))
+        .leftJoin(professionals, eq(appointments.professionalId, professionals.id))
+        .where(eq(appointments.id, appointmentId));
+
+      if (!appointment) {
+        console.error("Appointment not found for reminder:", appointmentId);
+        return;
+      }
+
+      // Get company name
+      const [company] = await db.select().from(companies)
+        .where(eq(companies.id, appointment.companyId));
+
+      if (!company) {
+        console.error("Company not found for reminder:", appointment.companyId);
+        return;
+      }
+
+      // Get reminder template
+      const [reminderSetting] = await db.select().from(reminderSettings)
+        .where(and(
+          eq(reminderSettings.companyId, appointment.companyId),
+          eq(reminderSettings.reminderType, reminderType),
+          eq(reminderSettings.isActive, true)
+        ));
+
+      if (!reminderSetting) {
+        console.log(`No active reminder template found for type: ${reminderType}`);
+        return;
+      }
+
+      // Format the message
+      let message = reminderSetting.messageTemplate;
+      message = message.replace('{companyName}', company.fantasyName);
+      message = message.replace('{serviceName}', appointment.serviceName || 'Serviço');
+      message = message.replace('{professionalName}', appointment.professionalName || 'Profissional');
+      
+      // Format date and time
+      const appointmentDate = new Date(appointment.appointmentDate);
+      const formattedDate = appointmentDate.toLocaleDateString('pt-BR');
+      message = message.replace('{appointmentDate}', formattedDate);
+      message = message.replace('{appointmentTime}', appointment.appointmentTime);
+
+      // Get WhatsApp instance for the company
+      const [whatsappInstance] = await db.select().from(whatsappInstances)
+        .where(eq(whatsappInstances.companyId, appointment.companyId));
+
+      if (!whatsappInstance) {
+        console.error("No WhatsApp instance found for company:", appointment.companyId);
+        return;
+      }
+
+      // Format phone number for WhatsApp API (Brazilian format with DDI 55)
+      const cleanPhone = appointment.clientPhone.replace(/\D/g, '');
+      let formattedPhone = cleanPhone;
+      
+      if (!formattedPhone.startsWith('55')) {
+        formattedPhone = '55' + formattedPhone;
+      }
+
+      // Send WhatsApp message
+      try {
+        const evolutionApiUrl = whatsappInstance.apiUrl || process.env.EVOLUTION_API_URL;
+        const apiKey = whatsappInstance.apiKey || process.env.EVOLUTION_API_KEY;
+
+        if (!evolutionApiUrl || !apiKey) {
+          console.error("Missing Evolution API configuration");
+          return;
+        }
+
+        const response = await fetch(`${evolutionApiUrl}/message/sendText/${whatsappInstance.instanceName}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': apiKey
+          },
+          body: JSON.stringify({
+            number: formattedPhone,
+            text: message
+          })
+        });
+
+        const result = await response.json();
+        
+        // Save reminder to history
+        await db.insert(reminderHistory).values({
+          companyId: appointment.companyId,
+          appointmentId: appointmentId,
+          reminderType: reminderType,
+          clientPhone: appointment.clientPhone,
+          message: message,
+          status: response.ok ? 'sent' : 'failed',
+          whatsappInstanceId: whatsappInstance.id
+        });
+
+        if (response.ok) {
+          console.log(`✅ Reminder sent successfully for appointment ${appointmentId} (${reminderType})`);
+        } else {
+          console.error(`❌ Failed to send reminder:`, result);
+        }
+
+      } catch (error) {
+        console.error("Error sending WhatsApp reminder:", error);
+        
+        // Save failed reminder to history
+        await db.insert(reminderHistory).values({
+          companyId: appointment.companyId,
+          appointmentId: appointmentId,
+          reminderType: reminderType,
+          clientPhone: appointment.clientPhone,
+          message: message,
+          status: 'failed',
+          whatsappInstanceId: whatsappInstance.id
+        });
+      }
+
+    } catch (error: any) {
+      console.error("Error in sendAppointmentReminder:", error);
+    }
+  }
+
+  async testReminderFunction(companyId: number): Promise<{ success: boolean; message: string }> {
+    try {
+      // Get a recent appointment for testing
+      const [testAppointment] = await db.select().from(appointments)
+        .where(eq(appointments.companyId, companyId))
+        .orderBy(desc(appointments.createdAt))
+        .limit(1);
+
+      if (!testAppointment) {
+        return { success: false, message: "Nenhum agendamento encontrado para teste" };
+      }
+
+      // Send test confirmation reminder
+      await this.sendAppointmentReminder(testAppointment.id, 'confirmation');
+      
+      return { success: true, message: "Lembrete de teste enviado com sucesso!" };
+    } catch (error: any) {
+      console.error("Error testing reminder function:", error);
+      return { success: false, message: "Erro ao enviar lembrete de teste: " + error.message };
     }
   }
 
