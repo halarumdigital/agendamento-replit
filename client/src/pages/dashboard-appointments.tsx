@@ -61,17 +61,27 @@ interface Status {
 }
 
 const appointmentSchema = z.object({
+  clientId: z.number().optional(),
   serviceId: z.number().min(1, "Selecione um serviço"),
   professionalId: z.number().min(1, "Selecione um profissional"),
+  statusId: z.number().min(1, "Selecione um status"),
   clientName: z.string().min(1, "Nome do cliente é obrigatório"),
   clientEmail: z.string().email("Email inválido").optional().or(z.literal("")),
   clientPhone: z.string().min(10, "Telefone deve ter pelo menos 10 dígitos"),
   appointmentDate: z.string().min(1, "Data é obrigatória"),
   appointmentTime: z.string().min(1, "Horário é obrigatório"),
   notes: z.string().optional(),
+  confirmed: z.boolean().optional(),
+});
+
+const clientSchema = z.object({
+  name: z.string().min(1, "Nome é obrigatório"),
+  phone: z.string().min(10, "Telefone deve ter pelo menos 10 dígitos"),
+  email: z.string().email("Email inválido").optional().or(z.literal("")),
 });
 
 type AppointmentFormData = z.infer<typeof appointmentSchema>;
+type ClientFormData = z.infer<typeof clientSchema>;
 
 export default function DashboardAppointments() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -79,6 +89,8 @@ export default function DashboardAppointments() {
   const [viewMode, setViewMode] = useState<'calendar' | 'list' | 'kanban'>('calendar');
   const [filterProfessional, setFilterProfessional] = useState<string>('all');
   const [isNewAppointmentOpen, setIsNewAppointmentOpen] = useState(false);
+  const [isNewClientOpen, setIsNewClientOpen] = useState(false);
+  const [selectedClientId, setSelectedClientId] = useState<string>('');
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -103,15 +115,78 @@ export default function DashboardAppointments() {
     queryKey: ['/api/company/status'],
   });
 
+  // Fetch clients
+  const { data: clients = [] } = useQuery<{id: number; name: string; phone: string; email: string}[]>({
+    queryKey: ['/api/company/clients'],
+  });
+
   const form = useForm<AppointmentFormData>({
     resolver: zodResolver(appointmentSchema),
     defaultValues: {
+      clientId: undefined,
+      serviceId: 0,
+      professionalId: 0,
+      statusId: 0,
       clientName: "",
       clientEmail: "",
       clientPhone: "",
       appointmentDate: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : "",
       appointmentTime: "",
       notes: "",
+      confirmed: false,
+    },
+  });
+
+  const clientForm = useForm<ClientFormData>({
+    resolver: zodResolver(clientSchema),
+    defaultValues: {
+      name: "",
+      phone: "",
+      email: "",
+    },
+  });
+
+  const createClientMutation = useMutation({
+    mutationFn: async (data: ClientFormData) => {
+      const response = await fetch('/api/company/clients', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Erro ao criar cliente');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (newClient) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/company/clients'] });
+      setIsNewClientOpen(false);
+      clientForm.reset();
+      
+      // Selecionar o cliente recém-criado no formulário de agendamento
+      setSelectedClientId(newClient.id.toString());
+      form.setValue('clientId', newClient.id);
+      form.setValue('clientName', newClient.name);
+      form.setValue('clientPhone', newClient.phone);
+      form.setValue('clientEmail', newClient.email || '');
+      
+      toast({
+        title: "Sucesso",
+        description: "Cliente criado com sucesso!",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao criar cliente",
+        variant: "destructive",
+      });
     },
   });
 
