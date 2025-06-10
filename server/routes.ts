@@ -20,6 +20,141 @@ function generateWebhookUrl(req: any, instanceName: string): string {
   return `${req.protocol}://${host}/api/webhook/whatsapp/${instanceName}`;
 }
 
+async function createAppointmentFromConversation(conversationId: number, companyId: number) {
+  try {
+    console.log('📅 Creating appointment from conversation:', conversationId);
+    
+    // Get conversation messages
+    const messages = await storage.getMessagesByConversation(conversationId);
+    const conversationText = messages.map(m => `${m.role}: ${m.content}`).join('\n');
+    
+    // Get available professionals and services to match
+    const professionals = await storage.getProfessionalsByCompany(companyId);
+    const services = await storage.getServicesByCompany(companyId);
+    
+    console.log('💬 Analyzing conversation for appointment data...');
+    
+    // Extract appointment data using AI
+    const OpenAI = (await import('openai')).default;
+    const globalSettings = await storage.getGlobalSettings();
+    if (!globalSettings?.openaiApiKey) {
+      throw new Error('OpenAI API key not configured');
+    }
+    
+    const openai = new OpenAI({ apiKey: globalSettings.openaiApiKey });
+    
+    const extractionPrompt = `Analise esta conversa de WhatsApp e extraia os dados do agendamento em formato JSON.
+
+PROFISSIONAIS DISPONÍVEIS:
+${professionals.map(p => `- ${p.name} (ID: ${p.id})`).join('\n')}
+
+SERVIÇOS DISPONÍVEIS:
+${services.map(s => `- ${s.name} (ID: ${s.id})`).join('\n')}
+
+CONVERSA:
+${conversationText}
+
+Extraia APENAS se TODOS os dados estiverem presentes na conversa:
+- Nome do cliente
+- Telefone do cliente  
+- Profissional escolhido (use o ID correto da lista acima)
+- Serviço escolhido (use o ID correto da lista acima)
+- Data e hora do agendamento (formato: YYYY-MM-DD HH:MM)
+
+Responda APENAS em formato JSON válido ou "DADOS_INCOMPLETOS" se algum dado estiver faltando:
+{
+  "clientName": "Nome completo",
+  "clientPhone": "Telefone",
+  "professionalId": 123,
+  "serviceId": 456,
+  "appointmentDate": "2025-06-10",
+  "appointmentTime": "10:00"
+}`;
+
+    const extraction = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: extractionPrompt }],
+      temperature: 0,
+      max_tokens: 500
+    });
+
+    const extractedData = extraction.choices[0]?.message?.content?.trim();
+    console.log('🤖 Extracted data:', extractedData);
+    
+    if (!extractedData || extractedData === 'DADOS_INCOMPLETOS') {
+      console.log('⚠️ Incomplete appointment data, skipping creation');
+      return;
+    }
+
+    try {
+      const appointmentData = JSON.parse(extractedData);
+      
+      // Validate required fields
+      if (!appointmentData.clientName || !appointmentData.clientPhone || 
+          !appointmentData.professionalId || !appointmentData.serviceId ||
+          !appointmentData.appointmentDate || !appointmentData.appointmentTime) {
+        console.log('⚠️ Missing required appointment fields');
+        return;
+      }
+
+      // Find the service to get duration
+      const service = services.find(s => s.id === appointmentData.serviceId);
+      if (!service) {
+        console.log('⚠️ Service not found');
+        return;
+      }
+
+      // Create client if doesn't exist
+      let client;
+      try {
+        const existingClients = await storage.getClientsByCompany(companyId);
+        client = existingClients.find(c => c.phone === appointmentData.clientPhone);
+        
+        if (!client) {
+          client = await storage.createClient({
+            companyId,
+            name: appointmentData.clientName,
+            phone: appointmentData.clientPhone,
+            email: null,
+            notes: 'Cliente criado via WhatsApp',
+            birthDate: null
+          });
+          console.log('👤 New client created:', client.name);
+        }
+      } catch (error) {
+        console.error('Error creating/finding client:', error);
+        return;
+      }
+
+      // Create appointment
+      const appointmentDateTime = new Date(`${appointmentData.appointmentDate}T${appointmentData.appointmentTime}:00`);
+      
+      const appointment = await storage.createAppointment({
+        companyId,
+        serviceId: appointmentData.serviceId,
+        professionalId: appointmentData.professionalId,
+        clientName: appointmentData.clientName,
+        clientPhone: appointmentData.clientPhone,
+        appointmentDate: appointmentDateTime,
+        duration: service.duration || 60,
+        status: 'Agendado',
+        notes: 'Agendamento criado via WhatsApp',
+        reminderSent: false
+      });
+
+      console.log('✅ Appointment created successfully:', appointment.id);
+      console.log(`📅 ${appointmentData.clientName} - ${service.name} - ${appointmentDateTime.toLocaleString('pt-BR')}`);
+
+    } catch (parseError) {
+      console.error('❌ Error parsing extracted appointment data:', parseError);
+    }
+
+  } catch (error) {
+    console.error('❌ Error in createAppointmentFromConversation:', error);
+    throw error;
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
@@ -715,6 +850,10 @@ INSTRUÇÕES OBRIGATÓRIAS:
 - Use o formato: "Temos os seguintes profissionais disponíveis:\n[lista dos profissionais]\n\nCom qual profissional você gostaria de agendar?"
 - Após a escolha do profissional, ofereça IMEDIATAMENTE a lista completa de serviços disponíveis
 - Use o formato: "Aqui estão os serviços disponíveis:\n[lista dos serviços]\n\nQual serviço você gostaria de agendar?"
+- Após a escolha do serviço, peça o nome completo
+- Após o nome, peça a data e hora desejada
+- Após a data/hora, peça o telefone para finalizar o agendamento
+- Quando tiver TODOS os dados (profissional, serviço, nome, data/hora, telefone), confirme o agendamento
 - NÃO invente serviços - use APENAS os serviços listados acima
 - NÃO pergunte sem mostrar as listas completas
 - SEMPRE mostre todos os profissionais/serviços disponíveis antes de pedir para escolher
@@ -773,6 +912,15 @@ INSTRUÇÕES OBRIGATÓRIAS:
                   timestamp: new Date(),
                 });
                 console.log('✅ AI response saved to conversation history');
+                
+                // Check if this is an appointment confirmation and create appointment
+                if (aiResponse.includes('agendamento está confirmado') || aiResponse.includes('agendamento confirmado')) {
+                  try {
+                    await createAppointmentFromConversation(conversation.id, company.id);
+                  } catch (error) {
+                    console.error('❌ Error creating appointment from conversation:', error);
+                  }
+                }
                 
               } else {
                 const errorText = await evolutionResponse.text();
