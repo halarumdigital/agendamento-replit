@@ -454,12 +454,17 @@ export default function CompanyClients() {
                       <Label htmlFor="phone" className="text-right">
                         Telefone
                       </Label>
-                      <Input
-                        id="phone"
-                        className="col-span-3"
-                        placeholder="(11) 99999-9999"
-                        {...form.register('phone')}
-                      />
+                      <div className="col-span-3 flex">
+                        <div className="flex items-center px-3 py-2 bg-gray-50 border border-r-0 rounded-l-md text-sm text-gray-600">
+                          +55
+                        </div>
+                        <Input
+                          id="phone"
+                          className="rounded-l-none"
+                          placeholder="(11) 99999-9999"
+                          {...form.register('phone')}
+                        />
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-4 items-center gap-4">

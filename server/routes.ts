@@ -1784,8 +1784,18 @@ INSTRUÇÕES OBRIGATÓRIAS:
       let cleanPhone = client.phone.replace(/\D/g, '');
       
       // Ensure phone number starts with country code
-      if (!cleanPhone.startsWith('55') && cleanPhone.length === 11) {
-        cleanPhone = '55' + cleanPhone;
+      if (!cleanPhone.startsWith('55')) {
+        if (cleanPhone.length === 11 || cleanPhone.length === 10) {
+          cleanPhone = '55' + cleanPhone;
+        }
+      }
+      
+      // Validate phone number format
+      if (cleanPhone.length < 12 || cleanPhone.length > 13) {
+        return res.status(400).json({ 
+          message: "Formato de telefone inválido", 
+          details: `Número deve ter 12-13 dígitos (com DDI +55). Recebido: ${cleanPhone} (${cleanPhone.length} dígitos)`
+        });
       }
       
       // Send message via Evolution API
