@@ -191,14 +191,14 @@ export default function CompanyReviews() {
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-2">
                             <User className="h-4 w-4 text-gray-500" />
-                            {review.professional.name}
+                            {review.professionalName || 'N/A'}
                           </div>
                         </TableCell>
-                        <TableCell>{review.appointment.clientName}</TableCell>
+                        <TableCell>{review.clientName || 'N/A'}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Calendar className="h-4 w-4 text-gray-500" />
-                            {formatDate(review.appointment.appointmentDate)} às {formatTime(review.appointment.appointmentTime)}
+                            {review.appointmentDate ? formatDate(review.appointmentDate) : 'N/A'} {review.appointmentTime ? `às ${formatTime(review.appointmentTime)}` : ''}
                           </div>
                         </TableCell>
                         <TableCell>{renderStars(review.rating)}</TableCell>
