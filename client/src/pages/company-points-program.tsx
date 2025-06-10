@@ -96,12 +96,9 @@ export default function CompanyPointsProgram() {
   // Mutations
   const updatePointsMutation = useMutation({
     mutationFn: async (data: { clientId: number; pointsChange: number; description: string }) => {
-      return await apiRequest(`/api/company/client-points/${data.clientId}`, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          pointsChange: data.pointsChange,
-          description: data.description,
-        }),
+      return await apiRequest(`/api/company/client-points/${data.clientId}`, 'PATCH', {
+        pointsChange: data.pointsChange,
+        description: data.description,
       });
     },
     onSuccess: () => {
@@ -124,10 +121,7 @@ export default function CompanyPointsProgram() {
 
   const createCampaignMutation = useMutation({
     mutationFn: async (data: CampaignFormData) => {
-      return await apiRequest('/api/company/points-campaigns', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      });
+      return await apiRequest('/api/company/points-campaigns', 'POST', data);
     },
     onSuccess: () => {
       toast({

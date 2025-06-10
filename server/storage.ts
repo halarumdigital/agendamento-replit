@@ -77,35 +77,52 @@ import { eq, desc, and, sql } from "drizzle-orm";
 // Helper function to create conversation and message tables
 export async function ensureConversationTables() {
   try {
-    await db.execute(`
+    await db.execute(sql`
       CREATE TABLE IF NOT EXISTS conversations (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        company_id INT NOT NULL,
-        whatsapp_instance_id INT NOT NULL,
+        id SERIAL PRIMARY KEY,
+        company_id INTEGER NOT NULL,
+        whatsapp_instance_id INTEGER NOT NULL,
         phone_number VARCHAR(50) NOT NULL,
         contact_name VARCHAR(255),
         last_message_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        INDEX idx_company_phone (company_id, phone_number),
-        INDEX idx_instance_phone (whatsapp_instance_id, phone_number)
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
     
-    await db.execute(`
+    await db.execute(sql`
+      CREATE INDEX IF NOT EXISTS idx_company_phone ON conversations(company_id, phone_number)
+    `);
+    
+    await db.execute(sql`
+      CREATE INDEX IF NOT EXISTS idx_instance_phone ON conversations(whatsapp_instance_id, phone_number)
+    `);
+    
+    await db.execute(sql`
       CREATE TABLE IF NOT EXISTS messages (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        conversation_id INT NOT NULL,
-        role ENUM('user', 'assistant') NOT NULL,
-        content TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+        id SERIAL PRIMARY KEY,
+        conversation_id INTEGER NOT NULL,
+        role VARCHAR(20) NOT NULL,
+        content TEXT NOT NULL,
         message_id VARCHAR(255),
         message_type VARCHAR(50),
         delivered BOOLEAN DEFAULT false,
         timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        INDEX idx_conversation (conversation_id),
-        INDEX idx_timestamp (timestamp)
-      ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    await db.execute(sql`
+      CREATE INDEX IF NOT EXISTS idx_conversation ON messages(conversation_id)
+    `);
+    
+    await db.execute(sql`
+      CREATE INDEX IF NOT EXISTS idx_timestamp ON messages(timestamp)
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE messages ADD CONSTRAINT fk_messages_conversation 
+      FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE
     `);
     
     console.log("✅ Conversation and message tables created/verified");
