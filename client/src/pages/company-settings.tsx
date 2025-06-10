@@ -17,12 +17,18 @@ import { useCompanyAuth } from "@/hooks/useCompanyAuth";
 import { z } from "zod";
 import { formatDocument, companyProfileSchema, companyPasswordSchema, companyAiAgentSchema, whatsappInstanceSchema, webhookConfigSchema } from "@/lib/validations";
 
+const birthdayMessageSchema = z.object({
+  messageTemplate: z.string().min(10, "A mensagem deve ter pelo menos 10 caracteres"),
+  isActive: z.boolean().default(true),
+});
+
 
 type CompanyProfileData = z.infer<typeof companyProfileSchema>;
 type CompanyPasswordData = z.infer<typeof companyPasswordSchema>;
 type CompanyAiAgentData = z.infer<typeof companyAiAgentSchema>;
 type WhatsappInstanceData = z.infer<typeof whatsappInstanceSchema>;
 type WebhookConfigData = z.infer<typeof webhookConfigSchema>;
+type BirthdayMessageData = z.infer<typeof birthdayMessageSchema>;
 
 export default function CompanySettings() {
   const { toast } = useToast();
@@ -210,6 +216,10 @@ export default function CompanySettings() {
     updateAiAgentMutation.mutate(data);
   };
 
+  const onBirthdayMessageSubmit = (data: BirthdayMessageData) => {
+    createBirthdayMessageMutation.mutate(data);
+  };
+
   const autoConfigureWebhookMutation = useMutation({
     mutationFn: async (instanceId: number) => {
       const response = await apiRequest("POST", `/api/company/whatsapp/${instanceId}/auto-configure-webhook`);
@@ -391,6 +401,44 @@ export default function CompanySettings() {
   // State for AI agent testing
   const [testMessage, setTestMessage] = useState("");
   const [agentResponse, setAgentResponse] = useState("");
+
+  // Birthday messaging form
+  const birthdayForm = useForm<BirthdayMessageData>({
+    resolver: zodResolver(birthdayMessageSchema),
+    defaultValues: {
+      messageTemplate: "Que este novo ano de vida seja repleto de alegrias, conquistas e momentos especiais.\n\nPara comemorar, que tal agendar um horário especial conosco? 🎉✨\n\nFeliz aniversário! 🎂",
+      isActive: true,
+    },
+  });
+
+  // Birthday messages queries
+  const { data: birthdayMessages = [] } = useQuery({
+    queryKey: ["/api/company/birthday-messages"],
+  });
+
+  const { data: birthdayHistory = [] } = useQuery({
+    queryKey: ["/api/company/birthday-message-history"],
+  });
+
+  const createBirthdayMessageMutation = useMutation({
+    mutationFn: async (data: BirthdayMessageData) => {
+      return await apiRequest("POST", "/api/company/birthday-messages", data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Mensagem salva",
+        description: "Mensagem de aniversário configurada com sucesso.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/company/birthday-messages"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao salvar mensagem",
+        description: error.message || "Erro ao configurar mensagem de aniversário",
+        variant: "destructive",
+      });
+    },
+  });
 
   const testAgentMutation = useMutation({
     mutationFn: async () => {

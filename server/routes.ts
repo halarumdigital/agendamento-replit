@@ -1652,6 +1652,48 @@ INSTRUÇÕES OBRIGATÓRIAS:
     }
   });
 
+  // Initialize birthday messaging tables
+  app.post("/api/admin/init-birthday-messages", async (req, res) => {
+    try {
+      // Create birthday messages table
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS birthday_messages (
+          id INT PRIMARY KEY AUTO_INCREMENT,
+          company_id INT NOT NULL,
+          message_template TEXT NOT NULL,
+          is_active BOOLEAN DEFAULT TRUE,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `);
+
+      // Create birthday message history table
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS birthday_message_history (
+          id INT PRIMARY KEY AUTO_INCREMENT,
+          company_id INT NOT NULL,
+          client_id INT,
+          client_name VARCHAR(255) NOT NULL,
+          client_phone VARCHAR(20) NOT NULL,
+          message TEXT NOT NULL,
+          sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          status VARCHAR(50) DEFAULT 'sent',
+          whatsapp_instance_id INT,
+          FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
+          FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE SET NULL,
+          FOREIGN KEY (whatsapp_instance_id) REFERENCES whatsapp_instances(id) ON DELETE SET NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `);
+
+      console.log('✅ Birthday messaging tables created successfully');
+      res.json({ message: "Tabelas de mensagens de aniversário criadas com sucesso" });
+    } catch (error: any) {
+      console.error("Error creating birthday messaging tables:", error);
+      res.status(500).json({ message: "Erro ao criar tabelas de mensagens de aniversário", error: error.message });
+    }
+  });
+
   // Auto-configure webhook using global settings
   app.post('/api/company/whatsapp/:instanceId/auto-configure-webhook', async (req: any, res) => {
     try {
