@@ -987,7 +987,9 @@ export default function DashboardAppointments() {
                   <div>
                     <label className="text-sm font-medium text-gray-700">Serviço</label>
                     <p className="text-sm">{selectedAppointment.service.name}</p>
-                    <p className="text-xs text-gray-500">{selectedAppointment.duration} minutos - R$ {Number(selectedAppointment.totalPrice).toFixed(2)}</p>
+                    <p className="text-xs text-gray-500">
+                      {services.find(s => s.id === selectedAppointment.serviceId)?.duration || 'N/A'} minutos - R$ {services.find(s => s.id === selectedAppointment.serviceId)?.price || 'N/A'}
+                    </p>
                   </div>
 
                   <div>
