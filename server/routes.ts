@@ -692,7 +692,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
               const services = await storage.getServicesByCompany(company.id);
               const availableServices = services
-                .filter(service => service.active)
+                .filter(service => service.active !== false) // Include services where active is true or null
                 .map(service => `- ${service.name}${service.price ? ` (R$ ${service.price})` : ''}`)
                 .join('\n');
 
