@@ -34,6 +34,9 @@ interface ReviewInvitation {
   appointmentId: number;
   professionalId: number;
   clientPhone: string;
+  clientName: string;
+  appointmentDate: string;
+  appointmentTime: string;
   invitationToken: string;
   reviewSubmittedAt: string | null;
   status: string;
@@ -91,7 +94,7 @@ export default function CompanyReviews() {
   };
 
   const formatTime = (timeString: string) => {
-    return timeString.slice(0, 5);
+    return timeString ? timeString.slice(0, 5) : '';
   };
 
   const renderStars = (rating: number) => {
@@ -270,13 +273,13 @@ export default function CompanyReviews() {
                             {invitation.professional?.name || 'Profissional não encontrado'}
                           </div>
                         </TableCell>
-                        <TableCell>{invitation.appointment?.clientName || 'Cliente não encontrado'}</TableCell>
+                        <TableCell>{invitation.clientName || 'Cliente não encontrado'}</TableCell>
                         <TableCell>{invitation.clientPhone}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Calendar className="h-4 w-4 text-gray-500" />
-                            {invitation.appointment ? 
-                              `${formatDate(invitation.appointment.appointmentDate)} às ${formatTime(invitation.appointment.appointmentTime)}` : 
+                            {invitation.appointmentDate ? 
+                              `${formatDate(invitation.appointmentDate)} ${invitation.appointmentTime ? `às ${formatTime(invitation.appointmentTime)}` : ''}` : 
                               'Data não disponível'
                             }
                           </div>
