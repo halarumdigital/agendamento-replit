@@ -10,7 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { ChevronLeft, ChevronRight, Calendar, Plus, List, Grid3X3, Kanban } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar, Plus, List, Grid3X3, Kanban, Eye, Edit2 as Edit } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -93,6 +93,7 @@ export default function DashboardAppointments() {
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [isAppointmentDetailsOpen, setIsAppointmentDetailsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -306,6 +307,16 @@ export default function DashboardAppointments() {
     );
     days = [];
   }
+
+  // Filter appointments based on search term
+  const filteredAppointments = appointments.filter((appointment: Appointment) => {
+    if (!searchTerm) return true;
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      appointment.clientName.toLowerCase().includes(searchLower) ||
+      appointment.clientPhone.toLowerCase().includes(searchLower)
+    );
+  });
 
   // Helper functions
   const handleClientSelect = (clientId: string) => {
@@ -806,16 +817,26 @@ export default function DashboardAppointments() {
       ) : viewMode === 'list' ? (
         <Card>
           <CardHeader>
-            <CardTitle>Lista de Agendamentos</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>Lista de Agendamentos</CardTitle>
+              <div className="w-80">
+                <Input
+                  placeholder="Buscar por nome ou telefone do cliente..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {appointments.length === 0 ? (
+              {filteredAppointments.length === 0 ? (
                 <p className="text-gray-500 text-center py-8">
-                  Nenhum agendamento encontrado
+                  {searchTerm ? 'Nenhum agendamento encontrado para a busca' : 'Nenhum agendamento encontrado'}
                 </p>
               ) : (
-                appointments.map((appointment: Appointment) => (
+                filteredAppointments.map((appointment: Appointment) => (
                   <div
                     key={appointment.id}
                     className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
@@ -832,16 +853,44 @@ export default function DashboardAppointments() {
                         </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="font-medium">
-                        {format(new Date(appointment.appointmentDate), 'dd/MM/yyyy')} às {appointment.appointmentTime}
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <div className="font-medium">
+                          {format(new Date(appointment.appointmentDate), 'dd/MM/yyyy')} às {appointment.appointmentTime}
+                        </div>
+                        <div className="text-sm text-gray-500">{appointment.clientPhone}</div>
+                        <Badge variant="outline" className="mt-1">
+                          {appointment.status === 'scheduled' && 'Agendado'}
+                          {appointment.status === 'confirmed' && 'Confirmado'}
+                          {appointment.status === 'cancelled' && 'Cancelado'}
+                          {appointment.status === 'completed' && 'Concluído'}
+                        </Badge>
                       </div>
-                      <Badge variant="outline">
-                        {appointment.status === 'scheduled' && 'Agendado'}
-                        {appointment.status === 'confirmed' && 'Confirmado'}
-                        {appointment.status === 'cancelled' && 'Cancelado'}
-                        {appointment.status === 'completed' && 'Concluído'}
-                      </Badge>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedAppointment(appointment);
+                            setIsAppointmentDetailsOpen(true);
+                          }}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            // TODO: Implementar edição de agendamento
+                            toast({
+                              title: "Em desenvolvimento",
+                              description: "Funcionalidade de edição será implementada em breve.",
+                            });
+                          }}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))
