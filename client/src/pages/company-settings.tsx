@@ -1594,9 +1594,7 @@ export default function CompanySettings() {
                   </Card>
                 </TabsContent>
               </Tabs>
-            </div>
         </TabsContent>
-        </Tabs>
 
         {/* QR Code Dialog */}
         <Dialog open={showQrDialog} onOpenChange={setShowQrDialog}>
@@ -1669,31 +1667,30 @@ export default function CompanySettings() {
               <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
                 <h4 className="font-semibold text-amber-900 mb-2">URL do Webhook gerada</h4>
                 <p className="text-sm text-amber-800 mb-2">Esta URL será configurada automaticamente:</p>
-                <code className="text-xs bg-white p-2 rounded border block">
-                  {window.location.origin}/api/webhook/whatsapp/{selectedInstance?.instanceName}
-                </code>
+                <p className="text-sm text-gray-600">
+                  Configure o webhook para integração com WhatsApp
+                </p>
               </div>
 
               <div className="flex justify-end gap-2">
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setSelectedInstance(null)}
+                  onClick={() => setShowQrDialog(false)}
                 >
                   Cancelar
                 </Button>
                 <Button
-                  onClick={onWebhookSubmit}
-                  disabled={configureWebhookMutation.isPending}
                   className="flex items-center gap-2"
                 >
                   <Bot className="w-4 h-4" />
-                  {configureWebhookMutation.isPending ? "Configurando..." : "Configurar Agente IA"}
+                  Configurar
                 </Button>
               </div>
             </div>
           </DialogContent>
         </Dialog>
       </div>
+    </Tabs>
   );
 }
