@@ -16,6 +16,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useNotifications } from "@/hooks/use-notifications";
 
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 
@@ -104,6 +105,7 @@ export default function DashboardAppointments() {
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { showNewAppointmentNotification, NotificationContainer } = useNotifications();
 
   // Fetch appointments for current month
   const { data: appointments = [], isLoading: appointmentsLoading } = useQuery<Appointment[]>({
@@ -270,11 +272,24 @@ export default function DashboardAppointments() {
       
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (newAppointment, variables) => {
       queryClient.invalidateQueries({ queryKey: ['/api/company/appointments'] });
       setIsNewAppointmentOpen(false);
       form.reset();
       setSelectedClientId('');
+      
+      // Disparar notificação sonora e visual
+      const selectedService = services.find(s => s.id === variables.serviceId);
+      const selectedProfessional = professionals.find(p => p.id === variables.professionalId);
+      
+      showNewAppointmentNotification({
+        clientName: variables.clientName,
+        serviceName: selectedService?.name || 'Serviço',
+        appointmentDate: variables.appointmentDate,
+        appointmentTime: variables.appointmentTime,
+        professionalName: selectedProfessional?.name || 'Profissional',
+      });
+      
       toast({
         title: "Sucesso",
         description: "Agendamento criado com sucesso!",
@@ -1557,6 +1572,9 @@ export default function DashboardAppointments() {
           </Form>
         </DialogContent>
       </Dialog>
+      
+      {/* Container de Notificações */}
+      <NotificationContainer />
     </div>
   );
 }
