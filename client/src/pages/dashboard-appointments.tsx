@@ -54,6 +54,12 @@ interface Professional {
   name: string;
 }
 
+interface Status {
+  id: number;
+  name: string;
+  color: string;
+}
+
 const appointmentSchema = z.object({
   serviceId: z.number().min(1, "Selecione um serviço"),
   professionalId: z.number().min(1, "Selecione um profissional"),
@@ -70,7 +76,7 @@ type AppointmentFormData = z.infer<typeof appointmentSchema>;
 export default function DashboardAppointments() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
+  const [viewMode, setViewMode] = useState<'calendar' | 'list' | 'kanban'>('calendar');
   const [filterProfessional, setFilterProfessional] = useState<string>('all');
   const [isNewAppointmentOpen, setIsNewAppointmentOpen] = useState(false);
   
@@ -90,6 +96,11 @@ export default function DashboardAppointments() {
   // Fetch professionals
   const { data: professionals = [] } = useQuery<Professional[]>({
     queryKey: ['/api/company/professionals'],
+  });
+
+  // Fetch status
+  const { data: statuses = [] } = useQuery<Status[]>({
+    queryKey: ['/api/company/status'],
   });
 
   const form = useForm<AppointmentFormData>({
@@ -258,6 +269,13 @@ export default function DashboardAppointments() {
               onClick={() => setViewMode('list')}
             >
               <List className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'kanban' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('kanban')}
+            >
+              <Kanban className="h-4 w-4" />
             </Button>
           </div>
 
@@ -465,7 +483,7 @@ export default function DashboardAppointments() {
             </div>
           </CardContent>
         </Card>
-      ) : (
+      ) : viewMode === 'list' ? (
         <Card>
           <CardHeader>
             <CardTitle>Lista de Agendamentos</CardTitle>
@@ -511,6 +529,69 @@ export default function DashboardAppointments() {
             </div>
           </CardContent>
         </Card>
+      ) : (
+        // Kanban View
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {statuses.map((status) => {
+            const statusAppointments = appointments.filter((apt: Appointment) => 
+              apt.status === status.name &&
+              (filterProfessional === 'all' || apt.professionalId.toString() === filterProfessional)
+            );
+            
+            return (
+              <Card key={status.id} className="flex flex-col">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: status.color }}
+                    />
+                    <CardTitle className="text-lg">{status.name}</CardTitle>
+                    <Badge variant="secondary" className="ml-auto">
+                      {statusAppointments.length}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="flex-1 pt-0">
+                  <div className="space-y-3">
+                    {statusAppointments.length === 0 ? (
+                      <p className="text-gray-500 text-sm text-center py-4">
+                        Nenhum agendamento
+                      </p>
+                    ) : (
+                      statusAppointments.map((appointment: Appointment) => (
+                        <div
+                          key={appointment.id}
+                          className="p-3 bg-white border rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                        >
+                          <div className="flex items-start justify-between mb-2">
+                            <h4 className="font-medium text-sm">{appointment.clientName}</h4>
+                            <span className="text-xs text-gray-500">
+                              {appointment.appointmentTime}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 mb-2">
+                            <div
+                              className="w-2 h-2 rounded-full"
+                              style={{ backgroundColor: appointment.service.color }}
+                            />
+                            <span className="text-xs text-gray-600">{appointment.service.name}</span>
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {appointment.professional.name}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {format(new Date(appointment.appointmentDate), 'dd/MM/yyyy')}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
       )}
     </div>
   );
