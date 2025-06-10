@@ -536,7 +536,15 @@ export default function DashboardAppointments() {
   };
 
   const onEditSubmit = (data: AppointmentFormData) => {
-    if (!editingAppointment) return;
+    console.log("🔄 Edit form data being submitted:", data);
+    console.log("🔄 Editing appointment:", editingAppointment);
+    console.log("🔄 Edit form errors:", editForm.formState.errors);
+    
+    if (!editingAppointment) {
+      console.error("❌ No editing appointment found");
+      return;
+    }
+    
     updateAppointmentMutation.mutate({ 
       appointmentId: editingAppointment.id, 
       data 
