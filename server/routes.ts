@@ -1966,9 +1966,11 @@ INSTRUÇÕES OBRIGATÓRIAS:
       }
 
       // Replace placeholders in message template
-      let messageText = activeMessage.messageTemplate;
-      messageText = messageText.replace(/{NOME}/g, client.name);
-      messageText = messageText.replace(/{EMPRESA}/g, company.fantasyName);
+      let messageText = activeMessage.messageTemplate || activeMessage.message || '';
+      if (messageText) {
+        messageText = messageText.replace(/{NOME}/g, client.name);
+        messageText = messageText.replace(/{EMPRESA}/g, company.fantasyName);
+      }
 
       // Clean and format phone number (remove non-digits and ensure format)
       let cleanPhone = client.phone.replace(/\D/g, '');

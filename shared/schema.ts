@@ -196,6 +196,7 @@ export const birthdayMessages = mysqlTable("birthday_messages", {
   id: int("id").primaryKey().autoincrement(),
   companyId: int("company_id").notNull(),
   message: text("message").notNull(),
+  messageTemplate: text("message_template"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
