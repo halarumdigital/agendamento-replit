@@ -919,13 +919,12 @@ INSTRUÇÕES OBRIGATÓRIAS:
                 });
                 console.log('✅ AI response saved to conversation history');
                 
-                // Check if this is an appointment confirmation and create appointment
-                if (aiResponse.includes('agendamento está confirmado') || aiResponse.includes('agendamento confirmado')) {
-                  try {
-                    await createAppointmentFromConversation(conversation.id, company.id);
-                  } catch (error) {
-                    console.error('❌ Error creating appointment from conversation:', error);
-                  }
+                // Always check for appointment creation after AI response
+                try {
+                  console.log('🔍 Checking conversation for appointment data...');
+                  await createAppointmentFromConversation(conversation.id, company.id);
+                } catch (error) {
+                  console.log('ℹ️ No appointment data found or error:', error);
                 }
                 
               } else {
