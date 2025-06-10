@@ -921,6 +921,19 @@ export default function DashboardAppointments() {
                     <p className="text-sm">{selectedAppointment.professional.name}</p>
                   </div>
 
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Status</label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <div
+                        className="w-3 h-3 rounded-full"
+                        style={{ 
+                          backgroundColor: statuses.find(s => s.name === selectedAppointment.status)?.color || '#6b7280' 
+                        }}
+                      />
+                      <p className="text-sm">{selectedAppointment.status}</p>
+                    </div>
+                  </div>
+
                   {selectedAppointment.notes && (
                     <div>
                       <label className="text-sm font-medium text-gray-700">Observações</label>
