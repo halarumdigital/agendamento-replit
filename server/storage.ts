@@ -1345,7 +1345,6 @@ export class DatabaseStorage implements IStorage {
           ri.client_phone as clientPhone,
           ri.invitation_token as invitationToken,
           ri.sent_at as sentAt,
-
           ri.review_submitted_at as reviewSubmittedAt,
           ri.status,
           ri.whatsapp_instance_id as whatsappInstanceId,

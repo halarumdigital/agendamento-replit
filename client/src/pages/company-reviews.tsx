@@ -186,7 +186,7 @@ export default function CompanyReviews() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {reviews.map((review: ProfessionalReview) => (
+                    {reviews.map((review: any) => (
                       <TableRow key={review.id}>
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-2">
