@@ -997,12 +997,13 @@ export default function CompanySettings() {
                               size="sm"
                               onClick={() => {
                                 setSelectedInstance(instance);
-                                setShowQrDialog(true);
+                                connectInstanceMutation.mutate(instance.instanceName);
                               }}
+                              disabled={connectInstanceMutation.isPending}
                               className="flex items-center gap-2"
                             >
                               <QrCode className="w-4 h-4" />
-                              Conectar
+                              {connectInstanceMutation.isPending ? "Conectando..." : "Conectar"}
                             </Button>
                           )}
                           <Button
