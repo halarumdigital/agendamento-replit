@@ -193,6 +193,7 @@ export default function DashboardAppointments() {
   const createAppointmentMutation = useMutation({
     mutationFn: async (data: AppointmentFormData) => {
       const selectedService = services.find(s => s.id === data.serviceId);
+      const selectedStatus = statuses.find(s => s.id === data.statusId);
       const response = await fetch('/api/company/appointments', {
         method: 'POST',
         headers: {
@@ -202,6 +203,7 @@ export default function DashboardAppointments() {
           ...data,
           duration: selectedService?.duration || 60,
           totalPrice: selectedService?.price || 0,
+          status: selectedStatus?.name || 'Pendente',
         }),
         credentials: 'include',
       });
@@ -217,6 +219,7 @@ export default function DashboardAppointments() {
       queryClient.invalidateQueries({ queryKey: ['/api/company/appointments'] });
       setIsNewAppointmentOpen(false);
       form.reset();
+      setSelectedClientId('');
       toast({
         title: "Sucesso",
         description: "Agendamento criado com sucesso!",
@@ -297,8 +300,31 @@ export default function DashboardAppointments() {
     days = [];
   }
 
+  // Helper functions
+  const handleClientSelect = (clientId: string) => {
+    setSelectedClientId(clientId);
+    if (clientId) {
+      const selectedClient = clients.find(c => c.id.toString() === clientId);
+      if (selectedClient) {
+        form.setValue('clientId', selectedClient.id);
+        form.setValue('clientName', selectedClient.name);
+        form.setValue('clientPhone', selectedClient.phone);
+        form.setValue('clientEmail', selectedClient.email || '');
+      }
+    } else {
+      form.setValue('clientId', undefined);
+      form.setValue('clientName', '');
+      form.setValue('clientPhone', '');
+      form.setValue('clientEmail', '');
+    }
+  };
+
   const onSubmit = (data: AppointmentFormData) => {
     createAppointmentMutation.mutate(data);
+  };
+
+  const onClientSubmit = (data: ClientFormData) => {
+    createClientMutation.mutate(data);
   };
 
   // Update form date when selectedDate changes
@@ -361,7 +387,7 @@ export default function DashboardAppointments() {
                 Novo Agendamento
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md">
+            <DialogContent className="max-w-lg">
               <DialogHeader>
                 <DialogTitle>Novo Agendamento</DialogTitle>
               </DialogHeader>
@@ -384,7 +410,7 @@ export default function DashboardAppointments() {
                             <SelectContent>
                               {services.map((service) => (
                                 <SelectItem key={service.id} value={service.id.toString()}>
-                                  {service.name} - R$ {service.price.toFixed(2)}
+                                  {service.name} - R$ {typeof service.price === 'string' ? parseFloat(service.price).toFixed(2) : service.price.toFixed(2)}
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -519,6 +545,73 @@ export default function DashboardAppointments() {
                     </Button>
                     <Button type="submit" disabled={createAppointmentMutation.isPending}>
                       {createAppointmentMutation.isPending ? "Criando..." : "Criar Agendamento"}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+
+          {/* Modal de Cadastro Rápido de Cliente */}
+          <Dialog open={isNewClientOpen} onOpenChange={setIsNewClientOpen}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Novo Cliente</DialogTitle>
+              </DialogHeader>
+              <Form {...clientForm}>
+                <form onSubmit={clientForm.handleSubmit(onClientSubmit)} className="space-y-4">
+                  <FormField
+                    control={clientForm.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nome *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Nome completo do cliente" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={clientForm.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Telefone *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="(11) 99999-9999" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={clientForm.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input type="email" placeholder="cliente@email.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="flex justify-end space-x-2 pt-4">
+                    <Button type="button" variant="outline" onClick={() => setIsNewClientOpen(false)}>
+                      Cancelar
+                    </Button>
+                    <Button 
+                      type="submit" 
+                      disabled={createClientMutation.isPending}
+                      className="bg-purple-600 hover:bg-purple-700"
+                    >
+                      {createClientMutation.isPending ? "Criando..." : "Criar Cliente"}
                     </Button>
                   </div>
                 </form>
