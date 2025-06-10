@@ -337,21 +337,34 @@ export default function CompanySettings() {
 
   const connectInstanceMutation = useMutation({
     mutationFn: async (instanceName: string) => {
+      console.log(`🚀 Connecting instance: ${instanceName}`);
       // Trigger connection in Evolution API
       const response = await apiRequest("GET", `/api/company/whatsapp/instances/${instanceName}/connect`);
-      return await response.json();
+      if (!response.ok) {
+        const error = await response.text();
+        console.error("❌ Connection API error:", error);
+        throw new Error(error);
+      }
+      const result = await response.json();
+      console.log("📱 Connect API Response:", result);
+      return result;
     },
     onSuccess: async (data: any) => {
-      console.log("Connect API Response:", data);
+      console.log("✅ Connect API Success:", data);
       
       // Show modal immediately
       setShowQrDialog(true);
       
-      // Check if QR code was returned directly
-      const qrCode = data.qrcode || data.base64 || data.qr || data.qr_code;
+      // Check for QR code in multiple possible fields
+      const qrCode = data.qrcode || data.base64 || data.qr || data.qr_code || 
+                    data.data?.qrcode || data.data?.base64;
+      
+      console.log(`🔍 QR code found: ${!!qrCode}, Length: ${qrCode?.length || 0}`);
+      console.log("🔍 QR code preview:", qrCode?.substring(0, 100));
       
       if (qrCode && qrCode.length > 100) {
         // QR code received directly from API
+        console.log("✅ Setting QR code directly from API response");
         setQrCodeData(qrCode);
         toast({
           title: "QR code gerado",
@@ -359,6 +372,7 @@ export default function CompanySettings() {
         });
       } else {
         // QR code not available yet, start polling
+        console.log("⏳ QR code not ready, starting polling...");
         setQrCodeData("");
         toast({
           title: "Gerando QR code",
@@ -366,6 +380,7 @@ export default function CompanySettings() {
         });
         
         const instanceName = data.instanceName || selectedInstance?.instanceName;
+        console.log(`📡 Polling for instance: ${instanceName}`);
         
         // Poll for QR code with timeout
         let attempts = 0;
@@ -373,9 +388,11 @@ export default function CompanySettings() {
         
         const pollInterval = setInterval(async () => {
           attempts++;
+          console.log(`🔄 Polling attempt ${attempts}/${maxAttempts}`);
           const updatedQrCode = await pollForQrCode(instanceName);
           
           if (updatedQrCode && updatedQrCode.length > 100) {
+            console.log("✅ QR code found via polling!");
             clearInterval(pollInterval);
             setQrCodeData(updatedQrCode);
             toast({
@@ -383,6 +400,7 @@ export default function CompanySettings() {
               description: "Escaneie o QR code com seu WhatsApp.",
             });
           } else if (attempts >= maxAttempts) {
+            console.log("❌ Polling timeout reached");
             clearInterval(pollInterval);
             toast({
               title: "Timeout",

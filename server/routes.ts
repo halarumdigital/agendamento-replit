@@ -2820,11 +2820,17 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
         }
 
         const evolutionData = await evolutionResponse.json();
+        console.log(`🔍 Evolution API Response for ${instanceName}:`, JSON.stringify(evolutionData, null, 2));
         
-        // The Evolution API should return the QR code data
-        if (evolutionData.base64 || evolutionData.qrcode) {
-          const qrCodeData = evolutionData.base64 || evolutionData.qrcode;
+        // Check for QR code in multiple possible fields
+        const qrCodeData = evolutionData.base64 || evolutionData.qrcode || evolutionData.qr || 
+                          evolutionData.data?.qrcode || evolutionData.data?.base64;
+        
+        console.log(`📱 QR code found: ${!!qrCodeData}, Length: ${qrCodeData?.length || 0}`);
+        
+        if (qrCodeData && qrCodeData.length > 50) {
           const qrCodeUrl = qrCodeData.startsWith('data:') ? qrCodeData : `data:image/png;base64,${qrCodeData}`;
+          console.log(`✅ Returning QR code for ${instanceName}, Preview: ${qrCodeUrl.substring(0, 100)}...`);
           
           // Update instance status in database
           try {
@@ -2835,6 +2841,7 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
                 status: 'connecting',
                 qrCode: qrCodeUrl
               });
+              console.log(`💾 QR code saved to database for instance ${instanceName}`);
             }
           } catch (dbError) {
             console.error("Error updating instance status:", dbError);
@@ -2844,6 +2851,8 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
             instanceName,
             status: 'connecting',
             qrcode: qrCodeUrl,
+            base64: qrCodeUrl,
+            qr: qrCodeUrl,
             message: "QR code obtido da Evolution API. Escaneie com seu WhatsApp para conectar.",
             evolutionData
           });
