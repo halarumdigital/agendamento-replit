@@ -825,6 +825,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('📋 Webhook event:', webhookData.event);
       console.log('📄 Full webhook data:', JSON.stringify(webhookData, null, 2));
 
+      // Handle CONNECTION_UPDATE events to update instance status
+      const isConnectionEvent = webhookData.event === 'connection.update' || webhookData.event === 'CONNECTION_UPDATE';
+      
+      if (isConnectionEvent) {
+        console.log('🔄 Processing connection update event');
+        
+        const connectionData = webhookData.data;
+        let newStatus = 'disconnected'; // default status
+        
+        // Map Evolution API connection states to our status
+        if (connectionData?.state === 'open') {
+          newStatus = 'connected';
+        } else if (connectionData?.state === 'connecting') {
+          newStatus = 'connecting';
+        } else if (connectionData?.state === 'close') {
+          newStatus = 'disconnected';
+        }
+        
+        console.log(`📡 Connection state: ${connectionData?.state} -> ${newStatus}`);
+        
+        // Update instance status in database
+        try {
+          const whatsappInstance = await storage.getWhatsappInstanceByName(instanceName);
+          if (whatsappInstance) {
+            await storage.updateWhatsappInstance(whatsappInstance.id, {
+              status: newStatus
+            });
+            console.log(`✅ Updated instance ${instanceName} status to: ${newStatus}`);
+          } else {
+            console.log(`⚠️ Instance ${instanceName} not found in database`);
+          }
+        } catch (dbError) {
+          console.error("Error updating instance status:", dbError);
+        }
+        
+        return res.status(200).json({ 
+          received: true, 
+          processed: true, 
+          instanceName,
+          newStatus,
+          event: 'connection.update'
+        });
+      }
+
       // Check if it's a QR code update event
       const isQrCodeEvent = webhookData.event === 'qrcode.updated' || webhookData.event === 'QRCODE_UPDATED';
       
