@@ -78,6 +78,17 @@ async function createAppointmentFromConversation(conversationId: number, company
   try {
     console.log('📅 Creating appointment from conversation:', conversationId);
     
+    // Check if appointment already exists for this conversation
+    const existingAppointments = await storage.getAppointmentsByCompany(companyId);
+    const conversationAppointment = existingAppointments.find(apt => 
+      apt.notes && apt.notes.includes(`Conversa ID: ${conversationId}`)
+    );
+    
+    if (conversationAppointment) {
+      console.log('ℹ️ Appointment already exists for this conversation:', conversationAppointment.id);
+      return;
+    }
+    
     // Get conversation messages
     const messages = await storage.getMessagesByConversation(conversationId);
     const conversationText = messages.map(m => `${m.role}: ${m.content}`).join('\n');
@@ -129,6 +140,15 @@ async function createAppointmentFromConversation(conversationId: number, company
     const extractionPrompt = `Analise esta conversa de WhatsApp e extraia os dados do agendamento em formato JSON.
 
 HOJE É: ${today.toLocaleDateString('pt-BR')} (${['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'][today.getDay()]})
+
+PRÓXIMOS DIAS DA SEMANA:
+- Domingo: ${getNextWeekdayDate('domingo')} 
+- Segunda-feira: ${getNextWeekdayDate('segunda')}
+- Terça-feira: ${getNextWeekdayDate('terça')}
+- Quarta-feira: ${getNextWeekdayDate('quarta')}
+- Quinta-feira: ${getNextWeekdayDate('quinta')}
+- Sexta-feira: ${getNextWeekdayDate('sexta')}
+- Sábado: ${getNextWeekdayDate('sábado')}
 
 PROFISSIONAIS DISPONÍVEIS:
 ${professionals.map(p => `- ${p.name} (ID: ${p.id})`).join('\n')}
@@ -237,7 +257,7 @@ Responda APENAS em formato JSON válido ou "DADOS_INCOMPLETOS" se algum dado est
         duration: service.duration || 60,
         status: 'Pendente',
         totalPrice: String(service.price || 0),
-        notes: 'Agendamento criado via WhatsApp',
+        notes: `Agendamento criado via WhatsApp - Conversa ID: ${conversationId}`,
         reminderSent: false
       };
 
@@ -1090,6 +1110,10 @@ INSTRUÇÕES OBRIGATÓRIAS:
 - Use o formato: "Aqui estão os serviços disponíveis:\n[lista dos serviços]\n\nQual serviço você gostaria de agendar?"
 - Após a escolha do serviço, peça o nome completo
 - Após o nome, peça a data e hora desejada
+- REGRA OBRIGATÓRIA DE CONFIRMAÇÃO DE DATA: Quando cliente mencionar dias da semana (segunda, terça, quarta, quinta, sexta, sábado, domingo), SEMPRE confirme o dia específico do mês
+- Exemplo: Se cliente falar "quarta-feira", responda "Quarta-feira dia 11/06. Está correto?" 
+- Exemplo: Se cliente falar "sexta", responda "Sexta-feira dia 13/06. Confirma?"
+- Esta confirmação é OBRIGATÓRIA antes de prosseguir com o agendamento
 - IMPORTANTE: Quando cliente sugerir data/hora, SEMPRE verifique a disponibilidade real usando as informações acima
 - Verifique se o profissional trabalha no dia solicitado
 - Verifique se o horário está dentro do expediente
