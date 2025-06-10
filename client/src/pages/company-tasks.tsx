@@ -75,7 +75,7 @@ export default function CompanyTasks() {
     },
   });
 
-  const { data: tasks = [], isLoading } = useQuery({
+  const { data: tasks = [], isLoading } = useQuery<Task[]>({
     queryKey: ["/api/company/tasks"],
   });
 
@@ -101,7 +101,7 @@ export default function CompanyTasks() {
 
   const updateTaskMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: Partial<TaskFormData> }) =>
-      apiRequest(`/api/company/tasks/${id}`, "PATCH", data),
+      apiRequest("PATCH", `/api/company/tasks/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/company/tasks"] });
       setIsDialogOpen(false);
@@ -186,8 +186,8 @@ export default function CompanyTasks() {
     return new Date(dueDate) < new Date() && new Date(dueDate).toDateString() !== new Date().toDateString();
   };
 
-  const activeTasks = tasks.filter((task: Task) => task.isActive);
-  const inactiveTasks = tasks.filter((task: Task) => !task.isActive);
+  const activeTasks = tasks.filter((task) => task.isActive);
+  const inactiveTasks = tasks.filter((task) => !task.isActive);
 
   if (isLoading) {
     return (
