@@ -396,10 +396,13 @@ export default function DashboardAppointments() {
   while (day <= endDate) {
     for (let i = 0; i < 7; i++) {
       const cloneDay = day;
-      const dayAppointments = appointments.filter((apt: Appointment) => 
-        isSameDay(new Date(apt.appointmentDate), day) &&
-        (filterProfessional === 'all' || apt.professionalId.toString() === filterProfessional)
-      );
+      const dayAppointments = appointments.filter((apt: Appointment) => {
+        // Fix timezone issue: extract date directly from ISO string
+        const appointmentDateString = apt.appointmentDate.split('T')[0];
+        const appointmentDate = new Date(appointmentDateString + 'T12:00:00');
+        return isSameDay(appointmentDate, day) &&
+          (filterProfessional === 'all' || apt.professionalId.toString() === filterProfessional);
+      });
 
       days.push(
         <div
