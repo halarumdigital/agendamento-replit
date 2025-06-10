@@ -570,8 +570,10 @@ export default function DashboardAppointments() {
       const statusObj = statuses.find(s => s.name.toLowerCase() === freshAppointment.status.toLowerCase());
       
       // Populate form with fresh appointment data
-      // Extract date directly from ISO string to avoid timezone issues
-      const appointmentDateString = freshAppointment.appointmentDate.split('T')[0];
+      // Fix timezone issue: add one day to compensate for UTC conversion
+      const dbDate = new Date(freshAppointment.appointmentDate);
+      const correctedDate = new Date(dbDate.getTime() + (24 * 60 * 60 * 1000)); // Add 1 day
+      const appointmentDateString = correctedDate.toISOString().split('T')[0];
       
       editForm.reset({
         clientId: undefined,
