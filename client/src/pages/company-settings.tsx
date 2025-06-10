@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Settings, Building2, Lock, User, MessageSquare, Trash2, Plus, Smartphone, QrCode, RefreshCw, Bot, Key, Gift, Calendar, Bell, Clock, CheckCircle, Send, XCircle } from "lucide-react";
+import { Settings, Building2, Lock, User, MessageSquare, Trash2, Plus, Smartphone, QrCode, RefreshCw, Bot, Key, Gift, Calendar, Bell, Clock, CheckCircle, Send, XCircle, LogOut } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useCompanyAuth } from "@/hooks/useCompanyAuth";
 import { z } from "zod";
@@ -991,7 +991,23 @@ export default function CompanySettings() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Instâncias Configuradas</CardTitle>
+              <CardTitle className="flex items-center justify-between">
+                <span>Instâncias Configuradas</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    queryClient.invalidateQueries({ queryKey: ['/api/company/whatsapp/instances'] });
+                    whatsappInstances.forEach(instance => {
+                      refreshInstanceStatus(instance.instanceName);
+                    });
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Atualizar Status
+                </Button>
+              </CardTitle>
               <CardDescription>
                 Lista de todas as instâncias WhatsApp configuradas para sua empresa.
               </CardDescription>
@@ -1007,66 +1023,107 @@ export default function CompanySettings() {
                 </div>
               ) : whatsappInstances.length > 0 ? (
                 <div className="space-y-4">
-                  {whatsappInstances.map((instance: any) => (
-                    <div key={instance.id} className="border rounded-lg p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3">
-                            <h3 className="font-medium">{instance.instanceName}</h3>
-                            <Badge 
-                              variant={instance.status === "open" ? "default" : "secondary"}
-                              className={instance.status === "open" ? "bg-green-600" : ""}
-                            >
-                              {instance.status === "open" ? "Conectado" : "Desconectado"}
-                            </Badge>
-                          </div>
+                  {whatsappInstances.map((instance: any) => {
+                    const isConnected = instance.status === "connected" || instance.status === "open";
+                    const isConnecting = instance.status === "connecting";
+                    
+                    return (
+                      <div key={instance.id} className="border rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3">
+                              <h3 className="font-medium">{instance.instanceName}</h3>
+                              <Badge 
+                                variant={isConnected ? "default" : isConnecting ? "secondary" : "outline"}
+                                className={isConnected ? "bg-green-600" : isConnecting ? "bg-yellow-500" : ""}
+                              >
+                                {isConnected ? "Conectado" : isConnecting ? "Conectando..." : "Desconectado"}
+                              </Badge>
+                            </div>
 
-                          {instance.webhook && (
-                            <p className="text-xs text-blue-600 mt-1">
-                              Webhook: {instance.webhook}
+                            {instance.webhook && (
+                              <p className="text-xs text-blue-600 mt-1">
+                                Webhook: {instance.webhook}
+                              </p>
+                            )}
+                            
+                            <p className="text-xs text-gray-500 mt-1">
+                              Status: {instance.status || 'desconhecido'} | Última atualização: {instance.updatedAt ? new Date(instance.updatedAt).toLocaleString('pt-BR') : 'N/A'}
                             </p>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {instance.status !== "open" && (
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => refreshInstanceStatus(instance.instanceName)}
+                              className="flex items-center gap-2"
+                            >
+                              <RefreshCw className="w-4 h-4" />
+                              Verificar
+                            </Button>
+                            
+                            {!isConnected && !isConnecting && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedInstance(instance);
+                                  connectInstanceMutation.mutate(instance.instanceName);
+                                }}
+                                disabled={connectInstanceMutation.isPending}
+                                className="flex items-center gap-2"
+                              >
+                                <QrCode className="w-4 h-4" />
+                                {connectInstanceMutation.isPending ? "Conectando..." : "Conectar"}
+                              </Button>
+                            )}
+                            
+                            {isConnected && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  // Add disconnect functionality
+                                  fetch(`/api/company/whatsapp/instances/${instance.instanceName}/disconnect`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' }
+                                  }).then(() => {
+                                    queryClient.invalidateQueries({ queryKey: ['/api/company/whatsapp/instances'] });
+                                    refreshInstanceStatus(instance.instanceName);
+                                  });
+                                }}
+                                className="flex items-center gap-2 text-red-600 hover:text-red-700"
+                              >
+                                <LogOut className="w-4 h-4" />
+                                Desconectar
+                              </Button>
+                            )}
+                            
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => {
                                 setSelectedInstance(instance);
-                                connectInstanceMutation.mutate(instance.instanceName);
+                                setShowWebhookDialog(true);
                               }}
-                              disabled={connectInstanceMutation.isPending}
                               className="flex items-center gap-2"
                             >
-                              <QrCode className="w-4 h-4" />
-                              {connectInstanceMutation.isPending ? "Conectando..." : "Conectar"}
+                              <Bot className="w-4 h-4" />
+                              Configurar IA
                             </Button>
-                          )}
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedInstance(instance);
-                              setShowWebhookDialog(true);
-                            }}
-                            className="flex items-center gap-2"
-                          >
-                            <Bot className="w-4 h-4" />
-                            Configurar IA
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => deleteInstanceMutation.mutate(instance.id)}
-                            disabled={deleteInstanceMutation.isPending}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => deleteInstanceMutation.mutate(instance.id)}
+                              disabled={deleteInstanceMutation.isPending}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="text-center p-8 bg-gray-50 rounded-lg border border-dashed">
