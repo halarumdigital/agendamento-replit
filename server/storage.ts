@@ -1473,12 +1473,18 @@ Sua opinião é muito importante para nós! Por favor, avalie nosso serviço cli
 
 Obrigado pela preferência! 🙏`;
 
-      // Format phone number
+      // Format phone number - ensure we have a valid phone number
       const cleanPhone = appointment.clientPhone.replace(/\D/g, '');
       let formattedPhone = cleanPhone;
       
-      if (!formattedPhone.startsWith('55')) {
-        formattedPhone = '55' + formattedPhone;
+      // Only add 55 if we have a valid phone number and it doesn't start with 55
+      if (cleanPhone && cleanPhone.length >= 10 && !cleanPhone.startsWith('55')) {
+        formattedPhone = '55' + cleanPhone;
+      }
+      
+      // Validate phone number format
+      if (!formattedPhone || formattedPhone.length < 12) {
+        return { success: false, message: "Número de telefone inválido ou não informado" };
       }
 
       // Get global settings for Evolution API
