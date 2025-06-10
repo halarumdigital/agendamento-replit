@@ -128,6 +128,7 @@ export const services = mysqlTable("services", {
   duration: int("duration").notNull(), // in minutes
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   color: varchar("color", { length: 7 }).default("#3b82f6"),
+  points: int("points").default(0), // points awarded for this service
   active: boolean("active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
