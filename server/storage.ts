@@ -749,7 +749,6 @@ export class DatabaseStorage implements IStorage {
         companyId: appointments.companyId,
         service: {
           name: services.name,
-          color: services.color,
         },
         professional: {
           name: professionals.name,

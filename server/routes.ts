@@ -4001,20 +4001,21 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
     }
   });
 
+  // Debug appointments query
+  app.get("/api/admin/debug-appointments/:companyId", async (req, res) => {
+    try {
+      const companyId = parseInt(req.params.companyId);
+      const result = await db.execute(`SELECT * FROM appointments WHERE company_id = ${companyId} ORDER BY appointment_date DESC LIMIT 10`);
+      res.json({ companyId, appointments: result });
+    } catch (error: any) {
+      console.error("Debug appointments error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Create sample appointments for testing
   app.post("/api/admin/create-sample-appointments", async (req, res) => {
     try {
-      // Get first professional and service for company 4
-      const professionals = await db.select().from(professionals).where(eq(professionals.companyId, 4)).limit(1);
-      const services = await db.select().from(services).where(eq(services.companyId, 4)).limit(1);
-      
-      if (professionals.length === 0 || services.length === 0) {
-        return res.status(400).json({ message: "Empresa precisa ter pelo menos 1 profissional e 1 serviço" });
-      }
-
-      const professionalId = professionals[0].id;
-      const serviceId = services[0].id;
-
       await db.execute(`
         INSERT IGNORE INTO appointments (
           company_id, 
@@ -4030,15 +4031,15 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
           created_at,
           updated_at
         ) VALUES 
-        (4, ${professionalId}, ${serviceId}, 'Carlos Silva', '5511999887766', 'carlos@email.com', '2025-06-11', '09:00', 'agendado', 'Primeiro corte do mês', NOW(), NOW()),
-        (4, ${professionalId}, ${serviceId}, 'Maria Santos', '5511888776655', 'maria@email.com', '2025-06-11', '10:30', 'agendado', 'Cliente regular', NOW(), NOW()),
-        (4, ${professionalId}, ${serviceId}, 'João Pedro', '5511777665544', 'joao@email.com', '2025-06-12', '14:00', 'confirmado', 'Corte especial', NOW(), NOW()),
-        (4, ${professionalId}, ${serviceId}, 'Ana Costa', '5511666554433', 'ana@email.com', '2025-06-13', '15:30', 'agendado', 'Nova cliente', NOW(), NOW()),
-        (4, ${professionalId}, ${serviceId}, 'Pedro Lima', '5511555443322', 'pedro@email.com', '2025-06-14', '11:00', 'agendado', 'Corte mensal', NOW(), NOW())
+        (1, 5, 11, 'Carlos Silva', '5511999887766', 'carlos@email.com', '2025-06-11', '09:00', 'agendado', 'Primeiro corte do mês', NOW(), NOW()),
+        (1, 5, 11, 'Maria Santos', '5511888776655', 'maria@email.com', '2025-06-11', '10:30', 'agendado', 'Cliente regular', NOW(), NOW()),
+        (1, 5, 11, 'João Pedro', '5511777665544', 'joao@email.com', '2025-06-12', '14:00', 'confirmado', 'Corte especial', NOW(), NOW()),
+        (1, 5, 11, 'Ana Costa', '5511666554433', 'ana@email.com', '2025-06-13', '15:30', 'agendado', 'Nova cliente', NOW(), NOW()),
+        (1, 5, 11, 'Pedro Lima', '5511555443322', 'pedro@email.com', '2025-06-14', '11:00', 'agendado', 'Corte mensal', NOW(), NOW())
       `);
 
-      console.log('✅ Sample appointments created for company 4');
-      res.json({ message: "Agendamentos de exemplo criados com sucesso para sua empresa" });
+      console.log('✅ Sample appointments created for company 1');
+      res.json({ message: "Agendamentos de exemplo criados com sucesso" });
     } catch (error: any) {
       console.error("Error creating sample appointments:", error);
       res.status(500).json({ message: "Erro ao criar agendamentos de exemplo", error: error.message });
