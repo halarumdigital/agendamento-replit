@@ -1807,6 +1807,68 @@ INSTRUÇÕES OBRIGATÓRIAS:
     }
   });
 
+  // Test birthday message functionality
+  app.post('/api/company/test-birthday-message', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      // Get company information
+      const company = await storage.getCompany(companyId);
+      if (!company) {
+        return res.status(404).json({ message: "Empresa não encontrada" });
+      }
+
+      // Get active birthday message template
+      const birthdayMessages = await storage.getBirthdayMessagesByCompany(companyId);
+      const activeMessage = birthdayMessages.find(msg => msg.isActive);
+      
+      if (!activeMessage) {
+        return res.status(400).json({ message: "Nenhuma mensagem de aniversário ativa configurada" });
+      }
+
+      // Get WhatsApp instance for the company
+      const whatsappInstances = await storage.getWhatsappInstancesByCompany(companyId);
+      const activeInstance = whatsappInstances.find(instance => instance.status === 'connected' && instance.apiUrl && instance.apiKey);
+      
+      if (!activeInstance) {
+        return res.status(400).json({ message: "Nenhuma instância WhatsApp conectada encontrada" });
+      }
+
+      // Test with example data
+      let testMessage = activeMessage.messageTemplate;
+      testMessage = testMessage.replace(/{NOME}/g, 'João Silva');
+      testMessage = testMessage.replace(/{EMPRESA}/g, company.fantasyName);
+
+      console.log('=== TESTE DE MENSAGEM DE ANIVERSÁRIO ===');
+      console.log('Empresa:', company.fantasyName);
+      console.log('Instância WhatsApp:', activeInstance.instanceName);
+      console.log('Mensagem de teste:');
+      console.log(testMessage);
+      console.log('=========================================');
+
+      res.json({ 
+        message: "Teste realizado com sucesso",
+        details: {
+          empresa: company.fantasyName,
+          instanciaWhatsApp: activeInstance.instanceName,
+          statusInstancia: activeInstance.status,
+          mensagemTeste: testMessage,
+          placeholders: {
+            nome: "João Silva",
+            empresa: company.fantasyName
+          }
+        }
+      });
+
+    } catch (error: any) {
+      console.error('Error testing birthday message:', error);
+      res.status(500).json({ message: "Erro interno do servidor", error: error.message });
+    }
+  });
+
   // Auto-configure webhook using global settings
   app.post('/api/company/whatsapp/:instanceId/auto-configure-webhook', async (req: any, res) => {
     try {

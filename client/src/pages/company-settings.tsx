@@ -477,6 +477,26 @@ export default function CompanySettings() {
     },
   });
 
+  const testBirthdayMessageMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/company/test-birthday-message");
+      return await response.json();
+    },
+    onSuccess: (data: any) => {
+      toast({
+        title: "Teste realizado",
+        description: data.message || "Mensagem de teste enviada com sucesso",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro no teste",
+        description: error.message || "Erro ao testar mensagem de aniversário",
+        variant: "destructive",
+      });
+    },
+  });
+
   const testAgentMutation = useMutation({
     mutationFn: async () => {
       const response = await apiRequest("POST", "/api/company/ai-agent/test", {
@@ -1140,8 +1160,14 @@ export default function CompanySettings() {
                         <Gift className="w-4 h-4 mr-2" />
                         {createBirthdayMessageMutation.isPending ? "Salvando..." : "Salvar Mensagem"}
                       </Button>
-                      <Button type="button" size="sm" variant="outline">
-                        Testar Função
+                      <Button 
+                        type="button" 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => testBirthdayMessageMutation.mutate()}
+                        disabled={testBirthdayMessageMutation.isPending}
+                      >
+                        {testBirthdayMessageMutation.isPending ? "Testando..." : "Testar Função"}
                       </Button>
                     </div>
                   </form>
