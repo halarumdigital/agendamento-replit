@@ -1378,7 +1378,7 @@ export default function CompanySettings() {
                     const currentSetting = isEditing || setting;
 
                     return (
-                      <Card key={setting.id} className="border-l-4 border-l-blue-500">
+                          <Card key={setting.id} className="border-l-4 border-l-blue-500">
                             <CardHeader>
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
@@ -1520,38 +1520,36 @@ export default function CompanySettings() {
                       </p>
                     </CardContent>
                   </Card>
-                </div>
-              )}
             </TabsContent>
 
             <TabsContent value="history" className="space-y-6 mt-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Clock className="w-5 h-5" />
-                    Histórico de Lembretes Enviados
-                  </CardTitle>
-                  <CardDescription>
-                    Visualize todos os lembretes que foram enviados automaticamente pelo sistema
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {historyLoading ? (
-                    <div className="text-center py-8">
-                      <p className="text-gray-500">Carregando histórico...</p>
-                    </div>
-                  ) : (reminderHistory as ReminderHistory[]).length === 0 ? (
-                    <div className="text-center py-8">
-                      <Clock className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-500 mb-2">Nenhum lembrete enviado ainda</p>
-                      <p className="text-sm text-gray-400">Os lembretes enviados aparecerão aqui</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {(reminderHistory as ReminderHistory[]).map((history) => (
-                        <div key={history.id} className="border rounded-lg p-4">
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-3">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Clock className="w-5 h-5" />
+                        Histórico de Lembretes Enviados
+                      </CardTitle>
+                      <CardDescription>
+                        Visualize todos os lembretes que foram enviados automaticamente pelo sistema
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {historyLoading ? (
+                        <div className="text-center py-8">
+                          <p className="text-gray-500">Carregando histórico...</p>
+                        </div>
+                      ) : (reminderHistory as ReminderHistory[]).length === 0 ? (
+                        <div className="text-center py-8">
+                          <Clock className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                          <p className="text-gray-500 mb-2">Nenhum lembrete enviado ainda</p>
+                          <p className="text-sm text-gray-400">Os lembretes enviados aparecerão aqui</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {(reminderHistory as ReminderHistory[]).map((history) => (
+                            <div key={history.id} className="border rounded-lg p-4">
+                              <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-3">
                                   <div className={`p-2 rounded-full ${
                                     history.reminderType === 'confirmation' ? 'bg-green-100' :
                                     history.reminderType === 'day_before' ? 'bg-yellow-100' :
@@ -1596,9 +1594,9 @@ export default function CompanySettings() {
                   </Card>
                 </TabsContent>
               </Tabs>
-            </TabsContent>
-          </Tabs>
-        </div>
+            </div>
+        </TabsContent>
+        </Tabs>
 
         {/* QR Code Dialog */}
         <Dialog open={showQrDialog} onOpenChange={setShowQrDialog}>
@@ -1646,6 +1644,56 @@ export default function CompanySettings() {
             </div>
           </DialogContent>
         </Dialog>
-    </>
+
+        {/* Webhook Configuration Dialog */}
+        <Dialog open={!!selectedInstance} onOpenChange={() => setSelectedInstance(null)}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Configurar Agente IA - {selectedInstance?.instanceName}</DialogTitle>
+              <DialogDescription>
+                O agente IA será configurado automaticamente usando as configurações globais da Evolution API definidas pelo administrador.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <h4 className="font-semibold text-blue-900 mb-2">Como funciona</h4>
+                <ul className="text-sm text-blue-800 space-y-1">
+                  <li>• O webhook será configurado automaticamente na Evolution API</li>
+                  <li>• Mensagens recebidas no WhatsApp serão processadas pelo agente IA</li>
+                  <li>• As respostas serão enviadas automaticamente usando seu prompt personalizado</li>
+                  <li>• Utiliza as configurações globais definidas pelo administrador</li>
+                </ul>
+              </div>
+
+              <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
+                <h4 className="font-semibold text-amber-900 mb-2">URL do Webhook gerada</h4>
+                <p className="text-sm text-amber-800 mb-2">Esta URL será configurada automaticamente:</p>
+                <code className="text-xs bg-white p-2 rounded border block">
+                  {window.location.origin}/api/webhook/whatsapp/{selectedInstance?.instanceName}
+                </code>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setSelectedInstance(null)}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={onWebhookSubmit}
+                  disabled={configureWebhookMutation.isPending}
+                  className="flex items-center gap-2"
+                >
+                  <Bot className="w-4 h-4" />
+                  {configureWebhookMutation.isPending ? "Configurando..." : "Configurar Agente IA"}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
   );
 }
