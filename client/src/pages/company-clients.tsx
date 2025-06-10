@@ -282,7 +282,21 @@ export default function CompanyClients() {
     // Handle timezone issues by using local date components
     let formattedBirthDate = "";
     if (client.birthDate) {
-      const date = new Date(client.birthDate);
+      const dateString = client.birthDate.toString();
+      
+      // Handle both ISO date strings and Date objects from the database
+      let date: Date;
+      if (dateString.includes('T')) {
+        // ISO string from database - parse as UTC but use local components
+        date = new Date(dateString);
+      } else if (dateString.includes('-') && dateString.length === 10) {
+        // Date string in YYYY-MM-DD format - parse as local date
+        const parts = dateString.split('-');
+        date = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+      } else {
+        date = new Date(dateString);
+      }
+      
       if (!isNaN(date.getTime())) {
         // Use local date components to avoid timezone issues
         const year = date.getFullYear();
@@ -318,7 +332,22 @@ export default function CompanyClients() {
 
   const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return '';
-    const date = new Date(dateString);
+    
+    // Handle both ISO date strings and Date objects from the database
+    let date: Date;
+    if (typeof dateString === 'string' && dateString.includes('T')) {
+      // ISO string from database
+      date = new Date(dateString);
+    } else {
+      // Date string in YYYY-MM-DD format - parse as local date
+      const parts = dateString.toString().split('-');
+      if (parts.length === 3) {
+        date = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+      } else {
+        date = new Date(dateString);
+      }
+    }
+    
     if (isNaN(date.getTime())) return '';
     
     // Use local date components to avoid timezone issues
