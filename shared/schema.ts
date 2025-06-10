@@ -403,3 +403,7 @@ export type Status = typeof status.$inferSelect;
 export type InsertStatus = z.infer<typeof insertStatusSchema>;
 export type Client = typeof clients.$inferSelect;
 export type InsertClient = z.infer<typeof insertClientSchema>;
+export type BirthdayMessage = typeof birthdayMessages.$inferSelect;
+export type InsertBirthdayMessage = z.infer<typeof insertBirthdayMessageSchema>;
+export type BirthdayMessageHistory = typeof birthdayMessageHistory.$inferSelect;
+export type InsertBirthdayMessageHistory = z.infer<typeof insertBirthdayMessageHistorySchema>;

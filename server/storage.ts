@@ -11,6 +11,8 @@ import {
   appointments,
   status,
   clients,
+  birthdayMessages,
+  birthdayMessageHistory,
   type Admin,
   type InsertAdmin,
   type Company,
@@ -35,6 +37,10 @@ import {
   type InsertStatus,
   type Client,
   type InsertClient,
+  type BirthdayMessage,
+  type InsertBirthdayMessage,
+  type BirthdayMessageHistory,
+  type InsertBirthdayMessageHistory,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -160,6 +166,17 @@ export interface IStorage {
   createClient(client: InsertClient): Promise<Client>;
   updateClient(id: number, client: Partial<InsertClient>): Promise<Client>;
   deleteClient(id: number): Promise<void>;
+  
+  // Birthday messages operations
+  getBirthdayMessagesByCompany(companyId: number): Promise<BirthdayMessage[]>;
+  getBirthdayMessage(id: number): Promise<BirthdayMessage | undefined>;
+  createBirthdayMessage(message: InsertBirthdayMessage): Promise<BirthdayMessage>;
+  updateBirthdayMessage(id: number, message: Partial<InsertBirthdayMessage>): Promise<BirthdayMessage>;
+  deleteBirthdayMessage(id: number): Promise<void>;
+  
+  // Birthday message history operations
+  getBirthdayMessageHistory(companyId: number): Promise<BirthdayMessageHistory[]>;
+  createBirthdayMessageHistory(history: InsertBirthdayMessageHistory): Promise<BirthdayMessageHistory>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -922,6 +939,89 @@ export class DatabaseStorage implements IStorage {
       await db.delete(clients).where(eq(clients.id, id));
     } catch (error: any) {
       console.error("Error deleting client:", error);
+      throw error;
+    }
+  }
+
+  // Birthday messages operations
+  async getBirthdayMessagesByCompany(companyId: number): Promise<BirthdayMessage[]> {
+    try {
+      return await db.select().from(birthdayMessages)
+        .where(eq(birthdayMessages.companyId, companyId))
+        .orderBy(desc(birthdayMessages.createdAt));
+    } catch (error: any) {
+      console.error("Error getting birthday messages:", error);
+      return [];
+    }
+  }
+
+  async getBirthdayMessage(id: number): Promise<BirthdayMessage | undefined> {
+    try {
+      const [message] = await db.select().from(birthdayMessages)
+        .where(eq(birthdayMessages.id, id));
+      return message;
+    } catch (error: any) {
+      console.error("Error getting birthday message:", error);
+      return undefined;
+    }
+  }
+
+  async createBirthdayMessage(messageData: InsertBirthdayMessage): Promise<BirthdayMessage> {
+    try {
+      const [message] = await db.insert(birthdayMessages)
+        .values(messageData)
+        .returning();
+      return message;
+    } catch (error: any) {
+      console.error("Error creating birthday message:", error);
+      throw error;
+    }
+  }
+
+  async updateBirthdayMessage(id: number, messageData: Partial<InsertBirthdayMessage>): Promise<BirthdayMessage> {
+    try {
+      await db.update(birthdayMessages)
+        .set({ ...messageData, updatedAt: new Date() })
+        .where(eq(birthdayMessages.id, id));
+      
+      const [message] = await db.select().from(birthdayMessages)
+        .where(eq(birthdayMessages.id, id));
+      return message;
+    } catch (error: any) {
+      console.error("Error updating birthday message:", error);
+      throw error;
+    }
+  }
+
+  async deleteBirthdayMessage(id: number): Promise<void> {
+    try {
+      await db.delete(birthdayMessages).where(eq(birthdayMessages.id, id));
+    } catch (error: any) {
+      console.error("Error deleting birthday message:", error);
+      throw error;
+    }
+  }
+
+  // Birthday message history operations
+  async getBirthdayMessageHistory(companyId: number): Promise<BirthdayMessageHistory[]> {
+    try {
+      return await db.select().from(birthdayMessageHistory)
+        .where(eq(birthdayMessageHistory.companyId, companyId))
+        .orderBy(desc(birthdayMessageHistory.sentAt));
+    } catch (error: any) {
+      console.error("Error getting birthday message history:", error);
+      return [];
+    }
+  }
+
+  async createBirthdayMessageHistory(historyData: InsertBirthdayMessageHistory): Promise<BirthdayMessageHistory> {
+    try {
+      const [history] = await db.insert(birthdayMessageHistory)
+        .values(historyData)
+        .returning();
+      return history;
+    } catch (error: any) {
+      console.error("Error creating birthday message history:", error);
       throw error;
     }
   }

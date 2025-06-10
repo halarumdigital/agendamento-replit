@@ -547,6 +547,36 @@ class FallbackStorage implements IStorage {
       this.clients.splice(index, 1);
     }
   }
+
+  // Birthday messages operations (fallback implementation)
+  async getBirthdayMessagesByCompany(companyId: number): Promise<any[]> {
+    return [];
+  }
+
+  async getBirthdayMessage(id: number): Promise<any | undefined> {
+    return undefined;
+  }
+
+  async createBirthdayMessage(message: any): Promise<any> {
+    return { id: this.nextId++, ...message, createdAt: new Date(), updatedAt: new Date() };
+  }
+
+  async updateBirthdayMessage(id: number, message: any): Promise<any> {
+    return { id, ...message, updatedAt: new Date() };
+  }
+
+  async deleteBirthdayMessage(id: number): Promise<void> {
+    // Fallback implementation - no action needed
+  }
+
+  // Birthday message history operations (fallback implementation)
+  async getBirthdayMessageHistory(companyId: number): Promise<any[]> {
+    return [];
+  }
+
+  async createBirthdayMessageHistory(history: any): Promise<any> {
+    return { id: this.nextId++, ...history, sentAt: new Date() };
+  }
 }
 
 export const fallbackStorage = new FallbackStorage();
