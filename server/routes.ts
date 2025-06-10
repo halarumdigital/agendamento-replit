@@ -831,56 +831,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isQrCodeEvent) {
         console.log('📱 QR code updated for instance:', instanceName);
         
-        // Debug: Log complete webhook structure
-        console.log('=== DEBUGGING QR CODE WEBHOOK ===');
-        console.log('Event:', webhookData.event);
-        console.log('Instance:', instanceName);
-        console.log('Webhook keys:', Object.keys(webhookData));
-        console.log('Data object:', webhookData.data);
-        
-        // Extract QR code - Evolution API sends it in different formats
-        let qrCodeUrl = null;
+        // Extract QR code from Evolution API
+        let qrCodeData = null;
         
         // Check all possible locations for QR code
         if (webhookData.data) {
           if (webhookData.data.base64) {
-            qrCodeUrl = webhookData.data.base64;
-            console.log('✅ QR found in data.base64');
+            qrCodeData = webhookData.data.base64;
+            console.log('QR found in data.base64');
           } else if (webhookData.data.qrcode) {
-            qrCodeUrl = webhookData.data.qrcode;
-            console.log('✅ QR found in data.qrcode');
-          } else {
-            console.log('❌ QR not found in data object');
-            console.log('Available data keys:', Object.keys(webhookData.data));
+            qrCodeData = webhookData.data.qrcode;
+            console.log('QR found in data.qrcode');
           }
         } else if (webhookData.qrcode) {
-          qrCodeUrl = webhookData.qrcode;
-          console.log('✅ QR found in root.qrcode');
+          qrCodeData = webhookData.qrcode;
+          console.log('QR found in root.qrcode');
         } else if (webhookData.base64) {
-          qrCodeUrl = webhookData.base64;
-          console.log('✅ QR found in root.base64');
+          qrCodeData = webhookData.base64;
+          console.log('QR found in root.base64');
         }
         
-        if (qrCodeUrl) {
-          console.log('QR code URL length:', qrCodeUrl.length);
-          console.log('QR code preview:', qrCodeUrl.substring(0, 100) + '...');
-          
+        if (qrCodeData) {
           try {
-            const whatsappInstance = await storage.getWhatsappInstanceByName(instanceName);
-            if (whatsappInstance) {
-              await storage.updateWhatsappInstance(whatsappInstance.id, {
-                qrCode: qrCodeUrl,
-                status: 'connecting'
-              });
-              console.log('✅ QR code saved to database for instance:', instanceName);
+            // Convert to string safely
+            const qrCodeString = String(qrCodeData);
+            console.log('QR code length:', qrCodeString.length);
+            console.log('QR code data type:', typeof qrCodeData);
+            
+            if (qrCodeString && qrCodeString.length > 50) { // Minimum length for valid QR
+              const whatsappInstance = await storage.getWhatsappInstanceByName(instanceName);
+              if (whatsappInstance) {
+                await storage.updateWhatsappInstance(whatsappInstance.id, {
+                  qrCode: qrCodeString,
+                  status: 'connecting'
+                });
+                console.log('QR code saved successfully for instance:', instanceName);
+              } else {
+                console.log('Instance not found:', instanceName);
+              }
             } else {
-              console.log('❌ Instance not found:', instanceName);
+              console.log('QR code data is too short or invalid');
             }
           } catch (error) {
-            console.error('❌ Database error:', error);
+            console.error('Error processing QR code:', error);
           }
         } else {
-          console.log('❌ No QR code found anywhere in webhook data');
+          console.log('No QR code found in webhook data');
         }
         
         return res.json({ received: true, processed: true, type: 'qrcode' });
