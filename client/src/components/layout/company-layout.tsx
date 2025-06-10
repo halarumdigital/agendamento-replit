@@ -13,7 +13,8 @@ import {
   Home,
   Bell,
   Star,
-  CheckSquare
+  CheckSquare,
+  Gift
 } from "lucide-react";
 import { useCompanyAuth } from "@/hooks/useCompanyAuth";
 

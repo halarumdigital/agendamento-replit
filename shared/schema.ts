@@ -400,6 +400,77 @@ export const reviewInvitationsRelations = relations(reviewInvitations, ({ one })
   }),
 }));
 
+// Client Points table
+export const clientPoints = mysqlTable("client_points", {
+  id: int("id").primaryKey().autoincrement(),
+  companyId: int("company_id").notNull(),
+  clientId: int("client_id").notNull(),
+  totalPoints: int("total_points").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+});
+
+// Points Campaigns table
+export const pointsCampaigns = mysqlTable("points_campaigns", {
+  id: int("id").primaryKey().autoincrement(),
+  companyId: int("company_id").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  requiredPoints: int("required_points").notNull(),
+  rewardServiceId: int("reward_service_id").notNull(),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+});
+
+// Points History table
+export const pointsHistory = mysqlTable("points_history", {
+  id: int("id").primaryKey().autoincrement(),
+  companyId: int("company_id").notNull(),
+  clientId: int("client_id").notNull(),
+  appointmentId: int("appointment_id"),
+  pointsChange: int("points_change").notNull(), // positive for gained, negative for spent
+  description: text("description").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Relations for points tables
+export const clientPointsRelations = relations(clientPoints, ({ one }) => ({
+  company: one(companies, {
+    fields: [clientPoints.companyId],
+    references: [companies.id],
+  }),
+  client: one(clients, {
+    fields: [clientPoints.clientId],
+    references: [clients.id],
+  }),
+}));
+
+export const pointsCampaignsRelations = relations(pointsCampaigns, ({ one }) => ({
+  company: one(companies, {
+    fields: [pointsCampaigns.companyId],
+    references: [companies.id],
+  }),
+  rewardService: one(services, {
+    fields: [pointsCampaigns.rewardServiceId],
+    references: [services.id],
+  }),
+}));
+
+export const pointsHistoryRelations = relations(pointsHistory, ({ one }) => ({
+  company: one(companies, {
+    fields: [pointsHistory.companyId],
+    references: [companies.id],
+  }),
+  client: one(clients, {
+    fields: [pointsHistory.clientId],
+    references: [clients.id],
+  }),
+  appointment: one(appointments, {
+    fields: [pointsHistory.appointmentId],
+    references: [appointments.id],
+  }),
+}));
+
 // Insert schemas
 export const insertAdminSchema = createInsertSchema(admins).omit({
   id: true,
@@ -512,6 +583,26 @@ export const insertReviewInvitationSchema = createInsertSchema(reviewInvitations
   reviewSubmittedAt: true,
 });
 
+// Client Points insert schema
+export const insertClientPointsSchema = createInsertSchema(clientPoints).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Points Campaigns insert schema
+export const insertPointsCampaignSchema = createInsertSchema(pointsCampaigns).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Points History insert schema
+export const insertPointsHistorySchema = createInsertSchema(pointsHistory).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type Admin = typeof admins.$inferSelect;
 export type InsertAdmin = z.infer<typeof insertAdminSchema>;
@@ -549,6 +640,12 @@ export type ProfessionalReview = typeof professionalReviews.$inferSelect;
 export type InsertProfessionalReview = z.infer<typeof insertProfessionalReviewSchema>;
 export type ReviewInvitation = typeof reviewInvitations.$inferSelect;
 export type InsertReviewInvitation = z.infer<typeof insertReviewInvitationSchema>;
+export type ClientPoints = typeof clientPoints.$inferSelect;
+export type InsertClientPoints = z.infer<typeof insertClientPointsSchema>;
+export type PointsCampaign = typeof pointsCampaigns.$inferSelect;
+export type InsertPointsCampaign = z.infer<typeof insertPointsCampaignSchema>;
+export type PointsHistory = typeof pointsHistory.$inferSelect;
+export type InsertPointsHistory = z.infer<typeof insertPointsHistorySchema>;
 
 // Tasks insert schema
 export const insertTaskSchema = createInsertSchema(tasks).omit({
