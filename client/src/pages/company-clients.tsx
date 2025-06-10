@@ -57,13 +57,15 @@ function ClientServiceHistory({ clientId, clientName }: ClientServiceHistoryProp
     queryKey: ['/api/company/appointments/client', clientId],
   });
 
-  const totalSpent = appointments
-    .filter(apt => apt.statusName !== 'Cancelado')
-    .reduce((total, apt) => total + apt.price, 0);
+  // Debug log to see what data we're getting
+  console.log('Client appointments data:', appointments);
 
   const completedAppointments = appointments.filter(apt => 
     apt.statusName === 'Concluído' || apt.statusName === 'Finalizado'
   );
+
+  const totalSpent = completedAppointments
+    .reduce((total, apt) => total + (apt.price || 0), 0);
 
   if (isLoading) {
     return (

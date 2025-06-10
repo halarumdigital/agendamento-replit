@@ -406,9 +406,14 @@ class FallbackStorage implements IStorage {
 
   async getAppointmentsByClient(clientId: number, companyId: number): Promise<any[]> {
     const client = this.clients.find(c => c.id === clientId && c.companyId === companyId);
-    if (!client) return [];
+    if (!client) {
+      console.log(`No client found with id ${clientId}`);
+      return [];
+    }
 
-    return this.appointments
+    console.log(`Looking for appointments for client phone: ${client.phone}`);
+    
+    const clientAppointments = this.appointments
       .filter(apt => apt.companyId === companyId && apt.clientPhone === client.phone)
       .map(apt => {
         const service = this.services.find(s => s.id === apt.serviceId);
@@ -419,7 +424,7 @@ class FallbackStorage implements IStorage {
           id: apt.id,
           appointmentDate: apt.appointmentDate,
           appointmentTime: apt.appointmentTime,
-          price: apt.totalPrice,
+          price: parseFloat(apt.totalPrice?.toString() || '0'),
           notes: apt.notes,
           serviceName: service?.name || 'Serviço não encontrado',
           professionalName: professional?.name || 'Profissional não encontrado',
@@ -428,6 +433,9 @@ class FallbackStorage implements IStorage {
         };
       })
       .sort((a, b) => new Date(b.appointmentDate).getTime() - new Date(a.appointmentDate).getTime());
+
+    console.log(`Found ${clientAppointments.length} appointments for client ${clientId}`);
+    return clientAppointments;
   }
 
   async getAppointment(id: number): Promise<Appointment | undefined> {

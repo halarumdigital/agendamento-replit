@@ -703,6 +703,20 @@ export class DatabaseStorage implements IStorage {
 
   async getAppointmentsByClient(clientId: number, companyId: number): Promise<any[]> {
     try {
+      // First get the client's phone number
+      const clientResult = await db.execute(`
+        SELECT phone FROM clients WHERE id = ${clientId} AND company_id = ${companyId}
+      `);
+      
+      if (!clientResult || clientResult.length === 0) {
+        console.log(`No client found with id ${clientId}`);
+        return [];
+      }
+      
+      const clientPhone = (clientResult[0] as any).phone;
+      console.log(`Looking for appointments for client phone: ${clientPhone}`);
+      
+      // Then get appointments for that phone number
       const results = await db.execute(`
         SELECT 
           a.id,
@@ -710,6 +724,8 @@ export class DatabaseStorage implements IStorage {
           a.appointment_time as appointmentTime,
           a.total_price as price,
           a.notes,
+          a.client_name as clientName,
+          a.client_phone as clientPhone,
           s.name as serviceName,
           p.name as professionalName,
           st.name as statusName,
@@ -718,10 +734,11 @@ export class DatabaseStorage implements IStorage {
         LEFT JOIN services s ON a.service_id = s.id
         LEFT JOIN professionals p ON a.professional_id = p.id
         LEFT JOIN status st ON a.status = st.id
-        LEFT JOIN clients c ON (a.client_phone = c.phone AND a.company_id = c.company_id)
-        WHERE c.id = ${clientId} AND a.company_id = ${companyId}
+        WHERE a.client_phone = '${clientPhone}' AND a.company_id = ${companyId}
         ORDER BY a.appointment_date DESC, a.appointment_time DESC
       `);
+      
+      console.log(`Found ${results.length} appointments for client ${clientId}`);
       return results as any[];
     } catch (error: any) {
       console.error("Error getting appointments by client:", error);
