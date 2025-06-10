@@ -96,7 +96,7 @@ export default function CompanyPointsProgram() {
   // Mutations
   const updatePointsMutation = useMutation({
     mutationFn: async (data: { clientId: number; pointsChange: number; description: string }) => {
-      return await apiRequest(`/api/company/client-points/${data.clientId}`, 'PATCH', {
+      return await apiRequest('PATCH', `/api/company/client-points/${data.clientId}`, {
         pointsChange: data.pointsChange,
         description: data.description,
       });
@@ -121,7 +121,7 @@ export default function CompanyPointsProgram() {
 
   const createCampaignMutation = useMutation({
     mutationFn: async (data: CampaignFormData) => {
-      return await apiRequest('/api/company/points-campaigns', 'POST', data);
+      return await apiRequest('POST', '/api/company/points-campaigns', data);
     },
     onSuccess: () => {
       toast({
@@ -143,7 +143,7 @@ export default function CompanyPointsProgram() {
 
   const updateCampaignMutation = useMutation({
     mutationFn: async (data: CampaignFormData) => {
-      return await apiRequest(`/api/company/points-campaigns/${editingCampaign?.id}`, 'PUT', data);
+      return await apiRequest('PUT', `/api/company/points-campaigns/${editingCampaign?.id}`, data);
     },
     onSuccess: () => {
       toast({
@@ -166,7 +166,7 @@ export default function CompanyPointsProgram() {
 
   const deleteCampaignMutation = useMutation({
     mutationFn: async (id: number) => {
-      return await apiRequest(`/api/company/points-campaigns/${id}`, 'DELETE');
+      return await apiRequest('DELETE', `/api/company/points-campaigns/${id}`);
     },
     onSuccess: () => {
       toast({
