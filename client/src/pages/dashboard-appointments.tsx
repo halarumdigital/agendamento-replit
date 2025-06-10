@@ -213,6 +213,34 @@ export default function DashboardAppointments() {
     },
   });
 
+  const sendReviewInvitationMutation = useMutation({
+    mutationFn: async (appointmentId: number) => {
+      const response = await fetch(`/api/appointments/${appointmentId}/send-review-invitation`, {
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Erro ao enviar convite de avaliação");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Convite de avaliação enviado com sucesso!" });
+      queryClient.invalidateQueries({ queryKey: ["/api/company/appointments"] });
+    },
+    onError: (error: Error) => {
+      toast({ 
+        title: "Erro ao enviar convite", 
+        description: error.message,
+        variant: "destructive" 
+      });
+    },
+  });
+
   const createAppointmentMutation = useMutation({
     mutationFn: async (data: AppointmentFormData) => {
       const selectedService = services.find(s => s.id === data.serviceId);
@@ -1121,6 +1149,21 @@ export default function DashboardAppointments() {
                                         <span className="text-xs text-gray-500">
                                           {appointment.appointmentTime}
                                         </span>
+                                        {appointment.status.toLowerCase() === 'concluído' && (
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              sendReviewInvitationMutation.mutate(appointment.id);
+                                            }}
+                                            disabled={sendReviewInvitationMutation.isPending}
+                                            title="Enviar convite de avaliação"
+                                          >
+                                            <Star className="h-3 w-3 text-yellow-500" />
+                                          </Button>
+                                        )}
                                         <Button
                                           variant="ghost"
                                           size="sm"
