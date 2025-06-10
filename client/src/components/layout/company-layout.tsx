@@ -46,16 +46,6 @@ const menuItems = [
     icon: Users,
   },
   {
-    title: "Lembretes",
-    href: "/company/reminders",
-    icon: Bell,
-  },
-  {
-    title: "WhatsApp",
-    href: "/company/whatsapp",
-    icon: MessageSquare,
-  },
-  {
     title: "Configurações",
     href: "/company/settings",
     icon: Settings,

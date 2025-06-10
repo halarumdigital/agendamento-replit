@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Settings, Building2, Lock, User, MessageSquare, Trash2, Plus, Smartphone, QrCode, RefreshCw, Bot, Key, Gift, Calendar } from "lucide-react";
+import { Settings, Building2, Lock, User, MessageSquare, Trash2, Plus, Smartphone, QrCode, RefreshCw, Bot, Key, Gift, Calendar, Bell, Clock, CheckCircle, Send, XCircle } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useCompanyAuth } from "@/hooks/useCompanyAuth";
 import { z } from "zod";
@@ -21,6 +21,33 @@ const birthdayMessageSchema = z.object({
   messageTemplate: z.string().min(10, "A mensagem deve ter pelo menos 10 caracteres"),
   isActive: z.boolean().default(true),
 });
+
+const reminderSettingsSchema = z.object({
+  messageTemplate: z.string().min(10, "A mensagem deve ter pelo menos 10 caracteres"),
+  isActive: z.boolean(),
+});
+
+interface ReminderSettings {
+  id: number;
+  companyId: number;
+  reminderType: string;
+  isActive: boolean;
+  messageTemplate: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface ReminderHistory {
+  id: number;
+  companyId: number;
+  appointmentId: number;
+  reminderType: string;
+  clientPhone: string;
+  message: string;
+  sentAt: string;
+  status: string;
+  whatsappInstanceId: number;
+}
 
 
 type CompanyProfileData = z.infer<typeof companyProfileSchema>;
@@ -37,6 +64,7 @@ export default function CompanySettings() {
   const [selectedInstance, setSelectedInstance] = useState<any>(null);
   const [qrCodeData, setQrCodeData] = useState<string>("");
   const [showQrDialog, setShowQrDialog] = useState(false);
+  const [editingSettings, setEditingSettings] = useState<{ [key: string]: ReminderSettings }>({});
 
   const profileForm = useForm<CompanyProfileData>({
     resolver: zodResolver(companyProfileSchema),
@@ -547,21 +575,17 @@ export default function CompanySettings() {
         </div>
 
         <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <Building2 className="w-4 h-4" />
               Empresa
-            </TabsTrigger>
-            <TabsTrigger value="whatsapp" className="flex items-center gap-2">
-              <MessageSquare className="w-4 h-4" />
-              WhatsApp
             </TabsTrigger>
             <TabsTrigger value="ai-agent" className="flex items-center gap-2">
               <Bot className="w-4 h-4" />
               IA
             </TabsTrigger>
             <TabsTrigger value="reminders" className="flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
+              <Bell className="w-4 h-4" />
               Lembretes
             </TabsTrigger>
             <TabsTrigger value="birthdays" className="flex items-center gap-2">
@@ -743,178 +767,7 @@ export default function CompanySettings() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="whatsapp" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MessageSquare className="w-5 h-5" />
-                Conexões WhatsApp
-              </CardTitle>
-              <CardDescription>
-                Crie e gerencie suas instâncias do WhatsApp Business.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Form {...whatsappForm}>
-                <form onSubmit={whatsappForm.handleSubmit(onWhatsappSubmit)} className="space-y-4">
-                  <FormField
-                    control={whatsappForm.control}
-                    name="instanceName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nome da Instância</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="Ex: WhatsApp Principal"
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
 
-                  <div className="flex gap-2">
-                    <Button 
-                      type="submit" 
-                      disabled={createInstanceMutation.isPending}
-                      className="flex items-center gap-2"
-                    >
-                      <Plus className="w-4 h-4" />
-                      {createInstanceMutation.isPending ? "Criando..." : "Criar Instância"}
-                    </Button>
-                  </div>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Instâncias Ativas</CardTitle>
-              <CardDescription>
-                Lista de todas as suas instâncias do WhatsApp.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoadingInstances ? (
-                <div className="text-center py-4">
-                  <p className="text-gray-500">Carregando instâncias...</p>
-                </div>
-              ) : (whatsappInstances as any[]).length === 0 ? (
-                <div className="text-center py-8">
-                  <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500 mb-2">Nenhuma instância criada</p>
-                  <p className="text-sm text-gray-400">Crie sua primeira instância do WhatsApp acima.</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {(whatsappInstances as any[]).map((instance: any) => (
-                    <div key={instance.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <MessageSquare className="w-5 h-5 text-green-600" />
-                        <div>
-                          <h4 className="font-medium">{instance.instanceName}</h4>
-                          <div className="text-sm text-gray-500 flex items-center gap-2">
-                            <span>Status:</span>
-                            <Badge variant={instance.status === 'connected' || instance.status === 'open' ? 'default' : 'secondary'}>
-                              {instance.status === 'connected' || instance.status === 'open' ? 'Conectado' : 
-                               instance.status === 'close' ? 'Desconectado' :
-                               instance.status === 'connecting' ? 'Conectando' :
-                               instance.status || 'Desconhecido'}
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => checkStatusMutation.mutate(instance.instanceName)}
-                          disabled={checkStatusMutation.isPending}
-                          className="flex items-center gap-1"
-                        >
-                          <QrCode className="w-4 h-4" />
-                          {checkStatusMutation.isPending ? "Verificando..." : "Status"}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => fetchInstanceDetailsMutation.mutate(instance.instanceName)}
-                          disabled={fetchInstanceDetailsMutation.isPending}
-                          className="flex items-center gap-1"
-                        >
-                          <Key className="w-4 h-4" />
-                          {fetchInstanceDetailsMutation.isPending ? "Buscando..." : "Ver Chave"}
-                        </Button>
-                        {instance.status === 'connected' || instance.status === 'open' ? (
-                          <>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => disconnectInstanceMutation.mutate(instance.instanceName)}
-                              disabled={disconnectInstanceMutation.isPending}
-                              className="flex items-center gap-1"
-                            >
-                              <Smartphone className="w-4 h-4" />
-                              {disconnectInstanceMutation.isPending ? "Desconectando..." : "Desconectar"}
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={async () => {
-                                setSelectedInstance(instance);
-                                
-                                // Try to fetch the latest instance details with API credentials
-                                try {
-                                  const details = await apiRequest("GET", `/api/company/whatsapp/instances/${instance.instanceName}/details`) as any;
-                                  webhookForm.reset({
-                                    apiUrl: details?.instance?.apiUrl || (instance as any).apiUrl || "https://sua-evolution-api.com",
-                                    apiKey: details?.instance?.apiKey || (instance as any).apiKey || "",
-                                  });
-                                } catch (error) {
-                                  // Fallback to instance data if details fetch fails
-                                  webhookForm.reset({
-                                    apiUrl: (instance as any).apiUrl || "https://sua-evolution-api.com",
-                                    apiKey: (instance as any).apiKey || "",
-                                  });
-                                }
-                              }}
-                              className="flex items-center gap-1"
-                            >
-                              <Bot className="w-4 h-4" />
-                              {instance.webhook ? "Reconfigurar IA" : "Configurar IA"}
-                            </Button>
-                          </>
-                        ) : (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => connectInstanceMutation.mutate(instance.instanceName)}
-                            disabled={connectInstanceMutation.isPending}
-                            className="flex items-center gap-1"
-                          >
-                            <Smartphone className="w-4 h-4" />
-                            {connectInstanceMutation.isPending ? "Conectando..." : "Conectar"}
-                          </Button>
-                        )}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => deleteInstanceMutation.mutate(instance.id)}
-                          disabled={deleteInstanceMutation.isPending}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         <TabsContent value="preferences" className="space-y-6">
           <Card>
