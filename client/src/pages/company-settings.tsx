@@ -1354,19 +1354,19 @@ export default function CompanySettings() {
             </p>
           </div>
           
-          <Tabs defaultValue="settings" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="settings" className="flex items-center gap-2">
+          <div className="w-full">
+            <div className="grid w-full grid-cols-2 mb-6">
+              <button className="flex items-center gap-2 p-2 border-b-2 border-blue-500">
                 <Settings className="w-4 h-4" />
                 Configurações
-              </TabsTrigger>
-              <TabsTrigger value="history" className="flex items-center gap-2">
+              </button>
+              <button className="flex items-center gap-2 p-2 border-b-2 border-transparent">
                 <Clock className="w-4 h-4" />
                 Histórico
-              </TabsTrigger>
-            </TabsList>
+              </button>
+            </div>
 
-            <TabsContent value="settings" className="space-y-6 mt-6">
+            <div className="space-y-6 mt-6">
               {settingsLoading ? (
                 <div className="text-center py-8">
                   <p className="text-gray-500">Carregando configurações...</p>
@@ -1520,9 +1520,9 @@ export default function CompanySettings() {
                       </p>
                     </CardContent>
                   </Card>
-            </TabsContent>
+            </div>
 
-            <TabsContent value="history" className="space-y-6 mt-6">
+            <div className="space-y-6 mt-6" style={{display: 'none'}}>
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
@@ -1592,8 +1592,7 @@ export default function CompanySettings() {
                       )}
                     </CardContent>
                   </Card>
-                </TabsContent>
-              </Tabs>
+          </div>
         </TabsContent>
 
         {/* QR Code Dialog */}
@@ -1690,7 +1689,7 @@ export default function CompanySettings() {
             </div>
           </DialogContent>
         </Dialog>
-      </div>
-    </Tabs>
+      </Tabs>
+    </div>
   );
 }
