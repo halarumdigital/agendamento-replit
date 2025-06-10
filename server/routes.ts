@@ -3391,7 +3391,7 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
   });
 
   // Professional Reviews API Routes
-  app.get("/api/company/reviews", isAuthenticated, async (req: any, res) => {
+  app.get("/api/company/reviews", async (req: any, res) => {
     try {
       const companyId = req.session.companyId;
       if (!companyId) {
@@ -3406,7 +3406,7 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
     }
   });
 
-  app.get("/api/company/reviews/professional/:professionalId", isAuthenticated, async (req: any, res) => {
+  app.get("/api/company/reviews/professional/:professionalId", async (req: any, res) => {
     try {
       const companyId = req.session.companyId;
       if (!companyId) {
@@ -3422,7 +3422,7 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
     }
   });
 
-  app.get("/api/company/review-invitations", isAuthenticated, async (req: any, res) => {
+  app.get("/api/company/review-invitations", async (req: any, res) => {
     try {
       const companyId = req.session.companyId;
       if (!companyId) {
