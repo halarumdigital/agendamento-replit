@@ -3733,11 +3733,11 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
           id INT AUTO_INCREMENT PRIMARY KEY,
           task_id INT NOT NULL,
           whatsapp_number VARCHAR(20) NOT NULL,
-          message TEXT NOT NULL,
+          message TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
           sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
-        )
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `);
 
       console.log('✅ Task reminders table created/verified');
@@ -3837,13 +3837,17 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
       });
 
       if (response.ok) {
-        // Record the reminder sent
-        await storage.createTaskReminder({
-          taskId: task.id,
-          whatsappNumber: task.whatsappNumber,
-          sentAt: new Date(),
-          message: message
-        });
+        // Record the reminder sent (remove emojis for database compatibility)
+        try {
+          await storage.createTaskReminder({
+            taskId: task.id,
+            whatsappNumber: task.whatsappNumber,
+            sentAt: new Date(),
+            message: message.replace(/[\u{1F300}-\u{1F9FF}]/gu, '').replace(/[^\x00-\x7F]/g, '') // Remove emojis and non-ASCII chars
+          });
+        } catch (dbError) {
+          console.log(`⚠️ Could not save reminder to database (message sent successfully)`);
+        }
         console.log(`✅ Task reminder sent to ${task.whatsappNumber} for task: ${task.name}`);
         return true;
       } else {
