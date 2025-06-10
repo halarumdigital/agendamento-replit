@@ -784,6 +784,22 @@ Importante: Você está representando a empresa "${company.fantasyName}" via Wha
     res.status(200).send('Webhook endpoint is active');
   });
 
+  // Company Status API
+  app.get('/api/company/status', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const statuses = await storage.getStatus();
+      res.json(statuses);
+    } catch (error) {
+      console.error("Error fetching status:", error);
+      res.status(500).json({ message: "Erro ao buscar status" });
+    }
+  });
+
   // Company Appointments API
   app.get('/api/company/appointments', async (req: any, res) => {
     try {
