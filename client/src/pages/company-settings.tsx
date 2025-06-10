@@ -420,6 +420,11 @@ export default function CompanySettings() {
     queryKey: ["/api/company/birthday-message-history"],
   });
 
+  // Client data for birthday functionality
+  const { data: clients = [] } = useQuery<any[]>({
+    queryKey: ["/api/company/clients"],
+  });
+
   const createBirthdayMessageMutation = useMutation({
     mutationFn: async (data: BirthdayMessageData) => {
       return await apiRequest("POST", "/api/company/birthday-messages", data);
@@ -1072,28 +1077,43 @@ export default function CompanySettings() {
             <CardContent className="space-y-6">
               <div className="bg-pink-50 p-4 rounded-lg border border-pink-200">
                 <h4 className="font-semibold text-pink-900 mb-3">Mensagem Personalizada</h4>
-                <div className="space-y-3">
-                  <Textarea
-                    placeholder="Que este novo ano de vida seja repleto de alegrias, conquistas e momentos especiais.&#10;&#10;Para comemorar, que tal agendar um horário especial conosco? 🎉✨&#10;&#10;Feliz aniversário! 🎂"
-                    className="min-h-[120px] bg-white"
-                    defaultValue="Que este novo ano de vida seja repleto de alegrias, conquistas e momentos especiais.&#10;&#10;Para comemorar, que tal agendar um horário especial conosco? 🎉✨&#10;&#10;Feliz aniversário! 🎂"
-                  />
-                  <p className="text-sm text-pink-700">
-                    Use <strong>{"{NOME}"}</strong> para o nome do cliente e <strong>{"{EMPRESA}"}</strong> para o nome da empresa
-                  </p>
-                  <div className="flex gap-3">
-                    <Button size="sm" className="bg-pink-600 hover:bg-pink-700">
-                      <Gift className="w-4 h-4 mr-2" />
-                      Salvar Mensagem
-                    </Button>
-                    <Button size="sm" variant="outline">
-                      Testar Função
-                    </Button>
-                    <Button size="sm" variant="outline">
-                      Atualizar
-                    </Button>
-                  </div>
-                </div>
+                <Form {...birthdayForm}>
+                  <form onSubmit={birthdayForm.handleSubmit(onBirthdayMessageSubmit)} className="space-y-4">
+                    <FormField
+                      control={birthdayForm.control}
+                      name="messageTemplate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Textarea
+                              placeholder="Digite sua mensagem de aniversário personalizada..."
+                              className="min-h-[120px] bg-white"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <p className="text-sm text-pink-700">
+                      Use <strong>{"{NOME}"}</strong> para o nome do cliente e <strong>{"{EMPRESA}"}</strong> para o nome da empresa
+                    </p>
+                    <div className="flex gap-3">
+                      <Button 
+                        type="submit" 
+                        size="sm" 
+                        className="bg-pink-600 hover:bg-pink-700"
+                        disabled={createBirthdayMessageMutation.isPending}
+                      >
+                        <Gift className="w-4 h-4 mr-2" />
+                        {createBirthdayMessageMutation.isPending ? "Salvando..." : "Salvar Mensagem"}
+                      </Button>
+                      <Button type="button" size="sm" variant="outline">
+                        Testar Função
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1102,13 +1122,51 @@ export default function CompanySettings() {
                     <CardTitle className="text-lg flex items-center gap-2">
                       <Gift className="w-5 h-5 text-pink-600" />
                       Aniversariantes de Hoje
-                      <Badge variant="secondary" className="bg-pink-100 text-pink-700">0</Badge>
+                      <Badge variant="secondary" className="bg-pink-100 text-pink-700">
+                        {clients.filter(client => {
+                          if (!client.birthDate) return false;
+                          const today = new Date();
+                          const birthDate = new Date(client.birthDate);
+                          return birthDate.getMonth() === today.getMonth() && 
+                                 birthDate.getDate() === today.getDate();
+                        }).length}
+                      </Badge>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-center py-6">
-                      <p className="text-gray-600">Nenhum aniversariante hoje</p>
-                    </div>
+                    {clients.filter(client => {
+                      if (!client.birthDate) return false;
+                      const today = new Date();
+                      const birthDate = new Date(client.birthDate);
+                      return birthDate.getMonth() === today.getMonth() && 
+                             birthDate.getDate() === today.getDate();
+                    }).length > 0 ? (
+                      <div className="space-y-3">
+                        {clients.filter(client => {
+                          if (!client.birthDate) return false;
+                          const today = new Date();
+                          const birthDate = new Date(client.birthDate);
+                          return birthDate.getMonth() === today.getMonth() && 
+                                 birthDate.getDate() === today.getDate();
+                        }).map(client => (
+                          <div key={client.id} className="bg-pink-50 p-3 rounded-lg border border-pink-200">
+                            <div className="flex justify-between items-center">
+                              <div>
+                                <p className="font-medium text-pink-900">{client.name}</p>
+                                <p className="text-sm text-pink-600">{client.phone || 'Sem telefone'}</p>
+                              </div>
+                              <Button size="sm" className="bg-pink-600 hover:bg-pink-700">
+                                <MessageCircle className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-6">
+                        <p className="text-gray-600">Nenhum aniversariante hoje</p>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 
@@ -1117,13 +1175,53 @@ export default function CompanySettings() {
                     <CardTitle className="text-lg flex items-center gap-2">
                       <Calendar className="w-5 h-5 text-blue-600" />
                       Aniversariantes do Mês
-                      <Badge variant="secondary" className="bg-blue-100 text-blue-700">0</Badge>
+                      <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+                        {clients.filter(client => {
+                          if (!client.birthDate) return false;
+                          const today = new Date();
+                          const birthDate = new Date(client.birthDate);
+                          return birthDate.getMonth() === today.getMonth();
+                        }).length}
+                      </Badge>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-center py-6">
-                      <p className="text-gray-600">Nenhum aniversariante este mês</p>
-                    </div>
+                    {clients.filter(client => {
+                      if (!client.birthDate) return false;
+                      const today = new Date();
+                      const birthDate = new Date(client.birthDate);
+                      return birthDate.getMonth() === today.getMonth();
+                    }).length > 0 ? (
+                      <div className="space-y-2 max-h-40 overflow-y-auto">
+                        {clients.filter(client => {
+                          if (!client.birthDate) return false;
+                          const today = new Date();
+                          const birthDate = new Date(client.birthDate);
+                          return birthDate.getMonth() === today.getMonth();
+                        }).map(client => {
+                          const birthDate = new Date(client.birthDate!);
+                          const isToday = birthDate.getDate() === new Date().getDate();
+                          return (
+                            <div key={client.id} className={`p-2 rounded border ${isToday ? 'bg-pink-50 border-pink-200' : 'bg-blue-50 border-blue-200'}`}>
+                              <div className="flex justify-between items-center">
+                                <div>
+                                  <p className={`font-medium ${isToday ? 'text-pink-900' : 'text-blue-900'}`}>{client.name}</p>
+                                  <p className={`text-sm ${isToday ? 'text-pink-600' : 'text-blue-600'}`}>
+                                    {birthDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}
+                                    {isToday && ' - Hoje!'}
+                                  </p>
+                                </div>
+                                <div className={`w-2 h-2 rounded-full ${isToday ? 'bg-pink-500' : 'bg-blue-500'}`}></div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="text-center py-6">
+                        <p className="text-gray-600">Nenhum aniversariante este mês</p>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </div>
@@ -1139,10 +1237,45 @@ export default function CompanySettings() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-center p-6 bg-gray-50 rounded-lg border border-dashed">
-                    <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                    <p className="text-gray-600">Nenhuma mensagem de aniversário enviada ainda</p>
-                  </div>
+                  {birthdayHistory.length > 0 ? (
+                    <div className="space-y-3 max-h-60 overflow-y-auto">
+                      {birthdayHistory.map((history: any) => (
+                        <div key={history.id} className="bg-green-50 p-3 rounded-lg border border-green-200">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <p className="font-medium text-green-900">{history.clientName}</p>
+                              <p className="text-sm text-green-600">{history.clientPhone}</p>
+                              <p className="text-xs text-green-500 mt-1">
+                                Enviado em {new Date(history.sentAt).toLocaleDateString('pt-BR', {
+                                  day: '2-digit',
+                                  month: '2-digit',
+                                  year: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge 
+                                variant={history.status === 'sent' ? 'default' : 'destructive'} 
+                                className={history.status === 'sent' ? 'bg-green-600' : ''}
+                              >
+                                {history.status === 'sent' ? 'Enviado' : 'Erro'}
+                              </Badge>
+                            </div>
+                          </div>
+                          <div className="mt-2 p-2 bg-white rounded border border-green-100">
+                            <p className="text-sm text-gray-700 line-clamp-2">{history.message}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center p-6 bg-gray-50 rounded-lg border border-dashed">
+                      <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                      <p className="text-gray-600">Nenhuma mensagem de aniversário enviada ainda</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </CardContent>
