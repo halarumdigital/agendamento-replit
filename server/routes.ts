@@ -4006,6 +4006,31 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
     }
   });
 
+  // PATCH endpoint for updating client points
+  app.patch("/api/company/client-points/:clientId", async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const { clientId } = req.params;
+      const { pointsChange, description } = req.body;
+
+      console.log('PATCH Points Update:', { clientId, pointsChange, description, companyId });
+
+      if (pointsChange === undefined || pointsChange === null || !description) {
+        return res.status(400).json({ message: "Alteração de pontos e descrição são obrigatórios" });
+      }
+
+      await storage.updateClientPoints(parseInt(clientId), pointsChange, description, companyId);
+      res.json({ message: "Pontos atualizados com sucesso" });
+    } catch (error) {
+      console.error("Error updating client points:", error);
+      res.status(500).json({ message: "Erro ao atualizar pontos do cliente" });
+    }
+  });
+
   app.get("/api/company/points-campaigns", async (req: any, res) => {
     try {
       const companyId = req.session.companyId;
