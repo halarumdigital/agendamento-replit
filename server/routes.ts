@@ -1730,9 +1730,48 @@ INSTRUÇÕES OBRIGATÓRIAS:
 
       // Get WhatsApp instance for the company
       const whatsappInstances = await storage.getWhatsappInstancesByCompany(companyId);
-      const activeInstance = whatsappInstances.find(instance => instance.status === 'connected' && instance.apiUrl && instance.apiKey);
+      console.log('=== DEBUG WHATSAPP INSTANCES ===');
+      console.log('Company ID:', companyId);
+      console.log('Total instances found:', whatsappInstances.length);
+      whatsappInstances.forEach((instance, index) => {
+        console.log(`Instance ${index + 1}:`, {
+          id: instance.id,
+          instanceName: instance.instanceName,
+          status: instance.status,
+          hasApiUrl: !!instance.apiUrl,
+          hasApiKey: !!instance.apiKey,
+          apiUrl: instance.apiUrl
+        });
+      });
+
+      // Try to find active instance with more flexible criteria
+      let activeInstance = whatsappInstances.find(instance => 
+        (instance.status === 'connected' || instance.status === 'open') && instance.apiUrl && instance.apiKey
+      );
+
+      // If no active instance found, try with any instance that has API credentials
+      if (!activeInstance) {
+        activeInstance = whatsappInstances.find(instance => instance.apiUrl && instance.apiKey);
+        if (activeInstance) {
+          console.log('Using instance with credentials despite status:', activeInstance.status);
+        }
+      }
       
       if (!activeInstance) {
+        // Check if there's any instance at all for debugging
+        const anyInstance = whatsappInstances.find(instance => instance.instanceName);
+        if (anyInstance) {
+          console.log('Available instance but incomplete:', anyInstance);
+          return res.status(400).json({ 
+            message: "Instância WhatsApp encontrada mas não configurada completamente",
+            details: {
+              instancia: anyInstance.instanceName,
+              status: anyInstance.status,
+              temApiUrl: !!anyInstance.apiUrl,
+              temApiKey: !!anyInstance.apiKey
+            }
+          });
+        }
         return res.status(400).json({ message: "Nenhuma instância WhatsApp conectada encontrada" });
       }
 
