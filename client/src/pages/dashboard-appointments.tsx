@@ -582,28 +582,53 @@ export default function DashboardAppointments() {
               </SelectContent>
             </Select>
             
-            <div className="flex items-center bg-gray-100 rounded-lg p-1">
-              <Button
-                variant={viewMode === 'calendar' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('calendar')}
-              >
-                <Calendar className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === 'list' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('list')}
-              >
-                <List className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === 'kanban' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('kanban')}
-              >
-                <Kanban className="h-4 w-4" />
-              </Button>
+            <div className="flex items-center gap-2">
+              {viewMode === 'kanban' && (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="date"
+                    value={selectedDate ? format(selectedDate, 'yyyy-MM-dd') : ''}
+                    onChange={(e) => {
+                      const newDate = e.target.value ? new Date(e.target.value) : null;
+                      setSelectedDate(newDate);
+                    }}
+                    className="px-3 py-2 border rounded-md text-sm"
+                  />
+                  {selectedDate && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedDate(null)}
+                    >
+                      Limpar
+                    </Button>
+                  )}
+                </div>
+              )}
+              
+              <div className="flex items-center bg-gray-100 rounded-lg p-1">
+                <Button
+                  variant={viewMode === 'calendar' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('calendar')}
+                >
+                  <Calendar className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'list' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('list')}
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'kanban' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('kanban')}
+                >
+                  <Kanban className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
 
             <Dialog open={isNewAppointmentOpen} onOpenChange={setIsNewAppointmentOpen}>
@@ -1171,28 +1196,6 @@ export default function DashboardAppointments() {
       ) : (
         // Kanban View
         <div>
-          {/* Date Filter Indicator for Kanban */}
-          {selectedDate && (
-            <Card className="mb-6">
-              <CardContent className="flex items-center justify-between p-4">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm font-medium">Mostrando agendamentos de:</span>
-                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                    {format(selectedDate, 'dd/MM/yyyy', { locale: ptBR })}
-                  </Badge>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSelectedDate(null)}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  Mostrar todos
-                </Button>
-              </CardContent>
-            </Card>
-          )}
           
           <DragDropContext onDragEnd={handleDragEnd}>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
