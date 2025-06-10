@@ -1339,6 +1339,7 @@ export class DatabaseStorage implements IStorage {
         id: reviewInvitations.id,
         appointmentId: reviewInvitations.appointmentId,
         professionalId: reviewInvitations.professionalId,
+        companyId: reviewInvitations.companyId,
         clientPhone: reviewInvitations.clientPhone,
         invitationToken: reviewInvitations.invitationToken,
         sentAt: reviewInvitations.sentAt,
@@ -1351,7 +1352,7 @@ export class DatabaseStorage implements IStorage {
       }).from(reviewInvitations)
         .leftJoin(professionals, eq(reviewInvitations.professionalId, professionals.id))
         .leftJoin(appointments, eq(reviewInvitations.appointmentId, appointments.id))
-        .where(eq(professionals.companyId, companyId))
+        .where(eq(reviewInvitations.companyId, companyId))
         .orderBy(desc(reviewInvitations.sentAt));
     } catch (error: any) {
       console.error("Error getting review invitations:", error);
@@ -1480,15 +1481,25 @@ Obrigado pela preferência! 🙏`;
         formattedPhone = '55' + formattedPhone;
       }
 
-      // Send WhatsApp message
-      const evolutionApiUrl = whatsappInstance.apiUrl || process.env.EVOLUTION_API_URL;
-      const apiKey = whatsappInstance.apiKey || process.env.EVOLUTION_API_KEY;
+      // Get global settings for Evolution API
+      const globalSettings = await this.getGlobalSettings();
+      const evolutionApiUrl = globalSettings?.evolutionApiUrl || whatsappInstance.apiUrl;
+      const apiKey = globalSettings?.evolutionApiGlobalKey || whatsappInstance.apiKey;
 
       if (!evolutionApiUrl || !apiKey) {
-        return { success: false, message: "Configuração da API do WhatsApp não encontrada" };
+        return { success: false, message: "Configuração da API do WhatsApp não encontrada nas configurações globais" };
       }
 
-      const response = await fetch(`${evolutionApiUrl}/message/sendText/${whatsappInstance.instanceName}`, {
+      console.log('=== SENDING REVIEW INVITATION ===');
+      console.log('Evolution API URL:', evolutionApiUrl);
+      console.log('Instance Name:', whatsappInstance.instanceName);
+      console.log('Formatted Phone:', formattedPhone);
+      console.log('API Key configured:', !!apiKey);
+
+      const whatsappApiUrl = `${evolutionApiUrl}/message/sendText/${whatsappInstance.instanceName}`;
+      console.log('Full API URL:', whatsappApiUrl);
+
+      const response = await fetch(whatsappApiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1500,11 +1511,16 @@ Obrigado pela preferência! 🙏`;
         })
       });
 
-      if (response.ok) {
+      console.log('Response status:', response.status);
+      const responseData = await response.json();
+      console.log('Response data:', responseData);
+
+      if (response.ok && responseData.key) {
+        console.log('✅ Review invitation sent successfully!');
         return { success: true, message: "Convite de avaliação enviado com sucesso!" };
       } else {
-        const error = await response.json();
-        return { success: false, message: `Erro ao enviar mensagem: ${error.message || 'Erro desconhecido'}` };
+        console.error('❌ Error sending review invitation:', responseData);
+        return { success: false, message: `Erro ao enviar mensagem: ${responseData.message || 'Erro desconhecido'}` };
       }
 
     } catch (error: any) {
