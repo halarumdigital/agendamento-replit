@@ -154,7 +154,7 @@ export default function CompanySettings() {
 
   const aiConfigMutation = useMutation({
     mutationFn: async (instanceId: number) => {
-      return await apiRequest(`/api/company/whatsapp/${instanceId}/auto-configure-webhook`, {
+      return await apiRequest(`/api/company/whatsapp/instances/${instanceId}/auto-configure`, {
         method: "POST",
       });
     },

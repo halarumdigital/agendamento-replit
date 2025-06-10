@@ -2052,7 +2052,7 @@ INSTRUÇÕES OBRIGATÓRIAS:
   });
 
   // Auto-configure webhook using global settings
-  app.post('/api/company/whatsapp/:instanceId/auto-configure-webhook', async (req: any, res) => {
+  app.post('/api/company/whatsapp/instances/:instanceId/auto-configure', async (req: any, res) => {
     try {
       const companyId = req.session.companyId;
       if (!companyId) {
