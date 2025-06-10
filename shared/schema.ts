@@ -266,6 +266,19 @@ export const reviewInvitations = mysqlTable("review_invitations", {
   whatsappInstanceId: int("whatsapp_instance_id").references(() => whatsappInstances.id),
 });
 
+// Tasks table
+export const tasks = mysqlTable("tasks", {
+  id: int("id").primaryKey().autoincrement(),
+  name: varchar("name", { length: 255 }).notNull(),
+  companyId: int("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+  dueDate: date("due_date").notNull(),
+  recurrence: varchar("recurrence", { length: 20 }).notNull(), // daily, weekly, biweekly, monthly
+  isActive: boolean("is_active").notNull().default(true),
+  color: varchar("color", { length: 7 }).notNull().default("#3B82F6"), // hex color
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+});
+
 // Relations
 export const companiesRelations = relations(companies, ({ many }) => ({
   whatsappInstances: many(whatsappInstances),
@@ -524,3 +537,13 @@ export type ProfessionalReview = typeof professionalReviews.$inferSelect;
 export type InsertProfessionalReview = z.infer<typeof insertProfessionalReviewSchema>;
 export type ReviewInvitation = typeof reviewInvitations.$inferSelect;
 export type InsertReviewInvitation = z.infer<typeof insertReviewInvitationSchema>;
+
+// Tasks insert schema
+export const insertTaskSchema = createInsertSchema(tasks).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type Task = typeof tasks.$inferSelect;
+export type InsertTask = z.infer<typeof insertTaskSchema>;
