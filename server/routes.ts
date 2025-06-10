@@ -1780,8 +1780,13 @@ INSTRUÇÕES OBRIGATÓRIAS:
       messageText = messageText.replace(/{NOME}/g, client.name);
       messageText = messageText.replace(/{EMPRESA}/g, company.fantasyName);
 
-      // Clean phone number (remove non-digits)
-      const cleanPhone = client.phone.replace(/\D/g, '');
+      // Clean and format phone number (remove non-digits and ensure format)
+      let cleanPhone = client.phone.replace(/\D/g, '');
+      
+      // Ensure phone number starts with country code
+      if (!cleanPhone.startsWith('55') && cleanPhone.length === 11) {
+        cleanPhone = '55' + cleanPhone;
+      }
       
       // Send message via Evolution API
       const sendMessageUrl = `${activeInstance.apiUrl}/message/sendText/${activeInstance.instanceName}`;
@@ -1796,6 +1801,7 @@ INSTRUÇÕES OBRIGATÓRIAS:
       console.log('Client:', client.name);
       console.log('Phone:', cleanPhone);
       console.log('Message:', messageText);
+      console.log('API Key being used:', activeInstance.apiKey?.substring(0, 8) + '...');
 
       const response = await fetch(sendMessageUrl, {
         method: 'POST',
@@ -1813,6 +1819,20 @@ INSTRUÇÕES OBRIGATÓRIAS:
       if (!response.ok) {
         status = 'error';
         console.error('Error sending birthday message:', responseData);
+        
+        // Log detailed error information
+        if (responseData.response && responseData.response.message) {
+          console.error('Detailed error message:', JSON.stringify(responseData.response.message, null, 2));
+        }
+        
+        // Return more specific error to client
+        const errorMessage = responseData.response?.message?.[0] || responseData.message || 'Erro desconhecido da API';
+        return res.status(500).json({ 
+          message: "Erro ao enviar mensagem de aniversário", 
+          error: errorMessage,
+          phone: cleanPhone,
+          apiResponse: responseData
+        });
       }
 
       // Save to history
