@@ -1794,7 +1794,7 @@ INSTRUÇÕES OBRIGATÓRIAS:
       if (cleanPhone.length < 12 || cleanPhone.length > 13) {
         return res.status(400).json({ 
           message: "Formato de telefone inválido", 
-          details: `Número deve ter 12-13 dígitos (com DDI +55). Recebido: ${cleanPhone} (${cleanPhone.length} dígitos)`
+          details: `Número deve ter 12-13 dígitos (com DDI 55). Recebido: ${cleanPhone} (${cleanPhone.length} dígitos)`
         });
       }
       

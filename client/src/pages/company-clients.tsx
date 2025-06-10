@@ -456,13 +456,26 @@ export default function CompanyClients() {
                       </Label>
                       <div className="col-span-3 flex">
                         <div className="flex items-center px-3 py-2 bg-gray-50 border border-r-0 rounded-l-md text-sm text-gray-600">
-                          +55
+                          55
                         </div>
                         <Input
                           id="phone"
                           className="rounded-l-none"
                           placeholder="(11) 99999-9999"
                           {...form.register('phone')}
+                          onChange={(e) => {
+                            // Format phone number automatically
+                            let value = e.target.value.replace(/\D/g, '');
+                            if (value.length <= 11) {
+                              if (value.length >= 7) {
+                                value = value.replace(/(\d{2})(\d{4,5})(\d{4})/, '($1) $2-$3');
+                              } else if (value.length >= 3) {
+                                value = value.replace(/(\d{2})(\d+)/, '($1) $2');
+                              }
+                            }
+                            e.target.value = value;
+                            form.setValue('phone', value);
+                          }}
                         />
                       </div>
                     </div>
