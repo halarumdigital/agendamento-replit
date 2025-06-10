@@ -1831,10 +1831,25 @@ INSTRUÇÕES OBRIGATÓRIAS:
 
       // Get WhatsApp instance for the company
       const whatsappInstances = await storage.getWhatsappInstancesByCompany(companyId);
-      const activeInstance = whatsappInstances.find(instance => instance.status === 'connected' && instance.apiUrl && instance.apiKey);
+      const activeInstance = whatsappInstances.find(instance => 
+        (instance.status === 'connected' || instance.status === 'open') && instance.apiUrl && instance.apiKey
+      );
       
       if (!activeInstance) {
-        return res.status(400).json({ message: "Nenhuma instância WhatsApp conectada encontrada" });
+        // Check if there's any instance at all
+        const anyInstance = whatsappInstances.find(instance => instance.instanceName);
+        if (anyInstance) {
+          return res.status(400).json({ 
+            message: "Instância WhatsApp encontrada mas não configurada completamente",
+            details: {
+              instancia: anyInstance.instanceName,
+              status: anyInstance.status,
+              temApiUrl: !!anyInstance.apiUrl,
+              temApiKey: !!anyInstance.apiKey
+            }
+          });
+        }
+        return res.status(400).json({ message: "Nenhuma instância WhatsApp configurada encontrada" });
       }
 
       // Test with example data
