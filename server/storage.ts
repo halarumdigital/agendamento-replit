@@ -408,6 +408,12 @@ export class DatabaseStorage implements IStorage {
 
   async deleteWhatsappInstance(id: number): Promise<void> {
     try {
+      // First delete related reminder history records using Drizzle ORM
+      await db
+        .delete(reminderHistory)
+        .where(eq(reminderHistory.whatsappInstanceId, id));
+      
+      // Then delete the WhatsApp instance
       await db
         .delete(whatsappInstances)
         .where(eq(whatsappInstances.id, id));
