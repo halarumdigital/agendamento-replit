@@ -1284,6 +1284,19 @@ INSTRUÇÕES OBRIGATÓRIAS:
     }
   });
 
+  // Fix appointment date (temporary route)
+  app.post('/api/fix-appointment-date', async (req: any, res) => {
+    try {
+      await storage.updateAppointment(29, {
+        appointmentDate: new Date('2025-06-14')
+      });
+      res.json({ message: "Data do agendamento corrigida para 14/06/2025" });
+    } catch (error) {
+      console.error("Error fixing appointment date:", error);
+      res.status(500).json({ message: "Erro ao corrigir data" });
+    }
+  });
+
   // Get appointments by client
   app.get('/api/company/appointments/client/:clientId', async (req: any, res) => {
     try {

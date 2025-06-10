@@ -570,6 +570,9 @@ export default function DashboardAppointments() {
       const statusObj = statuses.find(s => s.name.toLowerCase() === freshAppointment.status.toLowerCase());
       
       // Populate form with fresh appointment data
+      // Extract date directly from ISO string to avoid timezone issues
+      const appointmentDateString = freshAppointment.appointmentDate.split('T')[0];
+      
       editForm.reset({
         clientId: undefined,
         serviceId: freshAppointment.serviceId,
@@ -578,7 +581,7 @@ export default function DashboardAppointments() {
         clientName: freshAppointment.clientName,
         clientEmail: freshAppointment.clientEmail || "",
         clientPhone: freshAppointment.clientPhone,
-        appointmentDate: format(new Date(freshAppointment.appointmentDate), 'yyyy-MM-dd'),
+        appointmentDate: appointmentDateString,
         appointmentTime: freshAppointment.appointmentTime,
         notes: freshAppointment.notes || "",
         confirmed: false,
