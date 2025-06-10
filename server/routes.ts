@@ -1815,6 +1815,11 @@ INSTRUÇÕES OBRIGATÓRIAS:
         return res.status(401).json({ message: "Não autenticado" });
       }
 
+      const { testPhoneNumber } = req.body;
+      if (!testPhoneNumber) {
+        return res.status(400).json({ message: "Número de telefone para teste é obrigatório" });
+      }
+
       // Get company information
       const company = await storage.getCompany(companyId);
       if (!company) {
@@ -1854,29 +1859,57 @@ INSTRUÇÕES OBRIGATÓRIAS:
 
       // Test with example data
       let testMessage = activeMessage.messageTemplate;
-      testMessage = testMessage.replace(/{NOME}/g, 'João Silva');
+      testMessage = testMessage.replace(/{NOME}/g, 'João Silva (TESTE)');
       testMessage = testMessage.replace(/{EMPRESA}/g, company.fantasyName);
 
-      console.log('=== TESTE DE MENSAGEM DE ANIVERSÁRIO ===');
+      console.log('=== ENVIANDO TESTE DE MENSAGEM DE ANIVERSÁRIO ===');
       console.log('Empresa:', company.fantasyName);
       console.log('Instância WhatsApp:', activeInstance.instanceName);
+      console.log('Número de teste:', testPhoneNumber);
       console.log('Mensagem de teste:');
       console.log(testMessage);
-      console.log('=========================================');
+      console.log('===============================================');
 
-      res.json({ 
-        message: "Teste realizado com sucesso",
-        details: {
-          empresa: company.fantasyName,
-          instanciaWhatsApp: activeInstance.instanceName,
-          statusInstancia: activeInstance.status,
-          mensagemTeste: testMessage,
-          placeholders: {
-            nome: "João Silva",
-            empresa: company.fantasyName
-          }
-        }
+      // Actually send the WhatsApp message via Evolution API
+      const messageData = {
+        number: testPhoneNumber,
+        text: testMessage
+      };
+
+      const response = await fetch(`${activeInstance.apiUrl}/message/sendText/${activeInstance.instanceName}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': activeInstance.apiKey || ''
+        },
+        body: JSON.stringify(messageData)
       });
+
+      const responseData = await response.json();
+      console.log('Evolution API Response:', responseData);
+
+      if (response.ok && responseData.key) {
+        console.log('✅ Mensagem de teste enviada com sucesso!');
+        res.json({ 
+          message: "Mensagem de teste enviada com sucesso!",
+          details: {
+            empresa: company.fantasyName,
+            instanciaWhatsApp: activeInstance.instanceName,
+            statusInstancia: activeInstance.status,
+            numeroTeste: testPhoneNumber,
+            mensagemTeste: testMessage,
+            messageId: responseData.key.id,
+            status: 'enviada'
+          }
+        });
+      } else {
+        console.error('❌ Erro ao enviar mensagem:', responseData);
+        res.status(400).json({
+          message: "Erro ao enviar mensagem de teste",
+          error: responseData.message || 'Erro desconhecido',
+          details: responseData
+        });
+      }
 
     } catch (error: any) {
       console.error('Error testing birthday message:', error);

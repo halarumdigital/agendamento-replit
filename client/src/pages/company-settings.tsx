@@ -401,6 +401,9 @@ export default function CompanySettings() {
   // State for AI agent testing
   const [testMessage, setTestMessage] = useState("");
   const [agentResponse, setAgentResponse] = useState("");
+  
+  // State for birthday message testing
+  const [testPhoneNumber, setTestPhoneNumber] = useState("");
 
   // Birthday messaging form
   const birthdayForm = useForm<BirthdayMessageData>({
@@ -479,14 +482,20 @@ export default function CompanySettings() {
 
   const testBirthdayMessageMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/company/test-birthday-message");
+      if (!testPhoneNumber.trim()) {
+        throw new Error("Número de telefone é obrigatório para o teste");
+      }
+      const response = await apiRequest("POST", "/api/company/test-birthday-message", {
+        testPhoneNumber: testPhoneNumber.trim()
+      });
       return await response.json();
     },
     onSuccess: (data: any) => {
       toast({
-        title: "Teste realizado",
-        description: data.message || "Mensagem de teste enviada com sucesso",
+        title: "Mensagem de teste enviada",
+        description: `Mensagem enviada para ${testPhoneNumber}`,
       });
+      setTestPhoneNumber(""); // Limpar o campo após envio
     },
     onError: (error: any) => {
       toast({
@@ -1160,15 +1169,31 @@ export default function CompanySettings() {
                         <Gift className="w-4 h-4 mr-2" />
                         {createBirthdayMessageMutation.isPending ? "Salvando..." : "Salvar Mensagem"}
                       </Button>
-                      <Button 
-                        type="button" 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => testBirthdayMessageMutation.mutate()}
-                        disabled={testBirthdayMessageMutation.isPending}
-                      >
-                        {testBirthdayMessageMutation.isPending ? "Testando..." : "Testar Função"}
-                      </Button>
+                    </div>
+                    
+                    {/* Test section */}
+                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mt-4">
+                      <h5 className="font-medium text-gray-900 mb-3">Testar Mensagem</h5>
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Digite o número para teste (ex: 5511999999999)"
+                          value={testPhoneNumber}
+                          onChange={(e) => setTestPhoneNumber(e.target.value)}
+                          className="flex-1"
+                        />
+                        <Button 
+                          type="button" 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => testBirthdayMessageMutation.mutate()}
+                          disabled={testBirthdayMessageMutation.isPending || !testPhoneNumber.trim()}
+                        >
+                          {testBirthdayMessageMutation.isPending ? "Enviando..." : "Enviar Teste"}
+                        </Button>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2">
+                        A mensagem será enviada via WhatsApp para o número informado
+                      </p>
                     </div>
                   </form>
                 </Form>
