@@ -20,19 +20,46 @@ export function useNotifications() {
   const [notifications, setNotifications] = useState<NotificationData[]>([]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Criar audio element para o som de notificação
+  // Criar som de notificação usando Web Audio API
   useEffect(() => {
-    audioRef.current = new Audio();
-    // Som de notificação estilo WhatsApp (usando data URL para um tom simples)
-    audioRef.current.src = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmESBkOa2+7MeDsFIYfO7+CFNAYQY7jm7qNRDAlEouC0smMcBzmU2/HJdCMFl'+'...'+'(truncated for brevity)';
-    audioRef.current.volume = 0.6;
-    audioRef.current.preload = 'auto';
+    const createNotificationSound = () => {
+      try {
+        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        
+        // Criar um som estilo WhatsApp (duas notas)
+        const createTone = (frequency: number, startTime: number, duration: number) => {
+          const oscillator = audioContext.createOscillator();
+          const gainNode = audioContext.createGain();
+          
+          oscillator.connect(gainNode);
+          gainNode.connect(audioContext.destination);
+          
+          oscillator.frequency.setValueAtTime(frequency, startTime);
+          oscillator.type = 'sine';
+          
+          // Envelope para suavizar o som
+          gainNode.gain.setValueAtTime(0, startTime);
+          gainNode.gain.linearRampToValueAtTime(0.3, startTime + 0.01);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+          
+          oscillator.start(startTime);
+          oscillator.stop(startTime + duration);
+        };
+        
+        const currentTime = audioContext.currentTime;
+        createTone(800, currentTime, 0.2); // Primeira nota
+        createTone(600, currentTime + 0.25, 0.2); // Segunda nota
+      } catch (error) {
+        console.error('Erro ao criar som de notificação:', error);
+      }
+    };
+    
+    audioRef.current = { play: createNotificationSound } as any;
   }, []);
 
   const playNotificationSound = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = 0;
-      audioRef.current.play().catch(console.error);
+    if (audioRef.current && audioRef.current.play) {
+      audioRef.current.play();
     }
   }, []);
 

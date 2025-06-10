@@ -138,8 +138,11 @@ export function NotificationPopup({ notification, onClose, onView }: Notificatio
         {/* Progress bar */}
         <div className="h-1 bg-gray-200 dark:bg-gray-700">
           <div 
-            className="h-full bg-green-500 transition-all duration-[8000ms] ease-linear"
-            style={{ width: isVisible ? '0%' : '100%' }}
+            className="h-full bg-green-500 transition-all ease-linear"
+            style={{ 
+              width: isVisible ? '0%' : '100%',
+              transitionDuration: '8000ms'
+            }}
           />
         </div>
       </div>
