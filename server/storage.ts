@@ -1459,8 +1459,8 @@ export class DatabaseStorage implements IStorage {
         companyId: appointment.companyId
       });
 
-      // Generate review URL
-      const reviewUrl = `${process.env.REPLIT_DOMAINS || 'http://localhost:5000'}/review/${token}`;
+      // Generate review URL - use the current domain
+      const reviewUrl = `https://${process.env.REPL_SLUG || 'localhost:5000'}.replit.app/review/${token}`;
 
       // Format message
       const message = `Olá ${appointment.clientName}! 👋

@@ -3544,54 +3544,7 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
     }
   });
 
-  // Company reviews routes
-  app.get("/api/company/reviews", async (req: any, res) => {
-    try {
-      const companyId = req.session.companyId;
-      if (!companyId) {
-        return res.status(401).json({ message: "Não autenticado" });
-      }
-      const reviews = await storage.getProfessionalReviewsByCompany(companyId);
-      res.json(reviews);
-    } catch (error) {
-      console.error("Error fetching reviews:", error);
-      res.status(500).json({ message: "Erro ao buscar avaliações" });
-    }
-  });
 
-  app.get("/api/company/review-invitations", async (req: any, res) => {
-    try {
-      const companyId = req.session.companyId;
-      if (!companyId) {
-        return res.status(401).json({ message: "Não autenticado" });
-      }
-      const invitations = await storage.getReviewInvitations(companyId);
-      res.json(invitations);
-    } catch (error) {
-      console.error("Error fetching review invitations:", error);
-      res.status(500).json({ message: "Erro ao buscar convites de avaliação" });
-    }
-  });
-
-  app.post("/api/appointments/:id/send-review-invitation", async (req: any, res) => {
-    try {
-      const companyId = req.session.companyId;
-      if (!companyId) {
-        return res.status(401).json({ message: "Não autenticado" });
-      }
-      const appointmentId = parseInt(req.params.id);
-      const result = await storage.sendReviewInvitation(appointmentId);
-      
-      if (result.success) {
-        res.json({ message: result.message });
-      } else {
-        res.status(400).json({ message: result.message });
-      }
-    } catch (error) {
-      console.error("Error sending review invitation:", error);
-      res.status(500).json({ message: "Erro ao enviar convite de avaliação" });
-    }
-  });
 
   const httpServer = createServer(app);
   return httpServer;
