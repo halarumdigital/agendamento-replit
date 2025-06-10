@@ -57,11 +57,8 @@ export async function ensureConversationTables() {
       )
     `);
     
-    // Drop and recreate messages table with proper UTF-8 support
-    await db.execute(`DROP TABLE IF EXISTS messages`);
-    
     await db.execute(`
-      CREATE TABLE messages (
+      CREATE TABLE IF NOT EXISTS messages (
         id INT AUTO_INCREMENT PRIMARY KEY,
         conversation_id INT NOT NULL,
         role ENUM('user', 'assistant') NOT NULL,
