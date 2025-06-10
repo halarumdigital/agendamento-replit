@@ -3178,12 +3178,53 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
         return res.status(404).json({ message: "Instância não encontrada" });
       }
 
-      // Return current database status immediately
+      // Get Evolution API settings to check live status
+      const settings = await storage.getGlobalSettings();
+      let liveStatus = instance.status || 'disconnected';
+      
+      if (settings?.evolutionApiUrl && settings?.evolutionApiGlobalKey) {
+        try {
+          // Check live status from Evolution API
+          const statusResponse = await fetch(`${settings.evolutionApiUrl}/instance/connectionState/${instanceName}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': settings.evolutionApiGlobalKey,
+            }
+          });
+
+          if (statusResponse.ok) {
+            const statusData = await statusResponse.json();
+            console.log(`Live status check for ${instanceName}:`, statusData);
+            
+            // Map Evolution API states to our status
+            if (statusData.instance?.state === 'open') {
+              liveStatus = 'connected';
+            } else if (statusData.instance?.state === 'connecting') {
+              liveStatus = 'connecting';
+            } else if (statusData.instance?.state === 'close') {
+              liveStatus = 'disconnected';
+            }
+            
+            // Update database if status changed
+            if (liveStatus !== instance.status) {
+              await storage.updateWhatsappInstance(instance.id, {
+                status: liveStatus
+              });
+              console.log(`Updated ${instanceName} status from ${instance.status} to ${liveStatus}`);
+            }
+          }
+        } catch (apiError) {
+          console.error("Error checking live status:", apiError);
+        }
+      }
+
+      // Return current status
       res.json({
         instanceName,
-        status: instance.status || 'disconnected',
+        status: liveStatus,
         qrCode: instance.qrCode,
-        lastUpdated: instance.updatedAt || new Date()
+        lastUpdated: new Date()
       });
     } catch (error) {
       console.error("Error refreshing WhatsApp instance status:", error);
