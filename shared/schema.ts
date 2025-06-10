@@ -214,6 +214,30 @@ export const clients = mysqlTable("clients", {
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
 
+// Reminder Settings table
+export const reminderSettings = mysqlTable("reminder_settings", {
+  id: int("id").primaryKey().autoincrement(),
+  companyId: int("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+  reminderType: varchar("reminder_type", { length: 50 }).notNull(), // 'confirmation', '24h', '1h'
+  isActive: boolean("is_active").default(true),
+  messageTemplate: text("message_template").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+});
+
+// Reminder History table
+export const reminderHistory = mysqlTable("reminder_history", {
+  id: int("id").primaryKey().autoincrement(),
+  companyId: int("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+  appointmentId: int("appointment_id").notNull().references(() => appointments.id, { onDelete: "cascade" }),
+  reminderType: varchar("reminder_type", { length: 50 }).notNull(),
+  clientPhone: varchar("client_phone", { length: 20 }).notNull(),
+  message: text("message").notNull(),
+  sentAt: timestamp("sent_at").defaultNow(),
+  status: varchar("status", { length: 20 }).default("sent"), // sent, failed, pending
+  whatsappInstanceId: int("whatsapp_instance_id").references(() => whatsappInstances.id),
+});
+
 // Relations
 export const companiesRelations = relations(companies, ({ many }) => ({
   whatsappInstances: many(whatsappInstances),
@@ -378,6 +402,19 @@ export const insertBirthdayMessageHistorySchema = createInsertSchema(birthdayMes
   sentAt: true,
 });
 
+// Reminder Settings insert schema
+export const insertReminderSettingsSchema = createInsertSchema(reminderSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Reminder History insert schema
+export const insertReminderHistorySchema = createInsertSchema(reminderHistory).omit({
+  id: true,
+  sentAt: true,
+});
+
 // Types
 export type Admin = typeof admins.$inferSelect;
 export type InsertAdmin = z.infer<typeof insertAdminSchema>;
@@ -407,3 +444,7 @@ export type BirthdayMessage = typeof birthdayMessages.$inferSelect;
 export type InsertBirthdayMessage = z.infer<typeof insertBirthdayMessageSchema>;
 export type BirthdayMessageHistory = typeof birthdayMessageHistory.$inferSelect;
 export type InsertBirthdayMessageHistory = z.infer<typeof insertBirthdayMessageHistorySchema>;
+export type ReminderSettings = typeof reminderSettings.$inferSelect;
+export type InsertReminderSettings = z.infer<typeof insertReminderSettingsSchema>;
+export type ReminderHistory = typeof reminderHistory.$inferSelect;
+export type InsertReminderHistory = z.infer<typeof insertReminderHistorySchema>;
