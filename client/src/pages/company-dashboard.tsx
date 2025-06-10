@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Building2, Users, Calendar, CreditCard, Settings } from "lucide-react";
 import { useCompanyAuth } from "@/hooks/useCompanyAuth";
-import CompanyLayout from "@/components/layout/company-layout";
 
 export default function CompanyDashboard() {
   const { company, isLoading } = useCompanyAuth();
@@ -27,24 +26,21 @@ export default function CompanyDashboard() {
 
   if (!company) {
     return (
-      <CompanyLayout>
-        <div className="flex items-center justify-center h-96">
-          <Card className="w-96">
-            <CardHeader>
-              <CardTitle>Carregando...</CardTitle>
-              <CardDescription>
-                Obtendo informações da empresa.
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        </div>
-      </CompanyLayout>
+      <div className="flex items-center justify-center h-96">
+        <Card className="w-96">
+          <CardHeader>
+            <CardTitle>Carregando...</CardTitle>
+            <CardDescription>
+              Obtendo informações da empresa.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <CompanyLayout>
-      <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8">
         {/* Company Info Card */}
         <Card className="mb-8">
           <CardHeader>
@@ -180,6 +176,5 @@ export default function CompanyDashboard() {
           </Card>
         </div>
       </div>
-    </CompanyLayout>
-  );
+    );
 }
