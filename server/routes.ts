@@ -1345,7 +1345,7 @@ INSTRUÇÕES OBRIGATÓRIAS:
         companyId,
         email: req.body.email === '' ? null : req.body.email,
         phone: req.body.phone === '' ? null : req.body.phone,
-        birthDate: req.body.birthDate === '' ? null : req.body.birthDate,
+        birthDate: req.body.birthDate === '' ? null : (req.body.birthDate ? new Date(req.body.birthDate + 'T12:00:00') : null),
         notes: req.body.notes === '' ? null : req.body.notes,
       };
 
@@ -1369,7 +1369,7 @@ INSTRUÇÕES OBRIGATÓRIAS:
         ...req.body,
         email: req.body.email === '' ? null : req.body.email,
         phone: req.body.phone === '' ? null : req.body.phone,
-        birthDate: req.body.birthDate === '' ? null : req.body.birthDate,
+        birthDate: req.body.birthDate === '' ? null : (req.body.birthDate ? new Date(req.body.birthDate + 'T12:00:00') : null),
         notes: req.body.notes === '' ? null : req.body.notes,
       };
 
