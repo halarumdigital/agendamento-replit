@@ -177,32 +177,36 @@ Responda APENAS em formato JSON válido ou "DADOS_INCOMPLETOS" se algum dado est
     try {
       const appointmentData = JSON.parse(extractedData);
       
-      // Fix date based on conversation context
+      // Fix date based on conversation context with priority order (most specific first)
       const conversationLower = conversationText.toLowerCase();
-      if (conversationLower.includes('sexta') && appointmentData.appointmentDate) {
+      if (conversationLower.includes('sábado') && appointmentData.appointmentDate) {
+        const saturdayDate = getNextWeekdayDate('sábado');
+        console.log('🔧 Correcting Saturday date from', appointmentData.appointmentDate, 'to', saturdayDate);
+        appointmentData.appointmentDate = saturdayDate;
+      } else if (conversationLower.includes('domingo') && appointmentData.appointmentDate) {
+        const sundayDate = getNextWeekdayDate('domingo');
+        console.log('🔧 Correcting Sunday date from', appointmentData.appointmentDate, 'to', sundayDate);
+        appointmentData.appointmentDate = sundayDate;
+      } else if (conversationLower.includes('sexta') && appointmentData.appointmentDate) {
         const fridayDate = getNextWeekdayDate('sexta');
         console.log('🔧 Correcting Friday date from', appointmentData.appointmentDate, 'to', fridayDate);
         appointmentData.appointmentDate = fridayDate;
-      } else if (conversationLower.includes('segunda') && appointmentData.appointmentDate) {
-        const mondayDate = getNextWeekdayDate('segunda');
-        console.log('🔧 Correcting Monday date from', appointmentData.appointmentDate, 'to', mondayDate);
-        appointmentData.appointmentDate = mondayDate;
-      } else if (conversationLower.includes('terça') && appointmentData.appointmentDate) {
-        const tuesdayDate = getNextWeekdayDate('terça');
-        console.log('🔧 Correcting Tuesday date from', appointmentData.appointmentDate, 'to', tuesdayDate);
-        appointmentData.appointmentDate = tuesdayDate;
-      } else if (conversationLower.includes('quarta') && appointmentData.appointmentDate) {
-        const wednesdayDate = getNextWeekdayDate('quarta');
-        console.log('🔧 Correcting Wednesday date from', appointmentData.appointmentDate, 'to', wednesdayDate);
-        appointmentData.appointmentDate = wednesdayDate;
       } else if (conversationLower.includes('quinta') && appointmentData.appointmentDate) {
         const thursdayDate = getNextWeekdayDate('quinta');
         console.log('🔧 Correcting Thursday date from', appointmentData.appointmentDate, 'to', thursdayDate);
         appointmentData.appointmentDate = thursdayDate;
-      } else if (conversationLower.includes('sábado') && appointmentData.appointmentDate) {
-        const saturdayDate = getNextWeekdayDate('sábado');
-        console.log('🔧 Correcting Saturday date from', appointmentData.appointmentDate, 'to', saturdayDate);
-        appointmentData.appointmentDate = saturdayDate;
+      } else if (conversationLower.includes('quarta') && appointmentData.appointmentDate) {
+        const wednesdayDate = getNextWeekdayDate('quarta');
+        console.log('🔧 Correcting Wednesday date from', appointmentData.appointmentDate, 'to', wednesdayDate);
+        appointmentData.appointmentDate = wednesdayDate;
+      } else if (conversationLower.includes('terça') && appointmentData.appointmentDate) {
+        const tuesdayDate = getNextWeekdayDate('terça');
+        console.log('🔧 Correcting Tuesday date from', appointmentData.appointmentDate, 'to', tuesdayDate);
+        appointmentData.appointmentDate = tuesdayDate;
+      } else if (conversationLower.includes('segunda') && appointmentData.appointmentDate) {
+        const mondayDate = getNextWeekdayDate('segunda');
+        console.log('🔧 Correcting Monday date from', appointmentData.appointmentDate, 'to', mondayDate);
+        appointmentData.appointmentDate = mondayDate;
       }
 
       console.log('✅ Final appointment data with corrected date:', appointmentData);

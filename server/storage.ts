@@ -72,7 +72,7 @@ import {
 export type TaskReminder = typeof taskReminders.$inferSelect;
 export type InsertTaskReminder = typeof taskReminders.$inferInsert;
 import { db } from "./db";
-import { eq, desc, and, sql } from "drizzle-orm";
+import { eq, desc, and, sql, gte, lte } from "drizzle-orm";
 
 // Helper function to create conversation and message tables
 export async function ensureConversationTables() {
@@ -733,6 +733,8 @@ export class DatabaseStorage implements IStorage {
   // Appointments operations
   async getAppointmentsByCompany(companyId: number, month?: string): Promise<Appointment[]> {
     try {
+      console.log('🔍 Getting appointments for company:', companyId, 'month filter:', month);
+      
       let query = db.select({
         id: appointments.id,
         serviceId: appointments.serviceId,
@@ -747,6 +749,9 @@ export class DatabaseStorage implements IStorage {
         createdAt: appointments.createdAt,
         updatedAt: appointments.updatedAt,
         companyId: appointments.companyId,
+        duration: appointments.duration,
+        totalPrice: appointments.totalPrice,
+        reminderSent: appointments.reminderSent,
         service: {
           name: services.name,
           color: services.color,
@@ -759,8 +764,57 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(services, eq(appointments.serviceId, services.id))
       .leftJoin(professionals, eq(appointments.professionalId, professionals.id))
       .where(eq(appointments.companyId, companyId));
+
+      // Apply month filter if provided
+      if (month) {
+        const [year, monthNum] = month.split('-');
+        const startDate = new Date(parseInt(year), parseInt(monthNum) - 1, 1);
+        const endDate = new Date(parseInt(year), parseInt(monthNum), 0);
+        
+        console.log('📅 Filtering by month:', month, 'from', startDate, 'to', endDate);
+        
+        // Replace the where clause with month filter
+        query = db.select({
+          id: appointments.id,
+          serviceId: appointments.serviceId,
+          professionalId: appointments.professionalId,
+          clientName: appointments.clientName,
+          clientEmail: appointments.clientEmail,
+          clientPhone: appointments.clientPhone,
+          appointmentDate: appointments.appointmentDate,
+          appointmentTime: appointments.appointmentTime,
+          notes: appointments.notes,
+          status: appointments.status,
+          createdAt: appointments.createdAt,
+          updatedAt: appointments.updatedAt,
+          companyId: appointments.companyId,
+          duration: appointments.duration,
+          totalPrice: appointments.totalPrice,
+          reminderSent: appointments.reminderSent,
+          service: {
+            name: services.name,
+            color: services.color,
+          },
+          professional: {
+            name: professionals.name,
+          },
+        })
+        .from(appointments)
+        .leftJoin(services, eq(appointments.serviceId, services.id))
+        .leftJoin(professionals, eq(appointments.professionalId, professionals.id))
+        .where(
+          and(
+            eq(appointments.companyId, companyId),
+            sql`DATE(${appointments.appointmentDate}) >= ${startDate.toISOString().split('T')[0]}`,
+            sql`DATE(${appointments.appointmentDate}) <= ${endDate.toISOString().split('T')[0]}`
+          )
+        );
+      }
       
-      return await query.orderBy(desc(appointments.appointmentDate));
+      const result = await query.orderBy(desc(appointments.appointmentDate));
+      console.log('📋 Found appointments:', result.length);
+      
+      return result;
     } catch (error: any) {
       console.error("Error getting appointments:", error);
       return [];
