@@ -127,7 +127,7 @@ Responda APENAS em formato JSON válido ou "DADOS_INCOMPLETOS" se algum dado est
       }
 
       // Create appointment
-      const appointmentDateTime = new Date(`${appointmentData.appointmentDate}T${appointmentData.appointmentTime}:00`);
+      const appointmentDate = new Date(appointmentData.appointmentDate);
       
       const appointment = await storage.createAppointment({
         companyId,
@@ -135,15 +135,17 @@ Responda APENAS em formato JSON válido ou "DADOS_INCOMPLETOS" se algum dado est
         professionalId: appointmentData.professionalId,
         clientName: appointmentData.clientName,
         clientPhone: appointmentData.clientPhone,
-        appointmentDate: appointmentDateTime,
+        appointmentDate: appointmentDate,
+        appointmentTime: appointmentData.appointmentTime,
         duration: service.duration || 60,
         status: 'Agendado',
+        totalPrice: String(service.price || 0),
         notes: 'Agendamento criado via WhatsApp',
         reminderSent: false
       });
 
       console.log('✅ Appointment created successfully:', appointment.id);
-      console.log(`📅 ${appointmentData.clientName} - ${service.name} - ${appointmentDateTime.toLocaleString('pt-BR')}`);
+      console.log(`📅 ${appointmentData.clientName} - ${service.name} - ${appointmentDate.toLocaleString('pt-BR')}`);
 
     } catch (parseError) {
       console.error('❌ Error parsing extracted appointment data:', parseError);
