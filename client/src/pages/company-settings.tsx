@@ -283,34 +283,6 @@ export default function CompanySettings() {
     },
   });
 
-  const configureWebhookMutation = useMutation({
-    mutationFn: async (instanceId: number) => {
-      const response = await apiRequest("POST", `/api/company/whatsapp/${instanceId}/configure-webhook`);
-      return response;
-    },
-    onSuccess: (data: any) => {
-      toast({
-        title: "Agente IA configurado",
-        description: "O agente de IA foi conectado com sucesso ao WhatsApp usando as configurações globais.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/company/whatsapp/instances"] });
-      setSelectedInstance(null);
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Erro ao configurar agente IA",
-        description: error.message || "Configure a Evolution API nas configurações do administrador primeiro",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const onWebhookSubmit = () => {
-    if (selectedInstance) {
-      configureWebhookMutation.mutate(selectedInstance.id);
-    }
-  };
-
   const fetchInstanceDetailsMutation = useMutation({
     mutationFn: async (instanceName: string) => {
       const response = await apiRequest("GET", `/api/company/whatsapp/instances/${instanceName}/details`);
