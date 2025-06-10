@@ -20,6 +20,52 @@ function generateWebhookUrl(req: any, instanceName: string): string {
   return `${req.protocol}://${host}/api/webhook/whatsapp/${instanceName}`;
 }
 
+async function generateAvailabilityInfo(professionals: any[], existingAppointments: any[]): Promise<string> {
+  const dayNames = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
+  
+  let availabilityText = 'DISPONIBILIDADE REAL DOS PROFISSIONAIS:\n\n';
+  
+  for (const prof of professionals) {
+    if (!prof.active) continue;
+    
+    availabilityText += `${prof.name}:\n`;
+    
+    // Work days and hours
+    const workDays = prof.workDays || [1, 2, 3, 4, 5, 6]; // Default: Monday to Saturday
+    const workStart = prof.workStartTime || '09:00';
+    const workEnd = prof.workEndTime || '18:00';
+    
+    availabilityText += `- Dias de trabalho: ${workDays.map(day => dayNames[day]).join(', ')}\n`;
+    availabilityText += `- Horário: ${workStart} às ${workEnd}\n`;
+    
+    // Check existing appointments for this week
+    const today = new Date();
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() - today.getDay()); // Start of week (Sunday)
+    
+    const profAppointments = existingAppointments.filter(apt => 
+      apt.professionalId === prof.id && 
+      new Date(apt.appointmentDate) >= weekStart &&
+      apt.status !== 'Cancelado'
+    );
+    
+    if (profAppointments.length > 0) {
+      availabilityText += `- Agendamentos existentes esta semana:\n`;
+      profAppointments.forEach(apt => {
+        const date = new Date(apt.appointmentDate);
+        const dayName = dayNames[date.getDay()];
+        availabilityText += `  • ${dayName} às ${apt.appointmentTime}\n`;
+      });
+    } else {
+      availabilityText += `- Sem agendamentos esta semana\n`;
+    }
+    
+    availabilityText += '\n';
+  }
+  
+  return availabilityText;
+}
+
 async function createAppointmentFromConversation(conversationId: number, companyId: number) {
   try {
     console.log('📅 Creating appointment from conversation:', conversationId);
@@ -837,6 +883,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 .map(service => `- ${service.name}${service.price ? ` (R$ ${service.price})` : ''}`)
                 .join('\n');
 
+              // Get existing appointments to check availability
+              const existingAppointments = await storage.getAppointmentsByCompany(company.id);
+              
+              // Create availability context for AI
+              const availabilityInfo = await generateAvailabilityInfo(professionals, existingAppointments);
+
               // Generate AI response with conversation context
               const OpenAI = (await import('openai')).default;
               const openai = new OpenAI({ apiKey: globalSettings.openaiApiKey });
@@ -851,6 +903,8 @@ ${availableProfessionals || 'Nenhum profissional cadastrado no momento'}
 SERVIÇOS DISPONÍVEIS:
 ${availableServices || 'Nenhum serviço cadastrado no momento'}
 
+${availabilityInfo}
+
 INSTRUÇÕES OBRIGATÓRIAS:
 - SEMPRE que o cliente mencionar "agendar", "horário", "agendamento" ou similar, ofereça IMEDIATAMENTE a lista completa de profissionais
 - Use o formato: "Temos os seguintes profissionais disponíveis:\n[lista dos profissionais]\n\nCom qual profissional você gostaria de agendar?"
@@ -858,10 +912,15 @@ INSTRUÇÕES OBRIGATÓRIAS:
 - Use o formato: "Aqui estão os serviços disponíveis:\n[lista dos serviços]\n\nQual serviço você gostaria de agendar?"
 - Após a escolha do serviço, peça o nome completo
 - Após o nome, peça a data e hora desejada
-- Após a data/hora, peça o telefone para finalizar o agendamento
-- Quando tiver TODOS os dados (profissional, serviço, nome, data/hora, telefone), confirme o agendamento
+- IMPORTANTE: Quando cliente sugerir data/hora, SEMPRE verifique a disponibilidade real usando as informações acima
+- Verifique se o profissional trabalha no dia solicitado
+- Verifique se o horário está dentro do expediente
+- Verifique se não há conflito com agendamentos existentes
+- Se horário não disponível, sugira alternativas baseadas na agenda real
+- Após confirmar disponibilidade, peça o telefone para finalizar
+- Quando tiver TODOS os dados (profissional, serviço, nome, data/hora disponível, telefone), confirme o agendamento
 - NÃO invente serviços - use APENAS os serviços listados acima
-- NÃO pergunte sem mostrar as listas completas
+- NÃO confirme horários sem verificar disponibilidade real
 - SEMPRE mostre todos os profissionais/serviços disponíveis antes de pedir para escolher
 - Mantenha respostas concisas e adequadas para mensagens de texto
 - Seja profissional mas amigável
