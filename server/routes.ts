@@ -3968,6 +3968,39 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
     }
   });
 
+  // Add color column to services table and update existing services
+  app.post("/api/admin/add-service-colors", async (req, res) => {
+    try {
+      // Add color column to services table
+      await db.execute(`
+        ALTER TABLE services 
+        ADD COLUMN IF NOT EXISTS color VARCHAR(7) DEFAULT '#3B82F6'
+      `);
+
+      // Update existing services with different colors
+      const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4'];
+      
+      await db.execute(`
+        UPDATE services 
+        SET color = CASE 
+          WHEN id % 6 = 1 THEN '#3B82F6'
+          WHEN id % 6 = 2 THEN '#10B981'
+          WHEN id % 6 = 3 THEN '#F59E0B'
+          WHEN id % 6 = 4 THEN '#EF4444'
+          WHEN id % 6 = 5 THEN '#8B5CF6'
+          ELSE '#06B6D4'
+        END
+        WHERE color IS NULL OR color = ''
+      `);
+
+      console.log('✅ Service colors added');
+      res.json({ message: "Cores dos serviços adicionadas com sucesso" });
+    } catch (error: any) {
+      console.error("Error adding service colors:", error);
+      res.status(500).json({ message: "Erro ao adicionar cores aos serviços", error: error.message });
+    }
+  });
+
   // Create sample appointments for testing
   app.post("/api/admin/create-sample-appointments", async (req, res) => {
     try {
