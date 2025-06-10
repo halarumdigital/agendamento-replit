@@ -320,6 +320,8 @@ export default function DashboardAppointments() {
   };
 
   const onSubmit = (data: AppointmentFormData) => {
+    console.log("Form data being submitted:", data);
+    console.log("Form errors:", form.formState.errors);
     createAppointmentMutation.mutate(data);
   };
 
