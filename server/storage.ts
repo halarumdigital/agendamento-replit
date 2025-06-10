@@ -1257,7 +1257,7 @@ export class DatabaseStorage implements IStorage {
           eq(professionalReviews.professionalId, professionalId),
           eq(professionalReviews.isVisible, true)
         ))
-        .orderBy(desc(professionalReviews.reviewDate));
+        .orderBy(desc(professionalReviews.createdAt));
     } catch (error: any) {
       console.error("Error getting professional reviews:", error);
       return [];
@@ -1274,7 +1274,7 @@ export class DatabaseStorage implements IStorage {
         clientPhone: professionalReviews.clientPhone,
         rating: professionalReviews.rating,
         comment: professionalReviews.comment,
-        reviewDate: professionalReviews.reviewDate,
+        reviewDate: professionalReviews.createdAt, // Use createdAt instead of reviewDate
         isVisible: professionalReviews.isVisible,
         createdAt: professionalReviews.createdAt,
         professionalName: professionals.name,
@@ -1284,7 +1284,7 @@ export class DatabaseStorage implements IStorage {
           eq(professionals.companyId, companyId),
           eq(professionalReviews.isVisible, true)
         ))
-        .orderBy(desc(professionalReviews.reviewDate));
+        .orderBy(desc(professionalReviews.createdAt));
     } catch (error: any) {
       console.error("Error getting professional reviews by company:", error);
       return [];

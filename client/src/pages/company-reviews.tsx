@@ -267,15 +267,18 @@ export default function CompanyReviews() {
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-2">
                             <User className="h-4 w-4 text-gray-500" />
-                            {invitation.professional.name}
+                            {invitation.professional?.name || 'Profissional não encontrado'}
                           </div>
                         </TableCell>
-                        <TableCell>{invitation.appointment.clientName}</TableCell>
+                        <TableCell>{invitation.appointment?.clientName || 'Cliente não encontrado'}</TableCell>
                         <TableCell>{invitation.clientPhone}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Calendar className="h-4 w-4 text-gray-500" />
-                            {formatDate(invitation.appointment.appointmentDate)} às {formatTime(invitation.appointment.appointmentTime)}
+                            {invitation.appointment ? 
+                              `${formatDate(invitation.appointment.appointmentDate)} às ${formatTime(invitation.appointment.appointmentTime)}` : 
+                              'Data não disponível'
+                            }
                           </div>
                         </TableCell>
                         <TableCell>{getStatusBadge(invitation)}</TableCell>
