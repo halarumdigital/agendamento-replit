@@ -21,7 +21,7 @@ interface Service {
   price: string | number;
   color: string;
   points: number;
-  active: boolean;
+  isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -33,7 +33,7 @@ const serviceSchema = z.object({
   price: z.number().min(0, "Preço deve ser maior ou igual a 0"),
   color: z.string().regex(/^#[0-9A-F]{6}$/i, "Cor deve ser um código hexadecimal válido"),
   points: z.number().min(0, "Pontos devem ser maior ou igual a 0").default(0),
-  active: z.boolean().default(true),
+  isActive: z.boolean().default(true),
 });
 
 type ServiceFormData = z.infer<typeof serviceSchema>;
@@ -64,7 +64,7 @@ export default function CompanyServices() {
       price: 0,
       color: "#3b82f6",
       points: 0,
-      active: true,
+      isActive: true,
     },
   });
 
@@ -176,7 +176,7 @@ export default function CompanyServices() {
     form.setValue('price', typeof service.price === 'string' ? parseFloat(service.price) : service.price);
     form.setValue('color', service.color);
     form.setValue('points', service.points || 0);
-    form.setValue('active', service.active);
+    form.setValue('isActive', service.isActive);
     setIsDialogOpen(true);
   };
 
@@ -349,9 +349,9 @@ export default function CompanyServices() {
                       Serviço ativo
                     </Label>
                     <Switch
-                      id="active"
-                      checked={form.watch('active')}
-                      onCheckedChange={(checked) => form.setValue('active', checked)}
+                      id="isActive"
+                      checked={form.watch('isActive')}
+                      onCheckedChange={(checked) => form.setValue('isActive', checked)}
                     />
                   </div>
                 </div>
