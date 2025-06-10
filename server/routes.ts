@@ -683,6 +683,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   content: msg.content
                 }));
 
+              // Get available professionals for this company
+              const professionals = await storage.getProfessionalsByCompany(company.id);
+              const availableProfessionals = professionals
+                .filter(prof => prof.active)
+                .map(prof => `- ${prof.name}`)
+                .join('\n');
+
               // Generate AI response with conversation context
               const OpenAI = (await import('openai')).default;
               const openai = new OpenAI({ apiKey: globalSettings.openaiApiKey });
@@ -690,6 +697,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const systemPrompt = `${company.aiAgentPrompt}
 
 Importante: Você está representando a empresa "${company.fantasyName}" via WhatsApp. 
+
+PROFISSIONAIS DISPONÍVEIS:
+${availableProfessionals || 'Nenhum profissional cadastrado no momento'}
+
+INSTRUÇÕES ESPECÍFICAS:
+- Quando o cliente quiser agendar um horário, SEMPRE ofereça a lista de profissionais disponíveis
+- Use o formato: "Temos os seguintes profissionais disponíveis: [lista dos profissionais]"
 - Mantenha respostas concisas e adequadas para mensagens de texto
 - Seja profissional mas amigável
 - Use o histórico da conversa para dar respostas contextualizadas
