@@ -20,6 +20,7 @@ interface Service {
   duration: number;
   price: string | number;
   color: string;
+  points: number;
   active: boolean;
   createdAt: string;
   updatedAt: string;
@@ -31,6 +32,7 @@ const serviceSchema = z.object({
   duration: z.number().min(1, "Duração deve ser maior que 0"),
   price: z.number().min(0, "Preço deve ser maior ou igual a 0"),
   color: z.string().regex(/^#[0-9A-F]{6}$/i, "Cor deve ser um código hexadecimal válido"),
+  points: z.number().min(0, "Pontos devem ser maior ou igual a 0").default(0),
   active: z.boolean().default(true),
 });
 
@@ -61,6 +63,7 @@ export default function CompanyServices() {
       duration: 30,
       price: 0,
       color: "#3b82f6",
+      points: 0,
       active: true,
     },
   });
@@ -172,6 +175,7 @@ export default function CompanyServices() {
     form.setValue('duration', service.duration);
     form.setValue('price', typeof service.price === 'string' ? parseFloat(service.price) : service.price);
     form.setValue('color', service.color);
+    form.setValue('points', service.points || 0);
     form.setValue('active', service.active);
     setIsDialogOpen(true);
   };
