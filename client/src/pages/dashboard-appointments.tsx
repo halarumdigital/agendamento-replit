@@ -400,7 +400,7 @@ export default function DashboardAppointments() {
               <div
                 key={appointment.id}
                 className="group text-xs p-1.5 rounded text-white cursor-pointer hover:opacity-80 transition-opacity"
-                style={{ backgroundColor: appointment.service.color }}
+                style={{ backgroundColor: appointment.service.color || '#3b82f6' }}
                 title={`${appointment.appointmentTime} - ${appointment.clientName} - ${appointment.service.name}`}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -1046,7 +1046,7 @@ export default function DashboardAppointments() {
                     <div className="flex items-center gap-4">
                       <div
                         className="w-4 h-4 rounded"
-                        style={{ backgroundColor: appointment.service.color }}
+                        style={{ backgroundColor: appointment.service.color || '#3b82f6' }}
                       />
                       <div>
                         <div className="font-medium">{appointment.clientName}</div>
@@ -1192,7 +1192,7 @@ export default function DashboardAppointments() {
                                       <div className="flex items-center gap-2 mb-2">
                                         <div
                                           className="w-2 h-2 rounded-full"
-                                          style={{ backgroundColor: appointment.service.color }}
+                                          style={{ backgroundColor: appointment.service.color || '#3b82f6' }}
                                         />
                                         <span className="text-xs text-gray-600">{appointment.service.name}</span>
                                       </div>
