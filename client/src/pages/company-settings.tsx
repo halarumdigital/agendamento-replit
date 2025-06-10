@@ -631,10 +631,14 @@ export default function CompanySettings() {
         </div>
 
         <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <Building2 className="w-4 h-4" />
               Empresa
+            </TabsTrigger>
+            <TabsTrigger value="whatsapp" className="flex items-center gap-2">
+              <Smartphone className="w-4 h-4" />
+              WhatsApp
             </TabsTrigger>
             <TabsTrigger value="ai-agent" className="flex items-center gap-2">
               <Bot className="w-4 h-4" />
@@ -868,6 +872,160 @@ export default function CompanySettings() {
                   </Button>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="whatsapp" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Smartphone className="w-5 h-5" />
+                Instâncias do WhatsApp
+              </CardTitle>
+              <CardDescription>
+                Gerencie suas instâncias de WhatsApp para envio de mensagens automáticas.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...whatsappForm}>
+                <form onSubmit={whatsappForm.handleSubmit(onWhatsappSubmit)} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={whatsappForm.control}
+                      name="instanceName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nome da Instância</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Ex: principal" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={whatsappForm.control}
+                      name="apiUrl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>URL da API Evolution</FormLabel>
+                          <FormControl>
+                            <Input placeholder="https://api.evolution.com" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={whatsappForm.control}
+                    name="apiKey"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Chave da API</FormLabel>
+                        <FormControl>
+                          <Input type="password" placeholder="Sua chave da API Evolution" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="flex justify-end">
+                    <Button 
+                      type="submit" 
+                      disabled={createInstanceMutation.isPending}
+                      className="flex items-center gap-2"
+                    >
+                      <Plus className="w-4 h-4" />
+                      {createInstanceMutation.isPending ? "Criando..." : "Criar Instância"}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Instâncias Configuradas</CardTitle>
+              <CardDescription>
+                Lista de todas as instâncias WhatsApp configuradas para sua empresa.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingInstances ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="animate-pulse">
+                      <div className="h-16 bg-gray-200 rounded-lg"></div>
+                    </div>
+                  ))}
+                </div>
+              ) : whatsappInstances.length > 0 ? (
+                <div className="space-y-4">
+                  {whatsappInstances.map((instance: any) => (
+                    <div key={instance.id} className="border rounded-lg p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3">
+                            <h3 className="font-medium">{instance.instanceName}</h3>
+                            <Badge 
+                              variant={instance.status === "open" ? "default" : "secondary"}
+                              className={instance.status === "open" ? "bg-green-600" : ""}
+                            >
+                              {instance.status === "open" ? "Conectado" : "Desconectado"}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-gray-600 mt-1">
+                            API: {instance.apiUrl}
+                          </p>
+                          {instance.webhook && (
+                            <p className="text-xs text-blue-600 mt-1">
+                              Webhook: {instance.webhook}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {instance.status !== "open" && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedInstance(instance);
+                                setShowQrDialog(true);
+                              }}
+                              className="flex items-center gap-2"
+                            >
+                              <QrCode className="w-4 h-4" />
+                              Conectar
+                            </Button>
+                          )}
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => deleteInstanceMutation.mutate(instance.id)}
+                            disabled={deleteInstanceMutation.isPending}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center p-8 bg-gray-50 rounded-lg border border-dashed">
+                  <Smartphone className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                  <p className="text-gray-600">Nenhuma instância configurada</p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Crie sua primeira instância WhatsApp para começar a enviar mensagens
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
