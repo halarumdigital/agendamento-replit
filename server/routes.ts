@@ -3927,14 +3927,14 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
   app.post("/api/company/tasks/:taskId/send-reminder", async (req: any, res) => {
     try {
       const { taskId } = req.params;
-      const companyId = req.user?.companyId;
+      const companyId = req.session.companyId;
       
       if (!companyId) {
         return res.status(401).json({ message: "Não autenticado" });
       }
       
       // Get task
-      const task = await storage.getTaskById(taskId);
+      const task = await storage.getTask(parseInt(taskId));
       if (!task || task.companyId !== companyId) {
         return res.status(404).json({ message: "Tarefa não encontrada" });
       }
