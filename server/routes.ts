@@ -1283,14 +1283,83 @@ INSTRUÇÕES OBRIGATÓRIAS:
         return res.status(401).json({ message: "Não autenticado" });
       }
 
-      const appointment = await storage.createAppointment({
-        ...req.body,
+      console.log('📋 Creating appointment with data:', JSON.stringify(req.body, null, 2));
+
+      // Validate required fields
+      const { 
+        professionalId, 
+        serviceId, 
+        clientName, 
+        clientPhone, 
+        appointmentDate, 
+        appointmentTime,
+        status = 'agendado',
+        notes,
+        clientEmail
+      } = req.body;
+
+      if (!professionalId || !serviceId || !clientName || !clientPhone || !appointmentDate || !appointmentTime) {
+        return res.status(400).json({ 
+          message: "Dados obrigatórios em falta",
+          required: ['professionalId', 'serviceId', 'clientName', 'clientPhone', 'appointmentDate', 'appointmentTime']
+        });
+      }
+
+      // Get service details for duration and price
+      const service = await storage.getService(serviceId);
+      if (!service) {
+        return res.status(400).json({ message: "Serviço não encontrado" });
+      }
+
+      // Create/find client
+      let client;
+      try {
+        const existingClients = await storage.getClientsByCompany(companyId);
+        client = existingClients.find(c => c.phone === clientPhone);
+        
+        if (!client) {
+          client = await storage.createClient({
+            companyId,
+            name: clientName,
+            phone: clientPhone,
+            email: clientEmail || null,
+            notes: notes || null,
+            birthDate: null
+          });
+          console.log('👤 New client created:', client.name);
+        }
+      } catch (clientError) {
+        console.error('Error handling client:', clientError);
+        return res.status(500).json({ message: "Erro ao processar cliente" });
+      }
+
+      // Create appointment with all required fields
+      const appointmentData = {
         companyId,
-      });
+        professionalId: parseInt(professionalId),
+        serviceId: parseInt(serviceId),
+        clientName,
+        clientPhone,
+        clientEmail: clientEmail || null,
+        appointmentDate: new Date(appointmentDate),
+        appointmentTime,
+        status,
+        duration: service.duration || 60,
+        totalPrice: service.price ? String(service.price) : '0',
+        notes: notes || null,
+        reminderSent: false
+      };
+
+      console.log('📋 Final appointment data:', JSON.stringify(appointmentData, null, 2));
+
+      const appointment = await storage.createAppointment(appointmentData);
+      
+      console.log('✅ Appointment created successfully with ID:', appointment.id);
+      
       res.status(201).json(appointment);
     } catch (error) {
       console.error("Error creating appointment:", error);
-      res.status(500).json({ message: "Erro ao criar agendamento" });
+      res.status(500).json({ message: "Erro ao criar agendamento", error: error.message });
     }
   });
 
