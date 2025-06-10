@@ -299,6 +299,25 @@ export default function CompanyServices() {
                   </div>
 
                   <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="points" className="text-right">
+                      Pontos de Fidelidade
+                    </Label>
+                    <Input
+                      id="points"
+                      type="number"
+                      min="0"
+                      className="col-span-3"
+                      placeholder="0"
+                      {...form.register('points', { valueAsNumber: true })}
+                    />
+                    {form.formState.errors.points && (
+                      <p className="col-span-4 text-sm text-red-500">
+                        {form.formState.errors.points.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-4 items-center gap-4">
                     <Label className="text-right">
                       Cor do Serviço
                     </Label>
@@ -382,6 +401,9 @@ export default function CompanyServices() {
                   <p className="text-lg font-semibold text-green-600">
                     R$ {Number(service.price).toFixed(2)}
                   </p>
+                  <p className="text-sm text-blue-600 font-medium">
+                    {service.points || 0} pontos de fidelidade
+                  </p>
                 </div>
                 <div className="flex space-x-2">
                   <Button
@@ -420,7 +442,7 @@ export default function CompanyServices() {
                   <div>
                     <h3 className="font-semibold">{service.name}</h3>
                     <p className="text-sm text-gray-600">
-                      {service.duration}min • R$ {Number(service.price).toFixed(2)}
+                      {service.duration}min • R$ {Number(service.price).toFixed(2)} • {service.points || 0} pontos
                     </p>
                   </div>
                 </div>
