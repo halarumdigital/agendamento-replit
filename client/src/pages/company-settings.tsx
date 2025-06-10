@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Settings, Building2, Lock, User, MessageSquare, Trash2, Plus, Smartphone, QrCode, RefreshCw, Bot, Key } from "lucide-react";
+import { Settings, Building2, Lock, User, MessageSquare, Trash2, Plus, Smartphone, QrCode, RefreshCw, Bot, Key, Gift, Calendar } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useCompanyAuth } from "@/hooks/useCompanyAuth";
 import { z } from "zod";
@@ -433,14 +433,10 @@ export default function CompanySettings() {
         </div>
 
         <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <Building2 className="w-4 h-4" />
-              Perfil
-            </TabsTrigger>
-            <TabsTrigger value="security" className="flex items-center gap-2">
-              <Lock className="w-4 h-4" />
-              Segurança
+              Empresa
             </TabsTrigger>
             <TabsTrigger value="whatsapp" className="flex items-center gap-2">
               <MessageSquare className="w-4 h-4" />
@@ -448,7 +444,15 @@ export default function CompanySettings() {
             </TabsTrigger>
             <TabsTrigger value="ai-agent" className="flex items-center gap-2">
               <Bot className="w-4 h-4" />
-              Agente IA
+              IA
+            </TabsTrigger>
+            <TabsTrigger value="reminders" className="flex items-center gap-2">
+              <Calendar className="w-4 h-4" />
+              Lembretes
+            </TabsTrigger>
+            <TabsTrigger value="birthdays" className="flex items-center gap-2">
+              <Gift className="w-4 h-4" />
+              Aniversários
             </TabsTrigger>
           </TabsList>
 
@@ -981,6 +985,118 @@ export default function CompanySettings() {
                   <li>• Teste diferentes versões para otimizar as respostas</li>
                 </ul>
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="reminders" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="w-5 h-5" />
+                Lembretes de Agendamento
+              </CardTitle>
+              <CardDescription>
+                Configure lembretes automáticos para agendamentos.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center p-6 bg-gray-50 rounded-lg border border-dashed">
+                <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                <p className="text-gray-600 mb-2">Funcionalidade em desenvolvimento</p>
+                <p className="text-sm text-gray-500">Lembretes automáticos serão implementados em breve</p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="birthdays" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Gift className="w-5 h-5 text-pink-600" />
+                Mensagens de Aniversário
+              </CardTitle>
+              <CardDescription>
+                Envie mensagens automáticas para clientes no dia do aniversário
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="bg-pink-50 p-4 rounded-lg border border-pink-200">
+                <h4 className="font-semibold text-pink-900 mb-3">Mensagem Personalizada</h4>
+                <div className="space-y-3">
+                  <Textarea
+                    placeholder="Que este novo ano de vida seja repleto de alegrias, conquistas e momentos especiais.&#10;&#10;Para comemorar, que tal agendar um horário especial conosco? 🎉✨&#10;&#10;Feliz aniversário! 🎂"
+                    className="min-h-[120px] bg-white"
+                    defaultValue="Que este novo ano de vida seja repleto de alegrias, conquistas e momentos especiais.&#10;&#10;Para comemorar, que tal agendar um horário especial conosco? 🎉✨&#10;&#10;Feliz aniversário! 🎂"
+                  />
+                  <p className="text-sm text-pink-700">
+                    Use <strong>{"{NOME}"}</strong> para o nome do cliente e <strong>{"{EMPRESA}"}</strong> para o nome da empresa
+                  </p>
+                  <div className="flex gap-3">
+                    <Button size="sm" className="bg-pink-600 hover:bg-pink-700">
+                      <Gift className="w-4 h-4 mr-2" />
+                      Salvar Mensagem
+                    </Button>
+                    <Button size="sm" variant="outline">
+                      Testar Função
+                    </Button>
+                    <Button size="sm" variant="outline">
+                      Atualizar
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Gift className="w-5 h-5 text-pink-600" />
+                      Aniversariantes de Hoje
+                      <Badge variant="secondary" className="bg-pink-100 text-pink-700">0</Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-6">
+                      <p className="text-gray-600">Nenhum aniversariante hoje</p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Calendar className="w-5 h-5 text-blue-600" />
+                      Aniversariantes do Mês
+                      <Badge variant="secondary" className="bg-blue-100 text-blue-700">0</Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-6">
+                      <p className="text-gray-600">Nenhum aniversariante este mês</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-green-700">
+                    <Calendar className="w-5 h-5" />
+                    Histórico de Aniversários
+                  </CardTitle>
+                  <CardDescription>
+                    Mensagens de aniversário enviadas recentemente
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center p-6 bg-gray-50 rounded-lg border border-dashed">
+                    <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                    <p className="text-gray-600">Nenhuma mensagem de aniversário enviada ainda</p>
+                  </div>
+                </CardContent>
+              </Card>
             </CardContent>
           </Card>
         </TabsContent>

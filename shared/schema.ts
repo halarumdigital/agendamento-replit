@@ -178,6 +178,29 @@ export const status = mysqlTable("status", {
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
 
+// Birthday messages table
+export const birthdayMessages = mysqlTable("birthday_messages", {
+  id: int("id").primaryKey().autoincrement(),
+  companyId: int("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+  messageTemplate: text("message_template").notNull(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+});
+
+// Birthday message history table
+export const birthdayMessageHistory = mysqlTable("birthday_message_history", {
+  id: int("id").primaryKey().autoincrement(),
+  companyId: int("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+  clientId: int("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
+  clientName: varchar("client_name", { length: 255 }).notNull(),
+  clientPhone: varchar("client_phone", { length: 20 }).notNull(),
+  message: text("message").notNull(),
+  sentAt: timestamp("sent_at").defaultNow(),
+  status: varchar("status", { length: 20 }).default("sent"), // sent, failed, pending
+  whatsappInstanceId: int("whatsapp_instance_id").references(() => whatsappInstances.id),
+});
+
 // Clients table
 export const clients = mysqlTable("clients", {
   id: int("id").primaryKey().autoincrement(),
@@ -342,6 +365,17 @@ export const insertClientSchema = createInsertSchema(clients).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+});
+
+export const insertBirthdayMessageSchema = createInsertSchema(birthdayMessages).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertBirthdayMessageHistorySchema = createInsertSchema(birthdayMessageHistory).omit({
+  id: true,
+  sentAt: true,
 });
 
 // Types
