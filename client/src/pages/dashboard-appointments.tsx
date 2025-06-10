@@ -371,7 +371,7 @@ export default function DashboardAppointments() {
             {dayAppointments.slice(0, 3).map((appointment: Appointment) => (
               <div
                 key={appointment.id}
-                className="text-xs p-1 rounded text-white truncate cursor-pointer hover:opacity-80 transition-opacity"
+                className="group text-xs p-1 rounded text-white truncate cursor-pointer hover:opacity-80 transition-opacity flex items-center justify-between"
                 style={{ backgroundColor: appointment.service.color }}
                 title={`${appointment.appointmentTime} - ${appointment.clientName}`}
                 onClick={(e) => {
@@ -380,7 +380,18 @@ export default function DashboardAppointments() {
                   setIsAppointmentDetailsOpen(true);
                 }}
               >
-                {appointment.appointmentTime} {appointment.clientName}
+                <span className="truncate">{appointment.appointmentTime} {appointment.clientName}</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-white hover:bg-white hover:bg-opacity-20"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEditAppointment(appointment);
+                  }}
+                >
+                  <Edit className="h-3 w-3" />
+                </Button>
               </div>
             ))}
             {dayAppointments.length > 3 && (
@@ -471,19 +482,22 @@ export default function DashboardAppointments() {
   const handleEditAppointment = (appointment: Appointment) => {
     setEditingAppointment(appointment);
     
+    // Find status ID by status name
+    const statusObj = statuses.find(s => s.name.toLowerCase() === appointment.status.toLowerCase());
+    
     // Populate form with appointment data
     editForm.reset({
       clientId: undefined,
       serviceId: appointment.serviceId,
       professionalId: appointment.professionalId,
-      statusId: appointment.statusId,
+      statusId: statusObj?.id || 0,
       clientName: appointment.clientName,
       clientEmail: appointment.clientEmail || "",
       clientPhone: appointment.clientPhone,
       appointmentDate: format(new Date(appointment.appointmentDate), 'yyyy-MM-dd'),
       appointmentTime: appointment.appointmentTime,
       notes: appointment.notes || "",
-      confirmed: appointment.confirmed || false,
+      confirmed: false,
     });
     
     setIsEditAppointmentOpen(true);
@@ -899,7 +913,7 @@ export default function DashboardAppointments() {
                   <div>
                     <label className="text-sm font-medium text-gray-700">Serviço</label>
                     <p className="text-sm">{selectedAppointment.service.name}</p>
-                    <p className="text-xs text-gray-500">{selectedAppointment.duration} minutos - R$ {selectedAppointment.totalPrice.toFixed(2)}</p>
+                    <p className="text-xs text-gray-500">{selectedAppointment.duration} minutos - R$ {Number(selectedAppointment.totalPrice).toFixed(2)}</p>
                   </div>
 
                   <div>
@@ -1022,13 +1036,7 @@ export default function DashboardAppointments() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => {
-                            // TODO: Implementar edição de agendamento
-                            toast({
-                              title: "Em desenvolvimento",
-                              description: "Funcionalidade de edição será implementada em breve.",
-                            });
-                          }}
+                          onClick={() => handleEditAppointment(appointment)}
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -1090,32 +1098,49 @@ export default function DashboardAppointments() {
                                     ref={provided.innerRef}
                                     {...provided.draggableProps}
                                     {...provided.dragHandleProps}
-                                    className={`p-3 bg-white border rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer ${
+                                    className={`group p-3 bg-white border rounded-lg shadow-sm hover:shadow-md transition-shadow ${
                                       snapshot.isDragging ? 'shadow-lg transform rotate-2' : ''
                                     }`}
-                                    onClick={() => {
-                                      setSelectedAppointment(appointment);
-                                      setIsAppointmentDetailsOpen(true);
-                                    }}
                                   >
                                     <div className="flex items-start justify-between mb-2">
                                       <h4 className="font-medium text-sm">{appointment.clientName}</h4>
-                                      <span className="text-xs text-gray-500">
-                                        {appointment.appointmentTime}
-                                      </span>
+                                      <div className="flex items-center gap-1">
+                                        <span className="text-xs text-gray-500">
+                                          {appointment.appointmentTime}
+                                        </span>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleEditAppointment(appointment);
+                                          }}
+                                        >
+                                          <Edit className="h-3 w-3" />
+                                        </Button>
+                                      </div>
                                     </div>
-                                    <div className="flex items-center gap-2 mb-2">
-                                      <div
-                                        className="w-2 h-2 rounded-full"
-                                        style={{ backgroundColor: appointment.service.color }}
-                                      />
-                                      <span className="text-xs text-gray-600">{appointment.service.name}</span>
-                                    </div>
-                                    <div className="text-xs text-gray-500">
-                                      {appointment.professional.name}
-                                    </div>
-                                    <div className="text-xs text-gray-500 mt-1">
-                                      {format(new Date(appointment.appointmentDate), 'dd/MM/yyyy')}
+                                    <div 
+                                      className="cursor-pointer"
+                                      onClick={() => {
+                                        setSelectedAppointment(appointment);
+                                        setIsAppointmentDetailsOpen(true);
+                                      }}
+                                    >
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <div
+                                          className="w-2 h-2 rounded-full"
+                                          style={{ backgroundColor: appointment.service.color }}
+                                        />
+                                        <span className="text-xs text-gray-600">{appointment.service.name}</span>
+                                      </div>
+                                      <div className="text-xs text-gray-500">
+                                        {appointment.professional.name}
+                                      </div>
+                                      <div className="text-xs text-gray-500 mt-1">
+                                        {format(new Date(appointment.appointmentDate), 'dd/MM/yyyy')}
+                                      </div>
                                     </div>
                                   </div>
                                 )}
