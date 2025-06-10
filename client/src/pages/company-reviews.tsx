@@ -68,9 +68,7 @@ export default function CompanyReviews() {
   // Send review invitation mutation
   const sendInvitationMutation = useMutation({
     mutationFn: (appointmentId: number) =>
-      apiRequest(`/api/appointments/${appointmentId}/send-review-invitation`, {
-        method: 'POST',
-      }),
+      apiRequest(`/api/appointments/${appointmentId}/send-review-invitation`, 'POST'),
     onSuccess: () => {
       toast({
         title: "Convite enviado!",
