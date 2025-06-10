@@ -238,6 +238,33 @@ export const reminderHistory = mysqlTable("reminder_history", {
   whatsappInstanceId: int("whatsapp_instance_id").references(() => whatsappInstances.id),
 });
 
+// Professional Reviews table
+export const professionalReviews = mysqlTable("professional_reviews", {
+  id: int("id").primaryKey().autoincrement(),
+  professionalId: int("professional_id").notNull().references(() => professionals.id, { onDelete: "cascade" }),
+  appointmentId: int("appointment_id").notNull().references(() => appointments.id, { onDelete: "cascade" }),
+  clientName: varchar("client_name", { length: 255 }).notNull(),
+  clientPhone: varchar("client_phone", { length: 20 }),
+  rating: int("rating").notNull(), // 1-5 stars
+  comment: text("comment"),
+  reviewDate: timestamp("review_date").defaultNow(),
+  isVisible: boolean("is_visible").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Review Invitations table (to track sent invitations)
+export const reviewInvitations = mysqlTable("review_invitations", {
+  id: int("id").primaryKey().autoincrement(),
+  appointmentId: int("appointment_id").notNull().references(() => appointments.id, { onDelete: "cascade" }),
+  professionalId: int("professional_id").notNull().references(() => professionals.id, { onDelete: "cascade" }),
+  clientPhone: varchar("client_phone", { length: 20 }).notNull(),
+  invitationToken: varchar("invitation_token", { length: 255 }).notNull().unique(),
+  sentAt: timestamp("sent_at").defaultNow(),
+  reviewSubmittedAt: timestamp("review_submitted_at"),
+  status: varchar("status", { length: 20 }).default("sent"), // sent, viewed, completed, expired
+  whatsappInstanceId: int("whatsapp_instance_id").references(() => whatsappInstances.id),
+});
+
 // Relations
 export const companiesRelations = relations(companies, ({ many }) => ({
   whatsappInstances: many(whatsappInstances),
@@ -300,9 +327,11 @@ export const professionalsRelations = relations(professionals, ({ one, many }) =
     references: [companies.id],
   }),
   appointments: many(appointments),
+  reviews: many(professionalReviews),
+  reviewInvitations: many(reviewInvitations),
 }));
 
-export const appointmentsRelations = relations(appointments, ({ one }) => ({
+export const appointmentsRelations = relations(appointments, ({ one, many }) => ({
   company: one(companies, {
     fields: [appointments.companyId],
     references: [companies.id],
@@ -314,6 +343,34 @@ export const appointmentsRelations = relations(appointments, ({ one }) => ({
   professional: one(professionals, {
     fields: [appointments.professionalId],
     references: [professionals.id],
+  }),
+  reviews: many(professionalReviews),
+  reviewInvitations: many(reviewInvitations),
+}));
+
+export const professionalReviewsRelations = relations(professionalReviews, ({ one }) => ({
+  professional: one(professionals, {
+    fields: [professionalReviews.professionalId],
+    references: [professionals.id],
+  }),
+  appointment: one(appointments, {
+    fields: [professionalReviews.appointmentId],
+    references: [appointments.id],
+  }),
+}));
+
+export const reviewInvitationsRelations = relations(reviewInvitations, ({ one }) => ({
+  appointment: one(appointments, {
+    fields: [reviewInvitations.appointmentId],
+    references: [appointments.id],
+  }),
+  professional: one(professionals, {
+    fields: [reviewInvitations.professionalId],
+    references: [professionals.id],
+  }),
+  whatsappInstance: one(whatsappInstances, {
+    fields: [reviewInvitations.whatsappInstanceId],
+    references: [whatsappInstances.id],
   }),
 }));
 
@@ -415,6 +472,20 @@ export const insertReminderHistorySchema = createInsertSchema(reminderHistory).o
   sentAt: true,
 });
 
+// Professional Reviews insert schema
+export const insertProfessionalReviewSchema = createInsertSchema(professionalReviews).omit({
+  id: true,
+  reviewDate: true,
+  createdAt: true,
+});
+
+// Review Invitations insert schema
+export const insertReviewInvitationSchema = createInsertSchema(reviewInvitations).omit({
+  id: true,
+  sentAt: true,
+  reviewSubmittedAt: true,
+});
+
 // Types
 export type Admin = typeof admins.$inferSelect;
 export type InsertAdmin = z.infer<typeof insertAdminSchema>;
@@ -448,3 +519,7 @@ export type ReminderSettings = typeof reminderSettings.$inferSelect;
 export type InsertReminderSettings = z.infer<typeof insertReminderSettingsSchema>;
 export type ReminderHistory = typeof reminderHistory.$inferSelect;
 export type InsertReminderHistory = z.infer<typeof insertReminderHistorySchema>;
+export type ProfessionalReview = typeof professionalReviews.$inferSelect;
+export type InsertProfessionalReview = z.infer<typeof insertProfessionalReviewSchema>;
+export type ReviewInvitation = typeof reviewInvitations.$inferSelect;
+export type InsertReviewInvitation = z.infer<typeof insertReviewInvitationSchema>;
