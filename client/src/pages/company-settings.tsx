@@ -46,6 +46,7 @@ export default function CompanySettings() {
   const { toast } = useToast();
   const [editingSettings, setEditingSettings] = useState<{ [key: string]: ReminderSettings }>({});
   const [showQrDialog, setShowQrDialog] = useState(false);
+  const [showAiConfigDialog, setShowAiConfigDialog] = useState(false);
   const [selectedInstance, setSelectedInstance] = useState<any>(null);
 
   // React Hook Form setup
@@ -148,6 +149,26 @@ export default function CompanySettings() {
     },
     onError: () => {
       toast({ title: "Erro ao criar instância WhatsApp", variant: "destructive" });
+    },
+  });
+
+  const aiConfigMutation = useMutation({
+    mutationFn: async (instanceId: number) => {
+      return await apiRequest(`/api/company/whatsapp/${instanceId}/auto-configure-webhook`, {
+        method: "POST",
+      });
+    },
+    onSuccess: () => {
+      toast({ title: "Agente IA configurado com sucesso!" });
+      setShowAiConfigDialog(false);
+      queryClient.invalidateQueries({ queryKey: [`/api/companies/${company?.id}/whatsapp-instances`] });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Erro ao configurar agente IA", 
+        description: error?.message || "Verifique se a Evolution API está configurada",
+        variant: "destructive" 
+      });
     },
   });
 
@@ -408,7 +429,6 @@ export default function CompanySettings() {
                       <div className="flex justify-between items-start">
                         <div>
                           <h4 className="font-medium">{instance.instanceName}</h4>
-                          <p className="text-sm text-gray-600">{instance.apiUrl}</p>
                           <Badge variant={instance.status === 'connected' ? 'default' : 'secondary'}>
                             {instance.status || 'Desconectado'}
                           </Badge>
@@ -428,6 +448,17 @@ export default function CompanySettings() {
                           <Button size="sm" variant="outline">
                             <RefreshCw className="w-4 h-4 mr-2" />
                             Reconectar
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedInstance(instance);
+                              setShowAiConfigDialog(true);
+                            }}
+                          >
+                            <Bot className="w-4 h-4 mr-2" />
+                            Configurar IA
                           </Button>
                         </div>
                       </div>
@@ -650,6 +681,56 @@ export default function CompanySettings() {
               onClick={() => setShowQrDialog(false)}
             >
               Fechar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Configuration Dialog */}
+      <Dialog open={showAiConfigDialog} onOpenChange={setShowAiConfigDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Bot className="w-5 h-5" />
+              Configurar Agente IA
+            </DialogTitle>
+            <DialogDescription>
+              Configurar automaticamente o agente IA para a instância "{selectedInstance?.instanceName}"
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="text-sm text-blue-800">
+                Esta ação irá configurar automaticamente o webhook e conectar o agente IA à sua instância WhatsApp usando as configurações globais da Evolution API.
+              </p>
+            </div>
+            
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <p className="text-sm text-yellow-800">
+                <strong>Certifique-se de que:</strong>
+              </p>
+              <ul className="text-sm text-yellow-800 mt-2 space-y-1">
+                <li>• A Evolution API está configurada nas configurações do administrador</li>
+                <li>• A instância WhatsApp está conectada</li>
+                <li>• O prompt do agente IA está configurado</li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="flex gap-2 justify-end">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowAiConfigDialog(false)}
+              disabled={aiConfigMutation.isPending}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={() => selectedInstance && aiConfigMutation.mutate(selectedInstance.id)}
+              disabled={aiConfigMutation.isPending}
+            >
+              {aiConfigMutation.isPending ? "Configurando..." : "Configurar IA"}
             </Button>
           </div>
         </DialogContent>
