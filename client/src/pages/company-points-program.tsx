@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Star, Gift, Grid3X3, List, Phone } from "lucide-react";
+import { Plus, Edit, Trash2, Star, Gift, Grid3X3, List, Phone, Search } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -63,6 +63,7 @@ export default function CompanyPointsProgram() {
   const [selectedClient, setSelectedClient] = useState<ClientWithPoints | null>(null);
   const [editingCampaign, setEditingCampaign] = useState<PointsCampaign | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [searchTerm, setSearchTerm] = useState('');
 
   const editPointsForm = useForm<EditPointsFormData>({
     resolver: zodResolver(editPointsSchema),
@@ -92,6 +93,14 @@ export default function CompanyPointsProgram() {
 
   const { data: services = [], isLoading: isLoadingServices } = useQuery({
     queryKey: ['/api/company/services'],
+  });
+
+  // Filter clients based on search term
+  const filteredClients = clientsWithPoints.filter((client: ClientWithPoints) => {
+    const searchLower = searchTerm.toLowerCase();
+    const nameMatch = client.name.toLowerCase().includes(searchLower);
+    const phoneMatch = client.phone && client.phone.toLowerCase().includes(searchLower);
+    return nameMatch || phoneMatch;
   });
 
   // Mutations
@@ -282,14 +291,25 @@ export default function CompanyPointsProgram() {
                 </Button>
               </div>
               <div className="text-sm text-gray-500">
-                Total: {clientsWithPoints.length} clientes
+                Total: {filteredClients.length} clientes
               </div>
             </div>
           </div>
 
+          {/* Campo de busca */}
+          <div className="relative mb-6">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nome ou telefone..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+
           {viewMode === 'grid' ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {clientsWithPoints.map((client: ClientWithPoints) => (
+              {filteredClients.map((client: ClientWithPoints) => (
                 <Card key={client.id}>
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
@@ -333,7 +353,7 @@ export default function CompanyPointsProgram() {
                 <div className="col-span-2 text-center">Status</div>
                 <div className="col-span-1 text-center">Ações</div>
               </div>
-              {clientsWithPoints.map((client: ClientWithPoints) => (
+              {filteredClients.map((client: ClientWithPoints) => (
                 <Card key={client.id} className="p-3">
                   <div className="grid grid-cols-12 gap-4 items-center">
                     <div className="col-span-4">
