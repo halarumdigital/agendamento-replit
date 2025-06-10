@@ -33,6 +33,7 @@ function Router() {
     <Switch>
       {/* Company Routes */}
       <Route path="/" component={CompanyLogin} />
+      <Route path="/company" component={CompanyLogin} />
       <Route path="/dashboard">
         <CompanyLayout>
           <CompanyDashboard />

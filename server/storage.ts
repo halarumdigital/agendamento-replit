@@ -1454,7 +1454,8 @@ export class DatabaseStorage implements IStorage {
         clientPhone: appointment.clientPhone,
         invitationToken: token,
         status: 'sent',
-        whatsappInstanceId: whatsappInstance.id
+        whatsappInstanceId: whatsappInstance.id,
+        companyId: appointment.companyId
       });
 
       // Generate review URL

@@ -257,6 +257,7 @@ export const reviewInvitations = mysqlTable("review_invitations", {
   id: int("id").primaryKey().autoincrement(),
   appointmentId: int("appointment_id").notNull().references(() => appointments.id, { onDelete: "cascade" }),
   professionalId: int("professional_id").notNull().references(() => professionals.id, { onDelete: "cascade" }),
+  companyId: int("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
   clientPhone: varchar("client_phone", { length: 20 }).notNull(),
   invitationToken: varchar("invitation_token", { length: 255 }).notNull().unique(),
   sentAt: timestamp("sent_at").defaultNow(),
