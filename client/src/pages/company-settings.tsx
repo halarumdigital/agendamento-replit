@@ -139,6 +139,11 @@ export default function CompanySettings() {
     queryKey: ['/api/company/reminder-history'],
   });
 
+  // Clients query for birthday messages
+  const { data: clients = [] } = useQuery({
+    queryKey: ['/api/company/clients'],
+  });
+
   const updateProfileMutation = useMutation({
     mutationFn: async (data: CompanyProfileData) => {
       await apiRequest("PUT", "/api/company/profile", data);
@@ -463,10 +468,7 @@ export default function CompanySettings() {
     queryKey: ["/api/company/birthday-message-history"],
   });
 
-  // Client data for birthday functionality
-  const { data: clients = [] } = useQuery<any[]>({
-    queryKey: ["/api/company/clients"],
-  });
+
 
   // Update form when birthday messages are loaded
   useEffect(() => {
@@ -1455,8 +1457,8 @@ export default function CompanySettings() {
                                     <span>• {{empresa}} - Nome da empresa</span>
                                     <span>• {{servico}} - Nome do serviço</span>
                                     <span>• {{profissional}} - Nome do profissional</span>
-                                    <span>• {{data}} - Data do agendamento</span>
-                                    <span>• {{hora}} - Hora do agendamento</span>
+                                    <span>• &#123;&#123;data&#125;&#125; - Data do agendamento</span>
+                                    <span>• &#123;&#123;hora&#125;&#125; - Hora do agendamento</span>
                                   </div>
                                 </div>
                               </div>
