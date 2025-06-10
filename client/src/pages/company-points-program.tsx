@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Star, Gift } from "lucide-react";
+import { Plus, Edit, Trash2, Star, Gift, Grid3X3, List, Phone } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -62,6 +62,7 @@ export default function CompanyPointsProgram() {
   const [isCampaignDialogOpen, setIsCampaignDialogOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<ClientWithPoints | null>(null);
   const [editingCampaign, setEditingCampaign] = useState<PointsCampaign | null>(null);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   const editPointsForm = useForm<EditPointsFormData>({
     resolver: zodResolver(editPointsSchema),
@@ -261,39 +262,120 @@ export default function CompanyPointsProgram() {
         </TabsList>
 
         <TabsContent value="clients" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {clientsWithPoints.map((client: ClientWithPoints) => (
-              <Card key={client.id}>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{client.name}</CardTitle>
-                    <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                      {client.totalPoints} pontos
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2 mb-4">
-                    {client.phone && (
-                      <p className="text-sm text-gray-600">📱 {client.phone}</p>
-                    )}
-                    {client.email && (
-                      <p className="text-sm text-gray-600">✉️ {client.email}</p>
-                    )}
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleEditPoints(client)}
-                    className="w-full"
-                  >
-                    <Edit className="h-4 w-4 mr-2" />
-                    Editar Pontos
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold">Pontos dos Clientes</h2>
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant={viewMode === 'grid' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('grid')}
+                >
+                  <Grid3X3 className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'list' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('list')}
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="text-sm text-gray-500">
+                Total: {clientsWithPoints.length} clientes
+              </div>
+            </div>
           </div>
+
+          {viewMode === 'grid' ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {clientsWithPoints.map((client: ClientWithPoints) => (
+                <Card key={client.id}>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg">{client.name}</CardTitle>
+                      <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                        {client.totalPoints} pontos
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 mb-4">
+                      {client.phone && (
+                        <p className="text-sm text-gray-600 flex items-center">
+                          <Phone className="h-3 w-3 mr-1" />
+                          {client.phone}
+                        </p>
+                      )}
+                      {client.email && (
+                        <p className="text-sm text-gray-600">✉️ {client.email}</p>
+                      )}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEditPoints(client)}
+                      className="w-full"
+                    >
+                      <Edit className="h-4 w-4 mr-2" />
+                      Editar Pontos
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 grid grid-cols-12 gap-4 font-medium text-sm">
+                <div className="col-span-4">Cliente</div>
+                <div className="col-span-3">Contato</div>
+                <div className="col-span-2 text-center">Pontos</div>
+                <div className="col-span-2 text-center">Status</div>
+                <div className="col-span-1 text-center">Ações</div>
+              </div>
+              {clientsWithPoints.map((client: ClientWithPoints) => (
+                <Card key={client.id} className="p-3">
+                  <div className="grid grid-cols-12 gap-4 items-center">
+                    <div className="col-span-4">
+                      <div>
+                        <h3 className="font-medium">{client.name}</h3>
+                        {client.email && (
+                          <p className="text-xs text-gray-500">{client.email}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="col-span-3">
+                      {client.phone && (
+                        <p className="text-sm flex items-center">
+                          <Phone className="h-3 w-3 mr-1" />
+                          {client.phone}
+                        </p>
+                      )}
+                    </div>
+                    <div className="col-span-2 text-center">
+                      <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                        {client.totalPoints} pts
+                      </Badge>
+                    </div>
+                    <div className="col-span-2 text-center">
+                      <Badge variant={client.totalPoints >= 100 ? "default" : "outline"}>
+                        {client.totalPoints >= 100 ? "VIP" : "Regular"}
+                      </Badge>
+                    </div>
+                    <div className="col-span-1 text-center">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditPoints(client)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
 
           {clientsWithPoints.length === 0 && (
             <Card>
