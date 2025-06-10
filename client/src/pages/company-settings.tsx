@@ -322,43 +322,69 @@ export default function CompanySettings() {
     },
   });
 
+  // Function to poll for QR code updates from database
+  const pollForQrCode = async (instanceName: string): Promise<string | null> => {
+    try {
+      const response = await apiRequest("GET", "/api/company/whatsapp/instances");
+      const instances = await response.json();
+      const instance = instances.find((inst: any) => inst.instanceName === instanceName);
+      return instance?.qrCode || null;
+    } catch (error) {
+      console.error("Error polling for QR code:", error);
+      return null;
+    }
+  };
+
   const connectInstanceMutation = useMutation({
     mutationFn: async (instanceName: string) => {
-      const response = await apiRequest("GET", `/api/company/whatsapp/instances/${instanceName}/connect`);
-      return await response.json();
+      // Trigger connection in Evolution API
+      const response = await apiRequest("POST", `/api/company/whatsapp/instances/${instanceName}/connect`);
+      return { instanceName };
     },
-    onSuccess: (data: any) => {
-      console.log("API Response:", data);
-      // Try different QR code fields from Evolution API
-      const qrcode = data.qrcode || data.base64 || data.qr || data.qr_code;
+    onSuccess: async (data: any) => {
+      const { instanceName } = data;
       
-      if (qrcode) {
-        // If it's base64 without data URL prefix, add it
-        const qrCodeUrl = qrcode.startsWith('data:') ? qrcode : `data:image/png;base64,${qrcode}`;
-        setQrCodeData(qrCodeUrl);
-        setShowQrDialog(true);
-        toast({
-          title: "Conectando instância",
-          description: "Escaneie o QR code com seu WhatsApp.",
-        });
-      } else {
-        toast({
-          title: "Erro",
-          description: "QR code não encontrado na resposta da API",
-          variant: "destructive",
-        });
-      }
+      // Show modal immediately
+      setShowQrDialog(true);
+      setQrCodeData(null);
+      
+      toast({
+        title: "Gerando QR code",
+        description: "Aguarde enquanto o QR code é gerado...",
+      });
+      
+      // Poll for QR code with timeout
+      let attempts = 0;
+      const maxAttempts = 15; // 30 seconds total
+      
+      const pollInterval = setInterval(async () => {
+        attempts++;
+        const qrCode = await pollForQrCode(instanceName);
+        
+        if (qrCode && qrCode.length > 100) {
+          clearInterval(pollInterval);
+          setQrCodeData(qrCode);
+          toast({
+            title: "QR code gerado",
+            description: "Escaneie o QR code com seu WhatsApp.",
+          });
+        } else if (attempts >= maxAttempts) {
+          clearInterval(pollInterval);
+          toast({
+            title: "Timeout",
+            description: "QR code não foi gerado. Tente novamente.",
+            variant: "destructive",
+          });
+        }
+      }, 2000); // Check every 2 seconds
     },
     onError: (error: any) => {
       let errorMessage = error.message || "Erro ao conectar instância";
       
-      // Handle specific Evolution API errors
       if (error.message?.includes("Evolution API não configurada")) {
         errorMessage = "Configure a Evolution API nas configurações do administrador antes de conectar instâncias WhatsApp.";
       } else if (error.message?.includes("Instância não encontrada")) {
         errorMessage = "Esta instância não foi encontrada na Evolution API. Verifique se foi criada corretamente.";
-      } else if (error.message?.includes("Erro da Evolution API")) {
-        errorMessage = "Erro na comunicação com a Evolution API. Verifique as configurações da API.";
       }
       
       toast({
