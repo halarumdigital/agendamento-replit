@@ -3,6 +3,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { ensureConversationTables, storage } from "./storage";
+import { ensureReviewTables } from "./create-reviews-tables";
 
 const app = express();
 app.use(express.json());
@@ -41,6 +42,9 @@ app.use((req, res, next) => {
 (async () => {
   // Initialize conversation tables at startup
   await ensureConversationTables();
+  
+  // Initialize review tables
+  await ensureReviewTables();
   
   const server = await registerRoutes(app);
 
