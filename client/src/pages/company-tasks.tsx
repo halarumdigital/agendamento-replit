@@ -80,7 +80,7 @@ export default function CompanyTasks() {
   });
 
   const createTaskMutation = useMutation({
-    mutationFn: (data: TaskFormData) => apiRequest("/api/company/tasks", "POST", data),
+    mutationFn: (data: TaskFormData) => apiRequest("POST", "/api/company/tasks", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/company/tasks"] });
       setIsDialogOpen(false);
@@ -122,7 +122,7 @@ export default function CompanyTasks() {
   });
 
   const deleteTaskMutation = useMutation({
-    mutationFn: (id: number) => apiRequest(`/api/company/tasks/${id}`, "DELETE"),
+    mutationFn: (id: number) => apiRequest("DELETE", `/api/company/tasks/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/company/tasks"] });
       toast({
