@@ -345,7 +345,7 @@ export default function CompanyServices() {
                   </div>
 
                   <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="active" className="text-right">
+                    <Label htmlFor="isActive" className="text-right">
                       Serviço ativo
                     </Label>
                     <Switch
@@ -447,8 +447,8 @@ export default function CompanyServices() {
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Badge className="bg-purple-100 text-purple-800">
-                    Ativo
+                  <Badge className={service.isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
+                    {service.isActive ? "Ativo" : "Inativo"}
                   </Badge>
                   <Button
                     variant="ghost"
