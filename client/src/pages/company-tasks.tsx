@@ -157,6 +157,7 @@ export default function CompanyTasks() {
       recurrence: task.recurrence as any,
       isActive: task.isActive,
       color: task.color,
+      whatsappNumber: task.whatsappNumber || "",
     });
     setIsDialogOpen(true);
   };
@@ -297,6 +298,34 @@ export default function CompanyTasks() {
                           ))}
                         </SelectContent>
                       </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="whatsappNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>WhatsApp para Notificações</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="5511999999999"
+                          {...field}
+                          value={field.value?.startsWith('55') ? field.value : field.value ? `55${field.value}` : '55'}
+                          onChange={(e) => {
+                            let value = e.target.value.replace(/\D/g, '');
+                            if (!value.startsWith('55')) {
+                              value = '55' + value;
+                            }
+                            field.onChange(value);
+                          }}
+                        />
+                      </FormControl>
+                      <div className="text-sm text-muted-foreground">
+                        Número com DDI 55 para receber notificações (opcional)
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
