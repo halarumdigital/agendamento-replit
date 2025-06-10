@@ -968,9 +968,12 @@ export class DatabaseStorage implements IStorage {
 
   async createBirthdayMessage(messageData: InsertBirthdayMessage): Promise<BirthdayMessage> {
     try {
-      const [message] = await db.insert(birthdayMessages)
-        .values(messageData)
-        .returning();
+      await db.insert(birthdayMessages).values(messageData);
+      // Get the most recently created message for this company
+      const [message] = await db.select().from(birthdayMessages)
+        .where(eq(birthdayMessages.companyId, messageData.companyId))
+        .orderBy(desc(birthdayMessages.id))
+        .limit(1);
       return message;
     } catch (error: any) {
       console.error("Error creating birthday message:", error);
@@ -1016,9 +1019,12 @@ export class DatabaseStorage implements IStorage {
 
   async createBirthdayMessageHistory(historyData: InsertBirthdayMessageHistory): Promise<BirthdayMessageHistory> {
     try {
-      const [history] = await db.insert(birthdayMessageHistory)
-        .values(historyData)
-        .returning();
+      await db.insert(birthdayMessageHistory).values(historyData);
+      // Get the most recently created history for this company
+      const [history] = await db.select().from(birthdayMessageHistory)
+        .where(eq(birthdayMessageHistory.companyId, historyData.companyId))
+        .orderBy(desc(birthdayMessageHistory.id))
+        .limit(1);
       return history;
     } catch (error: any) {
       console.error("Error creating birthday message history:", error);

@@ -1441,6 +1441,86 @@ INSTRUÇÕES OBRIGATÓRIAS:
     }
   });
 
+  // Birthday Messages API
+  app.get('/api/company/birthday-messages', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const messages = await storage.getBirthdayMessagesByCompany(companyId);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching birthday messages:", error);
+      res.status(500).json({ message: "Erro ao buscar mensagens de aniversário" });
+    }
+  });
+
+  app.post('/api/company/birthday-messages', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const messageData = { ...req.body, companyId };
+      const message = await storage.createBirthdayMessage(messageData);
+      res.status(201).json(message);
+    } catch (error) {
+      console.error("Error creating birthday message:", error);
+      res.status(500).json({ message: "Erro ao criar mensagem de aniversário" });
+    }
+  });
+
+  app.put('/api/company/birthday-messages/:id', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const id = parseInt(req.params.id);
+      const message = await storage.updateBirthdayMessage(id, req.body);
+      res.json(message);
+    } catch (error) {
+      console.error("Error updating birthday message:", error);
+      res.status(500).json({ message: "Erro ao atualizar mensagem de aniversário" });
+    }
+  });
+
+  app.delete('/api/company/birthday-messages/:id', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const id = parseInt(req.params.id);
+      await storage.deleteBirthdayMessage(id);
+      res.json({ message: "Mensagem de aniversário excluída com sucesso" });
+    } catch (error) {
+      console.error("Error deleting birthday message:", error);
+      res.status(500).json({ message: "Erro ao excluir mensagem de aniversário" });
+    }
+  });
+
+  // Birthday Message History API
+  app.get('/api/company/birthday-message-history', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const history = await storage.getBirthdayMessageHistory(companyId);
+      res.json(history);
+    } catch (error) {
+      console.error("Error fetching birthday message history:", error);
+      res.status(500).json({ message: "Erro ao buscar histórico de mensagens de aniversário" });
+    }
+  });
+
   // Initialize appointment tables
   app.post("/api/admin/init-appointments", async (req, res) => {
     try {
