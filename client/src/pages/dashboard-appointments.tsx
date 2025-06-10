@@ -17,6 +17,7 @@ import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useNotifications } from "@/hooks/use-notifications";
+import { useRealTimeUpdates } from "@/hooks/use-real-time-updates";
 
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 
@@ -106,6 +107,9 @@ export default function DashboardAppointments() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { showNewAppointmentNotification, NotificationContainer } = useNotifications();
+  
+  // Enable real-time updates for new appointments
+  useRealTimeUpdates();
 
   // Fetch appointments (show all, not filtered by month)
   const { data: appointments = [], isLoading: appointmentsLoading } = useQuery<Appointment[]>({

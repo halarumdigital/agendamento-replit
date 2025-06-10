@@ -268,6 +268,18 @@ Responda APENAS em formato JSON válido ou "DADOS_INCOMPLETOS" se algum dado est
       console.log('✅ Appointment created successfully:', appointment.id);
       console.log(`📅 ${appointmentData.clientName} - ${service.name} - ${appointmentDate.toLocaleString('pt-BR')}`);
 
+      // Broadcast new appointment event to all connected clients
+      broadcastEvent({
+        type: 'new_appointment',
+        appointment: {
+          id: appointment.id,
+          clientName: appointmentData.clientName,
+          serviceName: service.name,
+          appointmentDate: appointmentData.appointmentDate,
+          appointmentTime: appointmentData.appointmentTime
+        }
+      });
+
     } catch (parseError) {
       console.error('❌ Error parsing extracted appointment data:', parseError);
     }
@@ -278,9 +290,50 @@ Responda APENAS em formato JSON válido ou "DADOS_INCOMPLETOS" se algum dado est
   }
 }
 
+// Store SSE connections
+const sseConnections = new Set<any>();
+
+// Function to broadcast events to all connected clients
+const broadcastEvent = (eventData: any) => {
+  const data = JSON.stringify(eventData);
+  sseConnections.forEach((res) => {
+    try {
+      res.write(`data: ${data}\n\n`);
+    } catch (error) {
+      // Remove dead connections
+      sseConnections.delete(res);
+    }
+  });
+};
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
+
+  // SSE endpoint for real-time updates
+  app.get('/api/events', (req, res) => {
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'Cache-Control'
+    });
+
+    // Add connection to store
+    sseConnections.add(res);
+
+    // Send keep-alive ping every 30 seconds
+    const keepAlive = setInterval(() => {
+      res.write('data: {"type":"ping"}\n\n');
+    }, 30000);
+
+    // Clean up on disconnect
+    req.on('close', () => {
+      clearInterval(keepAlive);
+      sseConnections.delete(res);
+    });
+  });
 
   // Simple admin authentication using hardcoded credentials for demo
   const ADMIN_CREDENTIALS = {
