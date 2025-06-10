@@ -905,13 +905,47 @@ export class DatabaseStorage implements IStorage {
 
   async updateAppointment(id: number, appointmentData: Partial<InsertAppointment>): Promise<Appointment> {
     try {
-      await db.update(appointments)
+      console.log('💾 Storage: Updating appointment ID:', id, 'with data:', JSON.stringify(appointmentData, null, 2));
+      
+      const result = await db.update(appointments)
         .set({ ...appointmentData, updatedAt: new Date() })
         .where(eq(appointments.id, id));
       
-      const [appointment] = await db.select().from(appointments)
-        .where(eq(appointments.id, id));
-      return appointment;
+      console.log('💾 Storage: Update result:', result);
+      
+      // Get the updated appointment with related data
+      const [updatedAppointment] = await db.select({
+        id: appointments.id,
+        serviceId: appointments.serviceId,
+        professionalId: appointments.professionalId,
+        clientName: appointments.clientName,
+        clientEmail: appointments.clientEmail,
+        clientPhone: appointments.clientPhone,
+        appointmentDate: appointments.appointmentDate,
+        appointmentTime: appointments.appointmentTime,
+        duration: appointments.duration,
+        notes: appointments.notes,
+        status: appointments.status,
+        totalPrice: appointments.totalPrice,
+        reminderSent: appointments.reminderSent,
+        createdAt: appointments.createdAt,
+        updatedAt: appointments.updatedAt,
+        companyId: appointments.companyId,
+        service: {
+          name: services.name,
+          color: services.color,
+        },
+        professional: {
+          name: professionals.name,
+        },
+      })
+      .from(appointments)
+      .leftJoin(services, eq(appointments.serviceId, services.id))
+      .leftJoin(professionals, eq(appointments.professionalId, professionals.id))
+      .where(eq(appointments.id, id));
+      
+      console.log('💾 Storage: Updated appointment retrieved:', updatedAppointment);
+      return updatedAppointment as any;
     } catch (error: any) {
       console.error("Error updating appointment:", error);
       throw error;

@@ -1375,11 +1375,64 @@ INSTRUÇÕES OBRIGATÓRIAS:
       }
 
       const id = parseInt(req.params.id);
-      const appointment = await storage.updateAppointment(id, req.body);
+      console.log('📋 Updating appointment ID:', id, 'with data:', JSON.stringify(req.body, null, 2));
+      
+      // Process the update data
+      const updateData: any = {};
+      
+      if (req.body.serviceId) {
+        updateData.serviceId = parseInt(req.body.serviceId);
+        // Get service details for pricing
+        const service = await storage.getService(updateData.serviceId);
+        if (service) {
+          updateData.duration = service.duration;
+          updateData.totalPrice = String(service.price);
+        }
+      }
+      
+      if (req.body.professionalId) {
+        updateData.professionalId = parseInt(req.body.professionalId);
+      }
+      
+      if (req.body.appointmentDate) {
+        updateData.appointmentDate = new Date(req.body.appointmentDate);
+      }
+      
+      if (req.body.appointmentTime) {
+        updateData.appointmentTime = req.body.appointmentTime;
+      }
+      
+      if (req.body.status) {
+        updateData.status = req.body.status;
+      }
+      
+      if (req.body.notes !== undefined) {
+        updateData.notes = req.body.notes || null;
+      }
+      
+      if (req.body.clientName) {
+        updateData.clientName = req.body.clientName;
+      }
+      
+      if (req.body.clientPhone) {
+        updateData.clientPhone = req.body.clientPhone;
+      }
+      
+      if (req.body.clientEmail !== undefined) {
+        updateData.clientEmail = req.body.clientEmail || null;
+      }
+      
+      updateData.updatedAt = new Date();
+      
+      console.log('📋 Processed update data:', JSON.stringify(updateData, null, 2));
+      
+      const appointment = await storage.updateAppointment(id, updateData);
+      
+      console.log('✅ Appointment updated successfully:', appointment.id);
       res.json(appointment);
     } catch (error) {
       console.error("Error updating appointment:", error);
-      res.status(500).json({ message: "Erro ao atualizar agendamento" });
+      res.status(500).json({ message: "Erro ao atualizar agendamento", error: error.message });
     }
   });
 
