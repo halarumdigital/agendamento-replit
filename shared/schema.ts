@@ -275,6 +275,7 @@ export const tasks = mysqlTable("tasks", {
   recurrence: varchar("recurrence", { length: 20 }).notNull(), // daily, weekly, biweekly, monthly
   isActive: boolean("is_active").notNull().default(true),
   color: varchar("color", { length: 7 }).notNull().default("#3B82F6"), // hex color
+  whatsappNumber: varchar("whatsapp_number", { length: 20 }), // WhatsApp number with DDI 55
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });

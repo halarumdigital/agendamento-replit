@@ -23,6 +23,7 @@ const taskSchema = z.object({
   recurrence: z.enum(["none", "daily", "weekly", "biweekly", "monthly"]),
   isActive: z.boolean().default(true),
   color: z.string().default("#3b82f6"),
+  whatsappNumber: z.string().optional(),
 });
 
 type TaskFormData = z.infer<typeof taskSchema>;
@@ -34,6 +35,7 @@ interface Task {
   recurrence: string;
   isActive: boolean;
   color: string;
+  whatsappNumber?: string;
   companyId: number;
   createdAt: string;
   updatedAt: string;

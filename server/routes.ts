@@ -3683,6 +3683,7 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
           recurrence ENUM('none', 'daily', 'weekly', 'biweekly', 'monthly') DEFAULT 'none',
           is_active BOOLEAN DEFAULT TRUE,
           color VARCHAR(7) DEFAULT '#3b82f6',
+          whatsapp_number VARCHAR(20),
           company_id INT NOT NULL,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -3695,6 +3696,23 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
     } catch (error: any) {
       console.error("Error creating tasks table:", error);
       res.status(500).json({ message: "Erro ao criar tabela de tarefas", error: error.message });
+    }
+  });
+
+  // Update tasks table schema
+  app.post("/api/admin/update-tasks-schema", async (req, res) => {
+    try {
+      // Add whatsapp_number column if it doesn't exist
+      await db.execute(`
+        ALTER TABLE tasks 
+        ADD COLUMN IF NOT EXISTS whatsapp_number VARCHAR(20)
+      `);
+
+      console.log('✅ Tasks table schema updated successfully');
+      res.json({ message: "Schema da tabela de tarefas atualizado com sucesso" });
+    } catch (error: any) {
+      console.error("Error updating tasks table schema:", error);
+      res.status(500).json({ message: "Erro ao atualizar schema da tabela", error: error.message });
     }
   });
 
