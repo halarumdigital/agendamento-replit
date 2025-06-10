@@ -1526,30 +1526,30 @@ export default function CompanySettings() {
 
             <TabsContent value="history" className="space-y-6 mt-6">
               <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Clock className="w-5 h-5" />
-                        Histórico de Lembretes Enviados
-                      </CardTitle>
-                      <CardDescription>
-                        Visualize todos os lembretes que foram enviados automaticamente pelo sistema
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      {historyLoading ? (
-                        <div className="text-center py-8">
-                          <p className="text-gray-500">Carregando histórico...</p>
-                        </div>
-                      ) : (reminderHistory as ReminderHistory[]).length === 0 ? (
-                        <div className="text-center py-8">
-                          <Clock className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                          <p className="text-gray-500 mb-2">Nenhum lembrete enviado ainda</p>
-                          <p className="text-sm text-gray-400">Os lembretes enviados aparecerão aqui</p>
-                        </div>
-                      ) : (
-                        <div className="space-y-4">
-                          {(reminderHistory as ReminderHistory[]).map((history) => (
-                            <div key={history.id} className="border rounded-lg p-4">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Clock className="w-5 h-5" />
+                    Histórico de Lembretes Enviados
+                  </CardTitle>
+                  <CardDescription>
+                    Visualize todos os lembretes que foram enviados automaticamente pelo sistema
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {historyLoading ? (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500">Carregando histórico...</p>
+                    </div>
+                  ) : (reminderHistory as ReminderHistory[]).length === 0 ? (
+                    <div className="text-center py-8">
+                      <Clock className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-500 mb-2">Nenhum lembrete enviado ainda</p>
+                      <p className="text-sm text-gray-400">Os lembretes enviados aparecerão aqui</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {(reminderHistory as ReminderHistory[]).map((history) => (
+                        <div key={history.id} className="border rounded-lg p-4">
                               <div className="flex items-center justify-between mb-3">
                                 <div className="flex items-center gap-3">
                                   <div className={`p-2 rounded-full ${
