@@ -418,7 +418,7 @@ export default function CompanySettings() {
       </div>
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="profile" className="flex items-center gap-2">
             <Building2 className="w-4 h-4" />
             Perfil
@@ -434,6 +434,10 @@ export default function CompanySettings() {
           <TabsTrigger value="ai-agent" className="flex items-center gap-2">
             <MessageSquare className="w-4 h-4" />
             Agente AI
+          </TabsTrigger>
+          <TabsTrigger value="birthdays" className="flex items-center gap-2">
+            <Calendar className="w-4 h-4" />
+            Aniversários
           </TabsTrigger>
           <TabsTrigger value="reminders" className="flex items-center gap-2">
             <Bell className="w-4 h-4" />
@@ -711,6 +715,281 @@ export default function CompanySettings() {
               </Form>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="birthdays" className="space-y-6">
+          <div>
+            <h2 className="text-2xl font-bold flex items-center gap-2 mb-2">
+              <Calendar className="w-6 h-6" />
+              Sistema de Mensagens de Aniversário
+            </h2>
+            <p className="text-gray-600 mb-6">
+              Configure mensagens automáticas de aniversário para seus clientes via WhatsApp
+            </p>
+          </div>
+
+          <Tabs defaultValue="settings" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="settings" className="flex items-center gap-2">
+                <Settings className="w-4 h-4" />
+                Configurações
+              </TabsTrigger>
+              <TabsTrigger value="clients" className="flex items-center gap-2">
+                <User className="w-4 h-4" />
+                Aniversariantes
+              </TabsTrigger>
+              <TabsTrigger value="history" className="flex items-center gap-2">
+                <Clock className="w-4 h-4" />
+                Histórico
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="settings" className="space-y-6 mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Template da Mensagem de Aniversário</CardTitle>
+                  <CardDescription>
+                    Configure a mensagem que será enviada automaticamente para seus clientes no dia do aniversário
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Form {...birthdayForm}>
+                    <form onSubmit={birthdayForm.handleSubmit(onBirthdayMessageSubmit)} className="space-y-4">
+                      <FormField
+                        control={birthdayForm.control}
+                        name="messageTemplate"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Template da Mensagem</FormLabel>
+                            <FormControl>
+                              <Textarea
+                                placeholder="Parabéns {nome}! Feliz aniversário! 🎉 A equipe da {empresa} deseja um dia maravilhoso para você!"
+                                className="min-h-[150px]"
+                                {...field}
+                              />
+                            </FormControl>
+                            <div className="mt-2 text-xs text-gray-500">
+                              <p className="font-medium">Variáveis disponíveis:</p>
+                              <p><code className="bg-gray-100 px-1 rounded">{'{nome}'}</code> - Nome do cliente</p>
+                              <p><code className="bg-gray-100 px-1 rounded">{'{empresa}'}</code> - Nome da empresa</p>
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <div className="flex gap-2">
+                        <Button type="submit" disabled={saveBirthdayMutation.isPending}>
+                          {saveBirthdayMutation.isPending ? "Salvando..." : "Salvar Template"}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => testBirthdayMutation.mutate()}
+                          disabled={testBirthdayMutation.isPending}
+                        >
+                          {testBirthdayMutation.isPending ? "Testando..." : "Enviar Teste"}
+                        </Button>
+                      </div>
+                    </form>
+                  </Form>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="clients" className="space-y-6 mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Clientes Aniversariantes</CardTitle>
+                  <CardDescription>
+                    Visualize e envie mensagens manuais para clientes que fazem aniversário hoje
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {(clients as any[])?.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-500 mb-2">Nenhum cliente cadastrado</p>
+                      <p className="text-sm text-gray-400">Cadastre clientes com data de nascimento para usar este recurso</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="grid gap-4">
+                        <h3 className="font-medium text-lg">Aniversariantes de Hoje</h3>
+                        {(clients as any[])?.filter((client: any) => {
+                          if (!client.birthDate) return false;
+                          const today = new Date();
+                          const birthDate = new Date(client.birthDate);
+                          return birthDate.getDate() === today.getDate() && 
+                                 birthDate.getMonth() === today.getMonth();
+                        }).length === 0 ? (
+                          <p className="text-gray-500 text-sm">Nenhum aniversariante hoje</p>
+                        ) : (
+                          (clients as any[])?.filter((client: any) => {
+                            if (!client.birthDate) return false;
+                            const today = new Date();
+                            const birthDate = new Date(client.birthDate);
+                            return birthDate.getDate() === today.getDate() && 
+                                   birthDate.getMonth() === today.getMonth();
+                          }).map((client: any) => (
+                            <Card key={client.id} className="p-4">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <h4 className="font-medium">{client.name}</h4>
+                                  <p className="text-sm text-gray-500">{client.phone}</p>
+                                  <p className="text-sm text-gray-500">
+                                    Aniversário: {new Date(client.birthDate).toLocaleDateString('pt-BR')}
+                                  </p>
+                                </div>
+                                <Button
+                                  onClick={() => sendBirthdayMutation.mutate({
+                                    clientId: client.id,
+                                    clientName: client.name,
+                                    clientPhone: client.phone
+                                  })}
+                                  disabled={sendBirthdayMutation.isPending}
+                                  className="flex items-center gap-2"
+                                >
+                                  <Send className="w-4 h-4" />
+                                  Enviar Parabéns
+                                </Button>
+                              </div>
+                            </Card>
+                          ))
+                        )}
+                      </div>
+
+                      <div className="grid gap-4 mt-8">
+                        <h3 className="font-medium text-lg">Próximos Aniversários</h3>
+                        {(clients as any[])?.filter((client: any) => {
+                          if (!client.birthDate) return false;
+                          const today = new Date();
+                          const birthDate = new Date(client.birthDate);
+                          const thisYear = today.getFullYear();
+                          const birthdayThisYear = new Date(thisYear, birthDate.getMonth(), birthDate.getDate());
+                          
+                          if (birthdayThisYear < today) {
+                            birthdayThisYear.setFullYear(thisYear + 1);
+                          }
+                          
+                          const diffTime = birthdayThisYear.getTime() - today.getTime();
+                          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                          
+                          return diffDays > 0 && diffDays <= 30;
+                        }).sort((a: any, b: any) => {
+                          const today = new Date();
+                          const aDate = new Date(a.birthDate);
+                          const bDate = new Date(b.birthDate);
+                          const thisYear = today.getFullYear();
+                          
+                          const aBirthdayThisYear = new Date(thisYear, aDate.getMonth(), aDate.getDate());
+                          const bBirthdayThisYear = new Date(thisYear, bDate.getMonth(), bDate.getDate());
+                          
+                          if (aBirthdayThisYear < today) aBirthdayThisYear.setFullYear(thisYear + 1);
+                          if (bBirthdayThisYear < today) bBirthdayThisYear.setFullYear(thisYear + 1);
+                          
+                          return aBirthdayThisYear.getTime() - bBirthdayThisYear.getTime();
+                        }).slice(0, 10).map((client: any) => {
+                          const today = new Date();
+                          const birthDate = new Date(client.birthDate);
+                          const thisYear = today.getFullYear();
+                          const birthdayThisYear = new Date(thisYear, birthDate.getMonth(), birthDate.getDate());
+                          
+                          if (birthdayThisYear < today) {
+                            birthdayThisYear.setFullYear(thisYear + 1);
+                          }
+                          
+                          const diffTime = birthdayThisYear.getTime() - today.getTime();
+                          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                          
+                          return (
+                            <div key={client.id} className="border rounded-lg p-4">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <h4 className="font-medium">{client.name}</h4>
+                                  <p className="text-sm text-gray-500">{client.phone}</p>
+                                  <p className="text-sm text-gray-500">
+                                    {birthdayThisYear.toLocaleDateString('pt-BR')} • Em {diffDays} dia{diffDays !== 1 ? 's' : ''}
+                                  </p>
+                                </div>
+                                <Badge variant="outline">
+                                  {diffDays} dia{diffDays !== 1 ? 's' : ''}
+                                </Badge>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="history" className="space-y-6 mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Histórico de Mensagens Enviadas</CardTitle>
+                  <CardDescription>
+                    Visualize todas as mensagens de aniversário que foram enviadas
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {birthdayHistory.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-500 mb-2">Nenhuma mensagem enviada ainda</p>
+                      <p className="text-sm text-gray-400">As mensagens de aniversário enviadas aparecerão aqui</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {birthdayHistory.map((history: any) => (
+                        <div key={history.id} className="border rounded-lg p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-3">
+                              <div className="p-2 rounded-full bg-green-100">
+                                <Calendar className="w-4 h-4 text-green-600" />
+                              </div>
+                              <div>
+                                <h4 className="font-medium">{history.clientName}</h4>
+                                <p className="text-sm text-gray-500">Para: {history.clientPhone}</p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="flex items-center gap-2">
+                                <Badge
+                                  variant={history.status === 'sent' ? 'default' : 'destructive'}
+                                  className={`${
+                                    history.status === 'sent' 
+                                      ? 'bg-green-100 text-green-800' 
+                                      : 'bg-red-100 text-red-800'
+                                  }`}
+                                >
+                                  {history.status === 'sent' ? 'Enviado' : 'Falha'}
+                                </Badge>
+                                <span className="text-sm text-gray-500">
+                                  {new Date(history.sentAt).toLocaleDateString('pt-BR', {
+                                    day: '2-digit',
+                                    month: '2-digit',
+                                    year: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="bg-gray-50 p-3 rounded border">
+                            <p className="text-sm text-gray-700">{history.message}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </TabsContent>
 
         <TabsContent value="reminders" className="space-y-6">
