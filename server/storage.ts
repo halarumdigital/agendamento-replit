@@ -17,6 +17,7 @@ import {
   reminderHistory,
   professionalReviews,
   reviewInvitations,
+  tasks,
   type Admin,
   type InsertAdmin,
   type Company,
@@ -53,6 +54,8 @@ import {
   type InsertProfessionalReview,
   type ReviewInvitation,
   type InsertReviewInvitation,
+  type Task,
+  type InsertTask,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql } from "drizzle-orm";
@@ -1567,6 +1570,72 @@ Obrigado pela preferência! 🙏`;
     } catch (error: any) {
       console.error("Error sending review invitation:", error);
       return { success: false, message: "Erro interno ao enviar convite de avaliação" };
+    }
+  }
+
+  // Tasks operations
+  async getTasks(companyId: number): Promise<Task[]> {
+    try {
+      return await db.select().from(tasks)
+        .where(eq(tasks.companyId, companyId))
+        .orderBy(desc(tasks.dueDate));
+    } catch (error: any) {
+      console.error("Error getting tasks:", error);
+      return [];
+    }
+  }
+
+  async getTask(id: number): Promise<Task | undefined> {
+    try {
+      const [task] = await db.select().from(tasks)
+        .where(eq(tasks.id, id));
+      return task;
+    } catch (error: any) {
+      console.error("Error getting task:", error);
+      return undefined;
+    }
+  }
+
+  async createTask(taskData: InsertTask): Promise<Task> {
+    try {
+      const result = await db.insert(tasks).values(taskData);
+      const insertId = result.insertId;
+      
+      const [task] = await db.select().from(tasks)
+        .where(eq(tasks.id, insertId));
+      return task;
+    } catch (error: any) {
+      console.error("Error creating task:", error);
+      throw error;
+    }
+  }
+
+  async updateTask(id: number, taskData: Partial<InsertTask>): Promise<Task> {
+    try {
+      const updateData = {
+        ...taskData,
+        updatedAt: new Date(),
+      };
+      
+      await db.update(tasks)
+        .set(updateData)
+        .where(eq(tasks.id, id));
+      
+      const [task] = await db.select().from(tasks)
+        .where(eq(tasks.id, id));
+      return task;
+    } catch (error: any) {
+      console.error("Error updating task:", error);
+      throw error;
+    }
+  }
+
+  async deleteTask(id: number): Promise<void> {
+    try {
+      await db.delete(tasks).where(eq(tasks.id, id));
+    } catch (error: any) {
+      console.error("Error deleting task:", error);
+      throw error;
     }
   }
 }

@@ -3566,6 +3566,111 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
     }
   });
 
+  // Tasks API
+  app.get('/api/company/tasks', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const tasks = await storage.getTasks(companyId);
+      res.json(tasks);
+    } catch (error) {
+      console.error("Error getting tasks:", error);
+      res.status(500).json({ message: "Erro ao buscar tarefas" });
+    }
+  });
+
+  app.get('/api/company/tasks/:id', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const taskId = parseInt(req.params.id);
+      const task = await storage.getTask(taskId);
+      
+      if (!task || task.companyId !== companyId) {
+        return res.status(404).json({ message: "Tarefa não encontrada" });
+      }
+
+      res.json(task);
+    } catch (error) {
+      console.error("Error getting task:", error);
+      res.status(500).json({ message: "Erro ao buscar tarefa" });
+    }
+  });
+
+  app.post('/api/company/tasks', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const taskData = {
+        ...req.body,
+        companyId,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      const task = await storage.createTask(taskData);
+      res.status(201).json(task);
+    } catch (error) {
+      console.error("Error creating task:", error);
+      res.status(500).json({ message: "Erro ao criar tarefa" });
+    }
+  });
+
+  app.patch('/api/company/tasks/:id', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const taskId = parseInt(req.params.id);
+      
+      // Verify task exists and belongs to company
+      const existingTask = await storage.getTask(taskId);
+      if (!existingTask || existingTask.companyId !== companyId) {
+        return res.status(404).json({ message: "Tarefa não encontrada" });
+      }
+
+      const updatedTask = await storage.updateTask(taskId, req.body);
+      res.json(updatedTask);
+    } catch (error) {
+      console.error("Error updating task:", error);
+      res.status(500).json({ message: "Erro ao atualizar tarefa" });
+    }
+  });
+
+  app.delete('/api/company/tasks/:id', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const taskId = parseInt(req.params.id);
+      
+      // Verify task exists and belongs to company
+      const existingTask = await storage.getTask(taskId);
+      if (!existingTask || existingTask.companyId !== companyId) {
+        return res.status(404).json({ message: "Tarefa não encontrada" });
+      }
+
+      await storage.deleteTask(taskId);
+      res.json({ message: "Tarefa excluída com sucesso" });
+    } catch (error) {
+      console.error("Error deleting task:", error);
+      res.status(500).json({ message: "Erro ao excluir tarefa" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
