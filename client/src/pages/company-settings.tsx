@@ -412,7 +412,7 @@ export default function CompanySettings() {
   });
 
   // Birthday messages queries
-  const { data: birthdayMessages = [] } = useQuery({
+  const { data: birthdayMessages = [] } = useQuery<any[]>({
     queryKey: ["/api/company/birthday-messages"],
   });
 
@@ -424,6 +424,17 @@ export default function CompanySettings() {
   const { data: clients = [] } = useQuery<any[]>({
     queryKey: ["/api/company/clients"],
   });
+
+  // Update form when birthday messages are loaded
+  useEffect(() => {
+    if (birthdayMessages.length > 0) {
+      const activeMessage = birthdayMessages.find((msg: any) => msg.isActive) || birthdayMessages[0];
+      birthdayForm.reset({
+        messageTemplate: activeMessage.messageTemplate,
+        isActive: activeMessage.isActive,
+      });
+    }
+  }, [birthdayMessages, birthdayForm]);
 
   const createBirthdayMessageMutation = useMutation({
     mutationFn: async (data: BirthdayMessageData) => {
