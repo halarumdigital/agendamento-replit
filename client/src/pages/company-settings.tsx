@@ -9,15 +9,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Settings, Building2, Bot, Smartphone, Bell, Clock, CheckCircle, Send, Calendar, QrCode, RefreshCw } from "lucide-react";
+import { Settings, Building2, Lock, User, MessageSquare, Trash2, Plus, Smartphone, QrCode, RefreshCw, Bot, Key, Gift, Calendar, Bell, Clock, CheckCircle, Send, XCircle } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useCompanyAuth } from "@/hooks/useCompanyAuth";
 import { z } from "zod";
-import { formatDocument, companyProfileSchema, companyPasswordSchema, companyAiAgentSchema, whatsappInstanceSchema } from "@/lib/validations";
+import { formatDocument, companyProfileSchema, companyPasswordSchema, companyAiAgentSchema, whatsappInstanceSchema, webhookConfigSchema } from "@/lib/validations";
+
+const birthdayMessageSchema = z.object({
+  messageTemplate: z.string().min(10, "A mensagem deve ter pelo menos 10 caracteres"),
+  isActive: z.boolean().default(true),
+});
 
 const reminderSettingsSchema = z.object({
   messageTemplate: z.string().min(10, "A mensagem deve ter pelo menos 10 caracteres"),
@@ -34,30 +37,49 @@ interface ReminderSettings {
   updatedAt: string;
 }
 
+interface ReminderHistory {
+  id: number;
+  companyId: number;
+  appointmentId: number;
+  reminderType: string;
+  clientPhone: string;
+  message: string;
+  sentAt: string;
+  status: string;
+  whatsappInstanceId: number;
+}
+
+
 type CompanyProfileData = z.infer<typeof companyProfileSchema>;
 type CompanyPasswordData = z.infer<typeof companyPasswordSchema>;
 type CompanyAiAgentData = z.infer<typeof companyAiAgentSchema>;
 type WhatsappInstanceData = z.infer<typeof whatsappInstanceSchema>;
-type ReminderSettingsData = z.infer<typeof reminderSettingsSchema>;
+type WebhookConfigData = z.infer<typeof webhookConfigSchema>;
+type BirthdayMessageData = z.infer<typeof birthdayMessageSchema>;
 
 export default function CompanySettings() {
-  const { company, isLoading: companyLoading } = useCompanyAuth();
-  const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [editingSettings, setEditingSettings] = useState<{ [key: string]: ReminderSettings }>({});
-  const [showQrDialog, setShowQrDialog] = useState(false);
-  const [showAiConfigDialog, setShowAiConfigDialog] = useState(false);
+  const queryClient = useQueryClient();
+  const { company } = useCompanyAuth();
   const [selectedInstance, setSelectedInstance] = useState<any>(null);
+  const [qrCodeData, setQrCodeData] = useState<string>("");
+  const [showQrDialog, setShowQrDialog] = useState(false);
+  const [editingSettings, setEditingSettings] = useState<{ [key: string]: ReminderSettings }>({});
 
-  // React Hook Form setup
   const profileForm = useForm<CompanyProfileData>({
     resolver: zodResolver(companyProfileSchema),
     defaultValues: {
-      fantasyName: company?.fantasyName || "",
-      document: company?.document || "",
-      address: company?.address || "",
-      email: company?.email || "",
+      fantasyName: "",
+      document: "",
+      address: "",
+      email: "",
     },
+    values: company ? {
+      fantasyName: company.fantasyName || "",
+      document: company.document || "",
+      address: company.address || "",
+      email: company.email || "",
+    } : undefined,
   });
 
   const passwordForm = useForm<CompanyPasswordData>({
@@ -69,13 +91,6 @@ export default function CompanySettings() {
     },
   });
 
-  const aiAgentForm = useForm<CompanyAiAgentData>({
-    resolver: zodResolver(companyAiAgentSchema),
-    defaultValues: {
-      aiAgentPrompt: company?.aiAgentPrompt || "",
-    },
-  });
-
   const whatsappForm = useForm<WhatsappInstanceData>({
     resolver: zodResolver(whatsappInstanceSchema),
     defaultValues: {
@@ -83,238 +98,560 @@ export default function CompanySettings() {
     },
   });
 
-  const form = useForm<ReminderSettingsData>({
-    resolver: zodResolver(reminderSettingsSchema),
+  const aiAgentForm = useForm<CompanyAiAgentData>({
+    resolver: zodResolver(companyAiAgentSchema),
     defaultValues: {
-      messageTemplate: "",
+      aiAgentPrompt: "",
+    },
+  });
+
+  const webhookForm = useForm<WebhookConfigData>({
+    resolver: zodResolver(webhookConfigSchema),
+    defaultValues: {
+      apiUrl: "",
+      apiKey: "",
+    },
+  });
+
+  // Update form when company data loads
+  useEffect(() => {
+    if (company?.aiAgentPrompt) {
+      aiAgentForm.reset({
+        aiAgentPrompt: company.aiAgentPrompt,
+      });
+    }
+  }, [company?.aiAgentPrompt, aiAgentForm]);
+
+  // WhatsApp instances query
+  const { data: whatsappInstances = [], isLoading: isLoadingInstances } = useQuery<any[]>({
+    queryKey: ["/api/company/whatsapp/instances"],
+  });
+
+  const updateProfileMutation = useMutation({
+    mutationFn: async (data: CompanyProfileData) => {
+      await apiRequest("PUT", "/api/company/profile", data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Perfil atualizado",
+        description: "As informações da empresa foram atualizadas com sucesso.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/company/auth/profile"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro",
+        description: error.message || "Falha ao atualizar perfil.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updatePasswordMutation = useMutation({
+    mutationFn: async (data: CompanyPasswordData) => {
+      await apiRequest("PUT", "/api/company/password", data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Senha alterada",
+        description: "Sua senha foi alterada com sucesso.",
+      });
+      passwordForm.reset();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro",
+        description: error.message || "Falha ao alterar senha.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onProfileSubmit = (data: CompanyProfileData) => {
+    updateProfileMutation.mutate(data);
+  };
+
+  const onPasswordSubmit = (data: CompanyPasswordData) => {
+    updatePasswordMutation.mutate(data);
+  };
+
+  const createInstanceMutation = useMutation({
+    mutationFn: async (data: WhatsappInstanceData) => {
+      return await apiRequest("POST", "/api/company/whatsapp/instances", data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Instância criada",
+        description: "Instância do WhatsApp criada com sucesso.",
+      });
+      whatsappForm.reset();
+      queryClient.invalidateQueries({ queryKey: ["/api/company/whatsapp/instances"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao criar instância",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteInstanceMutation = useMutation({
+    mutationFn: async (instanceId: number) => {
+      await apiRequest("DELETE", `/api/company/whatsapp/instances/${instanceId}`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Instância excluída",
+        description: "Instância do WhatsApp excluída com sucesso.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/company/whatsapp/instances"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao excluir instância",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateAiAgentMutation = useMutation({
+    mutationFn: async (data: CompanyAiAgentData) => {
+      await apiRequest("PUT", "/api/company/ai-agent", data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Agente IA configurado",
+        description: "As configurações do agente IA foram atualizadas com sucesso.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/company/auth/profile"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro",
+        description: "Falha ao atualizar configurações do agente IA. Tente novamente.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onWhatsappSubmit = (data: WhatsappInstanceData) => {
+    createInstanceMutation.mutate(data);
+  };
+
+  const onAiAgentSubmit = (data: CompanyAiAgentData) => {
+    updateAiAgentMutation.mutate(data);
+  };
+
+  const onBirthdayMessageSubmit = (data: BirthdayMessageData) => {
+    createBirthdayMessageMutation.mutate(data);
+  };
+
+  const autoConfigureWebhookMutation = useMutation({
+    mutationFn: async (instanceId: number) => {
+      const response = await apiRequest("POST", `/api/company/whatsapp/${instanceId}/auto-configure-webhook`);
+      return response;
+    },
+    onSuccess: (data: any) => {
+      toast({
+        title: "Agente IA configurado",
+        description: "O agente de IA foi conectado com sucesso ao WhatsApp usando as configurações globais.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/company/whatsapp/instances"] });
+      setSelectedInstance(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao configurar agente IA",
+        description: error.message || "Evolution API não configurada pelo administrador",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const configureWebhookMutation = useMutation({
+    mutationFn: async (instanceId: number) => {
+      const response = await apiRequest("POST", `/api/company/whatsapp/${instanceId}/configure-webhook`);
+      return response;
+    },
+    onSuccess: (data: any) => {
+      toast({
+        title: "Agente IA configurado",
+        description: "O agente de IA foi conectado com sucesso ao WhatsApp usando as configurações globais.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/company/whatsapp/instances"] });
+      setSelectedInstance(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao configurar agente IA",
+        description: error.message || "Configure a Evolution API nas configurações do administrador primeiro",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onWebhookSubmit = () => {
+    if (selectedInstance) {
+      configureWebhookMutation.mutate(selectedInstance.id);
+    }
+  };
+
+  const fetchInstanceDetailsMutation = useMutation({
+    mutationFn: async (instanceName: string) => {
+      const response = await apiRequest("GET", `/api/company/whatsapp/instances/${instanceName}/details`);
+      return response;
+    },
+    onSuccess: (data: any) => {
+      console.log('API Response:', data);
+      
+      const instance = data.instance || data;
+      const apiKey = instance?.apiKey;
+      const apiUrl = instance?.apiUrl;
+      
+      toast({
+        title: "Detalhes da Instância",
+        description: `URL da API: ${apiUrl || 'Não configurada'}\nChave da API: ${apiKey ? apiKey.substring(0, 20) + '...' : 'Não configurada'}`,
+      });
+
+      // Show detailed info in console for copying
+      console.log('=== DETALHES DA INSTÂNCIA ===');
+      console.log('Resposta completa:', data);
+      console.log('Nome da Instância:', instance?.instanceName);
+      console.log('URL da Evolution API:', apiUrl);
+      console.log('Chave da API:', apiKey);
+      console.log('Status:', instance?.status);
+      if (data.evolutionDetails) {
+        console.log('Detalhes da Evolution API:', data.evolutionDetails);
+      }
+      console.log('==============================');
+    },
+    onError: (error: any) => {
+      console.error('Error fetching instance details:', error);
+      toast({
+        title: "Erro ao buscar detalhes",
+        description: error.message || "Falha ao buscar detalhes da instância",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const connectInstanceMutation = useMutation({
+    mutationFn: async (instanceName: string) => {
+      const response = await apiRequest("GET", `/api/company/whatsapp/instances/${instanceName}/connect`);
+      return await response.json();
+    },
+    onSuccess: (data: any) => {
+      console.log("API Response:", data);
+      // Try different QR code fields from Evolution API
+      const qrcode = data.qrcode || data.base64 || data.qr || data.qr_code;
+      
+      if (qrcode) {
+        // If it's base64 without data URL prefix, add it
+        const qrCodeUrl = qrcode.startsWith('data:') ? qrcode : `data:image/png;base64,${qrcode}`;
+        setQrCodeData(qrCodeUrl);
+        setShowQrDialog(true);
+        toast({
+          title: "Conectando instância",
+          description: "Escaneie o QR code com seu WhatsApp.",
+        });
+      } else {
+        toast({
+          title: "Erro",
+          description: "QR code não encontrado na resposta da API",
+          variant: "destructive",
+        });
+      }
+    },
+    onError: (error: any) => {
+      let errorMessage = error.message || "Erro ao conectar instância";
+      
+      // Handle specific Evolution API errors
+      if (error.message?.includes("Evolution API não configurada")) {
+        errorMessage = "Configure a Evolution API nas configurações do administrador antes de conectar instâncias WhatsApp.";
+      } else if (error.message?.includes("Instância não encontrada")) {
+        errorMessage = "Esta instância não foi encontrada na Evolution API. Verifique se foi criada corretamente.";
+      } else if (error.message?.includes("Erro da Evolution API")) {
+        errorMessage = "Erro na comunicação com a Evolution API. Verifique as configurações da API.";
+      }
+      
+      toast({
+        title: "Erro de Conexão",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const checkStatusMutation = useMutation({
+    mutationFn: async (instanceName: string) => {
+      const response = await apiRequest("GET", `/api/company/whatsapp/instances/${instanceName}/status`);
+      return await response.json();
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/company/whatsapp/instances"] });
+      toast({
+        title: "Status atualizado",
+        description: `Status da instância: ${data.connectionStatus || 'Desconhecido'}`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao verificar status",
+        description: error.message || "Erro ao verificar status da instância",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const disconnectInstanceMutation = useMutation({
+    mutationFn: async (instanceName: string) => {
+      const response = await apiRequest("POST", `/api/company/whatsapp/instances/${instanceName}/disconnect`);
+      return await response.json();
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/company/whatsapp/instances"] });
+      toast({
+        title: "Instância desconectada",
+        description: "Instância do WhatsApp desconectada com sucesso.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao desconectar",
+        description: error.message || "Erro ao desconectar instância",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // State for AI agent testing
+  const [testMessage, setTestMessage] = useState("");
+  const [agentResponse, setAgentResponse] = useState("");
+  
+  // State for birthday message testing
+  const [testPhoneNumber, setTestPhoneNumber] = useState("");
+
+  // Birthday messaging form
+  const birthdayForm = useForm<BirthdayMessageData>({
+    resolver: zodResolver(birthdayMessageSchema),
+    defaultValues: {
+      messageTemplate: "Que este novo ano de vida seja repleto de alegrias, conquistas e momentos especiais.\n\nPara comemorar, que tal agendar um horário especial conosco? 🎉✨\n\nFeliz aniversário! 🎂",
       isActive: true,
     },
   });
 
-  // Queries
-  const { data: whatsappInstances, isLoading: instancesLoading } = useQuery({
-    queryKey: [`/api/companies/${company?.id}/whatsapp-instances`],
-    enabled: !!company?.id,
+  // Birthday messages queries
+  const { data: birthdayMessages = [] } = useQuery<any[]>({
+    queryKey: ["/api/company/birthday-messages"],
   });
 
-  const { data: reminderSettings, isLoading: settingsLoading } = useQuery({
-    queryKey: [`/api/companies/${company?.id}/reminder-settings`],
-    enabled: !!company?.id,
+  const { data: birthdayHistory = [] } = useQuery<any[]>({
+    queryKey: ["/api/company/birthday-message-history"],
   });
 
-  // Mutations
-  const profileMutation = useMutation({
-    mutationFn: async (data: CompanyProfileData) => {
-      return await apiRequest(`/api/companies/${company?.id}`, {
-        method: "PUT",
-        body: data,
+  // Client data for birthday functionality
+  const { data: clients = [] } = useQuery<any[]>({
+    queryKey: ["/api/company/clients"],
+  });
+
+  // Update form when birthday messages are loaded
+  useEffect(() => {
+    if (birthdayMessages.length > 0) {
+      const activeMessage = birthdayMessages.find((msg: any) => msg.isActive) || birthdayMessages[0];
+      birthdayForm.reset({
+        messageTemplate: activeMessage.messageTemplate,
+        isActive: activeMessage.isActive,
       });
+    }
+  }, [birthdayMessages, birthdayForm]);
+
+  const createBirthdayMessageMutation = useMutation({
+    mutationFn: async (data: BirthdayMessageData) => {
+      return await apiRequest("POST", "/api/company/birthday-messages", data);
     },
     onSuccess: () => {
-      toast({ title: "Perfil atualizado com sucesso!" });
-      queryClient.invalidateQueries({ queryKey: [`/api/companies/${company?.id}`] });
-    },
-    onError: () => {
-      toast({ title: "Erro ao atualizar perfil", variant: "destructive" });
-    },
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: async ({ type, data }: { type: string; data: any }) => {
-      return await apiRequest(`/api/companies/${company?.id}/reminder-settings/${type}`, {
-        method: "PUT",
-        body: data,
+      toast({
+        title: "Mensagem salva",
+        description: "Mensagem de aniversário configurada com sucesso.",
       });
-    },
-    onSuccess: () => {
-      toast({ title: "Configuração salva com sucesso!" });
-      queryClient.invalidateQueries({ queryKey: [`/api/companies/${company?.id}/reminder-settings`] });
-    },
-    onError: () => {
-      toast({ title: "Erro ao salvar configuração", variant: "destructive" });
-    },
-  });
-
-  const whatsappMutation = useMutation({
-    mutationFn: async (data: WhatsappInstanceData) => {
-      return await apiRequest(`/api/companies/${company?.id}/whatsapp-instances`, {
-        method: "POST",
-        body: data,
-      });
-    },
-    onSuccess: () => {
-      toast({ title: "Instância WhatsApp criada com sucesso!" });
-      queryClient.invalidateQueries({ queryKey: [`/api/companies/${company?.id}/whatsapp-instances`] });
-      whatsappForm.reset();
-    },
-    onError: () => {
-      toast({ title: "Erro ao criar instância WhatsApp", variant: "destructive" });
-    },
-  });
-
-  const aiConfigMutation = useMutation({
-    mutationFn: async (instanceId: number) => {
-      return await apiRequest(`/api/company/whatsapp/instances/${instanceId}/auto-configure`, {
-        method: "POST",
-      });
-    },
-    onSuccess: () => {
-      toast({ title: "Agente IA configurado com sucesso!" });
-      setShowAiConfigDialog(false);
-      queryClient.invalidateQueries({ queryKey: [`/api/companies/${company?.id}/whatsapp-instances`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/company/birthday-messages"] });
     },
     onError: (error: any) => {
-      toast({ 
-        title: "Erro ao configurar agente IA", 
-        description: error?.message || "Verifique se a Evolution API está configurada",
-        variant: "destructive" 
+      toast({
+        title: "Erro ao salvar mensagem",
+        description: error.message || "Erro ao configurar mensagem de aniversário",
+        variant: "destructive",
       });
     },
   });
 
-  // Effects
-  useEffect(() => {
-    if (company) {
-      profileForm.reset({
-        fantasyName: company.fantasyName,
-        document: company.document,
-        address: company.address,
-        email: company.email,
+  const sendBirthdayMessageMutation = useMutation({
+    mutationFn: async (clientId: number) => {
+      const response = await apiRequest("POST", `/api/company/send-birthday-message/${clientId}`);
+      return await response.json();
+    },
+    onSuccess: (data: any) => {
+      toast({
+        title: "Mensagem enviada",
+        description: `Mensagem de aniversário enviada para ${data.client}`,
       });
-      aiAgentForm.reset({
-        aiAgentPrompt: company.aiAgentPrompt || "",
+      queryClient.invalidateQueries({ queryKey: ["/api/company/birthday-message-history"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao enviar mensagem",
+        description: error.message || "Erro ao enviar mensagem de aniversário",
+        variant: "destructive",
       });
-    }
-  }, [company, profileForm, aiAgentForm]);
+    },
+  });
 
-  // Helper functions
-  const toggleEdit = (type: string) => {
-    const setting = reminderSettings?.find((s: any) => s.reminderType === type);
-    if (editingSettings[type]) {
-      setEditingSettings(prev => {
-        const newState = { ...prev };
-        delete newState[type];
-        return newState;
+  const testBirthdayMessageMutation = useMutation({
+    mutationFn: async () => {
+      if (!testPhoneNumber.trim()) {
+        throw new Error("Número de telefone é obrigatório para o teste");
+      }
+      const response = await apiRequest("POST", "/api/company/test-birthday-message", {
+        testPhoneNumber: testPhoneNumber.trim()
       });
-    } else {
-      setEditingSettings(prev => ({
-        ...prev,
-        [type]: setting || {
-          id: 0,
-          companyId: company?.id || 0,
-          reminderType: type,
-          isActive: true,
-          messageTemplate: "",
-          createdAt: "",
-          updatedAt: "",
-        }
-      }));
-      form.reset({
-        messageTemplate: setting?.messageTemplate || "",
-        isActive: setting?.isActive ?? true,
+      return await response.json();
+    },
+    onSuccess: (data: any) => {
+      toast({
+        title: "Mensagem de teste enviada",
+        description: `Mensagem enviada para ${testPhoneNumber}`,
       });
-    }
-  };
+      setTestPhoneNumber(""); // Limpar o campo após envio
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro no teste",
+        description: error.message || "Erro ao testar mensagem de aniversário",
+        variant: "destructive",
+      });
+    },
+  });
 
-  const saveReminderSetting = (type: string, data: ReminderSettingsData) => {
-    updateMutation.mutate({ type, data });
-    setEditingSettings(prev => {
-      const newState = { ...prev };
-      delete newState[type];
-      return newState;
-    });
-  };
+  const testAgentMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/company/ai-agent/test", {
+        message: testMessage
+      });
+      return await response.json();
+    },
+    onSuccess: (data: any) => {
+      setAgentResponse(data.response);
+      toast({
+        title: "Teste realizado",
+        description: "O agente IA respondeu com sucesso.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro no teste",
+        description: error.message || "Erro ao testar o agente IA",
+        variant: "destructive",
+      });
+    },
+  });
 
-  const updateReminderSetting = (type: string, updates: Partial<ReminderSettingsData>) => {
-    updateMutation.mutate({ type, data: updates });
-  };
-
-  const onProfileSubmit = (data: CompanyProfileData) => {
-    profileMutation.mutate(data);
-  };
-
-  const onWhatsappSubmit = (data: WhatsappInstanceData) => {
-    whatsappMutation.mutate(data);
-  };
-
-  if (companyLoading) {
+  if (!company) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
-          <p className="text-gray-500">Carregando...</p>
+          <p>Carregando informações da empresa...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex items-center gap-2 mb-6">
-        <Settings className="w-6 h-6" />
-        <h1 className="text-2xl font-bold">Configurações da Empresa</h1>
-      </div>
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center gap-2 mb-6">
+          <Settings className="w-6 h-6" />
+          <h1 className="text-2xl font-bold">Configurações da Empresa</h1>
+        </div>
 
-      <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="profile" className="flex items-center gap-2">
-            <Building2 className="w-4 h-4" />
-            Empresa
-          </TabsTrigger>
-          <TabsTrigger value="ai-agent" className="flex items-center gap-2">
-            <Bot className="w-4 h-4" />
-            IA
-          </TabsTrigger>
-          <TabsTrigger value="whatsapp" className="flex items-center gap-2">
-            <Smartphone className="w-4 h-4" />
-            WhatsApp
-          </TabsTrigger>
-          <TabsTrigger value="reminders" className="flex items-center gap-2">
-            <Bell className="w-4 h-4" />
-            Lembretes
-          </TabsTrigger>
-        </TabsList>
+        <Tabs defaultValue="profile" className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="profile" className="flex items-center gap-2">
+              <Building2 className="w-4 h-4" />
+              Empresa
+            </TabsTrigger>
+            <TabsTrigger value="ai-agent" className="flex items-center gap-2">
+              <Bot className="w-4 h-4" />
+              IA
+            </TabsTrigger>
+            <TabsTrigger value="reminders" className="flex items-center gap-2">
+              <Bell className="w-4 h-4" />
+              Lembretes
+            </TabsTrigger>
+            <TabsTrigger value="birthdays" className="flex items-center gap-2">
+              <Gift className="w-4 h-4" />
+              Aniversários
+            </TabsTrigger>
+          </TabsList>
 
         <TabsContent value="profile" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Informações da Empresa</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Building2 className="w-5 h-5" />
+                Informações da Empresa
+              </CardTitle>
               <CardDescription>
-                Atualize as informações básicas da sua empresa
+                Atualize as informações básicas da sua empresa.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Form {...profileForm}>
                 <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-4">
-                  <FormField
-                    control={profileForm.control}
-                    name="fantasyName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nome Fantasia</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={profileForm.control}
+                      name="fantasyName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nome Fantasia</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Nome da empresa" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                  <FormField
-                    control={profileForm.control}
-                    name="document"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>CNPJ</FormLabel>
-                        <FormControl>
-                          <Input 
-                            {...field} 
-                            onChange={(e) => field.onChange(formatDocument(e.target.value))}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Documento</label>
+                      <Input 
+                        value={formatDocument(company.document)} 
+                        disabled 
+                        className="bg-gray-50"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Email</label>
+                      <Input 
+                        value={company.email} 
+                        disabled 
+                        className="bg-gray-50"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Status</label>
+                      <Input 
+                        value="Ativo" 
+                        disabled 
+                        className="bg-gray-50"
+                      />
+                    </div>
+                  </div>
 
                   <FormField
                     control={profileForm.control}
@@ -323,7 +660,57 @@ export default function CompanySettings() {
                       <FormItem>
                         <FormLabel>Endereço</FormLabel>
                         <FormControl>
-                          <Input {...field} />
+                          <Textarea 
+                            placeholder="Endereço completo da empresa"
+                            className="min-h-[100px]"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="flex justify-end">
+                    <Button 
+                      type="submit" 
+                      disabled={updateProfileMutation.isPending}
+                    >
+                      {updateProfileMutation.isPending ? "Salvando..." : "Salvar Alterações"}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="security" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Lock className="w-5 h-5" />
+                Alterar Senha
+              </CardTitle>
+              <CardDescription>
+                Mantenha sua conta segura atualizando sua senha regularmente.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...passwordForm}>
+                <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4">
+                  <FormField
+                    control={passwordForm.control}
+                    name="currentPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Senha Atual</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="password" 
+                            placeholder="Digite sua senha atual"
+                            {...field} 
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -331,24 +718,100 @@ export default function CompanySettings() {
                   />
 
                   <FormField
-                    control={profileForm.control}
-                    name="email"
+                    control={passwordForm.control}
+                    name="newPassword"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Email</FormLabel>
+                        <FormLabel>Nova Senha</FormLabel>
                         <FormControl>
-                          <Input {...field} type="email" />
+                          <Input 
+                            type="password" 
+                            placeholder="Digite sua nova senha"
+                            {...field} 
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
 
-                  <Button type="submit" disabled={profileMutation.isPending}>
-                    {profileMutation.isPending ? "Salvando..." : "Salvar Alterações"}
-                  </Button>
+                  <FormField
+                    control={passwordForm.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Confirmar Nova Senha</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="password" 
+                            placeholder="Confirme sua nova senha"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="flex justify-end">
+                    <Button 
+                      type="submit" 
+                      disabled={updatePasswordMutation.isPending}
+                    >
+                      {updatePasswordMutation.isPending ? "Alterando..." : "Alterar Senha"}
+                    </Button>
+                  </div>
                 </form>
               </Form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+
+
+        <TabsContent value="preferences" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="w-5 h-5" />
+                Preferências do Sistema
+              </CardTitle>
+              <CardDescription>
+                Configure suas preferências de uso do sistema.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="text-sm font-medium">Notificações por Email</label>
+                    <p className="text-sm text-gray-500">Receber notificações importantes por email</p>
+                  </div>
+                  <Button variant="outline" size="sm">
+                    Configurar
+                  </Button>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="text-sm font-medium">Tema do Sistema</label>
+                    <p className="text-sm text-gray-500">Escolha entre modo claro ou escuro</p>
+                  </div>
+                  <Button variant="outline" size="sm">
+                    Claro
+                  </Button>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="text-sm font-medium">Idioma</label>
+                    <p className="text-sm text-gray-500">Idioma da interface do sistema</p>
+                  </div>
+                  <Button variant="outline" size="sm">
+                    Português (BR)
+                  </Button>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -356,376 +819,568 @@ export default function CompanySettings() {
         <TabsContent value="ai-agent" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Agente de IA</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Bot className="w-5 h-5" />
+                Configuração do Agente IA
+              </CardTitle>
               <CardDescription>
-                Configure o prompt do agente de IA para atendimento automático
+                Configure o prompt personalizado para o agente de IA da sua empresa
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Form {...aiAgentForm}>
-                <form onSubmit={aiAgentForm.handleSubmit(() => {})} className="space-y-4">
+                <form onSubmit={aiAgentForm.handleSubmit(onAiAgentSubmit)} className="space-y-6">
                   <FormField
                     control={aiAgentForm.control}
                     name="aiAgentPrompt"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Prompt do Agente</FormLabel>
+                        <FormLabel>Prompt do Agente IA</FormLabel>
                         <FormControl>
-                          <Textarea {...field} rows={6} />
+                          <Textarea
+                            placeholder="Exemplo: Você é um assistente virtual especializado em atendimento ao cliente para uma empresa de tecnologia. Sempre seja educado, profissional e forneça respostas precisas sobre nossos produtos e serviços..."
+                            className="min-h-[200px] resize-none"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
+                        <div className="text-sm text-gray-500">
+                          <p>• O prompt deve descrever como o agente IA deve se comportar</p>
+                          <p>• Inclua informações sobre sua empresa, produtos ou serviços</p>
+                          <p>• Defina o tom de voz e estilo de comunicação desejado</p>
+                          <p>• Mínimo de 10 caracteres</p>
+                        </div>
                       </FormItem>
                     )}
                   />
-                  <Button type="submit">Salvar Configurações</Button>
+                  
+                  <div className="flex justify-end">
+                    <Button 
+                      type="submit" 
+                      disabled={updateAiAgentMutation.isPending}
+                      className="min-w-[140px]"
+                    >
+                      {updateAiAgentMutation.isPending ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                          Salvando...
+                        </>
+                      ) : (
+                        "Salvar Configurações"
+                      )}
+                    </Button>
+                  </div>
                 </form>
               </Form>
             </CardContent>
           </Card>
-        </TabsContent>
 
-        <TabsContent value="whatsapp" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Instâncias WhatsApp</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare className="w-5 h-5" />
+                Testar Agente IA
+              </CardTitle>
               <CardDescription>
-                Gerencie suas conexões WhatsApp Business
+                Teste seu agente IA para verificar como ele responde com o prompt configurado
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Form {...whatsappForm}>
-                <form onSubmit={whatsappForm.handleSubmit(onWhatsappSubmit)} className="space-y-4">
-                  <FormField
-                    control={whatsappForm.control}
-                    name="instanceName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nome da Instância</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="Ex: Atendimento Principal" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-
-
-                  <Button type="submit" disabled={whatsappMutation.isPending}>
-                    {whatsappMutation.isPending ? "Criando..." : "Criar Instância"}
-                  </Button>
-                </form>
-              </Form>
-
-              {whatsappInstances && whatsappInstances.length > 0 && (
+              {company?.aiAgentPrompt ? (
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Instâncias Ativas</h3>
-                  {whatsappInstances.map((instance: any) => (
-                    <div key={instance.id} className="border rounded-lg p-4">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h4 className="font-medium">{instance.instanceName}</h4>
-                          <Badge variant={instance.status === 'connected' ? 'default' : 'secondary'}>
-                            {instance.status || 'Desconectado'}
-                          </Badge>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setSelectedInstance(instance);
-                              setShowQrDialog(true);
-                            }}
-                          >
-                            <QrCode className="w-4 h-4 mr-2" />
-                            QR Code
-                          </Button>
-                          <Button size="sm" variant="outline">
-                            <RefreshCw className="w-4 h-4 mr-2" />
-                            Reconectar
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setSelectedInstance(instance);
-                              setShowAiConfigDialog(true);
-                            }}
-                          >
-                            <Bot className="w-4 h-4 mr-2" />
-                            Configurar IA
-                          </Button>
-                        </div>
-                      </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Mensagem de teste</label>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Digite uma mensagem para testar o agente..."
+                        value={testMessage}
+                        onChange={(e) => setTestMessage(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && testAgentMutation.mutate()}
+                      />
+                      <Button 
+                        onClick={() => testAgentMutation.mutate()}
+                        disabled={testAgentMutation.isPending || !testMessage.trim()}
+                        className="min-w-[100px]"
+                      >
+                        {testAgentMutation.isPending ? (
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                        ) : (
+                          "Testar"
+                        )}
+                      </Button>
                     </div>
-                  ))}
+                  </div>
+                  
+                  {agentResponse && (
+                    <div className="bg-gray-50 p-4 rounded-lg border">
+                      <div className="text-sm font-medium text-gray-700 mb-2">Resposta do Agente:</div>
+                      <div className="text-sm text-gray-800 whitespace-pre-wrap">{agentResponse}</div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center p-6 bg-gray-50 rounded-lg border border-dashed">
+                  <Bot className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                  <p className="text-gray-600 mb-2">Nenhum prompt configurado</p>
+                  <p className="text-sm text-gray-500">Configure um prompt acima para testar o agente IA</p>
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Informações Importantes</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <h4 className="font-semibold text-blue-900 mb-2">Como funciona o Agente IA</h4>
+                <ul className="text-sm text-blue-800 space-y-1">
+                  <li>• O agente utiliza as configurações globais de IA definidas pelo administrador</li>
+                  <li>• Seu prompt personalizado será usado em todas as conversas</li>
+                  <li>• As respostas são geradas com base no modelo de IA configurado</li>
+                  <li>• O agente pode ser integrado com WhatsApp e outros canais</li>
+                </ul>
+              </div>
+              
+              <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
+                <h4 className="font-semibold text-amber-900 mb-2">Dicas para um bom prompt</h4>
+                <ul className="text-sm text-amber-800 space-y-1">
+                  <li>• Seja específico sobre o papel do agente</li>
+                  <li>• Inclua instruções sobre como lidar com diferentes situações</li>
+                  <li>• Defina limites e diretrizes de comunicação</li>
+                  <li>• Teste diferentes versões para otimizar as respostas</li>
+                </ul>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="reminders" className="space-y-6">
-          <div>
-            <h2 className="text-2xl font-bold flex items-center gap-2 mb-2">
-              <Bell className="w-6 h-6" />
-              Sistema de Lembretes Automáticos
-            </h2>
-            <p className="text-gray-600 mb-6">
-              Configure templates de mensagens automáticas para confirmação e lembretes de agendamentos via WhatsApp
-            </p>
-          </div>
-          
-          <div className="space-y-6">
-            {settingsLoading ? (
-              <div className="text-center py-8">
-                <p className="text-gray-500">Carregando configurações...</p>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="w-5 h-5" />
+                Lembretes de Agendamento
+              </CardTitle>
+              <CardDescription>
+                Configure lembretes automáticos para agendamentos.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center p-6 bg-gray-50 rounded-lg border border-dashed">
+                <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                <p className="text-gray-600 mb-2">Funcionalidade em desenvolvimento</p>
+                <p className="text-sm text-gray-500">Lembretes automáticos serão implementados em breve</p>
               </div>
-            ) : (
-              <div className="space-y-6">
-                {['confirmation', 'reminder_24h', 'reminder_1h'].map((type) => {
-                  const setting = Array.isArray(reminderSettings) ? reminderSettings.find((s: any) => s.reminderType === type) : undefined;
-                  const isEditing = editingSettings[type];
-                  
-                  return (
-                    <Card key={type}>
-                      <CardHeader>
-                        <CardTitle className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            {type === 'confirmation' && <CheckCircle className="w-5 h-5 text-green-600" />}
-                            {type === 'reminder_24h' && <Calendar className="w-5 h-5 text-blue-600" />}
-                            {type === 'reminder_1h' && <Clock className="w-5 h-5 text-orange-600" />}
-                            <span>
-                              {type === 'confirmation' && 'Confirmação de Agendamento'}
-                              {type === 'reminder_24h' && 'Lembrete 24 Horas Antes'}
-                              {type === 'reminder_1h' && 'Lembrete 1 Hora Antes'}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Switch
-                              checked={setting?.isActive || false}
-                              onCheckedChange={(checked) => updateReminderSetting(type, { isActive: checked })}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="birthdays" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Gift className="w-5 h-5 text-pink-600" />
+                Mensagens de Aniversário
+              </CardTitle>
+              <CardDescription>
+                Envie mensagens automáticas para clientes no dia do aniversário
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="bg-pink-50 p-4 rounded-lg border border-pink-200">
+                <h4 className="font-semibold text-pink-900 mb-3">Mensagem Personalizada</h4>
+                <Form {...birthdayForm}>
+                  <form onSubmit={birthdayForm.handleSubmit(onBirthdayMessageSubmit)} className="space-y-4">
+                    <FormField
+                      control={birthdayForm.control}
+                      name="messageTemplate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Textarea
+                              placeholder="Digite sua mensagem de aniversário personalizada..."
+                              className="min-h-[120px] bg-white"
+                              {...field}
                             />
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => toggleEdit(type)}
-                            >
-                              {isEditing ? 'Cancelar' : 'Editar'}
-                            </Button>
-                          </div>
-                        </CardTitle>
-                        <CardDescription>
-                          {type === 'confirmation' && 'Mensagem enviada imediatamente após confirmação do agendamento'}
-                          {type === 'reminder_24h' && 'Mensagem enviada 24 horas antes do agendamento'}
-                          {type === 'reminder_1h' && 'Mensagem enviada 1 hora antes do agendamento'}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        {isEditing ? (
-                          <Form {...form}>
-                            <form onSubmit={form.handleSubmit((data) => saveReminderSetting(type, data))} className="space-y-4">
-                              <FormField
-                                control={form.control}
-                                name="messageTemplate"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Template da Mensagem</FormLabel>
-                                    <FormControl>
-                                      <Textarea
-                                        {...field}
-                                        rows={4}
-                                        placeholder="Digite o template da mensagem..."
-                                      />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              
-                              <div className="bg-blue-50 p-4 rounded-lg">
-                                <h4 className="font-medium text-blue-900 mb-2">Variáveis Disponíveis:</h4>
-                                <div className="grid grid-cols-2 gap-2 text-sm text-blue-700">
-                                  <div>• nomeEmpresa - Nome da empresa</div>
-                                  <div>• nomeCliente - Nome do cliente</div>
-                                  <div>• servico - Serviço agendado</div>
-                                  <div>• profissional - Profissional responsável</div>
-                                  <div>• dataHora - Data e hora do agendamento</div>
-                                  <div>• endereco - Endereço da empresa</div>
-                                </div>
-                              </div>
-                              
-                              <div className="flex gap-2">
-                                <Button type="submit" disabled={updateMutation.isPending}>
-                                  {updateMutation.isPending ? 'Salvando...' : 'Salvar'}
-                                </Button>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  onClick={() => toggleEdit(type)}
-                                >
-                                  Cancelar
-                                </Button>
-                              </div>
-                            </form>
-                          </Form>
-                        ) : (
-                          <div className="space-y-4">
-                            <div>
-                              <Label className="text-sm font-medium">Template Atual:</Label>
-                              <div className="mt-1 p-3 bg-gray-50 rounded border text-sm">
-                                {setting?.messageTemplate || 'Nenhum template configurado'}
-                              </div>
-                            </div>
-                            
-                            <div className="bg-gray-50 p-3 rounded border">
-                              <Label className="text-sm font-medium">Prévia da Mensagem:</Label>
-                              <div className="mt-1 text-sm text-gray-600">
-                                {setting?.messageTemplate ? 
-                                  setting.messageTemplate
-                                    .replace(/\{\{nomeEmpresa\}\}/g, company?.fantasyName || '[Nome da Empresa]')
-                                    .replace(/\{\{nomeCliente\}\}/g, '[Nome do Cliente]')
-                                    .replace(/\{\{servico\}\}/g, '[Serviço]')
-                                    .replace(/\{\{profissional\}\}/g, '[Profissional]')
-                                    .replace(/\{\{dataHora\}\}/g, '[Data e Hora]')
-                                    .replace(/\{\{endereco\}\}/g, company?.address || '[Endereço]')
-                                  : 'Configure um template para visualizar a prévia'
-                                }
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-                
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <p className="text-sm text-pink-700">
+                      Use <strong>{"{NOME}"}</strong> para o nome do cliente e <strong>{"{EMPRESA}"}</strong> para o nome da empresa
+                    </p>
+                    <div className="flex gap-3">
+                      <Button 
+                        type="submit" 
+                        size="sm" 
+                        className="bg-pink-600 hover:bg-pink-700"
+                        disabled={createBirthdayMessageMutation.isPending}
+                      >
+                        <Gift className="w-4 h-4 mr-2" />
+                        {createBirthdayMessageMutation.isPending ? "Salvando..." : "Salvar Mensagem"}
+                      </Button>
+                    </div>
+                    
+                    {/* Test section */}
+                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mt-4">
+                      <h5 className="font-medium text-gray-900 mb-3">Testar Mensagem</h5>
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Digite o número para teste (ex: 5511999999999)"
+                          value={testPhoneNumber}
+                          onChange={(e) => setTestPhoneNumber(e.target.value)}
+                          className="flex-1"
+                        />
+                        <Button 
+                          type="button" 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => testBirthdayMessageMutation.mutate()}
+                          disabled={testBirthdayMessageMutation.isPending || !testPhoneNumber.trim()}
+                        >
+                          {testBirthdayMessageMutation.isPending ? "Enviando..." : "Enviar Teste"}
+                        </Button>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2">
+                        A mensagem será enviada via WhatsApp para o número informado
+                      </p>
+                    </div>
+                  </form>
+                </Form>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Send className="w-5 h-5 text-purple-600" />
-                      Teste do Sistema
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Gift className="w-5 h-5 text-pink-600" />
+                      Aniversariantes de Hoje
+                      <Badge variant="secondary" className="bg-pink-100 text-pink-700">
+                        {clients.filter(client => {
+                          if (!client.birthDate) return false;
+                          const today = new Date();
+                          const todayMonth = today.getMonth() + 1; // 1-12
+                          const todayDay = today.getDate();
+                          
+                          // Extract date components directly from ISO string
+                          const dateString = client.birthDate.toString();
+                          if (dateString.includes('T')) {
+                            const datePart = dateString.split('T')[0];
+                            const [year, month, day] = datePart.split('-').map(Number);
+                            return month === todayMonth && day === todayDay;
+                          }
+                          return false;
+                        }).length}
+                      </Badge>
                     </CardTitle>
-                    <CardDescription>
-                      Envie um lembrete de teste para validar o funcionamento
-                    </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <Button
-                      onClick={() => {
-                        toast({
-                          title: "Teste iniciado",
-                          description: "Um lembrete de teste será enviado em breve.",
-                        });
-                      }}
-                      className="w-full"
-                    >
-                      <Send className="w-4 h-4 mr-2" />
-                      Enviar Teste
-                    </Button>
-                    <p className="text-sm text-gray-500 mt-2">
-                      Um lembrete de teste será enviado para validar o funcionamento do sistema.
-                    </p>
+                    {clients.filter(client => {
+                      if (!client.birthDate) return false;
+                      const today = new Date();
+                      const todayMonth = today.getMonth() + 1; // 1-12
+                      const todayDay = today.getDate();
+                      
+                      // Extract date components directly from ISO string
+                      const dateString = client.birthDate.toString();
+                      if (dateString.includes('T')) {
+                        const datePart = dateString.split('T')[0];
+                        const [year, month, day] = datePart.split('-').map(Number);
+                        return month === todayMonth && day === todayDay;
+                      }
+                      return false;
+                    }).length > 0 ? (
+                      <div className="space-y-3">
+                        {clients.filter(client => {
+                          if (!client.birthDate) return false;
+                          const today = new Date();
+                          const todayMonth = today.getMonth() + 1; // 1-12
+                          const todayDay = today.getDate();
+                          
+                          // Extract date components directly from ISO string
+                          const dateString = client.birthDate.toString();
+                          if (dateString.includes('T')) {
+                            const datePart = dateString.split('T')[0];
+                            const [year, month, day] = datePart.split('-').map(Number);
+                            return month === todayMonth && day === todayDay;
+                          }
+                          return false;
+                        }).map(client => (
+                          <div key={client.id} className="bg-pink-50 p-3 rounded-lg border border-pink-200">
+                            <div className="flex justify-between items-center">
+                              <div>
+                                <p className="font-medium text-pink-900">{client.name}</p>
+                                <p className="text-sm text-pink-600">{client.phone || 'Sem telefone'}</p>
+                              </div>
+                              <Button 
+                                size="sm" 
+                                className="bg-pink-600 hover:bg-pink-700"
+                                onClick={() => sendBirthdayMessageMutation.mutate(client.id)}
+                                disabled={sendBirthdayMessageMutation.isPending}
+                              >
+                                <MessageSquare className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-6">
+                        <p className="text-gray-600">Nenhum aniversariante hoje</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Calendar className="w-5 h-5 text-blue-600" />
+                      Aniversariantes do Mês
+                      <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+                        {clients.filter(client => {
+                          if (!client.birthDate) return false;
+                          const today = new Date();
+                          const todayMonth = today.getMonth() + 1; // 1-12
+                          
+                          // Extract date components directly from ISO string
+                          const dateString = client.birthDate.toString();
+                          if (dateString.includes('T')) {
+                            const datePart = dateString.split('T')[0];
+                            const [year, month, day] = datePart.split('-').map(Number);
+                            return month === todayMonth;
+                          }
+                          return false;
+                        }).length}
+                      </Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {clients.filter(client => {
+                      if (!client.birthDate) return false;
+                      const today = new Date();
+                      const todayMonth = today.getMonth() + 1; // 1-12
+                      
+                      // Extract date components directly from ISO string
+                      const dateString = client.birthDate.toString();
+                      if (dateString.includes('T')) {
+                        const datePart = dateString.split('T')[0];
+                        const [year, month, day] = datePart.split('-').map(Number);
+                        return month === todayMonth;
+                      }
+                      return false;
+                    }).length > 0 ? (
+                      <div className="space-y-2 max-h-40 overflow-y-auto">
+                        {clients.filter(client => {
+                          if (!client.birthDate) return false;
+                          const today = new Date();
+                          const todayMonth = today.getMonth() + 1; // 1-12
+                          
+                          // Extract date components directly from ISO string
+                          const dateString = client.birthDate.toString();
+                          if (dateString.includes('T')) {
+                            const datePart = dateString.split('T')[0];
+                            const [year, month, day] = datePart.split('-').map(Number);
+                            return month === todayMonth;
+                          }
+                          return false;
+                        }).map(client => {
+                          // Extract date for display
+                          const dateString = client.birthDate!.toString();
+                          let displayDate = '';
+                          let isToday = false;
+                          if (dateString.includes('T')) {
+                            const datePart = dateString.split('T')[0];
+                            const [year, month, day] = datePart.split('-').map(Number);
+                            displayDate = `${day.toString().padStart(2, '0')} de ${['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'][month - 1]}`;
+                            
+                            // Check if it's today
+                            const today = new Date();
+                            const todayMonth = today.getMonth() + 1;
+                            const todayDay = today.getDate();
+                            isToday = month === todayMonth && day === todayDay;
+                          }
+                          return (
+                            <div key={client.id} className={`p-2 rounded border ${isToday ? 'bg-pink-50 border-pink-200' : 'bg-blue-50 border-blue-200'}`}>
+                              <div className="flex justify-between items-center">
+                                <div>
+                                  <p className={`font-medium ${isToday ? 'text-pink-900' : 'text-blue-900'}`}>{client.name}</p>
+                                  <p className={`text-sm ${isToday ? 'text-pink-600' : 'text-blue-600'}`}>
+                                    {displayDate}
+                                    {isToday && ' - Hoje!'}
+                                  </p>
+                                </div>
+                                <div className={`w-2 h-2 rounded-full ${isToday ? 'bg-pink-500' : 'bg-blue-500'}`}></div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="text-center py-6">
+                        <p className="text-gray-600">Nenhum aniversariante este mês</p>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </div>
-            )}
-          </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-green-700">
+                    <Calendar className="w-5 h-5" />
+                    Histórico de Aniversários
+                  </CardTitle>
+                  <CardDescription>
+                    Mensagens de aniversário enviadas recentemente
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {birthdayHistory.length > 0 ? (
+                    <div className="space-y-3 max-h-60 overflow-y-auto">
+                      {(birthdayHistory as any[]).map((history: any) => (
+                        <div key={history.id} className="bg-green-50 p-3 rounded-lg border border-green-200">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <p className="font-medium text-green-900">{history.clientName}</p>
+                              <p className="text-sm text-green-600">{history.clientPhone}</p>
+                              <p className="text-xs text-green-500 mt-1">
+                                Enviado em {new Date(history.sentAt).toLocaleDateString('pt-BR', {
+                                  day: '2-digit',
+                                  month: '2-digit',
+                                  year: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge 
+                                variant={history.status === 'sent' ? 'default' : 'destructive'} 
+                                className={history.status === 'sent' ? 'bg-green-600' : ''}
+                              >
+                                {history.status === 'sent' ? 'Enviado' : 'Erro'}
+                              </Badge>
+                            </div>
+                          </div>
+                          <div className="mt-2 p-2 bg-white rounded border border-green-100">
+                            <p className="text-sm text-gray-700 line-clamp-2">{history.message}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center p-6 bg-gray-50 rounded-lg border border-dashed">
+                      <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                      <p className="text-gray-600">Nenhuma mensagem de aniversário enviada ainda</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </CardContent>
+          </Card>
         </TabsContent>
-      </Tabs>
+        </Tabs>
 
-      {/* QR Code Dialog */}
-      <Dialog open={showQrDialog} onOpenChange={setShowQrDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <QrCode className="w-5 h-5" />
-              Conectar WhatsApp
-            </DialogTitle>
-            <DialogDescription>
-              Escaneie o QR code abaixo com seu WhatsApp para conectar a instância.
-            </DialogDescription>
-          </DialogHeader>
-          
-          {selectedInstance?.qrCode ? (
+        {/* QR Code Dialog */}
+        <Dialog open={showQrDialog} onOpenChange={setShowQrDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <QrCode className="w-5 h-5" />
+                Conectar WhatsApp
+              </DialogTitle>
+              <DialogDescription>
+                Escaneie o QR code abaixo com seu WhatsApp para conectar a instância.
+              </DialogDescription>
+            </DialogHeader>
             <div className="flex flex-col items-center space-y-4">
-              <div 
-                className="qr-code-container p-4 bg-white rounded-lg border"
-                dangerouslySetInnerHTML={{ __html: selectedInstance.qrCode }}
-              />
-              <p className="text-sm text-gray-600 text-center">
-                Abra o WhatsApp no seu celular, vá em Menu {"> "} Dispositivos conectados {"> "}
-                Conectar um dispositivo e escaneie este código QR
-              </p>
+              {qrCodeData ? (
+                <div className="bg-white p-4 rounded-lg border">
+                  <img 
+                    src={qrCodeData} 
+                    alt="QR Code WhatsApp" 
+                    className="w-64 h-64 object-contain"
+                  />
+                </div>
+              ) : (
+                <div className="w-64 h-64 bg-gray-100 flex items-center justify-center rounded-lg">
+                  <div className="text-center">
+                    <QrCode className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                    <p className="text-gray-500">Gerando QR code...</p>
+                  </div>
+                </div>
+              )}
+              <div className="text-center space-y-2">
+                <p className="text-sm text-gray-600">
+                  1. Abra o WhatsApp no seu celular
+                </p>
+                <p className="text-sm text-gray-600">
+                  2. Toque em Menu (⋮) &gt; Dispositivos conectados
+                </p>
+                <p className="text-sm text-gray-600">
+                  3. Toque em "Conectar um dispositivo"
+                </p>
+                <p className="text-sm text-gray-600">
+                  4. Aponte seu celular para esta tela para capturar o código
+                </p>
+              </div>
             </div>
-          ) : (
-            <div className="flex flex-col items-center space-y-4 py-8">
-              <QrCode className="w-16 h-16 text-gray-400" />
-              <p className="text-gray-500">QR Code não disponível</p>
-            </div>
-          )}
-          
-          <div className="flex justify-end space-x-2 mt-6">
-            <Button 
-              variant="outline" 
-              onClick={() => setShowQrDialog(false)}
-            >
-              Fechar
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
 
-      {/* AI Configuration Dialog */}
-      <Dialog open={showAiConfigDialog} onOpenChange={setShowAiConfigDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Bot className="w-5 h-5" />
-              Configurar Agente IA
-            </DialogTitle>
-            <DialogDescription>
-              Configurar automaticamente o agente IA para a instância "{selectedInstance?.instanceName}"
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-sm text-blue-800">
-                Esta ação irá configurar automaticamente o webhook e conectar o agente IA à sua instância WhatsApp usando as configurações globais da Evolution API.
-              </p>
-            </div>
+        {/* Webhook Configuration Dialog */}
+        <Dialog open={!!selectedInstance} onOpenChange={() => setSelectedInstance(null)}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Configurar Agente IA - {selectedInstance?.instanceName}</DialogTitle>
+              <DialogDescription>
+                O agente IA será configurado automaticamente usando as configurações globais da Evolution API definidas pelo administrador.
+              </DialogDescription>
+            </DialogHeader>
             
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <p className="text-sm text-yellow-800">
-                <strong>Certifique-se de que:</strong>
-              </p>
-              <ul className="text-sm text-yellow-800 mt-2 space-y-1">
-                <li>• A Evolution API está configurada nas configurações do administrador</li>
-                <li>• A instância WhatsApp está conectada</li>
-                <li>• O prompt do agente IA está configurado</li>
-              </ul>
-            </div>
-          </div>
+            <div className="space-y-4">
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <h4 className="font-semibold text-blue-900 mb-2">Como funciona</h4>
+                <ul className="text-sm text-blue-800 space-y-1">
+                  <li>• O webhook será configurado automaticamente na Evolution API</li>
+                  <li>• Mensagens recebidas no WhatsApp serão processadas pelo agente IA</li>
+                  <li>• As respostas serão enviadas automaticamente usando seu prompt personalizado</li>
+                  <li>• Utiliza as configurações globais definidas pelo administrador</li>
+                </ul>
+              </div>
 
-          <div className="flex gap-2 justify-end">
-            <Button 
-              variant="outline" 
-              onClick={() => setShowAiConfigDialog(false)}
-              disabled={aiConfigMutation.isPending}
-            >
-              Cancelar
-            </Button>
-            <Button 
-              onClick={() => selectedInstance && aiConfigMutation.mutate(selectedInstance.id)}
-              disabled={aiConfigMutation.isPending}
-            >
-              {aiConfigMutation.isPending ? "Configurando..." : "Configurar IA"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
+              <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
+                <h4 className="font-semibold text-amber-900 mb-2">URL do Webhook gerada</h4>
+                <p className="text-sm text-amber-800 mb-2">Esta URL será configurada automaticamente:</p>
+                <code className="text-xs bg-white p-2 rounded border block">
+                  {window.location.origin}/api/webhook/whatsapp/{selectedInstance?.instanceName}
+                </code>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setSelectedInstance(null)}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={onWebhookSubmit}
+                  disabled={configureWebhookMutation.isPending}
+                  className="flex items-center gap-2"
+                >
+                  <Bot className="w-4 h-4" />
+                  {configureWebhookMutation.isPending ? "Configurando..." : "Configurar Agente IA"}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
   );
 }
