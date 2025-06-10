@@ -90,9 +90,11 @@ export default function DashboardAppointments() {
   const [viewMode, setViewMode] = useState<'calendar' | 'list' | 'kanban'>('calendar');
   const [filterProfessional, setFilterProfessional] = useState<string>('all');
   const [isNewAppointmentOpen, setIsNewAppointmentOpen] = useState(false);
+  const [isEditAppointmentOpen, setIsEditAppointmentOpen] = useState(false);
   const [isNewClientOpen, setIsNewClientOpen] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [isAppointmentDetailsOpen, setIsAppointmentDetailsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -147,6 +149,23 @@ export default function DashboardAppointments() {
       name: "",
       phone: "",
       email: "",
+    },
+  });
+
+  const editForm = useForm<AppointmentFormData>({
+    resolver: zodResolver(appointmentSchema),
+    defaultValues: {
+      clientId: undefined,
+      serviceId: 0,
+      professionalId: 0,
+      statusId: 0,
+      clientName: "",
+      clientEmail: "",
+      clientPhone: "",
+      appointmentDate: "",
+      appointmentTime: "",
+      notes: "",
+      confirmed: false,
     },
   });
 
@@ -267,6 +286,44 @@ export default function DashboardAppointments() {
     onError: (error: Error) => {
       toast({
         title: "Erro ao atualizar status",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Update appointment mutation
+  const updateAppointmentMutation = useMutation({
+    mutationFn: async ({ appointmentId, data }: { appointmentId: number; data: Partial<AppointmentFormData> }) => {
+      const response = await fetch(`/api/company/appointments/${appointmentId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Erro ao atualizar agendamento');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/company/appointments'] });
+      setIsEditAppointmentOpen(false);
+      editForm.reset();
+      setEditingAppointment(null);
+      toast({
+        title: "Agendamento atualizado",
+        description: "O agendamento foi atualizado com sucesso.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao atualizar agendamento",
         description: error.message,
         variant: "destructive",
       });
@@ -401,6 +458,35 @@ export default function DashboardAppointments() {
 
   const onClientSubmit = (data: ClientFormData) => {
     createClientMutation.mutate(data);
+  };
+
+  const onEditSubmit = (data: AppointmentFormData) => {
+    if (!editingAppointment) return;
+    updateAppointmentMutation.mutate({ 
+      appointmentId: editingAppointment.id, 
+      data 
+    });
+  };
+
+  const handleEditAppointment = (appointment: Appointment) => {
+    setEditingAppointment(appointment);
+    
+    // Populate form with appointment data
+    editForm.reset({
+      clientId: undefined,
+      serviceId: appointment.serviceId,
+      professionalId: appointment.professionalId,
+      statusId: appointment.statusId,
+      clientName: appointment.clientName,
+      clientEmail: appointment.clientEmail || "",
+      clientPhone: appointment.clientPhone,
+      appointmentDate: format(new Date(appointment.appointmentDate), 'yyyy-MM-dd'),
+      appointmentTime: appointment.appointmentTime,
+      notes: appointment.notes || "",
+      confirmed: appointment.confirmed || false,
+    });
+    
+    setIsEditAppointmentOpen(true);
   };
 
   // Update form date when selectedDate changes
