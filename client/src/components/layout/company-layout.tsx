@@ -12,7 +12,8 @@ import {
   LogOut,
   Home,
   Bell,
-  Star
+  Star,
+  CheckSquare
 } from "lucide-react";
 import { useCompanyAuth } from "@/hooks/useCompanyAuth";
 
@@ -50,6 +51,11 @@ const menuItems = [
     title: "Avaliações",
     href: "/company/reviews",
     icon: Star,
+  },
+  {
+    title: "Tarefas",
+    href: "/company/tasks",
+    icon: CheckSquare,
   },
   {
     title: "Configurações",

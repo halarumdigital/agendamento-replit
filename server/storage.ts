@@ -1598,11 +1598,13 @@ Obrigado pela preferência! 🙏`;
 
   async createTask(taskData: InsertTask): Promise<Task> {
     try {
-      const result = await db.insert(tasks).values(taskData);
-      const insertId = result.insertId;
+      await db.insert(tasks).values(taskData);
       
+      // Get the last inserted task for this company
       const [task] = await db.select().from(tasks)
-        .where(eq(tasks.id, insertId));
+        .where(eq(tasks.companyId, taskData.companyId))
+        .orderBy(desc(tasks.id))
+        .limit(1);
       return task;
     } catch (error: any) {
       console.error("Error creating task:", error);

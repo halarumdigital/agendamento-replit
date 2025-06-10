@@ -3671,6 +3671,33 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
     }
   });
 
+  // Initialize tasks table
+  app.post("/api/admin/init-tasks", async (req, res) => {
+    try {
+      // Create tasks table
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS tasks (
+          id INT PRIMARY KEY AUTO_INCREMENT,
+          name VARCHAR(255) NOT NULL,
+          due_date DATE NOT NULL,
+          recurrence ENUM('none', 'daily', 'weekly', 'biweekly', 'monthly') DEFAULT 'none',
+          is_active BOOLEAN DEFAULT TRUE,
+          color VARCHAR(7) DEFAULT '#3b82f6',
+          company_id INT NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `);
+
+      console.log('✅ Tasks table created successfully');
+      res.json({ message: "Tabela de tarefas criada com sucesso" });
+    } catch (error: any) {
+      console.error("Error creating tasks table:", error);
+      res.status(500).json({ message: "Erro ao criar tabela de tarefas", error: error.message });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
