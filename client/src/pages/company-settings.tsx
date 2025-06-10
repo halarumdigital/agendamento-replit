@@ -1344,46 +1344,40 @@ export default function CompanySettings() {
         </TabsContent>
 
         <TabsContent value="reminders" className="space-y-6">
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold flex items-center gap-2 mb-2">
-                <Bell className="w-6 h-6" />
-                Sistema de Lembretes Automáticos
-              </h2>
-              <p className="text-gray-600 mb-6">
-                Configure templates de mensagens automáticas para confirmação e lembretes de agendamentos via WhatsApp
-              </p>
-            </div>
-            
-            <Tabs defaultValue="settings" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="settings" className="flex items-center gap-2">
-                    <Settings className="w-4 h-4" />
-                    Configurações
-                  </TabsTrigger>
-                  <TabsTrigger value="history" className="flex items-center gap-2">
-                    <Clock className="w-4 h-4" />
-                    Histórico
-                  </TabsTrigger>
-                </TabsList>
+          <div>
+            <h2 className="text-2xl font-bold flex items-center gap-2 mb-2">
+              <Bell className="w-6 h-6" />
+              Sistema de Lembretes Automáticos
+            </h2>
+            <p className="text-gray-600 mb-6">
+              Configure templates de mensagens automáticas para confirmação e lembretes de agendamentos via WhatsApp
+            </p>
+          </div>
+          
+          <Tabs defaultValue="settings" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="settings" className="flex items-center gap-2">
+                <Settings className="w-4 h-4" />
+                Configurações
+              </TabsTrigger>
+              <TabsTrigger value="history" className="flex items-center gap-2">
+                <Clock className="w-4 h-4" />
+                Histórico
+              </TabsTrigger>
+            </TabsList>
 
-                <TabsContent value="settings" className="space-y-6 mt-6">
-                  <div className="space-y-6">
-                    {settingsLoading ? (
-                      <div className="text-center py-8">
-                        <p className="text-gray-500">Carregando configurações...</p>
-                      </div>
-                    ) : (reminderSettings as ReminderSettings[]).length === 0 ? (
-                      <div className="text-center py-8">
-                        <Bell className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                        <p className="text-gray-500">Nenhuma configuração encontrada</p>
-                      </div>
-                    ) : (
-                      (reminderSettings as ReminderSettings[]).map((setting) => {
-                        const isEditing = editingSettings[setting.reminderType];
-                        const currentSetting = isEditing || setting;
+            <TabsContent value="settings" className="space-y-6 mt-6">
+              {settingsLoading ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">Carregando configurações...</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {(reminderSettings as ReminderSettings[]).map((setting) => {
+                    const isEditing = editingSettings[setting.reminderType];
+                    const currentSetting = isEditing || setting;
 
-                        return (
+                    return (
                           <Card key={setting.id} className="border-l-4 border-l-blue-500">
                             <CardHeader>
                               <div className="flex items-center justify-between">
@@ -1496,10 +1490,10 @@ export default function CompanySettings() {
                             </CardContent>
                           </Card>
                         );
-                      })
-                    )}
-                  </div>
-
+                      })}
+                    </div>
+                  )}
+                  
                   <Separator />
 
                   <Card>
@@ -1526,9 +1520,9 @@ export default function CompanySettings() {
                       </p>
                     </CardContent>
                   </Card>
-                </TabsContent>
+            </TabsContent>
 
-                <TabsContent value="history" className="space-y-6 mt-6">
+            <TabsContent value="history" className="space-y-6 mt-6">
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
