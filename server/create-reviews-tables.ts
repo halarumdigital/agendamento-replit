@@ -1,59 +1,67 @@
-import { pool } from "./db";
+import mysql from 'mysql2/promise';
 
 export async function ensureReviewTables() {
   try {
-    // Create professional_reviews table with PostgreSQL syntax
-    await pool.query(`
+    // Use MySQL connection from environment
+    const connection = await mysql.createConnection({
+      host: process.env.MYSQL_HOST || 'localhost',
+      port: parseInt(process.env.MYSQL_PORT || '3306'),
+      user: process.env.MYSQL_USER || '',
+      password: process.env.MYSQL_PASSWORD || '',
+      database: process.env.MYSQL_DATABASE || '',
+    });
+
+    // Create professional_reviews table with MySQL syntax
+    await connection.execute(`
       CREATE TABLE IF NOT EXISTS professional_reviews (
-        id SERIAL PRIMARY KEY,
-        professional_id INTEGER NOT NULL,
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        professional_id INT NOT NULL,
         client_name VARCHAR(255) NOT NULL,
         client_phone VARCHAR(20) NOT NULL,
-        rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+        rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
         comment TEXT,
         service_name VARCHAR(255),
         appointment_date DATE,
         submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         is_public BOOLEAN DEFAULT true,
-        company_id INTEGER NOT NULL,
-        appointment_id INTEGER
-      )
+        company_id INT NOT NULL,
+        appointment_id INT,
+        INDEX idx_professional_id (professional_id),
+        INDEX idx_company_id (company_id),
+        INDEX idx_appointment_id (appointment_id)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
-
-    // Create indexes for professional_reviews
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_prof_reviews_professional_id ON professional_reviews (professional_id)`);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_prof_reviews_company_id ON professional_reviews (company_id)`);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_prof_reviews_appointment_id ON professional_reviews (appointment_id)`);
 
     console.log('✅ professional_reviews table created/verified');
 
-    // Create review_invitations table with PostgreSQL syntax
-    await pool.query(`
+    // Create review_invitations table with MySQL syntax
+    await connection.execute(`
       CREATE TABLE IF NOT EXISTS review_invitations (
-        id SERIAL PRIMARY KEY,
-        appointment_id INTEGER NOT NULL,
-        professional_id INTEGER NOT NULL,
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        appointment_id INT NOT NULL,
+        professional_id INT NOT NULL,
         client_phone VARCHAR(20) NOT NULL,
         invitation_token VARCHAR(255) NOT NULL UNIQUE,
         sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         review_submitted_at TIMESTAMP NULL,
-        status VARCHAR(20) DEFAULT 'sent' CHECK (status IN ('sent', 'viewed', 'completed')),
-        whatsapp_instance_id INTEGER,
-        company_id INTEGER NOT NULL
-      )
+        status ENUM('sent', 'viewed', 'completed') DEFAULT 'sent',
+        whatsapp_instance_id INT,
+        company_id INT NOT NULL,
+        INDEX idx_appointment_id (appointment_id),
+        INDEX idx_professional_id (professional_id),
+        INDEX idx_token (invitation_token),
+        INDEX idx_company_id (company_id)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
-
-    // Create indexes for review_invitations
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_review_invitations_appointment_id ON review_invitations (appointment_id)`);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_review_invitations_professional_id ON review_invitations (professional_id)`);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_review_invitations_token ON review_invitations (invitation_token)`);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_review_invitations_company_id ON review_invitations (company_id)`);
 
     console.log('✅ review_invitations table created/verified');
     console.log('✅ Review tables setup completed');
 
+    await connection.end();
+
   } catch (error) {
     console.error('❌ Error creating review tables:', error);
-    throw error;
+    // Don't throw error to prevent server startup failure
+    console.log('⚠️ Continuing without review tables...');
   }
 }
