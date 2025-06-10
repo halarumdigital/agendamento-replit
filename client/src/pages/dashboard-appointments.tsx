@@ -384,7 +384,7 @@ export default function DashboardAppointments() {
       days.push(
         <div
           key={day.toString()}
-          className={`min-h-[120px] p-2 border border-gray-200 cursor-pointer hover:bg-gray-50 ${
+          className={`min-h-[140px] p-2 border border-gray-200 cursor-pointer hover:bg-gray-50 ${
             !isSameMonth(day, monthStart) ? 'text-gray-400 bg-gray-50' : ''
           } ${isSameDay(day, new Date()) ? 'bg-blue-50 border-blue-200' : ''}`}
           onClick={() => {
@@ -399,27 +399,32 @@ export default function DashboardAppointments() {
             {dayAppointments.slice(0, 3).map((appointment: Appointment) => (
               <div
                 key={appointment.id}
-                className="group text-xs p-1 rounded text-white truncate cursor-pointer hover:opacity-80 transition-opacity flex items-center justify-between"
+                className="group text-xs p-1.5 rounded text-white cursor-pointer hover:opacity-80 transition-opacity"
                 style={{ backgroundColor: appointment.service.color }}
-                title={`${appointment.appointmentTime} - ${appointment.clientName}`}
+                title={`${appointment.appointmentTime} - ${appointment.clientName} - ${appointment.service.name}`}
                 onClick={(e) => {
                   e.stopPropagation();
                   setSelectedAppointment(appointment);
                   setIsAppointmentDetailsOpen(true);
                 }}
               >
-                <span className="truncate">{appointment.appointmentTime} {appointment.clientName}</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-white hover:bg-white hover:bg-opacity-20"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleEditAppointment(appointment);
-                  }}
-                >
-                  <Edit className="h-3 w-3" />
-                </Button>
+                <div className="flex items-center justify-between">
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-white">{appointment.appointmentTime}</div>
+                    <div className="text-white opacity-90 truncate text-xs">{appointment.clientName}</div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-4 w-4 p-0 ml-1 opacity-0 group-hover:opacity-100 transition-opacity text-white hover:bg-white hover:bg-opacity-20 flex-shrink-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditAppointment(appointment);
+                    }}
+                  >
+                    <Edit className="h-3 w-3" />
+                  </Button>
+                </div>
               </div>
             ))}
             {dayAppointments.length > 3 && (
