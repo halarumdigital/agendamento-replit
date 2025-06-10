@@ -17,6 +17,7 @@ import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import CompanyLayout from "@/components/layout/company-layout";
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 
 // Types
 interface Appointment {
@@ -237,6 +238,31 @@ export default function DashboardAppointments() {
     },
   });
 
+  // Update appointment status mutation
+  const updateAppointmentStatusMutation = useMutation({
+    mutationFn: async ({ appointmentId, status }: { appointmentId: number; status: string }) => {
+      const response = await apiRequest(`/api/company/appointments/${appointmentId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+      });
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/company/appointments'] });
+      toast({
+        title: "Status atualizado",
+        description: "O status do agendamento foi atualizado com sucesso.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao atualizar status",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   // Calendar navigation
   const previousMonth = () => setCurrentDate(subMonths(currentDate, 1));
   const nextMonth = () => setCurrentDate(addMonths(currentDate, 1));
@@ -317,6 +343,26 @@ export default function DashboardAppointments() {
       appointment.clientPhone.toLowerCase().includes(searchLower)
     );
   });
+
+  // Handle drag and drop
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+
+    const { source, destination, draggableId } = result;
+    
+    // If dropped in the same position, do nothing
+    if (source.droppableId === destination.droppableId) return;
+
+    // Find the appointment being moved
+    const appointmentId = parseInt(draggableId);
+    const newStatus = destination.droppableId;
+
+    // Update the appointment status
+    updateAppointmentStatusMutation.mutate({
+      appointmentId,
+      status: newStatus
+    });
+  };
 
   // Helper functions
   const handleClientSelect = (clientId: string) => {
@@ -900,71 +946,96 @@ export default function DashboardAppointments() {
         </Card>
       ) : (
         // Kanban View
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {statuses.map((status) => {
-            const statusAppointments = appointments.filter((apt: Appointment) => 
-              apt.status === status.name &&
-              (filterProfessional === 'all' || apt.professionalId.toString() === filterProfessional)
-            );
-            
-            return (
-              <Card key={status.id} className="flex flex-col">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center gap-2">
-                    <div 
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: status.color }}
-                    />
-                    <CardTitle className="text-lg">{status.name}</CardTitle>
-                    <Badge variant="secondary" className="ml-auto">
-                      {statusAppointments.length}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="flex-1 pt-0">
-                  <div className="space-y-3">
-                    {statusAppointments.length === 0 ? (
-                      <p className="text-gray-500 text-sm text-center py-4">
-                        Nenhum agendamento
-                      </p>
-                    ) : (
-                      statusAppointments.map((appointment: Appointment) => (
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {statuses.map((status) => {
+              const statusAppointments = appointments.filter((apt: Appointment) => 
+                apt.status === status.name &&
+                (filterProfessional === 'all' || apt.professionalId.toString() === filterProfessional)
+              );
+              
+              return (
+                <Card key={status.id} className="flex flex-col">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: status.color }}
+                      />
+                      <CardTitle className="text-lg">{status.name}</CardTitle>
+                      <Badge variant="secondary" className="ml-auto">
+                        {statusAppointments.length}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="flex-1 pt-0">
+                    <Droppable droppableId={status.name}>
+                      {(provided, snapshot) => (
                         <div
-                          key={appointment.id}
-                          className="p-3 bg-white border rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-                          onClick={() => {
-                            setSelectedAppointment(appointment);
-                            setIsAppointmentDetailsOpen(true);
-                          }}
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                          className={`space-y-3 min-h-[200px] ${
+                            snapshot.isDraggingOver ? 'bg-blue-50' : ''
+                          }`}
                         >
-                          <div className="flex items-start justify-between mb-2">
-                            <h4 className="font-medium text-sm">{appointment.clientName}</h4>
-                            <span className="text-xs text-gray-500">
-                              {appointment.appointmentTime}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2 mb-2">
-                            <div
-                              className="w-2 h-2 rounded-full"
-                              style={{ backgroundColor: appointment.service.color }}
-                            />
-                            <span className="text-xs text-gray-600">{appointment.service.name}</span>
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {appointment.professional.name}
-                          </div>
-                          <div className="text-xs text-gray-500 mt-1">
-                            {format(new Date(appointment.appointmentDate), 'dd/MM/yyyy')}
-                          </div>
+                          {statusAppointments.length === 0 ? (
+                            <p className="text-gray-500 text-sm text-center py-4">
+                              Nenhum agendamento
+                            </p>
+                          ) : (
+                            statusAppointments.map((appointment: Appointment, index: number) => (
+                              <Draggable 
+                                key={appointment.id} 
+                                draggableId={appointment.id.toString()} 
+                                index={index}
+                              >
+                                {(provided, snapshot) => (
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    {...provided.dragHandleProps}
+                                    className={`p-3 bg-white border rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer ${
+                                      snapshot.isDragging ? 'shadow-lg transform rotate-2' : ''
+                                    }`}
+                                    onClick={() => {
+                                      setSelectedAppointment(appointment);
+                                      setIsAppointmentDetailsOpen(true);
+                                    }}
+                                  >
+                                    <div className="flex items-start justify-between mb-2">
+                                      <h4 className="font-medium text-sm">{appointment.clientName}</h4>
+                                      <span className="text-xs text-gray-500">
+                                        {appointment.appointmentTime}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <div
+                                        className="w-2 h-2 rounded-full"
+                                        style={{ backgroundColor: appointment.service.color }}
+                                      />
+                                      <span className="text-xs text-gray-600">{appointment.service.name}</span>
+                                    </div>
+                                    <div className="text-xs text-gray-500">
+                                      {appointment.professional.name}
+                                    </div>
+                                    <div className="text-xs text-gray-500 mt-1">
+                                      {format(new Date(appointment.appointmentDate), 'dd/MM/yyyy')}
+                                    </div>
+                                  </div>
+                                )}
+                              </Draggable>
+                            ))
+                          )}
+                          {provided.placeholder}
                         </div>
-                      ))
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+                      )}
+                    </Droppable>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </DragDropContext>
       )}
     </div>
   );
