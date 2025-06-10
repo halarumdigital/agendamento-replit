@@ -394,9 +394,7 @@ export default function DashboardAppointments() {
                 <DialogTitle>Novo Agendamento</DialogTitle>
               </DialogHeader>
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit, (errors) => {
-                  console.log("Form validation errors:", errors);
-                })} className="space-y-4">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                   <FormField
                     control={form.control}
                     name="serviceId"
@@ -527,6 +525,40 @@ export default function DashboardAppointments() {
                     )}
                   />
 
+                  <FormField
+                    control={form.control}
+                    name="statusId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Status</FormLabel>
+                        <FormControl>
+                          <Select
+                            value={field.value?.toString()}
+                            onValueChange={(value) => field.onChange(parseInt(value))}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione um status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {statuses.map((status) => (
+                                <SelectItem key={status.id} value={status.id.toString()}>
+                                  <div className="flex items-center gap-2">
+                                    <div
+                                      className="w-3 h-3 rounded-full"
+                                      style={{ backgroundColor: status.color }}
+                                    />
+                                    {status.name}
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
@@ -598,15 +630,7 @@ export default function DashboardAppointments() {
                     >
                       Cancelar
                     </Button>
-                    <Button 
-                      type="submit" 
-                      disabled={createAppointmentMutation.isPending}
-                      onClick={() => {
-                        console.log("Button clicked!");
-                        console.log("Form values:", form.getValues());
-                        console.log("Form state:", form.formState);
-                      }}
-                    >
+                    <Button type="submit" disabled={createAppointmentMutation.isPending}>
                       {createAppointmentMutation.isPending ? "Criando..." : "Criar Agendamento"}
                     </Button>
                   </div>
