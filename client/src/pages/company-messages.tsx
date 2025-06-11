@@ -142,6 +142,7 @@ export default function CompanyMessages() {
   // Mutation para deletar campanha
   const deleteCampaignMutation = useMutation({
     mutationFn: async (id: number) => {
+      console.log("Deleting campaign with ID:", id);
       return apiRequest(`/api/company/campaigns/${id}`, "DELETE");
     },
     onSuccess: (_, deletedId) => {
