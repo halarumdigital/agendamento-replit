@@ -603,11 +603,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/plans/:id', isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      console.log("Updating plan data received:", JSON.stringify(req.body, null, 2));
+      
       const validatedData = insertPlanSchema.partial().parse(req.body);
+      console.log("Validated data:", JSON.stringify(validatedData, null, 2));
+      
       const plan = await storage.updatePlan(id, validatedData);
+      console.log("Updated plan result:", JSON.stringify(plan, null, 2));
+      
       res.json(plan);
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.error("Validation errors:", error.errors);
         return res.status(400).json({ message: "Dados inválidos", errors: error.errors });
       }
       console.error("Error updating plan:", error);
