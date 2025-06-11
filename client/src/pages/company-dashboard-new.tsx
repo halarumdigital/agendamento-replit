@@ -18,6 +18,12 @@ export default function CompanyDashboardNew() {
     enabled: !!company
   });
 
+  // Buscar produtos para alertas de estoque
+  const { data: products = [] } = useQuery({
+    queryKey: ['/api/products'],
+    enabled: !!company
+  });
+
   // Calcular faturamento do dia dos agendamentos concluídos
   const calculateDailyRevenue = () => {
     if (!Array.isArray(appointments) || !Array.isArray(services)) {
@@ -231,6 +237,27 @@ export default function CompanyDashboardNew() {
   const servicesData = calculateServicesData();
   const monthlyRevenueData = calculateMonthlyRevenue();
   const todayAppointmentsList = getTodayAppointments();
+
+  // Calcular produtos com estoque baixo
+  const getLowStockAlerts = () => {
+    if (!Array.isArray(products)) {
+      return [];
+    }
+
+    return products.filter((product: any) => {
+      const currentStock = parseInt(product.currentStock) || 0;
+      const minStock = parseInt(product.minStock) || 5; // Padrão de 5 se não definido
+      return currentStock <= minStock && currentStock > 0;
+    }).map((product: any) => ({
+      id: product.id,
+      name: product.name,
+      currentStock: product.currentStock,
+      minStock: product.minStock || 5,
+      type: 'low_stock'
+    }));
+  };
+
+  const lowStockAlerts = getLowStockAlerts();
 
   if (isLoading) {
     return (
@@ -531,30 +558,26 @@ export default function CompanyDashboardNew() {
           <div className="mb-5">
             <h4 className="text-sm font-medium text-gray-600 mb-3">Estoque Baixo</h4>
             <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-red-50 rounded border border-red-100">
-                <div className="flex items-center">
-                  <div className="w-8 h-8 flex items-center justify-center rounded-full bg-red-100 text-red-600 mr-3">
-                    ⚠️
+              {lowStockAlerts.length > 0 ? (
+                lowStockAlerts.map((alert: any) => (
+                  <div key={alert.id} className="flex items-center justify-between p-3 bg-red-50 rounded border border-red-100">
+                    <div className="flex items-center">
+                      <div className="w-8 h-8 flex items-center justify-center rounded-full bg-red-100 text-red-600 mr-3">
+                        ⚠️
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-800">{alert.name}</p>
+                        <p className="text-xs text-gray-500">Restam {alert.currentStock} unidades</p>
+                      </div>
+                    </div>
+                    <button className="text-xs text-purple-600 font-medium hover:underline">Repor</button>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-800">Shampoo Hidratante</p>
-                    <p className="text-xs text-gray-500">Restam 2 unidades</p>
-                  </div>
+                ))
+              ) : (
+                <div className="p-3 bg-green-50 rounded border border-green-100 text-center">
+                  <p className="text-sm text-green-700">✓ Todos os produtos com estoque adequado</p>
                 </div>
-                <button className="text-xs text-purple-600 font-medium hover:underline">Repor</button>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-red-50 rounded border border-red-100">
-                <div className="flex items-center">
-                  <div className="w-8 h-8 flex items-center justify-center rounded-full bg-red-100 text-red-600 mr-3">
-                    ⚠️
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-800">Máscara Capilar</p>
-                    <p className="text-xs text-gray-500">Restam 3 unidades</p>
-                  </div>
-                </div>
-                <button className="text-xs text-purple-600 font-medium hover:underline">Repor</button>
-              </div>
+              )}
             </div>
           </div>
           
