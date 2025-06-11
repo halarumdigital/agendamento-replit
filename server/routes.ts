@@ -851,6 +851,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Company login route
+  app.post('/api/auth/company-login', async (req: any, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ message: "Email e senha são obrigatórios" });
+      }
+
+      const company = await storage.getCompanyByEmail(email);
+      if (!company) {
+        return res.status(401).json({ message: "Credenciais inválidas" });
+      }
+
+      const isValidPassword = await bcrypt.compare(password, company.password);
+      if (!isValidPassword) {
+        return res.status(401).json({ message: "Credenciais inválidas" });
+      }
+
+      req.session.companyId = company.id;
+      res.json({ 
+        message: "Login realizado com sucesso",
+        company: {
+          id: company.id,
+          fantasyName: company.fantasyName,
+          email: company.email
+        }
+      });
+    } catch (error) {
+      console.error("Company login error:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
   // Dashboard stats
   app.get('/api/dashboard/stats', isAuthenticated, async (req, res) => {
     try {
