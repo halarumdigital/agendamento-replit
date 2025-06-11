@@ -1,16 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { useGlobalTheme } from "@/hooks/use-global-theme";
-import { Building2, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { z } from "zod";
 import { useLocation } from "wouter";
@@ -34,50 +31,7 @@ export default function CompanyLogin() {
     retry: false,
   });
   
-  // Aplica tema global dinamicamente
-  useGlobalTheme();
 
-  // Aplica cores da configuração pública
-  useEffect(() => {
-    if (settings?.primaryColor) {
-      const root = document.documentElement;
-      
-      const hexToHsl = (hex: string) => {
-        const r = parseInt(hex.slice(1, 3), 16) / 255;
-        const g = parseInt(hex.slice(3, 5), 16) / 255;
-        const b = parseInt(hex.slice(5, 7), 16) / 255;
-
-        const max = Math.max(r, g, b);
-        const min = Math.min(r, g, b);
-        let h, s, l = (max + min) / 2;
-
-        if (max === min) {
-          h = s = 0;
-        } else {
-          const d = max - min;
-          s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-          switch (max) {
-            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-            case g: h = (b - r) / d + 2; break;
-            case b: h = (r - g) / d + 4; break;
-            default: h = 0;
-          }
-          h /= 6;
-        }
-
-        return `${Math.round(h * 360)}, ${Math.round(s * 100)}%, ${Math.round(l * 100)}%`;
-      };
-
-      const primaryHsl = hexToHsl(settings.primaryColor);
-      root.style.setProperty('--primary', `hsl(${primaryHsl})`);
-      root.style.setProperty('--ring', `hsl(${primaryHsl})`);
-      
-      // Criar versão clara para accent
-      const [h, s] = primaryHsl.split(',');
-      root.style.setProperty('--accent', `hsl(${h}, ${s}, 96%)`);
-      root.style.setProperty('--accent-foreground', `hsl(${primaryHsl})`);
-    }
-  }, [settings]);
 
   const form = useForm<CompanyLoginFormData>({
     resolver: zodResolver(companyLoginSchema),
@@ -89,7 +43,7 @@ export default function CompanyLogin() {
 
   const loginMutation = useMutation({
     mutationFn: async (data: CompanyLoginFormData) => {
-      const response = await apiRequest("/api/company/auth/login", "POST", data);
+      const response = await apiRequest("/api/auth/company-login", "POST", data);
       return response;
     },
     onSuccess: (data) => {
