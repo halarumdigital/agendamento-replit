@@ -867,49 +867,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Company forgot password route
-  app.post('/api/auth/forgot-password', async (req: any, res) => {
-    try {
-      const { email } = req.body;
-      
-      if (!email) {
-        return res.status(400).json({ message: "Email é obrigatório" });
-      }
 
-      const company = await storage.getCompanyByEmail(email);
-      if (!company) {
-        // Don't reveal if email exists for security
-        return res.json({ message: "Se o email estiver registrado, você receberá instruções para redefinir sua senha." });
-      }
-
-      // Generate reset token regardless of SMTP configuration
-
-      // Generate reset token
-      const crypto = await import('crypto');
-      const resetToken = crypto.randomBytes(32).toString('hex');
-      const resetTokenExpires = new Date(Date.now() + 3600000); // 1 hour
-
-      // Update company with reset token
-      await storage.updateCompany(company.id, {
-        resetToken,
-        resetTokenExpires: resetTokenExpires
-      });
-
-      // Log reset information for manual distribution
-      const resetUrl = `${process.env.NODE_ENV === 'production' ? 'https' : 'http'}://${req.get('host')}/reset-password?token=${resetToken}`;
-      
-      console.log(`Password reset requested for: ${email}`);
-      console.log(`Reset URL: ${resetUrl}`);
-      
-      res.json({ 
-        message: "Token de redefinição gerado com sucesso. Entre em contato com o suporte para receber o link.",
-        resetUrl: resetUrl // Remove this in production
-      });
-    } catch (error) {
-      console.error("Forgot password error:", error);
-      res.status(500).json({ message: "Erro interno do servidor" });
-    }
-  });
 
   // Company reset password route
   app.post('/api/auth/reset-password', async (req: any, res) => {
