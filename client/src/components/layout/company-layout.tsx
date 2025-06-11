@@ -151,7 +151,7 @@ function SidebarContent() {
       </div>
       
       <nav className="flex-1 space-y-2 p-4">
-        {menuItems.map((item) => {
+        {visibleMenuItems.map((item) => {
           const Icon = item.icon;
           const isActive = location === item.href;
           

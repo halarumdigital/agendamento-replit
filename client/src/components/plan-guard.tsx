@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Lock } from "lucide-react";
-import { usePermissionGuard } from "@/hooks/use-plan";
+import { usePermissionGuard, usePlan, type PlanPermissions } from "@/hooks/use-plan";
 
 interface PlanGuardProps {
   permission: keyof import("@/hooks/use-plan").PlanPermissions;
