@@ -144,10 +144,16 @@ export default function CompanyMessages() {
     mutationFn: async (id: number) => {
       return apiRequest(`/api/company/campaigns/${id}`, "DELETE");
     },
-    onSuccess: () => {
-      // Force refetch and remove from cache
+    onSuccess: (_, deletedId) => {
+      // Remove from cache immediately
+      queryClient.setQueryData(["/api/company/campaigns"], (oldData: any) => {
+        if (!oldData) return oldData;
+        return oldData.filter((campaign: any) => campaign.id !== deletedId);
+      });
+      
+      // Also invalidate to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ["/api/company/campaigns"] });
-      queryClient.refetchQueries({ queryKey: ["/api/company/campaigns"] });
+      
       toast({
         title: "Campanha excluída",
         description: "A campanha foi excluída com sucesso.",
