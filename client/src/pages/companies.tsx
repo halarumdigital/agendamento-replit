@@ -60,6 +60,12 @@ export default function Companies() {
       fantasyName: "",
       document: "",
       address: "",
+      phone: "",
+      zipCode: "",
+      number: "",
+      neighborhood: "",
+      city: "",
+      state: "",
       email: "",
       planId: null,
       isActive: true,
@@ -147,6 +153,12 @@ export default function Companies() {
       fantasyName: company.fantasyName,
       document: company.document,
       address: company.address,
+      phone: company.phone || "",
+      zipCode: company.zipCode || "",
+      number: company.number || "",
+      neighborhood: company.neighborhood || "",
+      city: company.city || "",
+      state: company.state || "",
       email: company.email,
       planId: company.planId || null,
       isActive: company.isActive ?? true,
@@ -251,6 +263,95 @@ export default function Companies() {
                     {editForm.formState.errors.address.message}
                   </p>
                 )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Celular</Label>
+                  <Input
+                    id="phone"
+                    {...editForm.register("phone")}
+                    placeholder="(11) 99999-9999"
+                  />
+                  {editForm.formState.errors.phone && (
+                    <p className="text-sm text-red-600">
+                      {editForm.formState.errors.phone.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="zipCode">CEP</Label>
+                  <Input
+                    id="zipCode"
+                    {...editForm.register("zipCode")}
+                    placeholder="00000-000"
+                  />
+                  {editForm.formState.errors.zipCode && (
+                    <p className="text-sm text-red-600">
+                      {editForm.formState.errors.zipCode.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="number">Número</Label>
+                  <Input
+                    id="number"
+                    {...editForm.register("number")}
+                    placeholder="123"
+                  />
+                  {editForm.formState.errors.number && (
+                    <p className="text-sm text-red-600">
+                      {editForm.formState.errors.number.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="neighborhood">Bairro</Label>
+                  <Input
+                    id="neighborhood"
+                    {...editForm.register("neighborhood")}
+                    placeholder="Centro"
+                  />
+                  {editForm.formState.errors.neighborhood && (
+                    <p className="text-sm text-red-600">
+                      {editForm.formState.errors.neighborhood.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="city">Cidade</Label>
+                  <Input
+                    id="city"
+                    {...editForm.register("city")}
+                    placeholder="São Paulo"
+                  />
+                  {editForm.formState.errors.city && (
+                    <p className="text-sm text-red-600">
+                      {editForm.formState.errors.city.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="state">Estado</Label>
+                  <Input
+                    id="state"
+                    {...editForm.register("state")}
+                    placeholder="SP"
+                    maxLength={2}
+                  />
+                  {editForm.formState.errors.state && (
+                    <p className="text-sm text-red-600">
+                      {editForm.formState.errors.state.message}
+                    </p>
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -361,6 +462,95 @@ export default function Companies() {
                     {form.formState.errors.address.message}
                   </p>
                 )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Celular</Label>
+                  <Input
+                    id="phone"
+                    {...form.register("phone")}
+                    placeholder="(11) 99999-9999"
+                  />
+                  {form.formState.errors.phone && (
+                    <p className="text-sm text-red-600">
+                      {form.formState.errors.phone.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="zipCode">CEP</Label>
+                  <Input
+                    id="zipCode"
+                    {...form.register("zipCode")}
+                    placeholder="00000-000"
+                  />
+                  {form.formState.errors.zipCode && (
+                    <p className="text-sm text-red-600">
+                      {form.formState.errors.zipCode.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="number">Número</Label>
+                  <Input
+                    id="number"
+                    {...form.register("number")}
+                    placeholder="123"
+                  />
+                  {form.formState.errors.number && (
+                    <p className="text-sm text-red-600">
+                      {form.formState.errors.number.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="neighborhood">Bairro</Label>
+                  <Input
+                    id="neighborhood"
+                    {...form.register("neighborhood")}
+                    placeholder="Centro"
+                  />
+                  {form.formState.errors.neighborhood && (
+                    <p className="text-sm text-red-600">
+                      {form.formState.errors.neighborhood.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="city">Cidade</Label>
+                  <Input
+                    id="city"
+                    {...form.register("city")}
+                    placeholder="São Paulo"
+                  />
+                  {form.formState.errors.city && (
+                    <p className="text-sm text-red-600">
+                      {form.formState.errors.city.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="state">Estado</Label>
+                  <Input
+                    id="state"
+                    {...form.register("state")}
+                    placeholder="SP"
+                    maxLength={2}
+                  />
+                  {form.formState.errors.state && (
+                    <p className="text-sm text-red-600">
+                      {form.formState.errors.state.message}
+                    </p>
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
