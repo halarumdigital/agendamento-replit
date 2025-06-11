@@ -79,11 +79,37 @@ export default function CompanyTasks() {
 
   const { data: tasks = [], isLoading } = useQuery<Task[]>({
     queryKey: ["/api/company/tasks"],
-    queryFn: () => apiRequest("GET", "/api/company/tasks"),
+    queryFn: () => {
+      return fetch('/api/company/tasks', {
+        method: 'GET',
+        credentials: 'include',
+      }).then(async (res) => {
+        if (!res.ok) {
+          const error = await res.json();
+          throw new Error(error.message || 'Erro ao buscar tarefas');
+        }
+        return res.json();
+      });
+    },
   });
 
   const createTaskMutation = useMutation({
-    mutationFn: (data: TaskFormData) => apiRequest("POST", "/api/company/tasks", data),
+    mutationFn: (data: TaskFormData) => {
+      return fetch('/api/company/tasks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(data),
+      }).then(async (res) => {
+        if (!res.ok) {
+          const error = await res.json();
+          throw new Error(error.message || 'Erro ao criar tarefa');
+        }
+        return res.json();
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/company/tasks"] });
       setIsDialogOpen(false);
