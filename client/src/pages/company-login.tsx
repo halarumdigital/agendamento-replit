@@ -1,28 +1,23 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { useLocation, Link } from "wouter";
-import { apiRequest } from "@/lib/queryClient";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
+import { Lock } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
+import { useLocation, Link } from "wouter";
 
-const companyLoginSchema = z.object({
-  email: z.string().email("Email inválido"),
-  password: z.string().min(1, "Senha é obrigatória"),
-});
-
-type CompanyLoginFormData = z.infer<typeof companyLoginSchema>;
+interface CompanyLoginFormData {
+  email: string;
+  password: string;
+}
 
 export default function CompanyLogin() {
-  const [showPassword, setShowPassword] = useState(false);
-  const [loginError, setLoginError] = useState<string>("");
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
   const [, setLocation] = useLocation();
   
   // Busca configurações públicas para obter a logo e cores
@@ -30,9 +25,6 @@ export default function CompanyLogin() {
     queryKey: ["/api/public-settings"],
     retry: false,
   });
-  
-  // Aplica tema global dinamicamente
-  useGlobalTheme();
 
   // Aplica cores da configuração pública
   useEffect(() => {
@@ -77,104 +69,94 @@ export default function CompanyLogin() {
   }, [settings]);
 
   const form = useForm<CompanyLoginFormData>({
-    resolver: zodResolver(companyLoginSchema),
     defaultValues: {
       email: "",
       password: "",
     },
   });
 
-  const loginMutation = useMutation({
-    mutationFn: async (data: CompanyLoginFormData) => {
-      const response = await apiRequest("/api/company/auth/login", "POST", data);
-      return response;
-    },
-    onSuccess: (data) => {
+  const onSubmit = async (data: CompanyLoginFormData) => {
+    setIsLoading(true);
+    try {
+      await apiRequest("POST", "/api/auth/company-login", data);
+      
       toast({
-        title: "Login realizado",
-        description: "Bem-vindo ao painel da empresa!",
+        title: "Sucesso",
+        description: "Login realizado com sucesso!",
       });
+      
+      // Redirect to company dashboard
       setLocation("/dashboard");
-    },
-    onError: (error: any) => {
-      const errorMessage = "Email ou senha errada";
-      setLoginError(errorMessage);
+    } catch (error: any) {
       toast({
-        title: "Erro no login",
-        description: errorMessage,
+        title: "Erro",
+        description: error.message || "Falha ao fazer login",
         variant: "destructive",
       });
-    },
-  });
-
-  const onSubmit = (data: CompanyLoginFormData) => {
-    setLoginError("");
-    loginMutation.mutate(data);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <Card>
-          <CardHeader className="pb-4">
-            {settings?.logoUrl && (
-              <div className="text-center mb-4">
+          <CardHeader className="space-y-4 pb-4">
+            <div className="text-center">
+              {settings?.logoUrl ? (
                 <img 
                   src={settings.logoUrl} 
                   alt="Logo" 
-                  className="w-full h-32 object-contain mx-auto"
+                  className="w-full h-32 object-contain mx-auto mb-4"
                 />
-              </div>
-            )}
+              ) : (
+                <div className="w-16 h-16 mx-auto mb-4 bg-primary rounded-full flex items-center justify-center">
+                  <Lock className="w-8 h-8 text-primary-foreground" />
+                </div>
+              )}
+            </div>
+            <div className="text-center">
+              <CardTitle className="text-2xl font-bold text-foreground">
+                {settings?.systemName || "Sistema de Gestão"}
+              </CardTitle>
+              <CardDescription className="text-muted-foreground mt-2">
+                Faça login para acessar sua conta
+              </CardDescription>
+            </div>
           </CardHeader>
           <CardContent>
-            {loginError && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertDescription>{loginError}</AlertDescription>
-              </Alert>
-            )}
-
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="text-foreground">Email</Label>
                 <Input
                   id="email"
                   type="email"
                   {...form.register("email", { required: "Email é obrigatório" })}
                   placeholder="Digite seu email"
-                  disabled={loginMutation.isPending}
+                  disabled={isLoading}
                   className="border-input focus:border-primary focus:ring-primary"
                 />
-                {form.formState.errors.email && (
-                  <p className="text-sm text-destructive">
-                    {form.formState.errors.email.message}
-                  </p>
-                )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
+                <Label htmlFor="password" className="text-foreground">Senha</Label>
                 <Input
                   id="password"
                   type="password"
                   {...form.register("password", { required: "Senha é obrigatória" })}
                   placeholder="Digite sua senha"
-                  disabled={loginMutation.isPending}
+                  disabled={isLoading}
                   className="border-input focus:border-primary focus:ring-primary"
                 />
-                {form.formState.errors.password && (
-                  <p className="text-sm text-destructive">
-                    {form.formState.errors.password.message}
-                  </p>
-                )}
               </div>
 
               <Button 
                 type="submit" 
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-                disabled={loginMutation.isPending}
+                disabled={isLoading}
               >
-                {loginMutation.isPending ? "Entrando..." : "Entrar"}
+                {isLoading ? "Entrando..." : "Entrar"}
               </Button>
             </form>
 
