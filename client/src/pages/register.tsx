@@ -39,6 +39,7 @@ export default function Register() {
 
   const form = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
+    mode: "onBlur",
     defaultValues: {
       fantasyName: "",
       document: "",
