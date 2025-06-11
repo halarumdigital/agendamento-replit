@@ -872,6 +872,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Company reset password route
   app.post('/api/auth/reset-password', async (req: any, res) => {
     try {
+      console.log("=== RESET PASSWORD ENDPOINT HIT ===");
+      console.log("Request body:", req.body);
       const { token, newPassword } = req.body;
       
       if (!token || !newPassword) {
@@ -883,6 +885,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const company = await storage.getCompanyByResetToken(token);
+      console.log("Found company:", !!company);
+      console.log("Token expires:", company?.resetTokenExpires);
+      console.log("Current time:", new Date());
+      console.log("Is expired:", !company?.resetTokenExpires || new Date() > new Date(company.resetTokenExpires));
+      
       if (!company || !company.resetTokenExpires || new Date() > new Date(company.resetTokenExpires)) {
         return res.status(400).json({ message: "Token inválido ou expirado" });
       }

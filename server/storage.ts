@@ -320,7 +320,12 @@ export class DatabaseStorage implements IStorage {
 
   async getCompanyByResetToken(token: string): Promise<Company | undefined> {
     try {
+      console.log('Looking for token:', token);
       const [company] = await db.select().from(companies).where(eq(companies.resetToken, token));
+      console.log('Found company with token:', company ? 'YES' : 'NO');
+      if (company) {
+        console.log('Token expiry from DB:', company.resetTokenExpires);
+      }
       return company;
     } catch (error) {
       console.error('Error in getCompanyByResetToken:', error);
