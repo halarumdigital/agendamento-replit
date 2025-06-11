@@ -4961,10 +4961,26 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
         color
       });
 
-      // Buscar a categoria criada
+      console.log("Insert result:", result);
+
+      // Buscar a categoria criada usando o insertId correto
+      const insertId = result.insertId || result[0]?.insertId;
+      
+      if (!insertId) {
+        // Se não conseguir o ID, buscar pela última categoria criada
+        const [createdCategory] = await db.select()
+          .from(financialCategories)
+          .where(and(eq(financialCategories.companyId, companyId), eq(financialCategories.name, name)))
+          .orderBy(desc(financialCategories.id))
+          .limit(1);
+        
+        console.log("Category created successfully:", createdCategory);
+        return res.json(createdCategory);
+      }
+
       const [createdCategory] = await db.select()
         .from(financialCategories)
-        .where(eq(financialCategories.id, result.insertId))
+        .where(eq(financialCategories.id, insertId))
         .limit(1);
 
       console.log("Category created successfully:", createdCategory);

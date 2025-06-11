@@ -194,7 +194,9 @@ export default function CompanyFinancial() {
     mutationFn: (data: CategoryFormData) =>
       apiRequest("/api/company/financial/categories", "POST", data),
     onSuccess: () => {
+      // Invalidar e refetch imediatamente
       queryClient.invalidateQueries({ queryKey: ["/api/company/financial/categories"] });
+      queryClient.refetchQueries({ queryKey: ["/api/company/financial/categories"] });
       setIsCategoryModalOpen(false);
       categoryForm.reset();
       toast({ title: "Categoria criada com sucesso!" });
