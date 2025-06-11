@@ -5041,12 +5041,13 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
   app.get("/api/company/financial/payment-methods", requireCompanyAuth, async (req, res) => {
     try {
       const companyId = req.session.companyId!;
-      const paymentMethods = await db.execute(sql`
-        SELECT * FROM payment_methods 
-        WHERE company_id = ${companyId} 
-        ORDER BY created_at DESC
-      `);
-      res.json(paymentMethods);
+      const methods = await db.select()
+        .from(paymentMethods)
+        .where(eq(paymentMethods.companyId, companyId))
+        .orderBy(desc(paymentMethods.createdAt));
+      
+      console.log("Payment methods fetched:", methods);
+      res.json(methods);
     } catch (error) {
       console.error("Error fetching payment methods:", error);
       res.status(500).json({ message: "Erro ao buscar métodos de pagamento" });
