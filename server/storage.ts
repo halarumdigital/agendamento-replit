@@ -303,11 +303,33 @@ export class DatabaseStorage implements IStorage {
 
   // Plan operations
   async getPlans(): Promise<Plan[]> {
-    return await db.select().from(plans).orderBy(desc(plans.createdAt));
+    const planList = await db.select().from(plans).orderBy(desc(plans.createdAt));
+    
+    // Ensure permissions are properly parsed if they're strings
+    return planList.map((plan: any) => {
+      if (plan && typeof plan.permissions === 'string') {
+        try {
+          plan.permissions = JSON.parse(plan.permissions);
+        } catch (e) {
+          console.error("Error parsing permissions for plan", plan.id, ":", e);
+        }
+      }
+      return plan;
+    });
   }
 
   async getPlan(id: number): Promise<Plan | undefined> {
     const [plan] = await db.select().from(plans).where(eq(plans.id, id));
+    
+    // Ensure permissions is properly parsed if it's a string
+    if (plan && typeof plan.permissions === 'string') {
+      try {
+        plan.permissions = JSON.parse(plan.permissions);
+      } catch (e) {
+        console.error("Error parsing permissions for plan", plan.id, ":", e);
+      }
+    }
+    
     return plan;
   }
 
@@ -318,8 +340,22 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updatePlan(id: number, planData: Partial<InsertPlan>): Promise<Plan> {
-    await db.update(plans).set(planData).where(eq(plans.id, id));
+    await db.update(plans).set({
+      ...planData,
+      updatedAt: new Date()
+    }).where(eq(plans.id, id));
+    
     const [plan] = await db.select().from(plans).where(eq(plans.id, id));
+    
+    // Ensure permissions is properly parsed if it's a string
+    if (plan && typeof plan.permissions === 'string') {
+      try {
+        plan.permissions = JSON.parse(plan.permissions);
+      } catch (e) {
+        console.error("Error parsing permissions:", e);
+      }
+    }
+    
     return plan;
   }
 
