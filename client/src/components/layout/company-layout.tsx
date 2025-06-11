@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { useCompanyAuth } from "@/hooks/useCompanyAuth";
 import { useGlobalTheme } from "@/hooks/use-global-theme";
+import { usePlan, type PlanPermissions } from "@/hooks/use-plan";
 
 interface CompanyLayoutProps {
   children: React.ReactNode;
@@ -32,82 +33,115 @@ const menuItems = [
     title: "Dashboard",
     href: "/company/dashboard",
     icon: Home,
+    permission: "dashboard" as keyof PlanPermissions,
   },
   {
     title: "Agendamentos",
     href: "/company/appointments",
     icon: Calendar,
+    permission: "appointments" as keyof PlanPermissions,
   },
   {
     title: "Serviços",
     href: "/company/services",
     icon: Briefcase,
+    permission: "services" as keyof PlanPermissions,
   },
   {
     title: "Profissionais",
     href: "/company/professionals",
     icon: Users,
+    permission: "professionals" as keyof PlanPermissions,
   },
   {
     title: "Clientes",
     href: "/company/clients",
     icon: Users,
+    permission: "clients" as keyof PlanPermissions,
   },
   {
     title: "Avaliações",
     href: "/company/reviews",
     icon: Star,
+    permission: "reviews" as keyof PlanPermissions,
   },
   {
     title: "Tarefas",
     href: "/company/tasks",
     icon: CheckSquare,
+    permission: "tasks" as keyof PlanPermissions,
   },
   {
     title: "Programa de pontos",
     href: "/company/points-program",
     icon: Gift,
+    permission: "pointsProgram" as keyof PlanPermissions,
   },
   {
     title: "Fidelidade",
     href: "/company/fidelidade",
     icon: Gift,
+    permission: "loyalty" as keyof PlanPermissions,
   },
   {
     title: "Estoque",
     href: "/company/estoque",
     icon: Package,
+    permission: "inventory" as keyof PlanPermissions,
   },
   {
     title: "Mensagens",
     href: "/company/messages",
     icon: MessageSquare,
+    permission: "messages" as keyof PlanPermissions,
   },
   {
     title: "Cupons",
     href: "/company/cupons",
     icon: Ticket,
+    permission: "coupons" as keyof PlanPermissions,
   },
   {
     title: "Financeiro",
     href: "/company/financial",
     icon: DollarSign,
+    permission: "financial" as keyof PlanPermissions,
   },
   {
     title: "Relatórios",
     href: "/company/relatorios",
     icon: BarChart3,
+    permission: "reports" as keyof PlanPermissions,
   },
   {
     title: "Configurações",
     href: "/company/settings",
     icon: Settings,
+    permission: "settings" as keyof PlanPermissions,
   },
 ];
 
 function SidebarContent() {
   const [location] = useLocation();
   const { company } = useCompanyAuth();
+  const { hasPermission, isLoading } = usePlan();
+
+  // Filter menu items based on plan permissions
+  const visibleMenuItems = menuItems.filter(item => hasPermission(item.permission));
+
+  if (isLoading) {
+    return (
+      <div className="flex h-full flex-col">
+        <div className="border-b p-6">
+          <h2 className="text-lg font-semibold">{company?.fantasyName || "Empresa"}</h2>
+          <p className="text-sm text-muted-foreground">Painel de Controle</p>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full flex-col">

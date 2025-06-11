@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 
-interface PlanPermissions {
+export interface PlanPermissions {
   dashboard: boolean;
   appointments: boolean;
   services: boolean;
