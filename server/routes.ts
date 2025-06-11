@@ -5941,5 +5941,33 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
     }
   });
 
+  // Company plan info endpoint
+  app.get('/api/company/plan-info', loadCompanyPlan, async (req: RequestWithPlan, res) => {
+    try {
+      const companyId = (req.session as any).companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      if (!req.companyPlan) {
+        return res.status(404).json({ message: "Plano não encontrado" });
+      }
+
+      // Return professional count along with plan info
+      const professionalCount = await storage.getProfessionalsCount(companyId);
+      
+      res.json({
+        plan: req.companyPlan,
+        usage: {
+          professionalsCount: professionalCount,
+          professionalsLimit: req.companyPlan.maxProfessionals
+        }
+      });
+    } catch (error) {
+      console.error("Error fetching company plan info:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
   return httpServer;
 }
