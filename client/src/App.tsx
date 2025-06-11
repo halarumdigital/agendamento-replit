@@ -133,11 +133,14 @@ function Router() {
           <CompanyReports />
         </CompanyLayout>
       </Route>
+      <Route path="/company/assinatura">
+        <CompanyLayout>
+          <Subscription />
+        </CompanyLayout>
+      </Route>
       
       {/* Public Routes (no authentication required) */}
       <Route path="/review/:token" component={PublicReview} />
-      <Route path="/assinatura" component={Subscription} />
-      <Route path="/subscription" component={Subscription} />
       
       {/* Admin Login Routes */}
       <Route path="/login" component={Login} />
