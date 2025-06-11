@@ -18,7 +18,8 @@ import {
   Package,
   Ticket,
   DollarSign,
-  BarChart3
+  BarChart3,
+  CreditCard
 } from "lucide-react";
 import { useCompanyAuth } from "@/hooks/useCompanyAuth";
 import { useGlobalTheme } from "@/hooks/use-global-theme";
@@ -120,6 +121,12 @@ const menuItems = [
     href: "/company/settings",
     icon: Settings,
     permission: "settings" as keyof PlanPermissions,
+  },
+  {
+    title: "Assinatura",
+    href: "/company/assinatura",
+    icon: CreditCard,
+    permission: "settings" as keyof PlanPermissions, // Same permission as settings
   },
 ];
 
