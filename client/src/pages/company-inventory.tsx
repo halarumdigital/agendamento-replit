@@ -16,10 +16,15 @@ import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { insertProductSchema, type Product } from "@shared/schema";
 
-const productFormSchema = insertProductSchema.extend({
+const productFormSchema = z.object({
+  name: z.string().min(1, "Nome do produto é obrigatório"),
+  description: z.string().optional(),
+  photo: z.string().optional(),
   purchasePrice: z.string().min(1, "Preço de compra é obrigatório"),
+  supplierName: z.string().optional(),
   stockQuantity: z.string().min(1, "Quantidade em estoque é obrigatória"),
   minStockLevel: z.string().optional(),
+  alertStock: z.boolean().optional(),
 });
 
 type ProductFormData = z.infer<typeof productFormSchema>;
@@ -155,6 +160,9 @@ export default function CompanyInventory() {
   });
 
   const handleSubmit = (data: ProductFormData) => {
+    console.log("Form data submitted:", data);
+    console.log("Form errors:", form.formState.errors);
+    
     if (editingProduct) {
       updateProductMutation.mutate({ id: editingProduct.id, data });
     } else {
@@ -372,6 +380,11 @@ export default function CompanyInventory() {
                   <Button
                     type="submit"
                     disabled={createProductMutation.isPending}
+                    onClick={() => {
+                      console.log("Button clicked");
+                      console.log("Form valid:", form.formState.isValid);
+                      console.log("Form errors:", form.formState.errors);
+                    }}
                   >
                     {createProductMutation.isPending ? "Salvando..." : "Salvar"}
                   </Button>
