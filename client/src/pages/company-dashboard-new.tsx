@@ -36,11 +36,11 @@ export default function CompanyDashboardNew() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      {/* Header com ícone laranja */}
+      {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-2">
           <div className="text-orange-500">
-            <Building2 className="w-8 h-8" />
+            <Building2 className="w-6 h-6" />
           </div>
           <h1 className="text-2xl font-semibold text-orange-600">DASHBOARD ATUALIZADO</h1>
           <div className="text-orange-500">
