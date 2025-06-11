@@ -322,7 +322,7 @@ export default function SettingsPage() {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <Tabs defaultValue="general" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="general" className="flex items-center gap-2">
                 <Settings className="w-4 h-4" />
                 Geral
@@ -338,6 +338,10 @@ export default function SettingsPage() {
               <TabsTrigger value="openai" className="flex items-center gap-2">
                 <Brain className="w-4 h-4" />
                 OpenAI
+              </TabsTrigger>
+              <TabsTrigger value="smtp" className="flex items-center gap-2">
+                <Globe className="w-4 h-4" />
+                SMTP
               </TabsTrigger>
             </TabsList>
 
@@ -807,6 +811,115 @@ export default function SettingsPage() {
                       <li>• <strong>Temperatura:</strong> Controla a criatividade (0 = determinístico, 2 = muito criativo)</li>
                       <li>• <strong>Tokens:</strong> Limite máximo de tokens por resposta</li>
                       <li>• <strong>Modelo:</strong> GPT-4o recomendado para melhor performance</li>
+                    </ul>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="smtp" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Globe className="w-5 h-5" />
+                    Configurações SMTP
+                  </CardTitle>
+                  <CardDescription>
+                    Configure o servidor de email para recuperação de senhas e notificações.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="smtpHost"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Servidor SMTP</FormLabel>
+                        <FormControl>
+                          <Input placeholder="smtp.gmail.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="smtpPort"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Porta SMTP</FormLabel>
+                        <FormControl>
+                          <Input placeholder="587" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="smtpUser"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Usuário SMTP</FormLabel>
+                        <FormControl>
+                          <Input placeholder="seu-email@gmail.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="smtpPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Senha SMTP</FormLabel>
+                        <FormControl>
+                          <Input type="password" placeholder="Senha ou App Password" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="smtpFromEmail"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email Remetente</FormLabel>
+                        <FormControl>
+                          <Input placeholder="noreply@empresa.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="smtpFromName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nome do Remetente</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Sistema de Gestão" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+                    <h4 className="font-medium text-blue-900 mb-2">Configuração SMTP:</h4>
+                    <ul className="text-sm text-blue-800 space-y-1">
+                      <li>• <strong>Gmail:</strong> smtp.gmail.com, porta 587, use App Password</li>
+                      <li>• <strong>Outlook:</strong> smtp-mail.outlook.com, porta 587</li>
+                      <li>• <strong>SendGrid:</strong> smtp.sendgrid.net, porta 587</li>
+                      <li>• <strong>Mailgun:</strong> smtp.mailgun.org, porta 587</li>
                     </ul>
                   </div>
                 </CardContent>

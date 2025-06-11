@@ -5,6 +5,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import { ensureConversationTables, storage } from "./storage";
 import { ensureReviewTables } from "./create-reviews-tables";
 import { startCampaignScheduler } from "./campaign-scheduler";
+import { ensureSmtpColumns } from "./ensure-smtp-columns";
 import { db } from "./db";
 import path from "path";
 
@@ -51,6 +52,9 @@ app.use((req, res, next) => {
   
   // Initialize review tables
   await ensureReviewTables();
+  
+  // Ensure SMTP columns exist
+  await ensureSmtpColumns();
   
   // Start campaign scheduler
   startCampaignScheduler();
