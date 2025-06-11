@@ -5387,6 +5387,9 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
       console.log('Transaction income result:', transactionIncome[0]);
       console.log('Current expenses result:', currentMonthExpenses[0]);
       console.log('Current month filter:', currentMonth);
+      console.log('Raw values before parsing:');
+      console.log('appointmentIncome[0]?.total:', appointmentIncome[0]?.total, 'type:', typeof appointmentIncome[0]?.total);
+      console.log('transactionIncome[0]?.total:', transactionIncome[0]?.total, 'type:', typeof transactionIncome[0]?.total);
       
       // Combinar receitas de agendamentos e transações manuais
       const appointmentIncomeValue = parseFloat(appointmentIncome[0]?.total || '0');
