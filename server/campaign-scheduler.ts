@@ -1,5 +1,5 @@
 import { storage } from "./storage";
-import { db } from "./db";
+import { db, pool } from "./db";
 import { sql } from "drizzle-orm";
 
 let schedulerInterval: NodeJS.Timeout | null = null;
@@ -38,12 +38,10 @@ async function processPendingCampaigns() {
   try {
     // Get all pending campaigns that should be sent now
     const now = new Date();
-    const campaigns = await db.execute(sql`
-      SELECT * FROM message_campaigns 
-      WHERE status = 'pending' 
-      AND scheduled_date <= ${now}
-      ORDER BY scheduled_date ASC
-    `);
+    const [campaigns] = await pool.execute(
+      'SELECT * FROM message_campaigns WHERE status = ? AND scheduled_date <= ? ORDER BY scheduled_date ASC',
+      ['pending', now]
+    );
 
     if (!Array.isArray(campaigns) || campaigns.length === 0) {
       return;
@@ -51,18 +49,32 @@ async function processPendingCampaigns() {
 
     console.log(`📋 Found ${campaigns.length} campaigns ready to send`);
 
-    for (const campaign of campaigns) {
+    for (const campaign of campaigns as any[]) {
       try {
+        // Log campaign data for debugging
+        console.log(`🔍 Campaign data:`, {
+          id: campaign.id,
+          name: campaign.name,
+          company_id: campaign.company_id,
+          target_type: campaign.target_type
+        });
+        
+        if (!campaign.id || !campaign.company_id) {
+          console.error(`❌ Invalid campaign data:`, campaign);
+          continue;
+        }
+        
         await processCampaign(campaign);
       } catch (error) {
         console.error(`Error processing campaign ${campaign.id}:`, error);
         
         // Mark campaign as failed
-        await db.execute(sql`
-          UPDATE message_campaigns 
-          SET status = 'failed' 
-          WHERE id = ${campaign.id}
-        `);
+        if (campaign.id) {
+          await pool.execute(
+            'UPDATE message_campaigns SET status = ? WHERE id = ?',
+            ['failed', campaign.id]
+          );
+        }
       }
     }
   } catch (error) {
@@ -74,36 +86,32 @@ async function processCampaign(campaign: any) {
   console.log(`📤 Processing campaign: ${campaign.name} (ID: ${campaign.id})`);
 
   // Mark campaign as sending
-  await db.execute(sql`
-    UPDATE message_campaigns 
-    SET status = 'sending' 
-    WHERE id = ${campaign.id}
-  `);
+  await pool.execute(
+    'UPDATE message_campaigns SET status = ? WHERE id = ?',
+    ['sending', campaign.id]
+  );
 
-  let clients = [];
+  let clients: any[] = [];
   let totalTargets = 0;
   let sentCount = 0;
 
   try {
     // Get target clients
     if (campaign.target_type === 'all') {
-      const result = await db.execute(sql`
-        SELECT * FROM clients 
-        WHERE company_id = ${campaign.company_id} 
-        AND phone IS NOT NULL AND phone != ''
-      `);
-      clients = Array.isArray(result) ? result : [result].filter(Boolean);
+      const [clientResults] = await pool.execute(
+        'SELECT * FROM clients WHERE company_id = ? AND phone IS NOT NULL AND phone != ""',
+        [campaign.company_id]
+      );
+      clients = Array.isArray(clientResults) ? clientResults : [];
     } else if (campaign.target_type === 'specific' && campaign.selected_clients) {
       const selectedIds = JSON.parse(campaign.selected_clients);
       if (selectedIds && selectedIds.length > 0) {
         const placeholders = selectedIds.map(() => '?').join(',');
-        const result = await db.execute(sql`
-          SELECT * FROM clients 
-          WHERE company_id = ${campaign.company_id} 
-          AND id IN (${selectedIds.join(',')})
-          AND phone IS NOT NULL AND phone != ''
-        `);
-        clients = Array.isArray(result) ? result : [result].filter(Boolean);
+        const [clientResults] = await pool.execute(
+          `SELECT * FROM clients WHERE company_id = ? AND id IN (${placeholders}) AND phone IS NOT NULL AND phone != ""`,
+          [campaign.company_id, ...selectedIds]
+        );
+        clients = Array.isArray(clientResults) ? clientResults : [];
       }
     }
 
@@ -111,34 +119,30 @@ async function processCampaign(campaign: any) {
 
     if (totalTargets === 0) {
       console.log(`⚠️ No valid clients found for campaign ${campaign.id}`);
-      await db.execute(sql`
-        UPDATE message_campaigns 
-        SET status = 'completed', total_targets = 0, sent_count = 0
-        WHERE id = ${campaign.id}
-      `);
+      await pool.execute(
+        'UPDATE message_campaigns SET status = ?, total_targets = ?, sent_count = ? WHERE id = ?',
+        ['completed', 0, 0, campaign.id]
+      );
       return;
     }
 
     console.log(`📱 Sending to ${totalTargets} clients for campaign: ${campaign.name}`);
 
     // Get WhatsApp instance for the company
-    const whatsappInstances = await db.execute(sql`
-      SELECT * FROM whatsapp_instances 
-      WHERE company_id = ${campaign.company_id} 
-      AND status = 'connected'
-      ORDER BY id ASC 
-      LIMIT 1
-    `);
+    const [instanceResults] = await pool.execute(
+      'SELECT * FROM whatsapp_instances WHERE company_id = ? AND status = ? ORDER BY id ASC LIMIT 1',
+      [campaign.company_id, 'connected']
+    );
 
-    const whatsappInstance = Array.isArray(whatsappInstances) ? whatsappInstances[0] : whatsappInstances;
+    const whatsappInstances = Array.isArray(instanceResults) ? instanceResults : [];
+    const whatsappInstance = whatsappInstances[0];
 
     if (!whatsappInstance) {
       console.error(`❌ No connected WhatsApp instance found for company ${campaign.company_id}`);
-      await db.execute(sql`
-        UPDATE message_campaigns 
-        SET status = 'failed' 
-        WHERE id = ${campaign.id}
-      `);
+      await pool.execute(
+        'UPDATE message_campaigns SET status = ? WHERE id = ?',
+        ['failed', campaign.id]
+      );
       return;
     }
 
@@ -146,11 +150,10 @@ async function processCampaign(campaign: any) {
     const settings = await storage.getGlobalSettings();
     if (!settings?.evolutionApiUrl || !settings?.evolutionApiGlobalKey) {
       console.error("❌ Evolution API not configured");
-      await db.execute(sql`
-        UPDATE message_campaigns 
-        SET status = 'failed' 
-        WHERE id = ${campaign.id}
-      `);
+      await pool.execute(
+        'UPDATE message_campaigns SET status = ? WHERE id = ?',
+        ['failed', campaign.id]
+      );
       return;
     }
 
@@ -194,13 +197,10 @@ async function processCampaign(campaign: any) {
 
     // Update campaign status
     const finalStatus = sentCount > 0 ? 'completed' : 'failed';
-    await db.execute(sql`
-      UPDATE message_campaigns 
-      SET status = ${finalStatus}, 
-          total_targets = ${totalTargets}, 
-          sent_count = ${sentCount}
-      WHERE id = ${campaign.id}
-    `);
+    await pool.execute(
+      'UPDATE message_campaigns SET status = ?, total_targets = ?, sent_count = ? WHERE id = ?',
+      [finalStatus, totalTargets, sentCount, campaign.id]
+    );
 
     console.log(`✅ Campaign ${campaign.name} completed: ${sentCount}/${totalTargets} messages sent`);
 
@@ -208,12 +208,9 @@ async function processCampaign(campaign: any) {
     console.error(`❌ Error processing campaign ${campaign.id}:`, error);
     
     // Update with partial results if any messages were sent
-    await db.execute(sql`
-      UPDATE message_campaigns 
-      SET status = 'failed', 
-          total_targets = ${totalTargets}, 
-          sent_count = ${sentCount}
-      WHERE id = ${campaign.id}
-    `);
+    await pool.execute(
+      'UPDATE message_campaigns SET status = ?, total_targets = ?, sent_count = ? WHERE id = ?',
+      ['failed', totalTargets, sentCount, campaign.id]
+    );
   }
 }
