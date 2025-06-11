@@ -2252,6 +2252,60 @@ export const storage = new DatabaseStorage();
   }
 })();
 
+// Ensure permissions column exists in plans table
+(async () => {
+  try {
+    await db.execute(sql`
+      ALTER TABLE plans 
+      ADD COLUMN IF NOT EXISTS permissions JSON DEFAULT (JSON_OBJECT(
+        'dashboard', true,
+        'appointments', true,
+        'services', true,
+        'professionals', true,
+        'clients', true,
+        'reviews', false,
+        'tasks', false,
+        'pointsProgram', false,
+        'loyalty', false,
+        'inventory', false,
+        'messages', false,
+        'coupons', false,
+        'financial', false,
+        'reports', false,
+        'settings', true
+      ))
+    `);
+    
+    // Update existing plans with default permissions if they don't have any
+    await db.execute(sql`
+      UPDATE plans SET permissions = JSON_OBJECT(
+        'dashboard', true,
+        'appointments', true,
+        'services', true,
+        'professionals', true,
+        'clients', true,
+        'reviews', false,
+        'tasks', false,
+        'pointsProgram', false,
+        'loyalty', false,
+        'inventory', false,
+        'messages', false,
+        'coupons', false,
+        'financial', false,
+        'reports', false,
+        'settings', true
+      ) WHERE permissions IS NULL
+    `);
+    
+    console.log("✅ Permissions column ensured in plans");
+  } catch (error: any) {
+    // Column might already exist, which is fine
+    if (!error.message?.includes('Duplicate column name')) {
+      console.error("❌ Error adding permissions column:", error);
+    }
+  }
+})();
+
 // Initialize financial tables on startup
 (async () => {
   try {
