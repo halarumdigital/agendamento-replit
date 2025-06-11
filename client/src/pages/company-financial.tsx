@@ -122,6 +122,9 @@ export default function CompanyFinancial() {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [editingPayment, setEditingPayment] = useState<PaymentMethod | null>(null);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [dashboardDateFilter, setDashboardDateFilter] = useState(
+    new Date().toISOString().slice(0, 7) // formato YYYY-MM para o mês atual
+  );
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -152,7 +155,14 @@ export default function CompanyFinancial() {
     expenseGrowth: number;
     totalTransactions: number;
   }>({
-    queryKey: ["/api/company/financial/dashboard"],
+    queryKey: ["/api/company/financial/dashboard", dashboardDateFilter],
+    queryFn: async () => {
+      const response = await fetch(`/api/company/financial/dashboard?month=${dashboardDateFilter}`, {
+        credentials: 'include'
+      });
+      if (!response.ok) throw new Error('Failed to fetch dashboard data');
+      return response.json();
+    },
   });
 
   // Forms
@@ -455,6 +465,30 @@ export default function CompanyFinancial() {
 
         {/* Dashboard Tab */}
         <TabsContent value="dashboard" className="space-y-6">
+          {/* Filtro de Data */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg font-semibold">Filtros</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <Label htmlFor="date-filter">Mês:</Label>
+                </div>
+                <Input
+                  id="date-filter"
+                  type="month"
+                  value={dashboardDateFilter}
+                  onChange={(e) => setDashboardDateFilter(e.target.value)}
+                  className="w-48"
+                />
+              </div>
+            </CardContent>
+          </Card>
+
           {isLoadingDashboard ? (
             <div className="text-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>

@@ -5318,8 +5318,9 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
       const companyId = req.session.companyId!;
       
       // Get current month's income and expenses
-      const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
-      const previousMonth = new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().slice(0, 7);
+      const filterMonth = req.query.month as string || new Date().toISOString().slice(0, 7); // YYYY-MM format
+      const currentMonth = filterMonth;
+      const previousMonth = new Date(new Date(`${filterMonth}-01`).setMonth(new Date(`${filterMonth}-01`).getMonth() - 1)).toISOString().slice(0, 7);
 
       // Receitas: Serviços concluídos + transações de receita no mês atual
       const appointmentIncome = await db.execute(sql`
