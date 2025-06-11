@@ -1,21 +1,21 @@
-import { db } from "./db";
+import { pool } from "./db";
 
 export async function ensureAddressColumns() {
   try {
     console.log('✅ Checking address columns in companies table...');
     
     // Check if columns exist
-    const [columns] = await db.raw(`
+    const [columns] = await pool.execute(`
       SELECT COLUMN_NAME 
       FROM INFORMATION_SCHEMA.COLUMNS 
       WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'companies' 
       AND COLUMN_NAME IN ('phone', 'zip_code', 'number', 'neighborhood', 'city', 'state')
     `, [process.env.PGDATABASE]);
 
-    if (columns.length === 0) {
+    if ((columns as any[]).length === 0) {
       console.log('Adding address columns to companies table...');
       
-      await db.raw(`
+      await pool.execute(`
         ALTER TABLE companies 
         ADD COLUMN phone VARCHAR(20) NULL,
         ADD COLUMN zip_code VARCHAR(10) NULL,

@@ -5956,5 +5956,66 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
     }
   });
 
+  // Public registration endpoint
+  app.post('/api/public/register', async (req, res) => {
+    try {
+      const registerSchema = z.object({
+        fantasyName: z.string().min(2),
+        document: z.string().min(11),
+        email: z.string().email(),
+        password: z.string().min(6),
+        address: z.string().min(5),
+        phone: z.string().optional(),
+        zipCode: z.string().optional(),
+        number: z.string().optional(),
+        neighborhood: z.string().optional(),
+        city: z.string().optional(),
+        state: z.string().optional(),
+      });
+
+      const validatedData = registerSchema.parse(req.body);
+
+      // Check if email already exists
+      const existingCompany = await storage.getCompanyByEmail(validatedData.email);
+      if (existingCompany) {
+        return res.status(400).json({ message: "E-mail já cadastrado" });
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(validatedData.password, 10);
+
+      // Create company data
+      const companyData = {
+        fantasyName: validatedData.fantasyName,
+        document: validatedData.document,
+        email: validatedData.email,
+        password: hashedPassword,
+        address: validatedData.address,
+        phone: validatedData.phone || null,
+        zipCode: validatedData.zipCode || null,
+        number: validatedData.number || null,
+        neighborhood: validatedData.neighborhood || null,
+        city: validatedData.city || null,
+        state: validatedData.state || null,
+        planId: 1, // Default to basic plan
+        isActive: true,
+        createdAt: new Date(),
+      };
+
+      const company = await storage.createCompany(companyData);
+      
+      res.status(201).json({ 
+        message: "Empresa cadastrada com sucesso",
+        companyId: company.id 
+      });
+    } catch (error: any) {
+      console.error("Error in public registration:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: "Dados inválidos" });
+      }
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
   return httpServer;
 }

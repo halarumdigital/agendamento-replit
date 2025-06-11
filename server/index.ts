@@ -65,6 +65,9 @@ app.use((req, res, next) => {
   // Ensure custom HTML column exists
   await ensureCustomHtmlColumn();
   
+  // Ensure address columns exist
+  await ensureAddressColumns();
+  
   // Start campaign scheduler
   startCampaignScheduler();
   

@@ -34,6 +34,7 @@ import SettingsPage from "@/pages/settings";
 import Status from "@/pages/status";
 import PublicReview from "@/pages/public-review";
 import ResetPassword from "@/pages/reset-password";
+import Register from "@/pages/register";
 import Subscription from "@/pages/subscription";
 import NotFound from "@/pages/not-found";
 
@@ -48,6 +49,7 @@ function Router() {
       <Route path="/company/login" component={CompanyLogin} />
       <Route path="/company/auth/login" component={CompanyLogin} />
       <Route path="/reset-password" component={ResetPassword} />
+      <Route path="/cadastro" component={Register} />
       <Route path="/dashboard">
         <CompanyLayout>
           <CompanyDashboard />
