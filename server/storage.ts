@@ -882,6 +882,47 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async getDetailedAppointmentsForReports(companyId: number): Promise<any[]> {
+    try {
+      console.log('📊 Getting detailed appointments for reports, company:', companyId);
+      
+      const results = await db.execute(`
+        SELECT 
+          a.id,
+          a.client_name as clientName,
+          a.client_phone as clientPhone,
+          a.client_email as clientEmail,
+          a.appointment_date as date,
+          a.appointment_time as time,
+          a.status,
+          a.total_price as price,
+          a.notes,
+          a.created_at as createdAt,
+          s.name as serviceName,
+          s.price as servicePrice,
+          p.name as professionalName
+        FROM appointments a
+        LEFT JOIN services s ON a.service_id = s.id
+        LEFT JOIN professionals p ON a.professional_id = p.id
+        WHERE a.company_id = ${companyId}
+        ORDER BY a.appointment_date DESC, a.appointment_time DESC
+      `);
+      
+      // Convert price to number and format data
+      const formattedResults = (results as any[]).map(appointment => ({
+        ...appointment,
+        price: parseFloat(appointment.price) || 0,
+        date: appointment.date instanceof Date ? appointment.date.toISOString().split('T')[0] : appointment.date
+      }));
+      
+      console.log(`📊 Found ${formattedResults.length} detailed appointments for reports`);
+      return formattedResults;
+    } catch (error: any) {
+      console.error("Error getting detailed appointments for reports:", error);
+      return [];
+    }
+  }
+
   async getAppointment(id: number): Promise<Appointment | undefined> {
     try {
       const [appointment] = await db.select().from(appointments)

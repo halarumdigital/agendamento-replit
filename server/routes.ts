@@ -1405,7 +1405,44 @@ INSTRUÇÕES OBRIGATÓRIAS:
     }
   });
 
-  // Get single appointment by ID
+  // Get detailed appointments for reports (must be before :id route)
+  app.get('/api/company/appointments/detailed', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const appointments = await storage.getDetailedAppointmentsForReports(companyId);
+      res.json(appointments);
+    } catch (error) {
+      console.error("Error fetching detailed appointments:", error);
+      res.status(500).json({ message: "Erro ao buscar agendamentos detalhados" });
+    }
+  });
+
+  // Get appointments by client
+  app.get('/api/company/appointments/client/:clientId', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const clientId = parseInt(req.params.clientId);
+      if (isNaN(clientId)) {
+        return res.status(400).json({ message: "ID do cliente inválido" });
+      }
+
+      const appointments = await storage.getAppointmentsByClient(clientId, companyId);
+      res.json(appointments);
+    } catch (error) {
+      console.error("Error fetching client appointments:", error);
+      res.status(500).json({ message: "Erro ao buscar histórico do cliente" });
+    }
+  });
+
+  // Get single appointment by ID (must be after specific routes)
   app.get('/api/company/appointments/:id', async (req: any, res) => {
     try {
       const companyId = req.session.companyId;
@@ -1440,27 +1477,6 @@ INSTRUÇÕES OBRIGATÓRIAS:
     } catch (error) {
       console.error("Error fixing appointment date:", error);
       res.status(500).json({ message: "Erro ao corrigir data" });
-    }
-  });
-
-  // Get appointments by client
-  app.get('/api/company/appointments/client/:clientId', async (req: any, res) => {
-    try {
-      const companyId = req.session.companyId;
-      if (!companyId) {
-        return res.status(401).json({ message: "Não autenticado" });
-      }
-
-      const clientId = parseInt(req.params.clientId);
-      if (isNaN(clientId)) {
-        return res.status(400).json({ message: "ID do cliente inválido" });
-      }
-
-      const appointments = await storage.getAppointmentsByClient(clientId, companyId);
-      res.json(appointments);
-    } catch (error) {
-      console.error("Error fetching client appointments:", error);
-      res.status(500).json({ message: "Erro ao buscar histórico do cliente" });
     }
   });
 
