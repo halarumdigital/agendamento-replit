@@ -4719,10 +4719,8 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
         return res.status(400).json({ message: "Campos obrigatórios: name, message, scheduledDate, targetType" });
       }
 
-      // Parse the date correctly for GMT-3 (Brasília timezone)
+      // Parse the date as received from frontend (already in local timezone)
       const scheduledDate = new Date(req.body.scheduledDate);
-      // Adjust for GMT-3 timezone
-      scheduledDate.setHours(scheduledDate.getHours() + 3);
       
       const campaignData = {
         name: req.body.name,
