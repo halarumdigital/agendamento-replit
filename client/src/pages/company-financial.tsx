@@ -492,14 +492,14 @@ export default function CompanyFinancial() {
             <>
               {/* Resumo Financeiro */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="bg-white rounded-lg shadow-sm p-5 border border-gray-100">
+                <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
                   <div className="flex justify-between items-start mb-4">
                     <div>
                       <p className="text-sm font-medium text-gray-500">Receitas do Mês</p>
-                      <h3 className="text-2xl font-bold text-gray-800">{formatCurrency(safeData.monthlyIncome)}</h3>
+                      <h3 className="text-2xl font-bold text-gray-800 mt-1">{formatCurrency(safeData.monthlyIncome)}</h3>
                     </div>
-                    <div className="w-10 h-10 flex items-center justify-center rounded-full bg-green-100 text-green-600">
-                      <TrendingUp className="w-5 h-5" />
+                    <div className="w-12 h-12 flex items-center justify-center rounded-full bg-green-100 text-green-600">
+                      <TrendingUp className="w-6 h-6" />
                     </div>
                   </div>
                   <div className="flex items-center">
@@ -511,14 +511,14 @@ export default function CompanyFinancial() {
                   </div>
                 </div>
 
-                <div className="bg-white rounded-lg shadow-sm p-5 border border-gray-100">
+                <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
                   <div className="flex justify-between items-start mb-4">
                     <div>
                       <p className="text-sm font-medium text-gray-500">Despesas do Mês</p>
-                      <h3 className="text-2xl font-bold text-gray-800">{formatCurrency(safeData.monthlyExpenses)}</h3>
+                      <h3 className="text-2xl font-bold text-gray-800 mt-1">{formatCurrency(safeData.monthlyExpenses)}</h3>
                     </div>
-                    <div className="w-10 h-10 flex items-center justify-center rounded-full bg-red-100 text-red-600">
-                      <TrendingDown className="w-5 h-5" />
+                    <div className="w-12 h-12 flex items-center justify-center rounded-full bg-red-100 text-red-600">
+                      <TrendingDown className="w-6 h-6" />
                     </div>
                   </div>
                   <div className="flex items-center">
@@ -530,14 +530,14 @@ export default function CompanyFinancial() {
                   </div>
                 </div>
 
-                <div className="bg-white rounded-lg shadow-sm p-5 border border-gray-100">
+                <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
                   <div className="flex justify-between items-start mb-4">
                     <div>
                       <p className="text-sm font-medium text-gray-500">Lucro Líquido</p>
-                      <h3 className="text-2xl font-bold text-gray-800">{formatCurrency(safeData.monthlyIncome - safeData.monthlyExpenses)}</h3>
+                      <h3 className="text-2xl font-bold text-gray-800 mt-1">{formatCurrency(safeData.monthlyIncome - safeData.monthlyExpenses)}</h3>
                     </div>
-                    <div className="w-10 h-10 flex items-center justify-center rounded-full bg-blue-100 text-blue-600">
-                      <DollarSign className="w-5 h-5" />
+                    <div className="w-12 h-12 flex items-center justify-center rounded-full bg-blue-100 text-blue-600">
+                      <DollarSign className="w-6 h-6" />
                     </div>
                   </div>
                   <div className="flex items-center">
@@ -549,14 +549,14 @@ export default function CompanyFinancial() {
                   </div>
                 </div>
 
-                <div className="bg-white rounded-lg shadow-sm p-5 border border-gray-100">
+                <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
                   <div className="flex justify-between items-start mb-4">
                     <div>
                       <p className="text-sm font-medium text-gray-500">Transações</p>
-                      <h3 className="text-2xl font-bold text-gray-800">{safeData.totalTransactions}</h3>
+                      <h3 className="text-2xl font-bold text-gray-800 mt-1">{safeData.totalTransactions}</h3>
                     </div>
-                    <div className="w-10 h-10 flex items-center justify-center rounded-full bg-purple-100 text-purple-600">
-                      <Receipt className="w-5 h-5" />
+                    <div className="w-12 h-12 flex items-center justify-center rounded-full bg-purple-100 text-purple-600">
+                      <Receipt className="w-6 h-6" />
                     </div>
                   </div>
                   <div className="flex items-center">
