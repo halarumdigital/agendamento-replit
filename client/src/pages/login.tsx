@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useGlobalTheme } from "@/hooks/use-global-theme";
-import { Settings, Lock } from "lucide-react";
+import { Lock } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 interface LoginFormData {
@@ -20,6 +21,12 @@ export default function Login() {
   
   // Aplica tema global dinamicamente
   useGlobalTheme();
+
+  // Busca configurações globais para obter a logo
+  const { data: settings } = useQuery({
+    queryKey: ["/api/settings"],
+    retry: false,
+  });
 
   const form = useForm<LoginFormData>({
     defaultValues: {
@@ -54,19 +61,17 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-slate-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 bg-blue-600 rounded-xl flex items-center justify-center">
-              <Settings className="w-8 h-8 text-white" />
+        {settings?.logoUrl && (
+          <div className="text-center mb-8">
+            <div className="flex justify-center mb-4">
+              <img 
+                src={settings.logoUrl} 
+                alt="Logo" 
+                className="w-24 h-24 object-contain rounded-lg"
+              />
             </div>
           </div>
-          <h1 className="text-2xl font-bold text-slate-900">
-            Sistema Administrativo
-          </h1>
-          <p className="text-slate-600 mt-2">
-            Acesso restrito para administradores
-          </p>
-        </div>
+        )}
 
         <Card>
           <CardHeader>
