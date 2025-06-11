@@ -4715,6 +4715,7 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
       const campaignData = {
         ...req.body,
         companyId,
+        scheduledDate: new Date(req.body.scheduledDate),
       };
 
       const campaign = await storage.createMessageCampaign(campaignData);

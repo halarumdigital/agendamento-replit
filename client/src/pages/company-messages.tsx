@@ -116,13 +116,7 @@ export default function CompanyMessages() {
         ...data,
         selectedClients: data.targetType === "specific" ? selectedClients : null,
       };
-      return apiRequest("/api/company/campaigns", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+      return apiRequest("/api/company/campaigns", "POST", payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/company/campaigns"] });
@@ -146,9 +140,7 @@ export default function CompanyMessages() {
   // Mutation para deletar campanha
   const deleteCampaignMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest(`/api/company/campaigns/${id}`, {
-        method: "DELETE",
-      });
+      return apiRequest(`/api/company/campaigns/${id}`, "DELETE");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/company/campaigns"] });
