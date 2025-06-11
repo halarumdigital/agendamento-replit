@@ -30,6 +30,12 @@ export default function CompanyDashboardNew() {
     enabled: !!company
   });
 
+  // Buscar tarefas para lembretes
+  const { data: tasks = [] } = useQuery({
+    queryKey: ['/api/company/tasks'],
+    enabled: !!company
+  });
+
   // Calcular faturamento do dia dos agendamentos concluídos
   const calculateDailyRevenue = () => {
     if (!Array.isArray(appointments) || !Array.isArray(services)) {
@@ -303,6 +309,65 @@ export default function CompanyDashboardNew() {
   };
 
   const monthlyBirthdays = getMonthlyBirthdays();
+
+  // Calcular lembretes de tarefas
+  const getTaskReminders = () => {
+    if (!Array.isArray(tasks)) {
+      return [];
+    }
+
+    const today = new Date();
+    const todayTime = today.getTime();
+    const threeDaysFromNow = new Date(today.getTime() + (3 * 24 * 60 * 60 * 1000));
+
+    return tasks.filter((task: any) => {
+      // Só incluir tarefas ativas e não concluídas
+      if (!task.active || task.completed) return false;
+      
+      if (!task.dueDate) return false;
+      
+      try {
+        const dueDate = new Date(task.dueDate);
+        if (isNaN(dueDate.getTime())) return false;
+        
+        // Incluir tarefas vencidas ou que vencem nos próximos 3 dias
+        return dueDate.getTime() <= threeDaysFromNow.getTime();
+      } catch {
+        return false;
+      }
+    }).map((task: any) => {
+      const dueDate = new Date(task.dueDate);
+      const isOverdue = dueDate.getTime() < todayTime;
+      const daysUntilDue = Math.ceil((dueDate.getTime() - todayTime) / (24 * 60 * 60 * 1000));
+      
+      let dueDateText;
+      if (isOverdue) {
+        const daysOverdue = Math.abs(daysUntilDue);
+        dueDateText = daysOverdue === 1 ? 'Venceu ontem' : `Venceu há ${daysOverdue} dias`;
+      } else if (daysUntilDue === 0) {
+        dueDateText = 'Vence hoje';
+      } else if (daysUntilDue === 1) {
+        dueDateText = 'Vence amanhã';
+      } else {
+        dueDateText = `Vence em ${daysUntilDue} dias`;
+      }
+
+      return {
+        id: task.id,
+        name: task.name,
+        description: task.description,
+        dueDate: dueDateText,
+        isOverdue: isOverdue,
+        urgency: isOverdue ? 'overdue' : (daysUntilDue <= 1 ? 'urgent' : 'upcoming')
+      };
+    }).sort((a: any, b: any) => {
+      // Ordenar por urgência: vencidas primeiro, depois urgentes, depois próximas
+      const urgencyOrder = { overdue: 0, urgent: 1, upcoming: 2 };
+      return urgencyOrder[a.urgency] - urgencyOrder[b.urgency];
+    });
+  };
+
+  const taskReminders = getTaskReminders();
 
   if (isLoading) {
     return (
@@ -652,24 +717,34 @@ export default function CompanyDashboardNew() {
           <div>
             <h4 className="text-sm font-medium text-gray-600 mb-3">Lembretes</h4>
             <div className="space-y-3">
-              <div className="flex items-center p-3 bg-yellow-50 rounded border border-yellow-100">
-                <div className="w-8 h-8 flex items-center justify-center rounded-full bg-yellow-100 text-yellow-600 mr-3">
-                  🔧
+              {taskReminders.length > 0 ? (
+                taskReminders.map((reminder: any) => {
+                  const bgColor = reminder.urgency === 'overdue' ? 'bg-red-50 border-red-100' : 
+                                 reminder.urgency === 'urgent' ? 'bg-yellow-50 border-yellow-100' : 
+                                 'bg-blue-50 border-blue-100';
+                  const iconBg = reminder.urgency === 'overdue' ? 'bg-red-100 text-red-600' : 
+                                reminder.urgency === 'urgent' ? 'bg-yellow-100 text-yellow-600' : 
+                                'bg-blue-100 text-blue-600';
+                  const icon = reminder.urgency === 'overdue' ? '⚠️' : 
+                              reminder.urgency === 'urgent' ? '🔥' : '📋';
+
+                  return (
+                    <div key={reminder.id} className={`flex items-center p-3 rounded border ${bgColor}`}>
+                      <div className={`w-8 h-8 flex items-center justify-center rounded-full mr-3 ${iconBg}`}>
+                        {icon}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-800">{reminder.name}</p>
+                        <p className="text-xs text-gray-500">{reminder.dueDate}</p>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="p-3 bg-gray-50 rounded border border-gray-100 text-center">
+                  <p className="text-sm text-gray-600">Nenhuma tarefa pendente</p>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-800">Manutenção de Equipamentos</p>
-                  <p className="text-xs text-gray-500">Agendado para 10/06</p>
-                </div>
-              </div>
-              <div className="flex items-center p-3 bg-green-50 rounded border border-green-100">
-                <div className="w-8 h-8 flex items-center justify-center rounded-full bg-green-100 text-green-600 mr-3">
-                  💰
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-800">Pagamento de Fornecedor</p>
-                  <p className="text-xs text-gray-500">Vence em 15/06</p>
-                </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
