@@ -70,12 +70,24 @@ export default function CompanyLoyalty() {
         description: "Campanha de fidelidade criada com sucesso!",
       });
     },
-    onError: () => {
-      toast({
-        title: "Erro",
-        description: "Erro ao criar campanha de fidelidade.",
-        variant: "destructive",
-      });
+    onError: (error: any) => {
+      if (error.message.includes("401")) {
+        toast({
+          title: "Sessão Expirada",
+          description: "Faça login novamente para continuar.",
+          variant: "destructive",
+        });
+        // Redirecionar para login após alguns segundos
+        setTimeout(() => {
+          window.location.href = "/company/login";
+        }, 2000);
+      } else {
+        toast({
+          title: "Erro",
+          description: "Erro ao criar campanha de fidelidade.",
+          variant: "destructive",
+        });
+      }
     },
   });
 
