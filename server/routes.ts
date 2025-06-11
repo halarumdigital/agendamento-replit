@@ -5381,6 +5381,13 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
         AND DATE_FORMAT(date, '%Y-%m') = ${currentMonth}
       `);
 
+      // Debug - log dos valores retornados pelas consultas
+      console.log('🔍 Debug dashboard queries:');
+      console.log('Appointment income result:', appointmentIncome[0]);
+      console.log('Transaction income result:', transactionIncome[0]);
+      console.log('Current expenses result:', currentMonthExpenses[0]);
+      console.log('Current month filter:', currentMonth);
+      
       // Combinar receitas de agendamentos e transações manuais
       const appointmentIncomeValue = parseFloat(appointmentIncome[0]?.total || 0);
       const transactionIncomeValue = parseFloat(transactionIncome[0]?.total || 0);
@@ -5394,6 +5401,10 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
       const prevIncome = prevAppointmentIncomeValue + prevTransactionIncomeValue;
       
       const prevExpenses = parseFloat(previousMonthExpenses[0]?.total || 0);
+      
+      console.log('💰 Calculated values:');
+      console.log('Monthly income:', monthlyIncome, '(appointments:', appointmentIncomeValue, '+ transactions:', transactionIncomeValue, ')');
+      console.log('Monthly expenses:', monthlyExpenses);
 
       // Calculate growth percentages
       const incomeGrowth = prevIncome > 0 ? ((monthlyIncome - prevIncome) / prevIncome * 100).toFixed(1) : "0";
