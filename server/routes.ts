@@ -855,17 +855,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/auth/company-login', async (req: any, res) => {
     try {
       const { email, password } = req.body;
+      console.log('Company login attempt:', { email, password: '***' });
       
       if (!email || !password) {
         return res.status(400).json({ message: "Email e senha são obrigatórios" });
       }
 
       const company = await storage.getCompanyByEmail(email);
+      console.log('Company found:', company ? 'Yes' : 'No');
       if (!company) {
         return res.status(401).json({ message: "Credenciais inválidas" });
       }
 
+      console.log('Comparing passwords...');
       const isValidPassword = await bcrypt.compare(password, company.password);
+      console.log('Password valid:', isValidPassword);
       if (!isValidPassword) {
         return res.status(401).json({ message: "Credenciais inválidas" });
       }
