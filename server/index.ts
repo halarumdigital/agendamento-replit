@@ -7,6 +7,7 @@ import { ensureReviewTables } from "./create-reviews-tables";
 import { startCampaignScheduler } from "./campaign-scheduler";
 import { ensureSmtpColumns } from "./ensure-smtp-columns";
 import { ensureResetColumns } from "./ensure-reset-columns";
+import { ensureCustomHtmlColumn } from "./ensure-custom-html-column";
 import { db } from "./db";
 import path from "path";
 
@@ -59,6 +60,9 @@ app.use((req, res, next) => {
   
   // Ensure reset token columns exist
   await ensureResetColumns();
+  
+  // Ensure custom HTML column exists
+  await ensureCustomHtmlColumn();
   
   // Start campaign scheduler
   startCampaignScheduler();

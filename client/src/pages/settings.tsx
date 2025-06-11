@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -213,6 +214,7 @@ export default function SettingsPage() {
       smtpFromEmail: "",
       smtpFromName: "",
       smtpSecure: "tls",
+      customHtml: "",
     },
     values: settings ? {
       systemName: settings.systemName,
@@ -235,6 +237,7 @@ export default function SettingsPage() {
       smtpFromEmail: (settings as any).smtpFromEmail || "",
       smtpFromName: (settings as any).smtpFromName || "",
       smtpSecure: (settings as any).smtpSecure || "tls",
+      customHtml: (settings as any).customHtml || "",
     } : undefined,
   });
 
