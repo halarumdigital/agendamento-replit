@@ -237,16 +237,17 @@ export default function CompanyLoyalty() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Programa de Fidelidade</h1>
-          <p className="text-muted-foreground">
-            Crie campanhas de fidelidade para recompensar seus clientes mais fiéis
-          </p>
-        </div>
-        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+    <div className="container mx-auto px-4 py-8">
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Programa de Fidelidade</h1>
+            <p className="text-muted-foreground">
+              Crie campanhas de fidelidade para recompensar seus clientes mais fiéis
+            </p>
+          </div>
+          <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
           <DialogTrigger asChild>
             <Button onClick={() => {
               setEditingCampaign(null);
@@ -552,6 +553,7 @@ export default function CompanyLoyalty() {
           )}
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }
