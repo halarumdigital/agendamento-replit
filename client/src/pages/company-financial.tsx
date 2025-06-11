@@ -180,10 +180,7 @@ export default function CompanyFinancial() {
   // Mutations
   const createCategoryMutation = useMutation({
     mutationFn: (data: CategoryFormData) =>
-      apiRequest("/api/company/financial/categories", {
-        method: "POST",
-        body: JSON.stringify(data),
-      }),
+      apiRequest("/api/company/financial/categories", "POST", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/company/financial/categories"] });
       setIsCategoryModalOpen(false);
@@ -201,10 +198,7 @@ export default function CompanyFinancial() {
 
   const updateCategoryMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: CategoryFormData }) =>
-      apiRequest(`/api/company/financial/categories/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(data),
-      }),
+      apiRequest(`/api/company/financial/categories/${id}`, "PUT", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/company/financial/categories"] });
       setIsCategoryModalOpen(false);

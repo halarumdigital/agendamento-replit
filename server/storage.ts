@@ -2128,6 +2128,58 @@ Obrigado pela preferência! 🙏`;
   }
 }
 
+// Financial tables setup
+async function ensureFinancialTables() {
+  // Create financial categories table
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS financial_categories (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      company_id INT NOT NULL,
+      name VARCHAR(255) NOT NULL,
+      description TEXT,
+      type VARCHAR(20) NOT NULL,
+      color VARCHAR(7) NOT NULL DEFAULT '#3B82F6',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Create payment methods table
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS payment_methods (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      company_id INT NOT NULL,
+      name VARCHAR(255) NOT NULL,
+      description TEXT,
+      type VARCHAR(20) NOT NULL,
+      is_active BOOLEAN DEFAULT TRUE,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Create financial transactions table
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS financial_transactions (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      company_id INT NOT NULL,
+      description VARCHAR(500) NOT NULL,
+      amount DECIMAL(10, 2) NOT NULL,
+      type VARCHAR(20) NOT NULL,
+      category_id INT NOT NULL,
+      payment_method_id INT NOT NULL,
+      date DATE NOT NULL,
+      notes TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      FOREIGN KEY (category_id) REFERENCES financial_categories(id) ON DELETE CASCADE,
+      FOREIGN KEY (payment_method_id) REFERENCES payment_methods(id) ON DELETE CASCADE
+    )
+  `);
+
+  console.log("✅ Financial tables created/verified");
+}
+
 export const storage = new DatabaseStorage();
 
 // Initialize conversation tables on startup
@@ -2137,6 +2189,15 @@ export const storage = new DatabaseStorage();
     console.log("✅ Conversation tables initialized");
   } catch (error) {
     console.error("❌ Error initializing conversation tables:", error);
+  }
+})();
+
+// Initialize financial tables on startup
+(async () => {
+  try {
+    await ensureFinancialTables();
+  } catch (error) {
+    console.error("❌ Error initializing financial tables:", error);
   }
 })();
 

@@ -449,6 +449,9 @@ export const companiesRelations = relations(companies, ({ many }) => ({
   loyaltyRewardsHistory: many(loyaltyRewardsHistory),
   products: many(products),
   messageCampaigns: many(messageCampaigns),
+  financialCategories: many(financialCategories),
+  paymentMethods: many(paymentMethods),
+  financialTransactions: many(financialTransactions),
 }));
 
 export const messageCampaignsRelations = relations(messageCampaigns, ({ one }) => ({
@@ -641,6 +644,24 @@ export const insertProductSchema = createInsertSchema(products).omit({
 });
 
 export const insertMessageCampaignSchema = createInsertSchema(messageCampaigns).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertFinancialCategorySchema = createInsertSchema(financialCategories).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPaymentMethodSchema = createInsertSchema(paymentMethods).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertFinancialTransactionSchema = createInsertSchema(financialTransactions).omit({
   id: true,
   createdAt: true,
   updatedAt: true,

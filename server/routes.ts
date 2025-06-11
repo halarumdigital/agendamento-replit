@@ -4914,6 +4914,434 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
     }
   });
 
+  // Financial middleware
+  const requireCompanyAuth = (req: any, res: any, next: any) => {
+    if (!req.session.companyId) {
+      return res.status(401).json({ message: "Não autenticado" });
+    }
+    next();
+  };
+
+  // Financial routes
+  
+  // Get financial categories
+  app.get("/api/company/financial/categories", requireCompanyAuth, async (req, res) => {
+    try {
+      const companyId = req.session.companyId!;
+      const categories = await db.execute(sql`
+        SELECT * FROM financial_categories 
+        WHERE company_id = ${companyId} 
+        ORDER BY created_at DESC
+      `);
+      res.json(categories);
+    } catch (error) {
+      console.error("Error fetching financial categories:", error);
+      res.status(500).json({ message: "Erro ao buscar categorias financeiras" });
+    }
+  });
+
+  // Create financial category
+  app.post("/api/company/financial/categories", requireCompanyAuth, async (req, res) => {
+    try {
+      const companyId = req.session.companyId!;
+      const { name, description, type, color } = req.body;
+
+      const result = await db.execute(sql`
+        INSERT INTO financial_categories (company_id, name, description, type, color)
+        VALUES (${companyId}, ${name}, ${description || null}, ${type}, ${color})
+      `);
+
+      const category = await db.execute(sql`
+        SELECT * FROM financial_categories WHERE id = ${result.insertId}
+      `);
+
+      res.json(category[0]);
+    } catch (error) {
+      console.error("Error creating financial category:", error);
+      res.status(500).json({ message: "Erro ao criar categoria financeira" });
+    }
+  });
+
+  // Update financial category
+  app.put("/api/company/financial/categories/:id", requireCompanyAuth, async (req, res) => {
+    try {
+      const companyId = req.session.companyId!;
+      const categoryId = parseInt(req.params.id);
+      const { name, description, type, color } = req.body;
+
+      await db.execute(sql`
+        UPDATE financial_categories 
+        SET name = ${name}, description = ${description || null}, type = ${type}, color = ${color}, updated_at = NOW()
+        WHERE id = ${categoryId} AND company_id = ${companyId}
+      `);
+
+      const category = await db.execute(sql`
+        SELECT * FROM financial_categories WHERE id = ${categoryId}
+      `);
+
+      res.json(category[0]);
+    } catch (error) {
+      console.error("Error updating financial category:", error);
+      res.status(500).json({ message: "Erro ao atualizar categoria financeira" });
+    }
+  });
+
+  // Delete financial category
+  app.delete("/api/company/financial/categories/:id", requireCompanyAuth, async (req, res) => {
+    try {
+      const companyId = req.session.companyId!;
+      const categoryId = parseInt(req.params.id);
+
+      await db.execute(sql`
+        DELETE FROM financial_categories 
+        WHERE id = ${categoryId} AND company_id = ${companyId}
+      `);
+
+      res.json({ message: "Categoria removida com sucesso" });
+    } catch (error) {
+      console.error("Error deleting financial category:", error);
+      res.status(500).json({ message: "Erro ao remover categoria financeira" });
+    }
+  });
+
+  // Get payment methods
+  app.get("/api/company/financial/payment-methods", requireCompanyAuth, async (req, res) => {
+    try {
+      const companyId = req.session.companyId!;
+      const paymentMethods = await db.execute(sql`
+        SELECT * FROM payment_methods 
+        WHERE company_id = ${companyId} 
+        ORDER BY created_at DESC
+      `);
+      res.json(paymentMethods);
+    } catch (error) {
+      console.error("Error fetching payment methods:", error);
+      res.status(500).json({ message: "Erro ao buscar métodos de pagamento" });
+    }
+  });
+
+  // Create payment method
+  app.post("/api/company/financial/payment-methods", requireCompanyAuth, async (req, res) => {
+    try {
+      const companyId = req.session.companyId!;
+      const { name, description, type, isActive } = req.body;
+
+      const result = await db.execute(sql`
+        INSERT INTO payment_methods (company_id, name, description, type, is_active)
+        VALUES (${companyId}, ${name}, ${description || null}, ${type}, ${isActive})
+      `);
+
+      const paymentMethod = await db.execute(sql`
+        SELECT * FROM payment_methods WHERE id = ${result.insertId}
+      `);
+
+      res.json(paymentMethod[0]);
+    } catch (error) {
+      console.error("Error creating payment method:", error);
+      res.status(500).json({ message: "Erro ao criar método de pagamento" });
+    }
+  });
+
+  // Update payment method
+  app.put("/api/company/financial/payment-methods/:id", requireCompanyAuth, async (req, res) => {
+    try {
+      const companyId = req.session.companyId!;
+      const paymentMethodId = parseInt(req.params.id);
+      const { name, description, type, isActive } = req.body;
+
+      await db.execute(sql`
+        UPDATE payment_methods 
+        SET name = ${name}, description = ${description || null}, type = ${type}, is_active = ${isActive}, updated_at = NOW()
+        WHERE id = ${paymentMethodId} AND company_id = ${companyId}
+      `);
+
+      const paymentMethod = await db.execute(sql`
+        SELECT * FROM payment_methods WHERE id = ${paymentMethodId}
+      `);
+
+      res.json(paymentMethod[0]);
+    } catch (error) {
+      console.error("Error updating payment method:", error);
+      res.status(500).json({ message: "Erro ao atualizar método de pagamento" });
+    }
+  });
+
+  // Delete payment method
+  app.delete("/api/company/financial/payment-methods/:id", requireCompanyAuth, async (req, res) => {
+    try {
+      const companyId = req.session.companyId!;
+      const paymentMethodId = parseInt(req.params.id);
+
+      await db.execute(sql`
+        DELETE FROM payment_methods 
+        WHERE id = ${paymentMethodId} AND company_id = ${companyId}
+      `);
+
+      res.json({ message: "Método de pagamento removido com sucesso" });
+    } catch (error) {
+      console.error("Error deleting payment method:", error);
+      res.status(500).json({ message: "Erro ao remover método de pagamento" });
+    }
+  });
+
+  // Get financial transactions
+  app.get("/api/company/financial/transactions", requireCompanyAuth, async (req, res) => {
+    try {
+      const companyId = req.session.companyId!;
+      const transactions = await db.execute(sql`
+        SELECT 
+          t.*,
+          c.name as category_name,
+          c.color as category_color,
+          c.type as category_type,
+          p.name as payment_method_name,
+          p.type as payment_method_type
+        FROM financial_transactions t
+        LEFT JOIN financial_categories c ON t.category_id = c.id
+        LEFT JOIN payment_methods p ON t.payment_method_id = p.id
+        WHERE t.company_id = ${companyId} 
+        ORDER BY t.date DESC, t.created_at DESC
+      `);
+
+      // Format transactions for frontend
+      const formattedTransactions = transactions.map((transaction: any) => ({
+        id: transaction.id,
+        description: transaction.description,
+        amount: parseFloat(transaction.amount),
+        type: transaction.type,
+        categoryId: transaction.category_id,
+        paymentMethodId: transaction.payment_method_id,
+        date: transaction.date,
+        notes: transaction.notes,
+        createdAt: transaction.created_at,
+        category: {
+          id: transaction.category_id,
+          name: transaction.category_name,
+          color: transaction.category_color,
+          type: transaction.category_type,
+        },
+        paymentMethod: {
+          id: transaction.payment_method_id,
+          name: transaction.payment_method_name,
+          type: transaction.payment_method_type,
+        },
+      }));
+
+      res.json(formattedTransactions);
+    } catch (error) {
+      console.error("Error fetching financial transactions:", error);
+      res.status(500).json({ message: "Erro ao buscar transações financeiras" });
+    }
+  });
+
+  // Create financial transaction
+  app.post("/api/company/financial/transactions", requireCompanyAuth, async (req, res) => {
+    try {
+      const companyId = req.session.companyId!;
+      const { description, amount, type, categoryId, paymentMethodId, date, notes } = req.body;
+
+      const result = await db.execute(sql`
+        INSERT INTO financial_transactions 
+        (company_id, description, amount, type, category_id, payment_method_id, date, notes)
+        VALUES (${companyId}, ${description}, ${amount}, ${type}, ${categoryId}, ${paymentMethodId}, ${date}, ${notes || null})
+      `);
+
+      const transaction = await db.execute(sql`
+        SELECT 
+          t.*,
+          c.name as category_name,
+          c.color as category_color,
+          c.type as category_type,
+          p.name as payment_method_name,
+          p.type as payment_method_type
+        FROM financial_transactions t
+        LEFT JOIN financial_categories c ON t.category_id = c.id
+        LEFT JOIN payment_methods p ON t.payment_method_id = p.id
+        WHERE t.id = ${result.insertId}
+      `);
+
+      const formattedTransaction = {
+        id: transaction[0].id,
+        description: transaction[0].description,
+        amount: parseFloat(transaction[0].amount),
+        type: transaction[0].type,
+        categoryId: transaction[0].category_id,
+        paymentMethodId: transaction[0].payment_method_id,
+        date: transaction[0].date,
+        notes: transaction[0].notes,
+        createdAt: transaction[0].created_at,
+        category: {
+          id: transaction[0].category_id,
+          name: transaction[0].category_name,
+          color: transaction[0].category_color,
+          type: transaction[0].category_type,
+        },
+        paymentMethod: {
+          id: transaction[0].payment_method_id,
+          name: transaction[0].payment_method_name,
+          type: transaction[0].payment_method_type,
+        },
+      };
+
+      res.json(formattedTransaction);
+    } catch (error) {
+      console.error("Error creating financial transaction:", error);
+      res.status(500).json({ message: "Erro ao criar transação financeira" });
+    }
+  });
+
+  // Update financial transaction
+  app.put("/api/company/financial/transactions/:id", requireCompanyAuth, async (req, res) => {
+    try {
+      const companyId = req.session.companyId!;
+      const transactionId = parseInt(req.params.id);
+      const { description, amount, type, categoryId, paymentMethodId, date, notes } = req.body;
+
+      await db.execute(sql`
+        UPDATE financial_transactions 
+        SET description = ${description}, amount = ${amount}, type = ${type}, 
+            category_id = ${categoryId}, payment_method_id = ${paymentMethodId}, 
+            date = ${date}, notes = ${notes || null}, updated_at = NOW()
+        WHERE id = ${transactionId} AND company_id = ${companyId}
+      `);
+
+      const transaction = await db.execute(sql`
+        SELECT 
+          t.*,
+          c.name as category_name,
+          c.color as category_color,
+          c.type as category_type,
+          p.name as payment_method_name,
+          p.type as payment_method_type
+        FROM financial_transactions t
+        LEFT JOIN financial_categories c ON t.category_id = c.id
+        LEFT JOIN payment_methods p ON t.payment_method_id = p.id
+        WHERE t.id = ${transactionId}
+      `);
+
+      const formattedTransaction = {
+        id: transaction[0].id,
+        description: transaction[0].description,
+        amount: parseFloat(transaction[0].amount),
+        type: transaction[0].type,
+        categoryId: transaction[0].category_id,
+        paymentMethodId: transaction[0].payment_method_id,
+        date: transaction[0].date,
+        notes: transaction[0].notes,
+        createdAt: transaction[0].created_at,
+        category: {
+          id: transaction[0].category_id,
+          name: transaction[0].category_name,
+          color: transaction[0].category_color,
+          type: transaction[0].category_type,
+        },
+        paymentMethod: {
+          id: transaction[0].payment_method_id,
+          name: transaction[0].payment_method_name,
+          type: transaction[0].payment_method_type,
+        },
+      };
+
+      res.json(formattedTransaction);
+    } catch (error) {
+      console.error("Error updating financial transaction:", error);
+      res.status(500).json({ message: "Erro ao atualizar transação financeira" });
+    }
+  });
+
+  // Delete financial transaction
+  app.delete("/api/company/financial/transactions/:id", requireCompanyAuth, async (req, res) => {
+    try {
+      const companyId = req.session.companyId!;
+      const transactionId = parseInt(req.params.id);
+
+      await db.execute(sql`
+        DELETE FROM financial_transactions 
+        WHERE id = ${transactionId} AND company_id = ${companyId}
+      `);
+
+      res.json({ message: "Transação removida com sucesso" });
+    } catch (error) {
+      console.error("Error deleting financial transaction:", error);
+      res.status(500).json({ message: "Erro ao remover transação financeira" });
+    }
+  });
+
+  // Get financial dashboard data
+  app.get("/api/company/financial/dashboard", requireCompanyAuth, async (req, res) => {
+    try {
+      const companyId = req.session.companyId!;
+      
+      // Get current month's income and expenses
+      const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
+      const previousMonth = new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().slice(0, 7);
+
+      // Current month data
+      const currentMonthIncome = await db.execute(sql`
+        SELECT COALESCE(SUM(amount), 0) as total
+        FROM financial_transactions 
+        WHERE company_id = ${companyId} 
+        AND type = 'income' 
+        AND DATE_FORMAT(date, '%Y-%m') = ${currentMonth}
+      `);
+
+      const currentMonthExpenses = await db.execute(sql`
+        SELECT COALESCE(SUM(amount), 0) as total
+        FROM financial_transactions 
+        WHERE company_id = ${companyId} 
+        AND type = 'expense' 
+        AND DATE_FORMAT(date, '%Y-%m') = ${currentMonth}
+      `);
+
+      // Previous month data for comparison
+      const previousMonthIncome = await db.execute(sql`
+        SELECT COALESCE(SUM(amount), 0) as total
+        FROM financial_transactions 
+        WHERE company_id = ${companyId} 
+        AND type = 'income' 
+        AND DATE_FORMAT(date, '%Y-%m') = ${previousMonth}
+      `);
+
+      const previousMonthExpenses = await db.execute(sql`
+        SELECT COALESCE(SUM(amount), 0) as total
+        FROM financial_transactions 
+        WHERE company_id = ${companyId} 
+        AND type = 'expense' 
+        AND DATE_FORMAT(date, '%Y-%m') = ${previousMonth}
+      `);
+
+      // Total transactions count for current month
+      const totalTransactions = await db.execute(sql`
+        SELECT COUNT(*) as count
+        FROM financial_transactions 
+        WHERE company_id = ${companyId} 
+        AND DATE_FORMAT(date, '%Y-%m') = ${currentMonth}
+      `);
+
+      const monthlyIncome = parseFloat(currentMonthIncome[0]?.total || 0);
+      const monthlyExpenses = parseFloat(currentMonthExpenses[0]?.total || 0);
+      const prevIncome = parseFloat(previousMonthIncome[0]?.total || 0);
+      const prevExpenses = parseFloat(previousMonthExpenses[0]?.total || 0);
+
+      // Calculate growth percentages
+      const incomeGrowth = prevIncome > 0 ? ((monthlyIncome - prevIncome) / prevIncome * 100).toFixed(1) : "0";
+      const expenseGrowth = prevExpenses > 0 ? ((monthlyExpenses - prevExpenses) / prevExpenses * 100).toFixed(1) : "0";
+
+      const dashboardData = {
+        monthlyIncome,
+        monthlyExpenses,
+        incomeGrowth: parseFloat(incomeGrowth),
+        expenseGrowth: parseFloat(expenseGrowth),
+        totalTransactions: totalTransactions[0]?.count || 0,
+      };
+
+      res.json(dashboardData);
+    } catch (error) {
+      console.error("Error fetching financial dashboard:", error);
+      res.status(500).json({ message: "Erro ao buscar dados do dashboard financeiro" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
