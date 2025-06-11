@@ -36,6 +36,7 @@ export default function Plans() {
       name: "",
       freeDays: 0,
       price: "",
+      maxProfessionals: 1,
       isActive: true,
       permissions: {},
     },
@@ -127,6 +128,7 @@ export default function Plans() {
       name: plan.name,
       freeDays: plan.freeDays,
       price: plan.price.toString(),
+      maxProfessionals: plan.maxProfessionals || 1,
       isActive: plan.isActive,
       permissions: plan.permissions || {},
     });
@@ -141,11 +143,11 @@ export default function Plans() {
       price: "",
       isActive: true,
       permissions: {
-        dashboard: true,
-        appointments: true,
-        services: true,
-        professionals: true,
-        clients: true,
+        dashboard: false,
+        appointments: false,
+        services: false,
+        professionals: false,
+        clients: false,
         reviews: false,
         tasks: false,
         pointsProgram: false,
@@ -155,7 +157,7 @@ export default function Plans() {
         coupons: false,
         financial: false,
         reports: false,
-        settings: true,
+        settings: false,
       },
     });
     setIsModalOpen(true);

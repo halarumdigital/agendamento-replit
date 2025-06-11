@@ -156,6 +156,7 @@ export const planSchema = z.object({
   name: z.string().min(1, "Nome do plano é obrigatório"),
   freeDays: z.number().min(0, "Dias grátis deve ser 0 ou maior"),
   price: z.string().refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) >= 0, "Preço deve ser um número válido"),
+  maxProfessionals: z.number().min(1, "Número máximo de profissionais deve ser pelo menos 1"),
   isActive: z.boolean(),
   permissions: z.object({
     dashboard: z.boolean().optional(),

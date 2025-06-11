@@ -57,6 +57,7 @@ export const plans = mysqlTable("plans", {
   name: varchar("name", { length: 255 }).notNull(),
   freeDays: int("free_days").notNull().default(0),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  maxProfessionals: int("max_professionals").notNull().default(1),
   isActive: boolean("is_active").notNull().default(true),
   permissions: json("permissions").$type<{
     dashboard: boolean;
