@@ -156,11 +156,13 @@ export async function ensureConversationTables() {
 
 export interface IStorage {
   // Admin operations
+  getAdmins(): Promise<Admin[]>;
   getAdmin(id: number): Promise<Admin | undefined>;
   getAdminByUsername(username: string): Promise<Admin | undefined>;
   getAdminByEmail(email: string): Promise<Admin | undefined>;
   createAdmin(admin: InsertAdmin): Promise<Admin>;
   updateAdmin(id: number, admin: Partial<InsertAdmin>): Promise<Admin>;
+  deleteAdmin(id: number): Promise<void>;
   
   // Company operations
   getCompanies(): Promise<Company[]>;
@@ -250,6 +252,10 @@ export interface IStorage {
 
 export class DatabaseStorage implements IStorage {
   // Admin operations
+  async getAdmins(): Promise<Admin[]> {
+    return await db.select().from(admins).orderBy(desc(admins.createdAt));
+  }
+
   async getAdmin(id: number): Promise<Admin | undefined> {
     const [admin] = await db.select().from(admins).where(eq(admins.id, id));
     return admin;
@@ -272,9 +278,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateAdmin(id: number, adminData: Partial<InsertAdmin>): Promise<Admin> {
-    await db.update(admins).set(adminData).where(eq(admins.id, id));
+    await db.update(admins).set({
+      ...adminData,
+      updatedAt: new Date()
+    }).where(eq(admins.id, id));
     const [admin] = await db.select().from(admins).where(eq(admins.id, id));
     return admin;
+  }
+
+  async deleteAdmin(id: number): Promise<void> {
+    await db.delete(admins).where(eq(admins.id, id));
   }
 
   // Company operations

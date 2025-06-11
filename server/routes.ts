@@ -5544,5 +5544,99 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
   });
 
   const httpServer = createServer(app);
+  // Admin management routes
+  app.get("/api/admins", isAuthenticated, async (req, res) => {
+    try {
+      const admins = await storage.getAdmins();
+      // Remove passwords from response
+      const safeAdmins = admins.map(admin => ({
+        ...admin,
+        password: undefined
+      }));
+      res.json(safeAdmins);
+    } catch (error) {
+      console.error("Error getting admins:", error);
+      res.status(500).json({ message: "Erro ao buscar administradores" });
+    }
+  });
+
+  app.post("/api/admins", isAuthenticated, async (req, res) => {
+    try {
+      const validatedData = insertAdminSchema.parse(req.body);
+      
+      // Hash password
+      const hashedPassword = await bcrypt.hash(validatedData.password, 10);
+      const adminData = {
+        ...validatedData,
+        password: hashedPassword,
+      };
+
+      const admin = await storage.createAdmin(adminData);
+      // Remove password from response
+      const { password, ...safeAdmin } = admin;
+      res.status(201).json(safeAdmin);
+    } catch (error: any) {
+      if (error.code === 'ER_DUP_ENTRY') {
+        if (error.message.includes('username')) {
+          return res.status(400).json({ message: "Nome de usuário já existe" });
+        }
+        if (error.message.includes('email')) {
+          return res.status(400).json({ message: "E-mail já existe" });
+        }
+      }
+      console.error("Error creating admin:", error);
+      res.status(500).json({ message: "Erro ao criar administrador" });
+    }
+  });
+
+  app.put("/api/admins/:id", isAuthenticated, async (req, res) => {
+    try {
+      const adminId = parseInt(req.params.id);
+      const updateData = { ...req.body };
+      
+      // Hash password if provided
+      if (updateData.password) {
+        updateData.password = await bcrypt.hash(updateData.password, 10);
+      } else {
+        // Remove password field if empty
+        delete updateData.password;
+      }
+
+      const admin = await storage.updateAdmin(adminId, updateData);
+      // Remove password from response
+      const { password, ...safeAdmin } = admin;
+      res.json(safeAdmin);
+    } catch (error: any) {
+      if (error.code === 'ER_DUP_ENTRY') {
+        if (error.message.includes('username')) {
+          return res.status(400).json({ message: "Nome de usuário já existe" });
+        }
+        if (error.message.includes('email')) {
+          return res.status(400).json({ message: "E-mail já existe" });
+        }
+      }
+      console.error("Error updating admin:", error);
+      res.status(500).json({ message: "Erro ao atualizar administrador" });
+    }
+  });
+
+  app.delete("/api/admins/:id", isAuthenticated, async (req, res) => {
+    try {
+      const adminId = parseInt(req.params.id);
+      
+      // Prevent deleting the last admin
+      const admins = await storage.getAdmins();
+      if (admins.length <= 1) {
+        return res.status(400).json({ message: "Não é possível excluir o último administrador" });
+      }
+
+      await storage.deleteAdmin(adminId);
+      res.json({ message: "Administrador removido com sucesso" });
+    } catch (error) {
+      console.error("Error deleting admin:", error);
+      res.status(500).json({ message: "Erro ao remover administrador" });
+    }
+  });
+
   return httpServer;
 }
