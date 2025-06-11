@@ -9,6 +9,9 @@ import { z } from "zod";
 import QRCode from "qrcode";
 import { reminderScheduler, rescheduleRemindersForAppointment } from "./reminder-scheduler";
 import { sql, eq, and, desc, asc, sum, count, gte, lte } from "drizzle-orm";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
 import { 
   getLoyaltyCampaignsByCompany, 
   createLoyaltyCampaign, 

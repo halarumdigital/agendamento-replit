@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { Settings, Palette, MessageSquare, Globe, Brain } from "lucide-react";
+import { Settings, Palette, MessageSquare, Globe, Brain, Upload, X, Image } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { settingsSchema } from "@/lib/validations";
 import type { GlobalSettings } from "@shared/schema";
@@ -23,6 +23,9 @@ export default function SettingsPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [fetchingModels, setFetchingModels] = useState(false);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string>("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: settings, isLoading } = useQuery<GlobalSettings>({
     queryKey: ["/api/settings"],
@@ -49,6 +52,72 @@ export default function SettingsPage() {
       });
     } finally {
       setFetchingModels(false);
+    }
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Tipo de arquivo inválido",
+          description: "Por favor, selecione uma imagem.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        toast({
+          title: "Arquivo muito grande",
+          description: "O arquivo deve ter no máximo 5MB.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setLogoFile(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setLogoPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadLogo = async (): Promise<string | null> => {
+    if (!logoFile) return null;
+    
+    const formData = new FormData();
+    formData.append('logo', logoFile);
+    
+    try {
+      const response = await fetch('/api/upload/logo', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Falha no upload do logo');
+      }
+      
+      const result = await response.json();
+      return result.url;
+    } catch (error) {
+      console.error('Error uploading logo:', error);
+      throw error;
+    }
+  };
+
+  const removeLogo = () => {
+    setLogoFile(null);
+    setLogoPreview("");
+    form.setValue("logoUrl", "");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
   };
 
@@ -115,15 +184,34 @@ export default function SettingsPage() {
     },
   });
 
-  const onSubmit = (data: SettingsFormData) => {
-    // Convert string values to numbers for OpenAI fields and ensure required defaults
-    const processedData = {
-      ...data,
-      openaiModel: data.openaiModel || "gpt-4o",
-      openaiTemperature: data.openaiTemperature ? parseFloat(data.openaiTemperature.toString()) : 0.7,
-      openaiMaxTokens: data.openaiMaxTokens ? parseInt(data.openaiMaxTokens.toString()) : 4000,
-    };
-    updateMutation.mutate(processedData);
+  const onSubmit = async (data: SettingsFormData) => {
+    try {
+      // Upload logo if a new file was selected
+      let logoUrl = data.logoUrl;
+      if (logoFile) {
+        logoUrl = await uploadLogo();
+        if (!logoUrl) {
+          throw new Error("Falha no upload do logo");
+        }
+      }
+
+      // Convert string values to numbers for OpenAI fields and ensure required defaults
+      const processedData = {
+        ...data,
+        logoUrl,
+        openaiModel: data.openaiModel || "gpt-4o",
+        openaiTemperature: data.openaiTemperature ? parseFloat(data.openaiTemperature.toString()) : 0.7,
+        openaiMaxTokens: data.openaiMaxTokens ? parseInt(data.openaiMaxTokens.toString()) : 4000,
+      };
+      
+      updateMutation.mutate(processedData);
+    } catch (error: any) {
+      toast({
+        title: "Erro no upload",
+        description: error.message || "Falha ao fazer upload do logo",
+        variant: "destructive",
+      });
+    }
   };
 
   if (isLoading) {
@@ -201,9 +289,72 @@ export default function SettingsPage() {
                     name="logoUrl"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>URL do Logo (opcional)</FormLabel>
+                        <FormLabel>Logo do Sistema</FormLabel>
                         <FormControl>
-                          <Input placeholder="https://exemplo.com/logo.png" {...field} />
+                          <div className="space-y-4">
+                            {/* Preview do logo atual */}
+                            {(logoPreview || field.value || settings?.logoUrl) && (
+                              <div className="flex items-center gap-4 p-4 border rounded-lg bg-gray-50">
+                                <div className="relative">
+                                  <img
+                                    src={logoPreview || field.value || settings?.logoUrl}
+                                    alt="Logo atual"
+                                    className="w-16 h-16 object-contain rounded border bg-white"
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={removeLogo}
+                                    className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                                <div className="flex-1">
+                                  <p className="text-sm font-medium">Logo atual</p>
+                                  <p className="text-xs text-gray-500">
+                                    {logoFile ? logoFile.name : "Logo configurado"}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Área de upload */}
+                            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+                              <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="image/*"
+                                onChange={handleFileSelect}
+                                className="hidden"
+                                id="logo-upload"
+                              />
+                              <label htmlFor="logo-upload" className="cursor-pointer">
+                                <div className="mx-auto flex flex-col items-center">
+                                  <Upload className="w-8 h-8 text-gray-400 mb-2" />
+                                  <p className="text-sm font-medium text-gray-700 mb-1">
+                                    Clique para selecionar uma imagem
+                                  </p>
+                                  <p className="text-xs text-gray-500">
+                                    PNG, JPG, GIF até 5MB
+                                  </p>
+                                </div>
+                              </label>
+                            </div>
+
+                            {/* Campo de URL alternativo */}
+                            <div className="space-y-2">
+                              <Label className="text-sm text-gray-600">
+                                Ou insira uma URL da imagem:
+                              </Label>
+                              <Input 
+                                placeholder="https://exemplo.com/logo.png" 
+                                {...field}
+                                className="text-sm"
+                              />
+                            </div>
+                          </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
