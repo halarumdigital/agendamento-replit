@@ -4643,6 +4643,22 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
     }
   });
 
+  app.get("/api/company/client-points/:clientId", async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const { clientId } = req.params;
+      const clientPoints = await storage.getClientPointsById(parseInt(clientId), companyId);
+      res.json(clientPoints);
+    } catch (error) {
+      console.error("Error getting client points by ID:", error);
+      res.status(500).json({ message: "Erro ao buscar pontos do cliente" });
+    }
+  });
+
   app.post("/api/company/client-points/:clientId", async (req: any, res) => {
     try {
       const companyId = req.session.companyId;

@@ -248,6 +248,10 @@ export interface IStorage {
   // Birthday message history operations
   getBirthdayMessageHistory(companyId: number): Promise<BirthdayMessageHistory[]>;
   createBirthdayMessageHistory(history: InsertBirthdayMessageHistory): Promise<BirthdayMessageHistory>;
+  
+  // Points management operations
+  getClientPointsByCompany(companyId: number): Promise<any[]>;
+  getClientPointsById(clientId: number, companyId: number): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2045,6 +2049,18 @@ Obrigado pela preferência! 🙏`;
       .from(clients)
       .leftJoin(clientPoints, eq(clients.id, clientPoints.clientId))
       .where(eq(clients.companyId, companyId));
+  }
+
+  async getClientPointsById(clientId: number, companyId: number): Promise<any> {
+    const result = await db
+      .select({
+        totalPoints: sql`COALESCE(${clientPoints.totalPoints}, 0)`.as('totalPoints')
+      })
+      .from(clients)
+      .leftJoin(clientPoints, and(eq(clients.id, clientPoints.clientId), eq(clientPoints.companyId, companyId)))
+      .where(and(eq(clients.id, clientId), eq(clients.companyId, companyId)));
+    
+    return result[0] || { totalPoints: 0 };
   }
 
   async updateClientPoints(clientId: number, pointsChange: number, description: string, companyId: number): Promise<any> {

@@ -69,6 +69,18 @@ function ClientServiceHistory({ clientId, clientName }: ClientServiceHistoryProp
     enabled: !!clientId,
   });
 
+  const { data: clientPoints, isLoading: isLoadingPoints } = useQuery({
+    queryKey: ['/api/company/client-points', clientId],
+    queryFn: async () => {
+      const response = await fetch(`/api/company/client-points/${clientId}`);
+      if (!response.ok) {
+        throw new Error('Erro ao buscar pontos do cliente');
+      }
+      return response.json();
+    },
+    enabled: !!clientId,
+  });
+
   // Debug log to see what data we're getting
   console.log('Client appointments data:', appointments);
 
