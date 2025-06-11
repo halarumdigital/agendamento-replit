@@ -5389,19 +5389,19 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
       console.log('Current month filter:', currentMonth);
       
       // Combinar receitas de agendamentos e transações manuais
-      // O Drizzle retorna os resultados no primeiro elemento do array
-      const appointmentIncomeValue = parseFloat((appointmentIncome as any)[0]?.total || '0');
-      const transactionIncomeValue = parseFloat((transactionIncome as any)[0]?.total || '0');
+      // O Drizzle com MySQL retorna [resultados, metadados] - precisamos acessar [0][0]
+      const appointmentIncomeValue = parseFloat((appointmentIncome as any)[0][0]?.total || '0');
+      const transactionIncomeValue = parseFloat((transactionIncome as any)[0][0]?.total || '0');
       const monthlyIncome = appointmentIncomeValue + transactionIncomeValue;
       
-      const monthlyExpenses = parseFloat((currentMonthExpenses as any)[0]?.total || '0');
+      const monthlyExpenses = parseFloat((currentMonthExpenses as any)[0][0]?.total || '0');
       
       // Receitas do mês anterior (agendamentos + transações)
-      const prevAppointmentIncomeValue = parseFloat((previousAppointmentIncome as any)[0]?.total || '0');
-      const prevTransactionIncomeValue = parseFloat((previousTransactionIncome as any)[0]?.total || '0');
+      const prevAppointmentIncomeValue = parseFloat((previousAppointmentIncome as any)[0][0]?.total || '0');
+      const prevTransactionIncomeValue = parseFloat((previousTransactionIncome as any)[0][0]?.total || '0');
       const prevIncome = prevAppointmentIncomeValue + prevTransactionIncomeValue;
       
-      const prevExpenses = parseFloat((previousMonthExpenses as any)[0]?.total || '0');
+      const prevExpenses = parseFloat((previousMonthExpenses as any)[0][0]?.total || '0');
       
       console.log('💰 Calculated values:');
       console.log('Monthly income:', monthlyIncome, '(appointments:', appointmentIncomeValue, '+ transactions:', transactionIncomeValue, ')');
@@ -5416,7 +5416,7 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
         monthlyExpenses,
         incomeGrowth: parseFloat(incomeGrowth),
         expenseGrowth: parseFloat(expenseGrowth),
-        totalTransactions: (totalTransactions as any)[0]?.count || 0,
+        totalTransactions: (totalTransactions as any)[0][0]?.count || 0,
       };
 
       res.json(dashboardData);
