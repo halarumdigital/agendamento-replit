@@ -150,6 +150,9 @@ export default function CompanyFinancial() {
     refetchOnWindowFocus: true,
   });
 
+  // Debug para ver os dados recebidos
+  console.log('Dashboard data received:', dashboardData);
+  
   // Dados seguros do dashboard com valores padrão
   const safeData = {
     monthlyIncome: Number(dashboardData?.monthlyIncome) || 0,
