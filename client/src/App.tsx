@@ -29,6 +29,7 @@ import DashboardAppointments from "@/pages/dashboard-appointments";
 import Dashboard from "@/pages/dashboard";
 import Companies from "@/pages/companies";
 import Plans from "@/pages/plans";
+import Admins from "@/pages/admins";
 import SettingsPage from "@/pages/settings";
 import Status from "@/pages/status";
 import PublicReview from "@/pages/public-review";
@@ -178,6 +179,16 @@ function Router() {
           <Route path="/administrador/configuracoes">
             <AdminLayout>
               <SettingsPage />
+            </AdminLayout>
+          </Route>
+          <Route path="/admin/admins">
+            <AdminLayout>
+              <Admins />
+            </AdminLayout>
+          </Route>
+          <Route path="/administrador/administradores">
+            <AdminLayout>
+              <Admins />
             </AdminLayout>
           </Route>
         </>
