@@ -1,8 +1,118 @@
 import { Building2, Users, Calendar, CreditCard, Settings, FileText, User, MessageSquare, DollarSign, Clock, UserCheck, TrendingUp, TrendingDown, Plus, MoreHorizontal, Download } from "lucide-react";
 import { useCompanyAuth } from "@/hooks/useCompanyAuth";
+import { useQuery } from "@tanstack/react-query";
 
 export default function CompanyDashboardNew() {
   const { company, isLoading } = useCompanyAuth();
+
+  // Buscar agendamentos do dia
+  const { data: appointments = [] } = useQuery({
+    queryKey: ['/api/company/appointments'],
+    enabled: !!company
+  });
+
+  // Buscar serviços para obter os preços
+  const { data: services = [] } = useQuery({
+    queryKey: ['/api/company/services'],
+    enabled: !!company
+  });
+
+  // Calcular faturamento do dia dos agendamentos concluídos
+  const calculateDailyRevenue = () => {
+    if (!Array.isArray(appointments) || !Array.isArray(services)) {
+      return 0;
+    }
+
+    const today = new Date();
+    const todayStr = today.getFullYear() + '-' + 
+                    String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+                    String(today.getDate()).padStart(2, '0');
+    
+    const todayCompletedAppointments = appointments.filter((appointment: any) => {
+      if (!appointment.appointmentDate) return false;
+      
+      try {
+        const appointmentDate = new Date(appointment.appointmentDate);
+        if (isNaN(appointmentDate.getTime())) return false;
+        
+        const appointmentStr = appointmentDate.getFullYear() + '-' + 
+                              String(appointmentDate.getMonth() + 1).padStart(2, '0') + '-' + 
+                              String(appointmentDate.getDate()).padStart(2, '0');
+        
+        return appointmentStr === todayStr && appointment.status === 'Concluído';
+      } catch {
+        return false;
+      }
+    });
+
+    const totalRevenue = todayCompletedAppointments.reduce((total: number, appointment: any) => {
+      const service = services.find((s: any) => s.id === appointment.serviceId);
+      return total + (parseFloat(service?.price) || 0);
+    }, 0);
+
+    return totalRevenue;
+  };
+
+  const calculateTodayAppointments = () => {
+    if (!Array.isArray(appointments)) {
+      return 0;
+    }
+
+    const today = new Date();
+    const todayStr = today.getFullYear() + '-' + 
+                    String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+                    String(today.getDate()).padStart(2, '0');
+    
+    return appointments.filter((appointment: any) => {
+      if (!appointment.appointmentDate) return false;
+      
+      try {
+        const appointmentDate = new Date(appointment.appointmentDate);
+        if (isNaN(appointmentDate.getTime())) return false;
+        
+        const appointmentStr = appointmentDate.getFullYear() + '-' + 
+                              String(appointmentDate.getMonth() + 1).padStart(2, '0') + '-' + 
+                              String(appointmentDate.getDate()).padStart(2, '0');
+        
+        return appointmentStr === todayStr;
+      } catch {
+        return false;
+      }
+    }).length;
+  };
+
+  // Calcular clientes atendidos hoje (serviços concluídos)
+  const calculateTodayClientsServed = () => {
+    if (!Array.isArray(appointments)) {
+      return 0;
+    }
+
+    const today = new Date();
+    const todayStr = today.getFullYear() + '-' + 
+                    String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+                    String(today.getDate()).padStart(2, '0');
+    
+    return appointments.filter((appointment: any) => {
+      if (!appointment.appointmentDate) return false;
+      
+      try {
+        const appointmentDate = new Date(appointment.appointmentDate);
+        if (isNaN(appointmentDate.getTime())) return false;
+        
+        const appointmentStr = appointmentDate.getFullYear() + '-' + 
+                              String(appointmentDate.getMonth() + 1).padStart(2, '0') + '-' + 
+                              String(appointmentDate.getDate()).padStart(2, '0');
+        
+        return appointmentStr === todayStr && appointment.status === 'Concluído';
+      } catch {
+        return false;
+      }
+    }).length;
+  };
+
+  const dailyRevenue = calculateDailyRevenue();
+  const todayAppointmentsCount = calculateTodayAppointments();
+  const todayClientsServed = calculateTodayClientsServed();
 
   if (isLoading) {
     return (
@@ -68,7 +178,9 @@ export default function CompanyDashboardNew() {
           <div className="flex justify-between items-start mb-4">
             <div>
               <p className="text-sm font-medium text-gray-500">Faturamento do Dia</p>
-              <h3 className="text-2xl font-bold text-gray-800">R$ 2.850,00</h3>
+              <h3 className="text-2xl font-bold text-gray-800">
+                R$ {dailyRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </h3>
             </div>
             <div className="w-10 h-10 flex items-center justify-center rounded-full bg-green-100 text-green-600">
               <DollarSign className="w-5 h-5" />
@@ -77,9 +189,9 @@ export default function CompanyDashboardNew() {
           <div className="flex items-center">
             <div className="flex items-center text-green-600 text-sm font-medium">
               <TrendingUp className="w-4 h-4 mr-1" />
-              <span>12,5%</span>
+              <span>Serviços concluídos</span>
             </div>
-            <span className="text-xs text-gray-500 ml-2">vs. ontem</span>
+            <span className="text-xs text-gray-500 ml-2">hoje</span>
           </div>
         </div>
 
@@ -87,18 +199,18 @@ export default function CompanyDashboardNew() {
           <div className="flex justify-between items-start mb-4">
             <div>
               <p className="text-sm font-medium text-gray-500">Agendamentos do Dia</p>
-              <h3 className="text-2xl font-bold text-gray-800">32</h3>
+              <h3 className="text-2xl font-bold text-gray-800">{todayAppointmentsCount}</h3>
             </div>
             <div className="w-10 h-10 flex items-center justify-center rounded-full bg-blue-100 text-blue-600">
               <Calendar className="w-5 h-5" />
             </div>
           </div>
           <div className="flex items-center">
-            <div className="flex items-center text-green-600 text-sm font-medium">
-              <TrendingUp className="w-4 h-4 mr-1" />
-              <span>8,3%</span>
+            <div className="flex items-center text-blue-600 text-sm font-medium">
+              <Calendar className="w-4 h-4 mr-1" />
+              <span>Agendamentos</span>
             </div>
-            <span className="text-xs text-gray-500 ml-2">vs. ontem</span>
+            <span className="text-xs text-gray-500 ml-2">de hoje</span>
           </div>
         </div>
 
