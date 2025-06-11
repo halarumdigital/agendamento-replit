@@ -237,18 +237,18 @@ export default function CompanyDashboardNew() {
           <div className="flex justify-between items-start mb-4">
             <div>
               <p className="text-sm font-medium text-gray-500">Clientes Atendidos</p>
-              <h3 className="text-2xl font-bold text-gray-800">28</h3>
+              <h3 className="text-2xl font-bold text-gray-800">{todayClientsServed}</h3>
             </div>
             <div className="w-10 h-10 flex items-center justify-center rounded-full bg-orange-100 text-orange-600">
               <UserCheck className="w-5 h-5" />
             </div>
           </div>
           <div className="flex items-center">
-            <div className="flex items-center text-red-600 text-sm font-medium">
-              <TrendingDown className="w-4 h-4 mr-1" />
-              <span>3,1%</span>
+            <div className="flex items-center text-orange-600 text-sm font-medium">
+              <UserCheck className="w-4 h-4 mr-1" />
+              <span>Serviços concluídos</span>
             </div>
-            <span className="text-xs text-gray-500 ml-2">vs. ontem</span>
+            <span className="text-xs text-gray-500 ml-2">hoje</span>
           </div>
         </div>
       </div>
