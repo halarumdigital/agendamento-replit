@@ -19,6 +19,7 @@ import CompanyReminders from "@/pages/company-reminders";
 import CompanyReviews from "@/pages/company-reviews";
 import CompanyTasks from "@/pages/company-tasks";
 import CompanyPointsProgram from "@/pages/company-points-program";
+import CompanyLoyalty from "@/pages/company-loyalty";
 import DashboardAppointments from "@/pages/dashboard-appointments";
 import Dashboard from "@/pages/dashboard";
 import Companies from "@/pages/companies";
@@ -89,6 +90,11 @@ function Router() {
       <Route path="/company/points-program">
         <CompanyLayout>
           <CompanyPointsProgram />
+        </CompanyLayout>
+      </Route>
+      <Route path="/company/fidelidade">
+        <CompanyLayout>
+          <CompanyLoyalty />
         </CompanyLayout>
       </Route>
       

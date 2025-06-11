@@ -319,6 +319,33 @@ export const pointsHistory = mysqlTable("points_history", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Loyalty campaigns table
+export const loyaltyCampaigns = mysqlTable("loyalty_campaigns", {
+  id: int("id").primaryKey().autoincrement(),
+  companyId: int("company_id").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  conditionType: varchar("condition_type", { length: 50 }).notNull(), // 'services' or 'amount'
+  conditionValue: int("condition_value").notNull(), // X services or X amount
+  rewardType: varchar("reward_type", { length: 50 }).notNull(), // 'service' or 'discount'
+  rewardValue: int("reward_value").notNull(), // service ID or discount percentage
+  rewardServiceId: int("reward_service_id"), // ID of the service to give as reward
+  active: boolean("active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+});
+
+// Loyalty rewards history table
+export const loyaltyRewardsHistory = mysqlTable("loyalty_rewards_history", {
+  id: int("id").primaryKey().autoincrement(),
+  companyId: int("company_id").notNull(),
+  clientId: int("client_id").notNull(),
+  campaignId: int("campaign_id").notNull(),
+  rewardType: varchar("reward_type", { length: 50 }).notNull(),
+  rewardValue: varchar("reward_value", { length: 255 }).notNull(),
+  usedAt: timestamp("used_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Relations
 export const companiesRelations = relations(companies, ({ many }) => ({
   professionals: many(professionals),
@@ -331,6 +358,8 @@ export const companiesRelations = relations(companies, ({ many }) => ({
   tasks: many(tasks),
   clientPoints: many(clientPoints),
   pointsCampaigns: many(pointsCampaigns),
+  loyaltyCampaigns: many(loyaltyCampaigns),
+  loyaltyRewardsHistory: many(loyaltyRewardsHistory),
 }));
 
 export const clientsRelations = relations(clients, ({ one }) => ({
@@ -492,6 +521,17 @@ export const insertPointsHistorySchema = createInsertSchema(pointsHistory).omit(
   createdAt: true,
 });
 
+export const insertLoyaltyCampaignSchema = createInsertSchema(loyaltyCampaigns).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertLoyaltyRewardsHistorySchema = createInsertSchema(loyaltyRewardsHistory).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertTaskSchema = createInsertSchema(tasks).omit({
   id: true,
   createdAt: true,
@@ -541,5 +581,9 @@ export type PointsCampaign = typeof pointsCampaigns.$inferSelect;
 export type InsertPointsCampaign = z.infer<typeof insertPointsCampaignSchema>;
 export type PointsHistory = typeof pointsHistory.$inferSelect;
 export type InsertPointsHistory = z.infer<typeof insertPointsHistorySchema>;
+export type LoyaltyCampaign = typeof loyaltyCampaigns.$inferSelect;
+export type InsertLoyaltyCampaign = z.infer<typeof insertLoyaltyCampaignSchema>;
+export type LoyaltyRewardsHistory = typeof loyaltyRewardsHistory.$inferSelect;
+export type InsertLoyaltyRewardsHistory = z.infer<typeof insertLoyaltyRewardsHistorySchema>;
 export type Task = typeof tasks.$inferSelect;
 export type InsertTask = z.infer<typeof insertTaskSchema>;
