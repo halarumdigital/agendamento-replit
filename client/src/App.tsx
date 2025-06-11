@@ -34,6 +34,7 @@ import SettingsPage from "@/pages/settings";
 import Status from "@/pages/status";
 import PublicReview from "@/pages/public-review";
 import ResetPassword from "@/pages/reset-password";
+import Subscription from "@/pages/subscription";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -133,8 +134,10 @@ function Router() {
         </CompanyLayout>
       </Route>
       
-      {/* Public Review Route (no authentication required) */}
+      {/* Public Routes (no authentication required) */}
       <Route path="/review/:token" component={PublicReview} />
+      <Route path="/assinatura" component={Subscription} />
+      <Route path="/subscription" component={Subscription} />
       
       {/* Admin Login Routes */}
       <Route path="/login" component={Login} />

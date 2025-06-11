@@ -648,6 +648,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public plans endpoint for subscription page
+  app.get('/api/public-plans', async (req, res) => {
+    try {
+      const plans = await storage.getPlans();
+      const activePlans = plans.filter(plan => plan.isActive);
+      res.json(activePlans);
+    } catch (error) {
+      console.error("Error fetching public plans:", error);
+      res.status(500).json({ message: "Erro ao buscar planos" });
+    }
+  });
+
   // Global settings routes
   app.get('/api/settings', isAuthenticated, async (req, res) => {
     try {
