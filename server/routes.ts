@@ -3930,18 +3930,23 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
         return res.status(401).json({ message: "Não autenticado" });
       }
 
+      // Mapear campos do frontend para o backend
       const taskData = {
-        ...req.body,
-        companyId,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        name: req.body.name,
+        description: req.body.description,
+        dueDate: req.body.dueDate,
+        recurrence: req.body.recurrence || 'none',
+        whatsappNumber: req.body.whatsappNumber,
+        active: req.body.isActive !== undefined ? req.body.isActive : true,
+        companyId
       };
 
+      console.log('Creating task with data:', taskData);
       const task = await storage.createTask(taskData);
       res.status(201).json(task);
     } catch (error) {
       console.error("Error creating task:", error);
-      res.status(500).json({ message: "Erro ao criar tarefa" });
+      res.status(500).json({ message: "Erro ao criar tarefa", error: error.message });
     }
   });
 
