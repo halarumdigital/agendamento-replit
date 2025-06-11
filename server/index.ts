@@ -8,6 +8,7 @@ import { startCampaignScheduler } from "./campaign-scheduler";
 import { ensureSmtpColumns } from "./ensure-smtp-columns";
 import { ensureResetColumns } from "./ensure-reset-columns";
 import { ensureCustomHtmlColumn } from "./ensure-custom-html-column";
+import { ensureAddressColumns } from "./ensure-address-columns";
 import { db } from "./db";
 import path from "path";
 
