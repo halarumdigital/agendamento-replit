@@ -4953,16 +4953,22 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
         return res.status(400).json({ message: "Nome, tipo e cor são obrigatórios" });
       }
 
-      const [result] = await db.insert(financialCategories).values({
+      const result = await db.insert(financialCategories).values({
         companyId,
         name,
         description: description || null,
         type,
         color
-      }).returning();
+      });
 
-      console.log("Category created successfully:", result);
-      res.json(result);
+      // Buscar a categoria criada
+      const [createdCategory] = await db.select()
+        .from(financialCategories)
+        .where(eq(financialCategories.id, result.insertId))
+        .limit(1);
+
+      console.log("Category created successfully:", createdCategory);
+      res.json(createdCategory);
     } catch (error) {
       console.error("Error creating financial category:", error);
       console.error("Error details:", JSON.stringify(error, null, 2));
