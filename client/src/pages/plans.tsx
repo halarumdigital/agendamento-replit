@@ -37,23 +37,7 @@ export default function Plans() {
       freeDays: 0,
       price: "",
       isActive: true,
-      permissions: {
-        dashboard: true,
-        appointments: true,
-        services: true,
-        professionals: true,
-        clients: true,
-        reviews: false,
-        tasks: false,
-        pointsProgram: false,
-        loyalty: false,
-        inventory: false,
-        messages: false,
-        coupons: false,
-        financial: false,
-        reports: false,
-        settings: true,
-      },
+      permissions: {},
     },
   });
 
@@ -130,17 +114,9 @@ export default function Plans() {
   });
 
   const onSubmit = (data: PlanFormData) => {
-    console.log("=== FORM SUBMIT ===");
-    console.log("Data:", data);
-    console.log("EditingPlan:", editingPlan);
-    console.log("Form valid:", form.formState.isValid);
-    console.log("Form errors:", form.formState.errors);
-    
     if (editingPlan) {
-      console.log("Calling update mutation...");
       updateMutation.mutate({ id: editingPlan.id, data });
     } else {
-      console.log("Calling create mutation...");
       createMutation.mutate(data);
     }
   };
@@ -150,25 +126,9 @@ export default function Plans() {
     form.reset({
       name: plan.name,
       freeDays: plan.freeDays,
-      price: plan.price,
+      price: plan.price.toString(),
       isActive: plan.isActive,
-      permissions: plan.permissions || {
-        dashboard: true,
-        appointments: true,
-        services: true,
-        professionals: true,
-        clients: true,
-        reviews: false,
-        tasks: false,
-        pointsProgram: false,
-        loyalty: false,
-        inventory: false,
-        messages: false,
-        coupons: false,
-        financial: false,
-        reports: false,
-        settings: true,
-      },
+      permissions: plan.permissions || {},
     });
     setIsModalOpen(true);
   };
@@ -447,7 +407,7 @@ export default function Plans() {
               <Button 
                 type="submit" 
                 disabled={createMutation.isPending || updateMutation.isPending}
-                onClick={() => console.log("Button clicked! Form validation:", form.trigger())}
+
               >
                 {editingPlan ? "Atualizar Plano" : "Criar Plano"}
               </Button>
