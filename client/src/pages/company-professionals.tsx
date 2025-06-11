@@ -15,6 +15,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
+import { usePlan } from "@/hooks/use-plan";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Lock } from "lucide-react";
 
 interface Professional {
   id: number;
@@ -47,6 +50,7 @@ export default function CompanyProfessionals() {
   const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { canAddProfessional, getProfessionalsLimitInfo } = usePlan();
 
   // Schedule management state
   const [schedules, setSchedules] = useState(() => {
@@ -305,6 +309,18 @@ export default function CompanyProfessionals() {
                 </DialogDescription>
               </DialogHeader>
               
+              {/* Alert for professional limit when creating new professional */}
+              {!editingProfessional && !canAddProfessional() && (
+                <Alert className="border-red-200 bg-red-50">
+                  <Lock className="h-4 w-4 text-red-600" />
+                  <AlertDescription className="text-red-800">
+                    Você pode adicionar somente {getProfessionalsLimitInfo()?.limit} profissionais. 
+                    Atualmente você tem {getProfessionalsLimitInfo()?.current} profissionais cadastrados. 
+                    Faça upgrade do seu plano para adicionar mais profissionais.
+                  </AlertDescription>
+                </Alert>
+              )}
+              
               <Tabs defaultValue="dados" className="w-full">
                 <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger value="dados">Dados do Profissional</TabsTrigger>
@@ -415,8 +431,12 @@ export default function CompanyProfessionals() {
                       </Button>
                       <Button 
                         type="submit" 
-                        disabled={createMutation.isPending || updateMutation.isPending}
-                        className="bg-purple-600 hover:bg-purple-700"
+                        disabled={
+                          createMutation.isPending || 
+                          updateMutation.isPending || 
+                          (!editingProfessional && !canAddProfessional())
+                        }
+                        className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {editingProfessional ? 'Atualizar' : 'Cadastrar'}
                       </Button>
