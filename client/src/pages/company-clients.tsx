@@ -13,6 +13,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { normalizePhone, validateBrazilianPhone, formatBrazilianPhone } from "../../../shared/phone-utils";
 
 interface Client {
   id: number;
@@ -28,7 +29,10 @@ interface Client {
 const clientSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
   email: z.string().email("Email inválido").optional().or(z.literal("")),
-  phone: z.string().optional(),
+  phone: z.string().optional().refine((phone) => {
+    if (!phone || phone === "") return true;
+    return validateBrazilianPhone(phone);
+  }, "Telefone deve estar no formato brasileiro: (XX) XXXXX-XXXX"),
   birthDate: z.string().optional(),
   notes: z.string().optional(),
 });
@@ -464,17 +468,11 @@ export default function CompanyClients() {
                           placeholder="(11) 99999-9999"
                           {...form.register('phone')}
                           onChange={(e) => {
-                            // Format phone number automatically
-                            let value = e.target.value.replace(/\D/g, '');
-                            if (value.length <= 11) {
-                              if (value.length >= 7) {
-                                value = value.replace(/(\d{2})(\d{4,5})(\d{4})/, '($1) $2-$3');
-                              } else if (value.length >= 3) {
-                                value = value.replace(/(\d{2})(\d+)/, '($1) $2');
-                              }
-                            }
-                            e.target.value = value;
-                            form.setValue('phone', value);
+                            // Format phone number automatically using phone utils
+                            const rawValue = e.target.value.replace(/\D/g, '');
+                            const formattedValue = formatBrazilianPhone(rawValue);
+                            e.target.value = formattedValue;
+                            form.setValue('phone', formattedValue);
                           }}
                         />
                       </div>

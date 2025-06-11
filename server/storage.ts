@@ -67,6 +67,7 @@ import {
   type PointsHistory,
   type InsertPointsHistory,
 } from "@shared/schema";
+import { normalizePhone, validateBrazilianPhone, comparePhones } from "../shared/phone-utils";
 
 // Add missing types for task reminders
 export type TaskReminder = typeof taskReminders.$inferSelect;
@@ -1283,6 +1284,25 @@ export class DatabaseStorage implements IStorage {
 
   async createClient(clientData: InsertClient): Promise<Client> {
     try {
+      // Validate phone number format
+      if (clientData.phone && !validateBrazilianPhone(clientData.phone)) {
+        throw new Error('Formato de telefone inválido. Use o formato brasileiro (XX) XXXXX-XXXX');
+      }
+
+      // Check for existing client with same phone in the company
+      if (clientData.phone) {
+        const normalizedPhone = normalizePhone(clientData.phone);
+        const existingClients = await this.getClientsByCompany(clientData.companyId);
+        
+        const duplicateClient = existingClients.find(client => 
+          client.phone && normalizePhone(client.phone) === normalizedPhone
+        );
+
+        if (duplicateClient) {
+          throw new Error(`Já existe um cliente cadastrado com este telefone: ${duplicateClient.name}`);
+        }
+      }
+
       await db.insert(clients).values(clientData);
       const [client] = await db.select().from(clients).where(
         and(
@@ -1299,6 +1319,33 @@ export class DatabaseStorage implements IStorage {
 
   async updateClient(id: number, clientData: Partial<InsertClient>): Promise<Client> {
     try {
+      // Validate phone number format if phone is being updated
+      if (clientData.phone && !validateBrazilianPhone(clientData.phone)) {
+        throw new Error('Formato de telefone inválido. Use o formato brasileiro (XX) XXXXX-XXXX');
+      }
+
+      // Check for existing client with same phone if phone is being updated
+      if (clientData.phone) {
+        const normalizedPhone = normalizePhone(clientData.phone);
+        
+        // Get current client to know the company
+        const [currentClient] = await db.select().from(clients).where(eq(clients.id, id));
+        if (!currentClient) {
+          throw new Error('Cliente não encontrado');
+        }
+
+        const existingClients = await this.getClientsByCompany(currentClient.companyId);
+        
+        const duplicateClient = existingClients.find(client => 
+          client.id !== id && // Exclude current client
+          client.phone && normalizePhone(client.phone) === normalizedPhone
+        );
+
+        if (duplicateClient) {
+          throw new Error(`Já existe outro cliente cadastrado com este telefone: ${duplicateClient.name}`);
+        }
+      }
+
       await db.update(clients)
         .set({ ...clientData, updatedAt: new Date() })
         .where(eq(clients.id, id));
