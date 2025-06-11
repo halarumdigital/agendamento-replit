@@ -133,7 +133,8 @@ function Router() {
       {/* Public Review Route (no authentication required) */}
       <Route path="/review/:token" component={PublicReview} />
       
-      {/* Admin Login Route */}
+      {/* Admin Login Routes */}
+      <Route path="/login" component={Login} />
       <Route path="/administrador" component={isAdminAuthenticated ? () => <AdminLayout><Dashboard /></AdminLayout> : Login} />
       
       {/* Protected Admin Routes */}
