@@ -4732,7 +4732,7 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
         return res.status(401).json({ message: "Não autenticado" });
       }
 
-      const clients = await storage.getClients(companyId);
+      const clients = await storage.getClientsByCompany(companyId);
       res.json(clients);
     } catch (error) {
       console.error("Error fetching clients:", error);

@@ -118,6 +118,9 @@ export default function CompanyMessages() {
       };
       return apiRequest("/api/company/campaigns", {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(payload),
       });
     },

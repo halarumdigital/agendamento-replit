@@ -2138,6 +2138,33 @@ export const storage = new DatabaseStorage();
   }
 })();
 
+// Initialize message campaigns table
+(async () => {
+  try {
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS message_campaigns (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        company_id INT NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        message TEXT NOT NULL,
+        scheduled_date TIMESTAMP NOT NULL,
+        status VARCHAR(50) NOT NULL DEFAULT 'pending',
+        target_type VARCHAR(20) NOT NULL,
+        selected_clients JSON,
+        sent_count INT DEFAULT 0,
+        total_targets INT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+      )
+    `);
+    
+    console.log("✅ Message campaigns table created/verified");
+  } catch (error) {
+    console.error("❌ Error creating message campaigns table:", error);
+  }
+})();
+
 // Loyalty Campaigns methods using SQL queries
 export async function getLoyaltyCampaignsByCompany(companyId: number) {
   try {
