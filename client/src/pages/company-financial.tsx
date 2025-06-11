@@ -103,7 +103,7 @@ interface PaymentMethod {
 interface Transaction {
   id: number;
   description: string;
-  amount: number;
+  amount: number | string;
   type: "income" | "expense";
   categoryId: number;
   paymentMethodId: number;
@@ -405,7 +405,7 @@ export default function CompanyFinancial() {
     setEditingTransaction(transaction);
     transactionForm.reset({
       description: transaction.description,
-      amount: transaction.amount,
+      amount: typeof transaction.amount === 'string' ? parseFloat(transaction.amount) : transaction.amount,
       type: transaction.type,
       categoryId: transaction.categoryId,
       paymentMethodId: transaction.paymentMethodId,
@@ -415,11 +415,12 @@ export default function CompanyFinancial() {
     setIsTransactionModalOpen(true);
   };
 
-  const formatCurrency = (value: number) => {
+  const formatCurrency = (value: number | string) => {
+    const numValue = typeof value === 'string' ? parseFloat(value) : value;
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
       currency: "BRL",
-    }).format(value);
+    }).format(numValue);
   };
 
   const getPaymentTypeLabel = (type: string) => {
