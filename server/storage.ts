@@ -2054,6 +2054,19 @@ Obrigado pela preferência! 🙏`;
     
     return campaign;
   }
+
+  async deleteMessageCampaign(id: number, companyId: number): Promise<void> {
+    try {
+      await db.delete(messageCampaigns)
+        .where(and(
+          eq(messageCampaigns.id, id),
+          eq(messageCampaigns.companyId, companyId)
+        ));
+    } catch (error: any) {
+      console.error("Error deleting message campaign:", error);
+      throw error;
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();
