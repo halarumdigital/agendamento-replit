@@ -122,12 +122,7 @@ const menuItems = [
     icon: Settings,
     permission: "settings" as keyof PlanPermissions | null,
   },
-  {
-    title: "Assinatura",
-    href: "/company/assinatura",
-    icon: CreditCard,
-    permission: null, // Always visible
-  },
+
 ];
 
 function SidebarContent() {

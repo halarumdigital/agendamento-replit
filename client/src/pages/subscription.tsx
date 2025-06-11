@@ -44,7 +44,7 @@ export default function Subscription() {
   const { company } = useCompanyAuth();
 
   const { data: plans = [], isLoading: plansLoading } = useQuery<Plan[]>({
-    queryKey: ["/api/admin-plans"],
+    queryKey: ["/api/public-plans"],
   });
 
   const handleSubscribe = (planId: number) => {
