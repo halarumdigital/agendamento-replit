@@ -341,19 +341,55 @@ export default function CompanyInventory() {
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="photo"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>URL da Foto</FormLabel>
-                      <FormControl>
-                        <Input placeholder="https://exemplo.com/foto.jpg" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {/* Upload de Imagem */}
+                <div className="col-span-2">
+                  <FormLabel>Imagem do Produto</FormLabel>
+                  <div className="mt-2 space-y-4">
+                    <div className="flex items-center space-x-4">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                        className="hidden"
+                        id="image-upload"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => document.getElementById('image-upload')?.click()}
+                      >
+                        <Upload className="w-4 h-4 mr-2" />
+                        Selecionar Imagem
+                      </Button>
+                      <span className="text-sm text-muted-foreground">
+                        Máximo 5MB - JPG, PNG
+                      </span>
+                    </div>
+                    
+                    {/* Preview da imagem */}
+                    {imagePreview && (
+                      <div className="relative w-32 h-32 border rounded-lg overflow-hidden">
+                        <img
+                          src={imagePreview}
+                          alt="Preview"
+                          className="w-full h-full object-cover"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          className="absolute top-1 right-1 w-6 h-6 p-0"
+                          onClick={() => {
+                            setImageFile(null);
+                            setImagePreview(null);
+                          }}
+                        >
+                          ×
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
 
                 <div className="grid grid-cols-3 gap-4">
                   <FormField
@@ -744,19 +780,55 @@ export default function CompanyInventory() {
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="photo"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>URL da Foto</FormLabel>
-                    <FormControl>
-                      <Input placeholder="https://exemplo.com/foto.jpg" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Upload de Imagem no Modal de Edição */}
+              <div>
+                <FormLabel>Imagem do Produto</FormLabel>
+                <div className="mt-2 space-y-4">
+                  <div className="flex items-center space-x-4">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="hidden"
+                      id="image-upload-edit"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => document.getElementById('image-upload-edit')?.click()}
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      Alterar Imagem
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                      Máximo 5MB - JPG, PNG
+                    </span>
+                  </div>
+                  
+                  {/* Preview da imagem */}
+                  {(imagePreview || editingProduct?.photo) && (
+                    <div className="relative w-32 h-32 border rounded-lg overflow-hidden">
+                      <img
+                        src={imagePreview || editingProduct?.photo || ''}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="absolute top-1 right-1 w-6 h-6 p-0"
+                        onClick={() => {
+                          setImageFile(null);
+                          setImagePreview(null);
+                        }}
+                      >
+                        ×
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
 
               <div className="grid grid-cols-3 gap-4">
                 <FormField
