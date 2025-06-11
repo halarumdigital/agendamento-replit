@@ -43,7 +43,7 @@ export default function CompanyInventory() {
       purchasePrice: "",
       supplierName: "",
       stockQuantity: "",
-      minStockLevel: "0",
+      minStockLevel: "",
       alertStock: false,
       photo: "",
     },
@@ -56,10 +56,14 @@ export default function CompanyInventory() {
   const createProductMutation = useMutation({
     mutationFn: async (data: ProductFormData) => {
       const productData = {
-        ...data,
+        name: data.name,
+        description: data.description || null,
+        photo: data.photo || null,
         purchasePrice: parseFloat(data.purchasePrice),
+        supplierName: data.supplierName || null,
         stockQuantity: parseInt(data.stockQuantity),
         minStockLevel: data.minStockLevel ? parseInt(data.minStockLevel) : 0,
+        alertStock: data.alertStock || false,
       };
       
       const response = await fetch("/api/products", {
@@ -69,7 +73,8 @@ export default function CompanyInventory() {
       });
       
       if (!response.ok) {
-        throw new Error("Erro ao criar produto");
+        const errorData = await response.text();
+        throw new Error(`Erro ao criar produto: ${response.status}`);
       }
       
       return response.json();
@@ -83,10 +88,10 @@ export default function CompanyInventory() {
         description: "Produto criado com sucesso!",
       });
     },
-    onError: () => {
+    onError: (error) => {
       toast({
         title: "Erro",
-        description: "Erro ao criar produto",
+        description: error.message || "Erro ao criar produto",
         variant: "destructive",
       });
     },
@@ -160,9 +165,6 @@ export default function CompanyInventory() {
   });
 
   const handleSubmit = (data: ProductFormData) => {
-    console.log("Form data submitted:", data);
-    console.log("Form errors:", form.formState.errors);
-    
     if (editingProduct) {
       updateProductMutation.mutate({ id: editingProduct.id, data });
     } else {
@@ -379,14 +381,9 @@ export default function CompanyInventory() {
                   </Button>
                   <Button
                     type="submit"
-                    disabled={createProductMutation.isPending}
-                    onClick={() => {
-                      console.log("Button clicked");
-                      console.log("Form valid:", form.formState.isValid);
-                      console.log("Form errors:", form.formState.errors);
-                    }}
+                    disabled={createProductMutation.isPending || updateProductMutation.isPending}
                   >
-                    {createProductMutation.isPending ? "Salvando..." : "Salvar"}
+                    {(createProductMutation.isPending || updateProductMutation.isPending) ? "Salvando..." : "Salvar"}
                   </Button>
                 </div>
               </form>
