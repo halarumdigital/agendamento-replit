@@ -442,7 +442,7 @@ export default function CompanyLoyalty() {
             </Form>
           </DialogContent>
         </Dialog>
-      </div>
+        </div>
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-3">
