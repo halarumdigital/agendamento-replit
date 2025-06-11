@@ -15,7 +15,8 @@ import {
   Star,
   CheckSquare,
   Gift,
-  Package
+  Package,
+  Ticket
 } from "lucide-react";
 import { useCompanyAuth } from "@/hooks/useCompanyAuth";
 
@@ -78,6 +79,11 @@ const menuItems = [
     title: "Mensagens",
     href: "/company/messages",
     icon: MessageSquare,
+  },
+  {
+    title: "Cupons",
+    href: "/company/cupons",
+    icon: Ticket,
   },
   {
     title: "Configurações",

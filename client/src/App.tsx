@@ -22,6 +22,7 @@ import CompanyPointsProgram from "@/pages/company-points-program";
 import CompanyLoyalty from "@/pages/company-loyalty";
 import CompanyInventory from "@/pages/company-inventory";
 import CompanyMessages from "@/pages/company-messages";
+import CompanyCoupons from "@/pages/company-coupons";
 import DashboardAppointments from "@/pages/dashboard-appointments";
 import Dashboard from "@/pages/dashboard";
 import Companies from "@/pages/companies";
@@ -108,6 +109,11 @@ function Router() {
       <Route path="/company/messages">
         <CompanyLayout>
           <CompanyMessages />
+        </CompanyLayout>
+      </Route>
+      <Route path="/company/cupons">
+        <CompanyLayout>
+          <CompanyCoupons />
         </CompanyLayout>
       </Route>
       
