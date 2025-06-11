@@ -4689,6 +4689,57 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
     }
   });
 
+  // Message Campaigns Routes
+  app.get("/api/company/campaigns", async (req, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const campaigns = await storage.getMessageCampaigns(companyId);
+      res.json(campaigns);
+    } catch (error) {
+      console.error("Error fetching campaigns:", error);
+      res.status(500).json({ message: "Erro ao buscar campanhas" });
+    }
+  });
+
+  app.post("/api/company/campaigns", async (req, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const campaignData = {
+        ...req.body,
+        companyId,
+      };
+
+      const campaign = await storage.createMessageCampaign(campaignData);
+      res.json(campaign);
+    } catch (error) {
+      console.error("Error creating campaign:", error);
+      res.status(500).json({ message: "Erro ao criar campanha" });
+    }
+  });
+
+  app.get("/api/company/clients", async (req, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const clients = await storage.getClients(companyId);
+      res.json(clients);
+    } catch (error) {
+      console.error("Error fetching clients:", error);
+      res.status(500).json({ message: "Erro ao buscar clientes" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

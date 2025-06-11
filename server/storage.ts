@@ -25,6 +25,7 @@ import {
   loyaltyCampaigns,
   loyaltyRewardsHistory,
   products,
+  messageCampaigns,
   type Admin,
   type InsertAdmin,
   type Company,
@@ -75,6 +76,8 @@ import {
   type InsertLoyaltyRewardsHistory,
   type Product,
   type InsertProduct,
+  type MessageCampaign,
+  type InsertMessageCampaign,
 } from "@shared/schema";
 import { normalizePhone, validateBrazilianPhone, comparePhones } from "../shared/phone-utils";
 
@@ -2028,6 +2031,28 @@ Obrigado pela preferência! 🙏`;
 
   async deleteProduct(id: number): Promise<void> {
     await db.delete(products).where(eq(products.id, id));
+  }
+
+  // Message Campaign methods
+  async getMessageCampaigns(companyId: number): Promise<MessageCampaign[]> {
+    return await db.select().from(messageCampaigns)
+      .where(eq(messageCampaigns.companyId, companyId))
+      .orderBy(desc(messageCampaigns.createdAt));
+  }
+
+  async createMessageCampaign(campaignData: InsertMessageCampaign): Promise<MessageCampaign> {
+    await db.insert(messageCampaigns).values(campaignData);
+    
+    const [campaign] = await db.select().from(messageCampaigns)
+      .where(eq(messageCampaigns.companyId, campaignData.companyId))
+      .orderBy(desc(messageCampaigns.id))
+      .limit(1);
+    
+    if (!campaign) {
+      throw new Error("Failed to create message campaign");
+    }
+    
+    return campaign;
   }
 }
 
