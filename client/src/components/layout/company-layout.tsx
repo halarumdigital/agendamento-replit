@@ -129,7 +129,7 @@ function SidebarContent() {
   const { hasPermission, isLoading } = usePlan();
   
   const { data: settings } = useQuery<GlobalSettings>({
-    queryKey: ["/api/settings"],
+    queryKey: ["/api/public-settings"],
   });
 
   // Filter menu items based on plan permissions
