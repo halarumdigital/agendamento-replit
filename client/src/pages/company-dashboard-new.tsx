@@ -401,8 +401,8 @@ export default function CompanyDashboardNew() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Date and Filter Controls */}
-      <div className="flex justify-between items-center mb-6 px-6 pt-6">
+      {/* Header */}
+      <div className="mb-6 px-6 pt-6">
         <div>
           <h2 className="text-xl font-semibold text-gray-800">Dashboard</h2>
           <p className="text-sm text-gray-500">
@@ -413,17 +413,6 @@ export default function CompanyDashboardNew() {
               weekday: 'long'
             })}
           </p>
-        </div>
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-            <button className="px-4 py-2 text-sm font-medium text-purple-600 bg-purple-50">Dia</button>
-            <button className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50">Semana</button>
-            <button className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50">Mês</button>
-          </div>
-          <button className="flex items-center space-x-1 px-3 py-2 bg-white rounded-lg shadow-sm border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 whitespace-nowrap">
-            <Download className="w-4 h-4" />
-            <span>Exportar</span>
-          </button>
         </div>
       </div>
 
