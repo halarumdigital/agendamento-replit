@@ -194,11 +194,43 @@ export default function CompanyDashboardNew() {
     return chartData;
   };
 
+  // Calcular agendamentos de hoje para a tabela
+  const getTodayAppointments = () => {
+    if (!Array.isArray(appointments)) {
+      return [];
+    }
+
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+
+    return appointments.filter((appointment: any) => {
+      const appointmentDate = new Date(appointment.appointmentDate);
+      const appointmentDateStr = appointmentDate.toISOString().split('T')[0];
+      return appointmentDateStr === todayStr;
+    }).sort((a: any, b: any) => {
+      return a.appointmentTime.localeCompare(b.appointmentTime);
+    });
+  };
+
+  // Função para mapear cores dos status
+  const getStatusColor = (status: string) => {
+    const colorMap: { [key: string]: string } = {
+      'Pendente': 'bg-yellow-100 text-yellow-800',
+      'Confirmado': 'bg-purple-100 text-purple-800',
+      'Em andamento': 'bg-blue-100 text-blue-800',
+      'Concluído': 'bg-green-100 text-green-800',
+      'Cancelado': 'bg-red-100 text-red-800',
+      'Não compareceu': 'bg-gray-100 text-gray-800'
+    };
+    return colorMap[status] || 'bg-gray-100 text-gray-800';
+  };
+
   const dailyRevenue = calculateDailyRevenue();
   const todayAppointmentsCount = calculateTodayAppointments();
   const todayClientsServed = calculateTodayClientsServed();
   const servicesData = calculateServicesData();
   const monthlyRevenueData = calculateMonthlyRevenue();
+  const todayAppointmentsList = getTodayAppointments();
 
   if (isLoading) {
     return (
@@ -450,10 +482,6 @@ export default function CompanyDashboardNew() {
         <div className="bg-white rounded shadow-sm p-5 border border-gray-100 lg:col-span-2">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-semibold text-gray-800">Agendamentos de Hoje</h3>
-            <button className="flex items-center space-x-1 px-3 py-1.5 bg-purple-600 rounded text-sm font-medium text-white hover:bg-purple-700">
-              <Plus className="w-4 h-4" />
-              <span>Novo Agendamento</span>
-            </button>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full">
@@ -468,76 +496,32 @@ export default function CompanyDashboardNew() {
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="py-3 px-4 text-sm text-gray-800">09:00</td>
-                  <td className="py-3 px-4 text-sm text-gray-800">Isabela Oliveira</td>
-                  <td className="py-3 px-4 text-sm text-gray-800">Corte e Escova</td>
-                  <td className="py-3 px-4 text-sm text-gray-800">Fernanda Souza</td>
-                  <td className="py-3 px-4">
-                    <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Concluído</span>
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    <button className="text-gray-500 hover:text-purple-600">
-                      <MoreHorizontal className="w-5 h-5" />
-                    </button>
-                  </td>
-                </tr>
-                <tr className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="py-3 px-4 text-sm text-gray-800">10:30</td>
-                  <td className="py-3 px-4 text-sm text-gray-800">Carolina Mendes</td>
-                  <td className="py-3 px-4 text-sm text-gray-800">Manicure e Pedicure</td>
-                  <td className="py-3 px-4 text-sm text-gray-800">Juliana Costa</td>
-                  <td className="py-3 px-4">
-                    <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">Em andamento</span>
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    <button className="text-gray-500 hover:text-purple-600">
-                      <MoreHorizontal className="w-5 h-5" />
-                    </button>
-                  </td>
-                </tr>
-                <tr className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="py-3 px-4 text-sm text-gray-800">11:15</td>
-                  <td className="py-3 px-4 text-sm text-gray-800">Gabriela Santos</td>
-                  <td className="py-3 px-4 text-sm text-gray-800">Coloração</td>
-                  <td className="py-3 px-4 text-sm text-gray-800">Fernanda Souza</td>
-                  <td className="py-3 px-4">
-                    <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">Aguardando</span>
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    <button className="text-gray-500 hover:text-purple-600">
-                      <MoreHorizontal className="w-5 h-5" />
-                    </button>
-                  </td>
-                </tr>
-                <tr className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="py-3 px-4 text-sm text-gray-800">13:00</td>
-                  <td className="py-3 px-4 text-sm text-gray-800">Rafaela Lima</td>
-                  <td className="py-3 px-4 text-sm text-gray-800">Hidratação e Escova</td>
-                  <td className="py-3 px-4 text-sm text-gray-800">Amanda Rocha</td>
-                  <td className="py-3 px-4">
-                    <span className="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800">Confirmado</span>
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    <button className="text-gray-500 hover:text-purple-600">
-                      <MoreHorizontal className="w-5 h-5" />
-                    </button>
-                  </td>
-                </tr>
-                <tr className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="py-3 px-4 text-sm text-gray-800">14:30</td>
-                  <td className="py-3 px-4 text-sm text-gray-800">Beatriz Ferreira</td>
-                  <td className="py-3 px-4 text-sm text-gray-800">Design de Sobrancelhas</td>
-                  <td className="py-3 px-4 text-sm text-gray-800">Juliana Costa</td>
-                  <td className="py-3 px-4">
-                    <span className="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800">Confirmado</span>
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    <button className="text-gray-500 hover:text-purple-600">
-                      <MoreHorizontal className="w-5 h-5" />
-                    </button>
-                  </td>
-                </tr>
+                {todayAppointmentsList.length > 0 ? (
+                  todayAppointmentsList.map((appointment: any) => (
+                    <tr key={appointment.id} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="py-3 px-4 text-sm text-gray-800">{appointment.appointmentTime}</td>
+                      <td className="py-3 px-4 text-sm text-gray-800">{appointment.clientName}</td>
+                      <td className="py-3 px-4 text-sm text-gray-800">{appointment.service?.name || 'Serviço não informado'}</td>
+                      <td className="py-3 px-4 text-sm text-gray-800">{appointment.professional?.name || 'Profissional não informado'}</td>
+                      <td className="py-3 px-4">
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(appointment.status?.name || 'Pendente')}`}>
+                          {appointment.status?.name || 'Pendente'}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <button className="text-gray-500 hover:text-purple-600">
+                          <MoreHorizontal className="w-5 h-5" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-gray-500">
+                      Nenhum agendamento para hoje
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
