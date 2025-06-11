@@ -213,22 +213,22 @@ export default function CompanyMessages() {
   const targetType = form.watch("targetType");
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Campanhas de Mensagens</h1>
+    <div className="container mx-auto p-6 space-y-8">
+      <div className="flex justify-between items-start">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-bold tracking-tight">Campanhas de Mensagens</h1>
           <p className="text-muted-foreground">
             Gerencie suas campanhas de mensagens via WhatsApp
           </p>
         </div>
-        <Button onClick={() => setIsCreateModalOpen(true)}>
+        <Button onClick={() => setIsCreateModalOpen(true)} className="shrink-0">
           <Plus className="w-4 h-4 mr-2" />
           Nova Campanha
         </Button>
       </div>
 
       {/* Estatísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total de Campanhas</CardTitle>
@@ -276,20 +276,20 @@ export default function CompanyMessages() {
 
       {/* Lista de campanhas */}
       <Card>
-        <CardHeader>
-          <CardTitle>Campanhas</CardTitle>
+        <CardHeader className="pb-4">
+          <CardTitle className="text-xl font-semibold">Campanhas</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-0">
           {isLoadingCampaigns ? (
-            <div className="text-center py-8">
+            <div className="text-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-              <p className="mt-2 text-muted-foreground">Carregando campanhas...</p>
+              <p className="mt-4 text-muted-foreground">Carregando campanhas...</p>
             </div>
           ) : campaigns.length === 0 ? (
-            <div className="text-center py-12">
-              <MessageSquare className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+            <div className="text-center py-16">
+              <MessageSquare className="w-16 h-16 mx-auto text-gray-400 mb-6" />
               <h3 className="text-lg font-semibold mb-2">Nenhuma campanha criada</h3>
-              <p className="text-muted-foreground mb-4">
+              <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
                 Comece criando sua primeira campanha de mensagens
               </p>
               <Button onClick={() => setIsCreateModalOpen(true)}>
@@ -298,20 +298,20 @@ export default function CompanyMessages() {
               </Button>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {campaigns.map((campaign: Campaign) => (
                 <div
                   key={campaign.id}
-                  className="border rounded-lg p-4 space-y-3"
+                  className="border rounded-lg p-6 space-y-4 hover:shadow-sm transition-shadow"
                 >
                   <div className="flex justify-between items-start">
-                    <div className="space-y-1">
+                    <div className="space-y-2 flex-1 min-w-0">
                       <h3 className="font-semibold text-lg">{campaign.name}</h3>
-                      <p className="text-muted-foreground text-sm line-clamp-2">
+                      <p className="text-muted-foreground text-sm leading-relaxed line-clamp-2 pr-4">
                         {campaign.message}
                       </p>
                     </div>
-                    <div className="flex space-x-2">
+                    <div className="flex space-x-2 shrink-0">
                       {getStatusBadge(campaign.status)}
                       <Button
                         variant="outline"
@@ -328,9 +328,9 @@ export default function CompanyMessages() {
                     </div>
                   </div>
                   
-                  <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                  <div className="flex flex-wrap gap-6 text-sm text-muted-foreground pt-2">
                     <div className="flex items-center">
-                      <Calendar className="w-4 h-4 mr-1" />
+                      <Calendar className="w-4 h-4 mr-2" />
                       {(() => {
                         const date = new Date(campaign.scheduledDate);
                         // Add 3 hours to compensate for GMT-3 timezone display
@@ -341,13 +341,13 @@ export default function CompanyMessages() {
                       })()}
                     </div>
                     <div className="flex items-center">
-                      <Users className="w-4 h-4 mr-1" />
+                      <Users className="w-4 h-4 mr-2" />
                       {campaign.targetType === "all" 
                         ? "Todos os clientes" 
                         : `${campaign.selectedClients?.length || 0} clientes selecionados`}
                     </div>
                     <div className="flex items-center">
-                      <Send className="w-4 h-4 mr-1" />
+                      <Send className="w-4 h-4 mr-2" />
                       {campaign.sentCount || 0} de {campaign.totalTargets || 0} enviadas
                     </div>
                   </div>
