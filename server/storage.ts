@@ -2371,6 +2371,28 @@ export const storage = new DatabaseStorage();
   }
 })();
 
+// Ensure plan_id and is_active columns exist in companies table
+(async () => {
+  try {
+    await db.execute(sql`
+      ALTER TABLE companies 
+      ADD COLUMN IF NOT EXISTS plan_id INT
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE companies 
+      ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE
+    `);
+    
+    console.log("✅ Company plan and status columns ensured");
+  } catch (error: any) {
+    // Columns might already exist, which is fine
+    if (!error.message?.includes('Duplicate column name')) {
+      console.error("❌ Error adding company columns:", error);
+    }
+  }
+})();
+
 // Initialize financial tables on startup
 (async () => {
   try {

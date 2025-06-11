@@ -126,6 +126,8 @@ export const companyProfileSchema = z.object({
   document: documentSchema,
   address: z.string().min(1, "Endereço é obrigatório"),
   email: z.string().email("Email inválido"),
+  planId: z.number().optional().nullable(),
+  isActive: z.boolean(),
 });
 
 // Company password validation schema

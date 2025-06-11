@@ -46,6 +46,8 @@ export const companies = mysqlTable("companies", {
   address: text("address").notNull(),
   email: varchar("email", { length: 255 }).notNull().unique(),
   password: varchar("password", { length: 255 }).notNull(),
+  planId: int("plan_id"),
+  isActive: boolean("is_active").notNull().default(true),
   aiAgentPrompt: text("ai_agent_prompt"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),

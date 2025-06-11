@@ -9,15 +9,18 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Building, Edit, Trash2, Search } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
-import { companySchema } from "@/lib/validations";
+import { companySchema, companyProfileSchema } from "@/lib/validations";
 import { formatDocument } from "@/lib/validations";
-import type { Company } from "@shared/schema";
+import type { Company, Plan } from "@shared/schema";
 import { z } from "zod";
 
 type CompanyFormData = z.infer<typeof companySchema>;
+type CompanyEditFormData = z.infer<typeof companyProfileSchema>;
 
 export default function Companies() {
   const { toast } = useToast();
@@ -30,6 +33,10 @@ export default function Companies() {
     queryKey: ["/api/companies"],
   });
 
+  const { data: plans = [] } = useQuery<Plan[]>({
+    queryKey: ["/api/plans"],
+  });
+
   const form = useForm<CompanyFormData>({
     resolver: zodResolver(companySchema),
     defaultValues: {
@@ -38,6 +45,18 @@ export default function Companies() {
       address: "",
       email: "",
       password: "",
+    },
+  });
+
+  const editForm = useForm<CompanyEditFormData>({
+    resolver: zodResolver(companyProfileSchema),
+    defaultValues: {
+      fantasyName: "",
+      document: "",
+      address: "",
+      email: "",
+      planId: null,
+      isActive: true,
     },
   });
 
