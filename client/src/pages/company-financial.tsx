@@ -217,9 +217,7 @@ export default function CompanyFinancial() {
 
   const deleteCategoryMutation = useMutation({
     mutationFn: (id: number) =>
-      apiRequest(`/api/company/financial/categories/${id}`, {
-        method: "DELETE",
-      }),
+      apiRequest(`/api/company/financial/categories/${id}`, "DELETE"),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/company/financial/categories"] });
       toast({ title: "Categoria removida com sucesso!" });
@@ -235,10 +233,7 @@ export default function CompanyFinancial() {
 
   const createPaymentMutation = useMutation({
     mutationFn: (data: PaymentFormData) =>
-      apiRequest("/api/company/financial/payment-methods", {
-        method: "POST",
-        body: JSON.stringify(data),
-      }),
+      apiRequest("/api/company/financial/payment-methods", "POST", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/company/financial/payment-methods"] });
       setIsPaymentModalOpen(false);
@@ -256,10 +251,7 @@ export default function CompanyFinancial() {
 
   const updatePaymentMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: PaymentFormData }) =>
-      apiRequest(`/api/company/financial/payment-methods/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(data),
-      }),
+      apiRequest(`/api/company/financial/payment-methods/${id}`, "PUT", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/company/financial/payment-methods"] });
       setIsPaymentModalOpen(false);
@@ -278,9 +270,7 @@ export default function CompanyFinancial() {
 
   const deletePaymentMutation = useMutation({
     mutationFn: (id: number) =>
-      apiRequest(`/api/company/financial/payment-methods/${id}`, {
-        method: "DELETE",
-      }),
+      apiRequest(`/api/company/financial/payment-methods/${id}`, "DELETE"),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/company/financial/payment-methods"] });
       toast({ title: "Método de pagamento removido com sucesso!" });
@@ -296,10 +286,7 @@ export default function CompanyFinancial() {
 
   const createTransactionMutation = useMutation({
     mutationFn: (data: TransactionFormData) =>
-      apiRequest("/api/company/financial/transactions", {
-        method: "POST",
-        body: JSON.stringify(data),
-      }),
+      apiRequest("/api/company/financial/transactions", "POST", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/company/financial/transactions"] });
       queryClient.invalidateQueries({ queryKey: ["/api/company/financial/dashboard"] });
@@ -318,10 +305,7 @@ export default function CompanyFinancial() {
 
   const updateTransactionMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: TransactionFormData }) =>
-      apiRequest(`/api/company/financial/transactions/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(data),
-      }),
+      apiRequest(`/api/company/financial/transactions/${id}`, "PUT", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/company/financial/transactions"] });
       queryClient.invalidateQueries({ queryKey: ["/api/company/financial/dashboard"] });
@@ -341,9 +325,7 @@ export default function CompanyFinancial() {
 
   const deleteTransactionMutation = useMutation({
     mutationFn: (id: number) =>
-      apiRequest(`/api/company/financial/transactions/${id}`, {
-        method: "DELETE",
-      }),
+      apiRequest(`/api/company/financial/transactions/${id}`, "DELETE"),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/company/financial/transactions"] });
       queryClient.invalidateQueries({ queryKey: ["/api/company/financial/dashboard"] });
