@@ -4503,6 +4503,106 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
     }
   });
 
+  // Loyalty Campaigns Routes
+  app.get("/api/loyalty-campaigns", async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const campaigns = await storage.getLoyaltyCampaignsByCompany(companyId);
+      res.json(campaigns);
+    } catch (error) {
+      console.error("Error getting loyalty campaigns:", error);
+      res.status(500).json({ message: "Erro ao buscar campanhas de fidelidade" });
+    }
+  });
+
+  app.post("/api/loyalty-campaigns", async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const campaignData = {
+        ...req.body,
+        companyId
+      };
+
+      const campaign = await storage.createLoyaltyCampaign(campaignData);
+      res.json(campaign);
+    } catch (error) {
+      console.error("Error creating loyalty campaign:", error);
+      res.status(500).json({ message: "Erro ao criar campanha de fidelidade" });
+    }
+  });
+
+  app.patch("/api/loyalty-campaigns/:id", async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const { id } = req.params;
+      const campaign = await storage.updateLoyaltyCampaign(parseInt(id), req.body, companyId);
+      res.json(campaign);
+    } catch (error) {
+      console.error("Error updating loyalty campaign:", error);
+      res.status(500).json({ message: "Erro ao atualizar campanha de fidelidade" });
+    }
+  });
+
+  app.patch("/api/loyalty-campaigns/:id/toggle", async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const { id } = req.params;
+      const { active } = req.body;
+      await storage.toggleLoyaltyCampaign(parseInt(id), active, companyId);
+      res.json({ message: "Status da campanha atualizado" });
+    } catch (error) {
+      console.error("Error toggling loyalty campaign:", error);
+      res.status(500).json({ message: "Erro ao atualizar status da campanha" });
+    }
+  });
+
+  app.delete("/api/loyalty-campaigns/:id", async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const { id } = req.params;
+      await storage.deleteLoyaltyCampaign(parseInt(id), companyId);
+      res.json({ message: "Campanha de fidelidade removida" });
+    } catch (error) {
+      console.error("Error deleting loyalty campaign:", error);
+      res.status(500).json({ message: "Erro ao remover campanha de fidelidade" });
+    }
+  });
+
+  app.get("/api/loyalty-rewards-history", async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const history = await storage.getLoyaltyRewardsHistory(companyId);
+      res.json(history);
+    } catch (error) {
+      console.error("Error getting loyalty rewards history:", error);
+      res.status(500).json({ message: "Erro ao buscar histórico de recompensas" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

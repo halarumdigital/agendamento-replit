@@ -64,6 +64,11 @@ const menuItems = [
     icon: Gift,
   },
   {
+    title: "Fidelidade",
+    href: "/company/fidelidade",
+    icon: Gift,
+  },
+  {
     title: "Configurações",
     href: "/company/settings",
     icon: Settings,

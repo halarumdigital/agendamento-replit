@@ -22,6 +22,8 @@ import {
   clientPoints,
   pointsCampaigns,
   pointsHistory,
+  loyaltyCampaigns,
+  loyaltyRewardsHistory,
   type Admin,
   type InsertAdmin,
   type Company,
@@ -66,6 +68,10 @@ import {
   type InsertPointsCampaign,
   type PointsHistory,
   type InsertPointsHistory,
+  type LoyaltyCampaign,
+  type InsertLoyaltyCampaign,
+  type LoyaltyRewardsHistory,
+  type InsertLoyaltyRewardsHistory,
 } from "@shared/schema";
 import { normalizePhone, validateBrazilianPhone, comparePhones } from "../shared/phone-utils";
 
@@ -1989,3 +1995,74 @@ export const storage = new DatabaseStorage();
     console.error("❌ Error initializing conversation tables:", error);
   }
 })();
+
+// Loyalty Campaigns methods
+export async function getLoyaltyCampaignsByCompany(companyId: number) {
+  try {
+    return await db.select()
+      .from(loyaltyCampaigns)
+      .where(eq(loyaltyCampaigns.companyId, companyId))
+      .orderBy(desc(loyaltyCampaigns.createdAt));
+  } catch (error) {
+    console.error('Error getting loyalty campaigns:', error);
+    throw error;
+  }
+}
+
+export async function createLoyaltyCampaign(campaignData: InsertLoyaltyCampaign) {
+  try {
+    const [campaign] = await db.insert(loyaltyCampaigns)
+      .values(campaignData)
+      .returning();
+    return campaign;
+  } catch (error) {
+    console.error('Error creating loyalty campaign:', error);
+    throw error;
+  }
+}
+
+export async function updateLoyaltyCampaign(id: number, updates: Partial<InsertLoyaltyCampaign>, companyId: number) {
+  try {
+    const [campaign] = await db.update(loyaltyCampaigns)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(and(eq(loyaltyCampaigns.id, id), eq(loyaltyCampaigns.companyId, companyId)))
+      .returning();
+    return campaign;
+  } catch (error) {
+    console.error('Error updating loyalty campaign:', error);
+    throw error;
+  }
+}
+
+export async function toggleLoyaltyCampaign(id: number, active: boolean, companyId: number) {
+  try {
+    await db.update(loyaltyCampaigns)
+      .set({ active, updatedAt: new Date() })
+      .where(and(eq(loyaltyCampaigns.id, id), eq(loyaltyCampaigns.companyId, companyId)));
+  } catch (error) {
+    console.error('Error toggling loyalty campaign:', error);
+    throw error;
+  }
+}
+
+export async function deleteLoyaltyCampaign(id: number, companyId: number) {
+  try {
+    await db.delete(loyaltyCampaigns)
+      .where(and(eq(loyaltyCampaigns.id, id), eq(loyaltyCampaigns.companyId, companyId)));
+  } catch (error) {
+    console.error('Error deleting loyalty campaign:', error);
+    throw error;
+  }
+}
+
+export async function getLoyaltyRewardsHistory(companyId: number) {
+  try {
+    return await db.select()
+      .from(loyaltyRewardsHistory)
+      .where(eq(loyaltyRewardsHistory.companyId, companyId))
+      .orderBy(desc(loyaltyRewardsHistory.createdAt));
+  } catch (error) {
+    console.error('Error getting loyalty rewards history:', error);
+    throw error;
+  }
+}
