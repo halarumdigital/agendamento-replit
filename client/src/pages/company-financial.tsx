@@ -502,10 +502,10 @@ export default function CompanyFinancial() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold text-green-600">
-                      {formatCurrency(dashboardData.monthlyIncome)}
+                      {formatCurrency(dashboardData?.monthlyIncome || 0)}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      +{dashboardData.incomeGrowth}% em relação ao mês anterior
+                      +{dashboardData?.incomeGrowth || 0}% em relação ao mês anterior
                     </p>
                   </CardContent>
                 </Card>
@@ -517,10 +517,10 @@ export default function CompanyFinancial() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold text-red-600">
-                      {formatCurrency(dashboardData.monthlyExpenses)}
+                      {formatCurrency(dashboardData?.monthlyExpenses || 0)}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      +{dashboardData.expenseGrowth}% em relação ao mês anterior
+                      +{dashboardData?.expenseGrowth || 0}% em relação ao mês anterior
                     </p>
                   </CardContent>
                 </Card>
@@ -532,7 +532,7 @@ export default function CompanyFinancial() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold text-blue-600">
-                      {formatCurrency(dashboardData.monthlyIncome - dashboardData.monthlyExpenses)}
+                      {formatCurrency((dashboardData?.monthlyIncome || 0) - (dashboardData?.monthlyExpenses || 0))}
                     </div>
                     <p className="text-xs text-muted-foreground">
                       Receitas - Despesas do mês
@@ -547,7 +547,7 @@ export default function CompanyFinancial() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">
-                      {dashboardData.totalTransactions}
+                      {dashboardData?.totalTransactions || 0}
                     </div>
                     <p className="text-xs text-muted-foreground">
                       Total de transações no mês
