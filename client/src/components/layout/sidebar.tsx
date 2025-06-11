@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { useGlobalTheme } from "@/hooks/use-global-theme";
 import { 
   BarChart3, 
   Building, 
@@ -23,6 +24,9 @@ export default function Sidebar({ systemName = "AdminPro", logoUrl }: SidebarPro
   const [location] = useLocation();
   const { user } = useAuth();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  
+  // Aplica tema global dinamicamente
+  useGlobalTheme();
 
   const navigation = [
     { name: "Dashboard", href: "/administrador", icon: BarChart3 },
@@ -86,7 +90,7 @@ export default function Sidebar({ systemName = "AdminPro", logoUrl }: SidebarPro
               <img 
                 src={logoUrl} 
                 alt="Logo" 
-                className="w-[150px] h-auto rounded object-contain"
+                className="w-[165px] h-auto rounded object-contain"
               />
             ) : (
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
@@ -120,7 +124,7 @@ export default function Sidebar({ systemName = "AdminPro", logoUrl }: SidebarPro
                   <a className={`
                     flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors
                     ${active 
-                      ? 'text-blue-700 bg-blue-50' 
+                      ? 'text-white bg-[var(--primary-color)]' 
                       : 'text-slate-600 hover:text-slate-800 hover:bg-slate-100'
                     }
                   `}>

@@ -54,6 +54,7 @@ export function useGlobalTheme() {
         root.style.setProperty('--sidebar-primary', `hsl(${primaryHsl})`);
         root.style.setProperty('--sidebar-ring', `hsl(${primaryHsl})`);
         root.style.setProperty('--chart-1', `hsl(${primaryHsl})`);
+        root.style.setProperty('--primary-color', settings.primaryColor);
         
         // Cria versão clara para accent
         const [h, s] = primaryHsl.split(',');
