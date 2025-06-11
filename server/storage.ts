@@ -2067,6 +2067,44 @@ Obrigado pela preferência! 🙏`;
       throw error;
     }
   }
+
+  // Coupon methods
+  async getCoupons(companyId: number): Promise<Coupon[]> {
+    return await db.select().from(coupons)
+      .where(eq(coupons.companyId, companyId))
+      .orderBy(desc(coupons.createdAt));
+  }
+
+  async createCoupon(couponData: InsertCoupon): Promise<Coupon> {
+    const [coupon] = await db.insert(coupons).values(couponData).returning();
+    return coupon;
+  }
+
+  async updateCoupon(id: number, couponData: Partial<InsertCoupon>): Promise<Coupon> {
+    const [coupon] = await db.update(coupons)
+      .set({ ...couponData, updatedAt: new Date() })
+      .where(eq(coupons.id, id))
+      .returning();
+    return coupon;
+  }
+
+  async deleteCoupon(id: number, companyId: number): Promise<void> {
+    await db.delete(coupons)
+      .where(and(
+        eq(coupons.id, id),
+        eq(coupons.companyId, companyId)
+      ));
+  }
+
+  async getCouponByCode(code: string, companyId: number): Promise<Coupon | undefined> {
+    const [coupon] = await db.select().from(coupons)
+      .where(and(
+        eq(coupons.code, code),
+        eq(coupons.companyId, companyId),
+        eq(coupons.isActive, true)
+      ));
+    return coupon;
+  }
 }
 
 export const storage = new DatabaseStorage();

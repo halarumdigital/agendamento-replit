@@ -362,6 +362,22 @@ export const products = mysqlTable("products", {
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
 
+// Coupons table
+export const coupons = mysqlTable("coupons", {
+  id: int("id").primaryKey().autoincrement(),
+  companyId: int("company_id").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  code: varchar("code", { length: 50 }).notNull(),
+  discountType: varchar("discount_type", { length: 20 }).notNull(), // 'fixed' or 'percentage'
+  discountValue: decimal("discount_value", { precision: 10, scale: 2 }).notNull(),
+  validUntil: date("valid_until").notNull(),
+  isActive: boolean("is_active").default(true),
+  usageLimit: int("usage_limit"), // null = unlimited
+  usedCount: int("used_count").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+});
+
 // Message campaigns table
 export const messageCampaigns = mysqlTable("message_campaigns", {
   id: int("id").primaryKey().autoincrement(),
@@ -591,6 +607,12 @@ export const insertMessageCampaignSchema = createInsertSchema(messageCampaigns).
   updatedAt: true,
 });
 
+export const insertCouponSchema = createInsertSchema(coupons).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Type exports
 export type Admin = typeof admins.$inferSelect;
 export type InsertAdmin = z.infer<typeof insertAdminSchema>;
@@ -644,3 +666,5 @@ export type Product = typeof products.$inferSelect;
 export type InsertProduct = z.infer<typeof insertProductSchema>;
 export type MessageCampaign = typeof messageCampaigns.$inferSelect;
 export type InsertMessageCampaign = z.infer<typeof insertMessageCampaignSchema>;
+export type Coupon = typeof coupons.$inferSelect;
+export type InsertCoupon = z.infer<typeof insertCouponSchema>;
