@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,8 +27,56 @@ export default function CompanyLogin() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   
+  // Busca configurações públicas para obter a logo e cores
+  const { data: settings } = useQuery({
+    queryKey: ["/api/public-settings"],
+    retry: false,
+  });
+  
   // Aplica tema global dinamicamente
   useGlobalTheme();
+
+  // Aplica cores da configuração pública
+  useEffect(() => {
+    if (settings?.primaryColor) {
+      const root = document.documentElement;
+      
+      const hexToHsl = (hex: string) => {
+        const r = parseInt(hex.slice(1, 3), 16) / 255;
+        const g = parseInt(hex.slice(3, 5), 16) / 255;
+        const b = parseInt(hex.slice(5, 7), 16) / 255;
+
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        let h, s, l = (max + min) / 2;
+
+        if (max === min) {
+          h = s = 0;
+        } else {
+          const d = max - min;
+          s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+          switch (max) {
+            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+            case g: h = (b - r) / d + 2; break;
+            case b: h = (r - g) / d + 4; break;
+            default: h = 0;
+          }
+          h /= 6;
+        }
+
+        return `${Math.round(h * 360)}, ${Math.round(s * 100)}%, ${Math.round(l * 100)}%`;
+      };
+
+      const primaryHsl = hexToHsl(settings.primaryColor);
+      root.style.setProperty('--primary', `hsl(${primaryHsl})`);
+      root.style.setProperty('--ring', `hsl(${primaryHsl})`);
+      
+      // Criar versão clara para accent
+      const [h, s] = primaryHsl.split(',');
+      root.style.setProperty('--accent', `hsl(${h}, ${s}, 96%)`);
+      root.style.setProperty('--accent-foreground', `hsl(${primaryHsl})`);
+    }
+  }, [settings]);
 
   const form = useForm<CompanyLoginFormData>({
     resolver: zodResolver(companyLoginSchema),
@@ -67,14 +115,24 @@ export default function CompanyLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4">
-            <Building2 className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Portal da Empresa</h1>
-          <p className="text-gray-600">
+          {settings?.logoUrl ? (
+            <div className="mb-4">
+              <img 
+                src={settings.logoUrl} 
+                alt="Logo" 
+                className="w-full h-32 object-contain mx-auto"
+              />
+            </div>
+          ) : (
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-full mb-4">
+              <Building2 className="w-8 h-8 text-primary-foreground" />
+            </div>
+          )}
+          <h1 className="text-3xl font-bold text-foreground mb-2">Portal da Empresa</h1>
+          <p className="text-muted-foreground">
             Acesse o painel da sua empresa com suas credenciais
           </p>
         </div>
@@ -148,7 +206,7 @@ export default function CompanyLogin() {
 
                 <Button
                   type="submit"
-                  className="w-full"
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                   disabled={loginMutation.isPending}
                 >
                   {loginMutation.isPending ? "Entrando..." : "Entrar"}
@@ -157,9 +215,9 @@ export default function CompanyLogin() {
             </Form>
 
             <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-muted-foreground">
                 Problemas com acesso?{" "}
-                <span className="text-blue-600 hover:underline cursor-pointer">
+                <span className="text-primary hover:underline cursor-pointer">
                   Entre em contato com o suporte
                 </span>
               </p>
@@ -168,11 +226,11 @@ export default function CompanyLogin() {
         </Card>
 
         <div className="mt-6 text-center">
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             Acesso administrativo?{" "}
             <button
-              onClick={() => setLocation("/")}
-              className="text-blue-600 hover:underline"
+              onClick={() => setLocation("/administrador")}
+              className="text-primary hover:underline"
             >
               Clique aqui
             </button>
