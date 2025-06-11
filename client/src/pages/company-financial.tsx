@@ -1183,7 +1183,7 @@ export default function CompanyFinancial() {
                               <span>•</span>
                               <span>{getPaymentTypeLabel(transaction.paymentMethod?.type)}</span>
                               <span>•</span>
-                              <span>{format(new Date(transaction.date), "dd/MM/yyyy", { locale: ptBR })}</span>
+                              <span>{transaction.date ? format(new Date(transaction.date), "dd/MM/yyyy", { locale: ptBR }) : "Data não informada"}</span>
                             </div>
                             {transaction.notes && (
                               <p className="text-sm text-muted-foreground mt-2">{transaction.notes}</p>
