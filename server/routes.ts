@@ -865,6 +865,109 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Company forgot password route
+  app.post('/api/auth/forgot-password', async (req: any, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: "Email é obrigatório" });
+      }
+
+      const company = await storage.getCompanyByEmail(email);
+      if (!company) {
+        // Don't reveal if email exists for security
+        return res.json({ message: "Se o email estiver registrado, você receberá instruções para redefinir sua senha." });
+      }
+
+      // Check if company has SMTP configured
+      if (!company.smtpHost || !company.smtpPort || !company.smtpUser || !company.smtpPassword) {
+        return res.status(400).json({ message: "SMTP não configurado para esta empresa. Entre em contato com o suporte." });
+      }
+
+      // Generate reset token
+      const crypto = await import('crypto');
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const resetTokenExpires = new Date(Date.now() + 3600000); // 1 hour
+
+      // Update company with reset token
+      await storage.updateCompany(company.id, {
+        resetToken,
+        resetTokenExpiry: resetTokenExpires
+      });
+
+      // Send reset email
+      const nodemailer = await import('nodemailer');
+      const transporter = nodemailer.createTransporter({
+        host: company.smtpHost,
+        port: company.smtpPort,
+        secure: company.smtpSecure === 'SSL',
+        auth: {
+          user: company.smtpUser,
+          pass: company.smtpPassword,
+        },
+        tls: company.smtpSecure === 'TLS' ? { rejectUnauthorized: false } : undefined,
+      });
+
+      const resetUrl = `${process.env.NODE_ENV === 'production' ? 'https' : 'http'}://${req.get('host')}/reset-password?token=${resetToken}`;
+      
+      const mailOptions = {
+        from: company.smtpUser,
+        to: email,
+        subject: 'Redefinição de Senha - ' + (company.fantasyName || 'Sistema'),
+        html: `
+          <h2>Redefinição de Senha</h2>
+          <p>Você solicitou a redefinição de sua senha.</p>
+          <p>Clique no link abaixo para redefinir sua senha:</p>
+          <p><a href="${resetUrl}">Redefinir Senha</a></p>
+          <p>Este link expira em 1 hora.</p>
+          <p>Se você não solicitou esta redefinição, ignore este email.</p>
+        `
+      };
+
+      await transporter.sendMail(mailOptions);
+      res.json({ message: "Se o email estiver registrado, você receberá instruções para redefinir sua senha." });
+    } catch (error) {
+      console.error("Forgot password error:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  // Company reset password route
+  app.post('/api/auth/reset-password', async (req: any, res) => {
+    try {
+      const { token, newPassword } = req.body;
+      
+      if (!token || !newPassword) {
+        return res.status(400).json({ message: "Token e nova senha são obrigatórios" });
+      }
+
+      if (newPassword.length < 6) {
+        return res.status(400).json({ message: "A senha deve ter pelo menos 6 caracteres" });
+      }
+
+      const company = await storage.getCompanyByResetToken(token);
+      if (!company || !company.resetTokenExpiry || new Date() > new Date(company.resetTokenExpiry)) {
+        return res.status(400).json({ message: "Token inválido ou expirado" });
+      }
+
+      // Hash new password
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+      // Update company password and clear reset token
+      await storage.updateCompany(company.id, {
+        password: hashedPassword,
+        resetToken: null,
+        resetTokenExpiry: null
+      });
+
+      res.json({ message: "Senha redefinida com sucesso" });
+    } catch (error) {
+      console.error("Reset password error:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
   // Company login route
   app.post('/api/auth/company-login', async (req: any, res) => {
     try {

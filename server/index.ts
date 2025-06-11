@@ -6,6 +6,7 @@ import { ensureConversationTables, storage } from "./storage";
 import { ensureReviewTables } from "./create-reviews-tables";
 import { startCampaignScheduler } from "./campaign-scheduler";
 import { ensureSmtpColumns } from "./ensure-smtp-columns";
+import { ensureResetColumns } from "./ensure-reset-columns";
 import { db } from "./db";
 import path from "path";
 
@@ -55,6 +56,9 @@ app.use((req, res, next) => {
   
   // Ensure SMTP columns exist
   await ensureSmtpColumns();
+  
+  // Ensure reset token columns exist
+  await ensureResetColumns();
   
   // Start campaign scheduler
   startCampaignScheduler();
