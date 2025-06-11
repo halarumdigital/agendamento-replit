@@ -5323,11 +5323,11 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
 
       // Receitas: Serviços concluídos no mês atual
       const currentMonthIncome = await db.execute(sql`
-        SELECT COALESCE(SUM(a.price), 0) as total
+        SELECT COALESCE(SUM(a.total_price), 0) as total
         FROM appointments a
         WHERE a.company_id = ${companyId} 
-        AND a.status = 'CONCLUIDO'
-        AND DATE_FORMAT(a.date, '%Y-%m') = ${currentMonth}
+        AND a.status = 'Concluído'
+        AND DATE_FORMAT(a.appointment_date, '%Y-%m') = ${currentMonth}
       `);
 
       // Despesas: Transações de despesa no mês atual
@@ -5341,11 +5341,11 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
 
       // Receitas do mês anterior (serviços concluídos)
       const previousMonthIncome = await db.execute(sql`
-        SELECT COALESCE(SUM(a.price), 0) as total
+        SELECT COALESCE(SUM(a.total_price), 0) as total
         FROM appointments a
         WHERE a.company_id = ${companyId} 
-        AND a.status = 'CONCLUIDO'
-        AND DATE_FORMAT(a.date, '%Y-%m') = ${previousMonth}
+        AND a.status = 'Concluído'
+        AND DATE_FORMAT(a.appointment_date, '%Y-%m') = ${previousMonth}
       `);
 
       // Despesas do mês anterior
