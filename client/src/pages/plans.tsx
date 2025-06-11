@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Tags, Edit, Trash2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
@@ -21,6 +22,7 @@ export default function Plans() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const { data: plans = [], isLoading } = useQuery<Plan[]>({
     queryKey: ["/api/plans"],
@@ -49,6 +51,7 @@ export default function Plans() {
         description: "Plano cadastrado com sucesso!",
       });
       form.reset();
+      setIsModalOpen(false);
       queryClient.invalidateQueries({ queryKey: ["/api/plans"] });
     },
     onError: (error: Error) => {
@@ -75,6 +78,7 @@ export default function Plans() {
       });
       form.reset();
       setEditingPlan(null);
+      setIsModalOpen(false);
       queryClient.invalidateQueries({ queryKey: ["/api/plans"] });
     },
     onError: (error: Error) => {
@@ -122,10 +126,23 @@ export default function Plans() {
       price: plan.price,
       isActive: plan.isActive,
     });
+    setIsModalOpen(true);
+  };
+
+  const handleNewPlan = () => {
+    setEditingPlan(null);
+    form.reset({
+      name: "",
+      freeDays: 0,
+      price: "",
+      isActive: true,
+    });
+    setIsModalOpen(true);
   };
 
   const handleCancelEdit = () => {
     setEditingPlan(null);
+    setIsModalOpen(false);
     form.reset();
   };
 
@@ -136,26 +153,26 @@ export default function Plans() {
           <h1 className="text-2xl font-bold text-slate-900">Planos de Assinatura</h1>
           <p className="text-slate-600 mt-1">Gerencie os planos disponíveis</p>
         </div>
-        <Button className="mt-4 sm:mt-0">
+        <Button onClick={handleNewPlan} className="mt-4 sm:mt-0">
           <Plus className="w-4 h-4 mr-2" />
-          {editingPlan ? "Editando Plano" : "Novo Plano"}
+          Novo Plano
         </Button>
       </div>
 
-      {/* Plan Form */}
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            {editingPlan ? "Editar Plano" : "Criar Plano"}
-          </CardTitle>
-          <CardDescription>
-            {editingPlan 
-              ? "Atualize as informações do plano selecionado"
-              : "Configure um novo plano de assinatura"
-            }
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+      {/* Modal de Cadastro/Edição de Planos */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>
+              {editingPlan ? "Editar Plano" : "Novo Plano"}
+            </DialogTitle>
+            <DialogDescription>
+              {editingPlan 
+                ? "Atualize as informações do plano selecionado"
+                : "Configure um novo plano de assinatura"
+              }
+            </DialogDescription>
+          </DialogHeader>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
@@ -223,11 +240,9 @@ export default function Plans() {
             </div>
 
             <div className="flex justify-end space-x-4">
-              {editingPlan && (
-                <Button type="button" variant="outline" onClick={handleCancelEdit}>
-                  Cancelar
-                </Button>
-              )}
+              <Button type="button" variant="outline" onClick={handleCancelEdit}>
+                Cancelar
+              </Button>
               <Button 
                 type="submit" 
                 disabled={createMutation.isPending || updateMutation.isPending}
@@ -236,8 +251,8 @@ export default function Plans() {
               </Button>
             </div>
           </form>
-        </CardContent>
-      </Card>
+        </DialogContent>
+      </Dialog>
 
       {/* Plans Grid */}
       <div>
