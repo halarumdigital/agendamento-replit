@@ -4712,11 +4712,26 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
         return res.status(401).json({ message: "Não autenticado" });
       }
 
+      console.log("Request body:", req.body);
+
+      // Validate required fields
+      if (!req.body.name || !req.body.message || !req.body.scheduledDate || !req.body.targetType) {
+        return res.status(400).json({ message: "Campos obrigatórios: name, message, scheduledDate, targetType" });
+      }
+
       const campaignData = {
-        ...req.body,
-        companyId,
+        name: req.body.name,
+        message: req.body.message,
         scheduledDate: new Date(req.body.scheduledDate),
+        targetType: req.body.targetType,
+        selectedClients: req.body.selectedClients || null,
+        companyId,
+        status: 'pending',
+        sentCount: 0,
+        totalTargets: req.body.targetType === 'all' ? 0 : (req.body.selectedClients ? req.body.selectedClients.length : 0),
       };
+
+      console.log("Campaign data:", campaignData);
 
       const campaign = await storage.createMessageCampaign(campaignData);
       res.json(campaign);
