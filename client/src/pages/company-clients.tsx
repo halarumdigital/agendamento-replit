@@ -148,7 +148,10 @@ function ClientServiceHistory({ clientId, clientName }: ClientServiceHistoryProp
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4" />
                         <span>
-                          {format(new Date(appointment.appointmentDate), 'dd/MM/yyyy')} às {appointment.appointmentTime}
+                          {appointment.appointmentDate ? 
+                            new Date(appointment.appointmentDate).toLocaleDateString('pt-BR') : 
+                            'Data não informada'
+                          } às {appointment.appointmentTime || 'Horário não informado'}
                         </span>
                       </div>
                       {appointment.notes && (

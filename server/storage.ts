@@ -908,43 +908,58 @@ export class DatabaseStorage implements IStorage {
 
   async getAppointmentsByClient(clientId: number, companyId: number): Promise<any[]> {
     try {
-      // First get the client's phone number
-      const clientResult = await db.execute(`
-        SELECT phone FROM clients WHERE id = ${clientId} AND company_id = ${companyId}
-      `);
+      // First get the client's phone number using Drizzle ORM
+      const [client] = await db.select()
+        .from(clients)
+        .where(and(eq(clients.id, clientId), eq(clients.companyId, companyId)));
       
-      if (!clientResult || clientResult.length === 0) {
+      if (!client) {
         console.log(`No client found with id ${clientId}`);
         return [];
       }
       
-      const clientPhone = (clientResult[0] as any).phone;
-      console.log(`Looking for appointments for client phone: ${clientPhone}`);
+      console.log(`Looking for appointments for client phone: ${client.phone}`);
       
-      // Then get appointments for that phone number
-      const results = await db.execute(`
-        SELECT 
-          a.id,
-          a.appointment_date as appointmentDate,
-          a.appointment_time as appointmentTime,
-          a.total_price as price,
-          a.notes,
-          a.client_name as clientName,
-          a.client_phone as clientPhone,
-          s.name as serviceName,
-          p.name as professionalName,
-          st.name as statusName,
-          st.color as statusColor
-        FROM appointments a
-        LEFT JOIN services s ON a.service_id = s.id
-        LEFT JOIN professionals p ON a.professional_id = p.id
-        LEFT JOIN status st ON a.status = st.id
-        WHERE a.client_phone = '${clientPhone}' AND a.company_id = ${companyId}
-        ORDER BY a.appointment_date DESC, a.appointment_time DESC
-      `);
+      // Get appointments using Drizzle ORM with proper joins
+      const results = await db.select({
+        id: appointments.id,
+        appointmentDate: appointments.appointmentDate,
+        appointmentTime: appointments.appointmentTime,
+        price: appointments.totalPrice,
+        notes: appointments.notes,
+        clientName: appointments.clientName,
+        clientPhone: appointments.clientPhone,
+        serviceName: services.name,
+        professionalName: professionals.name,
+        statusName: status.name,
+        statusColor: status.color
+      })
+      .from(appointments)
+      .leftJoin(services, eq(appointments.serviceId, services.id))
+      .leftJoin(professionals, eq(appointments.professionalId, professionals.id))
+      .leftJoin(status, eq(appointments.status, status.id))
+      .where(and(
+        eq(appointments.clientPhone, client.phone || ''),
+        eq(appointments.companyId, companyId)
+      ))
+      .orderBy(desc(appointments.appointmentDate), desc(appointments.appointmentTime));
       
       console.log(`Found ${results.length} appointments for client ${clientId}`);
-      return results as any[];
+      
+      // Format results properly
+      return results.map(result => ({
+        id: result.id,
+        appointmentDate: result.appointmentDate,
+        appointmentTime: result.appointmentTime,
+        price: parseFloat(result.price?.toString() || '0'),
+        notes: result.notes,
+        clientName: result.clientName,
+        clientPhone: result.clientPhone,
+        serviceName: result.serviceName || 'Serviço não encontrado',
+        professionalName: result.professionalName || 'Profissional não encontrado',
+        statusName: result.statusName || 'Pendente',
+        statusColor: result.statusColor || '#A0A0A0'
+      }));
     } catch (error: any) {
       console.error("Error getting appointments by client:", error);
       return [];
