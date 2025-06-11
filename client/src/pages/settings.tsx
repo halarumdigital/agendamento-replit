@@ -639,6 +639,41 @@ export default function SettingsPage() {
                   />
                 </CardContent>
               </Card>
+
+              {/* Custom HTML Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Globe className="w-5 h-5" />
+                    Texto HTML Personalizado
+                  </CardTitle>
+                  <CardDescription>
+                    Adicione texto HTML personalizado que será exibido no sistema.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <FormField
+                    control={form.control}
+                    name="customHtml"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>HTML Personalizado</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="<div>Seu HTML personalizado aqui...</div>"
+                            className="min-h-[120px] font-mono text-sm"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                        <div className="text-xs text-gray-500 mt-2">
+                          Suporte completo para HTML, CSS e JavaScript inline. Use com responsabilidade.
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
             </TabsContent>
 
             <TabsContent value="evolution" className="space-y-6">
