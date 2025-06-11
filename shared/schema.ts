@@ -49,6 +49,8 @@ export const companies = mysqlTable("companies", {
   planId: int("plan_id"),
   isActive: boolean("is_active").notNull().default(true),
   aiAgentPrompt: text("ai_agent_prompt"),
+  resetToken: varchar("reset_token", { length: 255 }),
+  resetTokenExpires: timestamp("reset_token_expires"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });

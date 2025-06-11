@@ -5704,5 +5704,146 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
     }
   });
 
+  // Password recovery for companies
+  app.post("/api/auth/forgot-password", async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: "Email é obrigatório" });
+      }
+
+      // Check if company exists
+      const company = await storage.getCompanyByEmail(email);
+      if (!company) {
+        // Return success even if email doesn't exist for security
+        return res.json({ message: "Se o email estiver cadastrado, você receberá as instruções de recuperação" });
+      }
+
+      // Get SMTP settings
+      const settings = await storage.getGlobalSettings();
+      if (!settings?.smtpHost || !settings?.smtpUser || !settings?.smtpPassword) {
+        return res.status(500).json({ message: "Configurações de email não encontradas. Contate o administrador." });
+      }
+
+      // Generate reset token (simple random string for demo)
+      const resetToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      const resetExpires = new Date(Date.now() + 3600000); // 1 hour
+
+      // Store reset token in company record
+      await storage.updateCompany(company.id, {
+        resetToken,
+        resetTokenExpires: resetExpires
+      });
+
+      // Configure nodemailer with SMTP settings
+      const nodemailer = require('nodemailer');
+      
+      let transportConfig: any = {
+        host: settings.smtpHost,
+        port: parseInt(settings.smtpPort || '587'),
+        auth: {
+          user: settings.smtpUser,
+          pass: settings.smtpPassword
+        }
+      };
+
+      // Configure security based on smtpSecure setting
+      if (settings.smtpSecure === 'tls') {
+        transportConfig.secure = false;
+        transportConfig.requireTLS = true;
+      } else if (settings.smtpSecure === 'ssl') {
+        transportConfig.secure = true;
+      } else {
+        transportConfig.secure = false;
+      }
+
+      const transporter = nodemailer.createTransporter(transportConfig);
+
+      // Reset password URL
+      const resetUrl = `${req.protocol}://${req.get('host')}/reset-password?token=${resetToken}`;
+
+      // Email content
+      const mailOptions = {
+        from: `"${settings.smtpFromName || 'Sistema'}" <${settings.smtpFromEmail || settings.smtpUser}>`,
+        to: email,
+        subject: 'Recuperação de Senha',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #333;">Recuperação de Senha</h2>
+            <p>Olá,</p>
+            <p>Você solicitou a recuperação de senha para sua conta.</p>
+            <p>Clique no botão abaixo para redefinir sua senha:</p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${resetUrl}" style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">
+                Redefinir Senha
+              </a>
+            </div>
+            <p>Ou copie e cole este link no seu navegador:</p>
+            <p style="word-break: break-all; color: #666;">${resetUrl}</p>
+            <p><strong>Este link expira em 1 hora.</strong></p>
+            <p>Se você não solicitou esta recuperação, ignore este email.</p>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+            <p style="color: #666; font-size: 12px;">Este é um email automático, não responda.</p>
+          </div>
+        `
+      };
+
+      // Send email
+      await transporter.sendMail(mailOptions);
+      
+      console.log(`Password reset email sent to: ${email}`);
+      res.json({ message: "Se o email estiver cadastrado, você receberá as instruções de recuperação" });
+
+    } catch (error: any) {
+      console.error("Error in forgot password:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  // Reset password with token
+  app.post("/api/auth/reset-password", async (req, res) => {
+    try {
+      const { token, password } = req.body;
+      
+      if (!token || !password) {
+        return res.status(400).json({ message: "Token e nova senha são obrigatórios" });
+      }
+
+      if (password.length < 6) {
+        return res.status(400).json({ message: "A senha deve ter pelo menos 6 caracteres" });
+      }
+
+      // Find company with reset token
+      const company = await storage.getCompanyByResetToken(token);
+      if (!company) {
+        return res.status(400).json({ message: "Token inválido ou expirado" });
+      }
+
+      // Check if token is expired
+      const now = new Date();
+      if (!company.resetTokenExpires || company.resetTokenExpires < now) {
+        return res.status(400).json({ message: "Token expirado" });
+      }
+
+      // Hash new password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Update password and clear reset token
+      await storage.updateCompany(company.id, {
+        password: hashedPassword,
+        resetToken: null,
+        resetTokenExpires: null
+      });
+
+      console.log(`Password reset completed for company: ${company.email}`);
+      res.json({ message: "Senha redefinida com sucesso" });
+
+    } catch (error: any) {
+      console.error("Error in reset password:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
   return httpServer;
 }

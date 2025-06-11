@@ -314,6 +314,16 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async getCompanyByResetToken(token: string): Promise<Company | undefined> {
+    try {
+      const [company] = await db.select().from(companies).where(eq(companies.resetToken, token));
+      return company;
+    } catch (error) {
+      console.error('Error in getCompanyByResetToken:', error);
+      return undefined;
+    }
+  }
+
   async createCompany(companyData: InsertCompany): Promise<Company> {
     await db.insert(companies).values(companyData);
     const [company] = await db.select().from(companies).where(eq(companies.email, companyData.email));
