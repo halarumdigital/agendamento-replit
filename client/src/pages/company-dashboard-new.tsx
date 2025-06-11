@@ -245,14 +245,14 @@ export default function CompanyDashboardNew() {
     }
 
     return products.filter((product: any) => {
-      const currentStock = parseInt(product.currentStock) || 0;
-      const minStock = parseInt(product.minStock) || 5; // Padrão de 5 se não definido
+      const currentStock = parseInt(product.stockQuantity) || 0;
+      const minStock = parseInt(product.minStockLevel) || 5;
       return currentStock <= minStock && currentStock > 0;
     }).map((product: any) => ({
       id: product.id,
       name: product.name,
-      currentStock: product.currentStock,
-      minStock: product.minStock || 5,
+      currentStock: product.stockQuantity,
+      minStock: product.minStockLevel || 5,
       type: 'low_stock'
     }));
   };
