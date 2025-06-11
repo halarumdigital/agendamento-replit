@@ -156,12 +156,9 @@ export default function CompanyFinancial() {
     totalTransactions: number;
   }>({
     queryKey: ["/api/company/financial/dashboard", dashboardDateFilter],
-    queryFn: async () => {
-      const response = await fetch(`/api/company/financial/dashboard?month=${dashboardDateFilter}`, {
-        credentials: 'include'
-      });
-      if (!response.ok) throw new Error('Failed to fetch dashboard data');
-      return response.json();
+    queryFn: () => {
+      const url = `/api/company/financial/dashboard?month=${dashboardDateFilter}`;
+      return apiRequest(url);
     },
   });
 
