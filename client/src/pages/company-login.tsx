@@ -11,17 +11,24 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { z } from "zod";
 import { useLocation } from "wouter";
+import { Eye, EyeOff } from "lucide-react";
 
 const companyLoginSchema = z.object({
   email: z.string().email("Email inválido"),
   password: z.string().min(1, "Senha é obrigatória"),
 });
 
+const forgotPasswordSchema = z.object({
+  email: z.string().email("Email inválido"),
+});
+
 type CompanyLoginFormData = z.infer<typeof companyLoginSchema>;
+type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 
 export default function CompanyLogin() {
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState<string>("");
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   
@@ -38,6 +45,13 @@ export default function CompanyLogin() {
     defaultValues: {
       email: "",
       password: "",
+    },
+  });
+
+  const forgotPasswordForm = useForm<ForgotPasswordFormData>({
+    resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: {
+      email: "",
     },
   });
 
@@ -64,26 +78,59 @@ export default function CompanyLogin() {
     },
   });
 
+  const forgotPasswordMutation = useMutation({
+    mutationFn: async (data: ForgotPasswordFormData) => {
+      const response = await apiRequest("POST", "/api/auth/forgot-password", data);
+      return response;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Email enviado",
+        description: "Se o email estiver registrado, você receberá instruções para redefinir sua senha.",
+      });
+      setShowForgotPassword(false);
+      forgotPasswordForm.reset();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao enviar email de recuperação",
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (data: CompanyLoginFormData) => {
     setLoginError("");
     loginMutation.mutate(data);
   };
 
+  const onForgotPasswordSubmit = (data: ForgotPasswordFormData) => {
+    forgotPasswordMutation.mutate(data);
+  };
+
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <Card>
-          <CardHeader className="pb-4">
+        <Card className="shadow-lg">
+          <CardHeader className="text-center pb-4">
             {settings?.logoUrl && (
-              <div className="text-center mb-4">
+              <div className="mb-4">
                 <img 
                   src={settings.logoUrl} 
                   alt="Logo" 
-                  className="w-full h-32 object-contain mx-auto"
+                  className="w-32 h-32 object-contain mx-auto"
                 />
               </div>
             )}
+            <h1 className="text-2xl font-bold text-foreground">
+              Acesso da Empresa
+            </h1>
+            <p className="text-muted-foreground">
+              {showForgotPassword ? "Recuperar Senha" : "Entre com suas credenciais"}
+            </p>
           </CardHeader>
+          
           <CardContent>
             {loginError && (
               <Alert variant="destructive" className="mb-4">
@@ -91,49 +138,120 @@ export default function CompanyLogin() {
               </Alert>
             )}
 
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  {...form.register("email", { required: "Email é obrigatório" })}
-                  placeholder="Digite seu email"
-                  disabled={loginMutation.isPending}
-                  className="border-input focus:border-primary focus:ring-primary"
-                />
-                {form.formState.errors.email && (
-                  <p className="text-sm text-destructive">
-                    {form.formState.errors.email.message}
-                  </p>
-                )}
-              </div>
+            {!showForgotPassword ? (
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    {...form.register("email")}
+                    placeholder="Digite seu email"
+                    disabled={loginMutation.isPending}
+                    className="h-12"
+                  />
+                  {form.formState.errors.email && (
+                    <p className="text-sm text-destructive">
+                      {form.formState.errors.email.message}
+                    </p>
+                  )}
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  {...form.register("password", { required: "Senha é obrigatória" })}
-                  placeholder="Digite sua senha"
-                  disabled={loginMutation.isPending}
-                  className="border-input focus:border-primary focus:ring-primary"
-                />
-                {form.formState.errors.password && (
-                  <p className="text-sm text-destructive">
-                    {form.formState.errors.password.message}
-                  </p>
-                )}
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Senha</Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      {...form.register("password")}
+                      placeholder="Digite sua senha"
+                      disabled={loginMutation.isPending}
+                      className="h-12 pr-12"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 p-0"
+                      onClick={() => setShowPassword(!showPassword)}
+                      disabled={loginMutation.isPending}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                  {form.formState.errors.password && (
+                    <p className="text-sm text-destructive">
+                      {form.formState.errors.password.message}
+                    </p>
+                  )}
+                </div>
 
-              <Button 
-                type="submit" 
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-                disabled={loginMutation.isPending}
-              >
-                {loginMutation.isPending ? "Entrando..." : "Entrar"}
-              </Button>
-            </form>
+                <div className="flex items-center justify-between text-sm">
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="p-0 h-auto text-primary hover:underline"
+                    onClick={() => setShowForgotPassword(true)}
+                  >
+                    Esqueceu a senha?
+                  </Button>
+                </div>
+
+                <Button 
+                  type="submit" 
+                  className="w-full h-12"
+                  disabled={loginMutation.isPending}
+                >
+                  {loginMutation.isPending ? "Entrando..." : "Entrar"}
+                </Button>
+              </form>
+            ) : (
+              <form onSubmit={forgotPasswordForm.handleSubmit(onForgotPasswordSubmit)} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="forgot-email">Email</Label>
+                  <Input
+                    id="forgot-email"
+                    type="email"
+                    {...forgotPasswordForm.register("email")}
+                    placeholder="Digite seu email para recuperação"
+                    disabled={forgotPasswordMutation.isPending}
+                    className="h-12"
+                  />
+                  {forgotPasswordForm.formState.errors.email && (
+                    <p className="text-sm text-destructive">
+                      {forgotPasswordForm.formState.errors.email.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  <Button 
+                    type="submit" 
+                    className="w-full h-12"
+                    disabled={forgotPasswordMutation.isPending}
+                  >
+                    {forgotPasswordMutation.isPending ? "Enviando..." : "Enviar Link de Recuperação"}
+                  </Button>
+                  
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full h-12"
+                    onClick={() => {
+                      setShowForgotPassword(false);
+                      forgotPasswordForm.reset();
+                    }}
+                    disabled={forgotPasswordMutation.isPending}
+                  >
+                    Voltar ao Login
+                  </Button>
+                </div>
+              </form>
+            )}
           </CardContent>
         </Card>
       </div>

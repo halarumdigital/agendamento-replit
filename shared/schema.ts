@@ -51,6 +51,12 @@ export const companies = mysqlTable("companies", {
   aiAgentPrompt: text("ai_agent_prompt"),
   resetToken: varchar("reset_token", { length: 255 }),
   resetTokenExpires: timestamp("reset_token_expires"),
+  // SMTP Configuration
+  smtpHost: varchar("smtp_host", { length: 255 }),
+  smtpPort: int("smtp_port"),
+  smtpUser: varchar("smtp_user", { length: 255 }),
+  smtpPassword: varchar("smtp_password", { length: 255 }),
+  smtpSecure: varchar("smtp_secure", { length: 10 }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });

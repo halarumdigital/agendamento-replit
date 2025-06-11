@@ -33,6 +33,7 @@ import Admins from "@/pages/admins";
 import SettingsPage from "@/pages/settings";
 import Status from "@/pages/status";
 import PublicReview from "@/pages/public-review";
+import ResetPassword from "@/pages/reset-password";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -45,6 +46,7 @@ function Router() {
       <Route path="/company" component={CompanyLogin} />
       <Route path="/company/login" component={CompanyLogin} />
       <Route path="/company/auth/login" component={CompanyLogin} />
+      <Route path="/reset-password" component={ResetPassword} />
       <Route path="/dashboard">
         <CompanyLayout>
           <CompanyDashboard />
