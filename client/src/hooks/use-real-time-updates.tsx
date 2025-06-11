@@ -1,7 +1,11 @@
 import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
-export function useRealTimeUpdates() {
+interface UseRealTimeUpdatesProps {
+  onNewAppointment?: (appointmentData: any) => void;
+}
+
+export function useRealTimeUpdates({ onNewAppointment }: UseRealTimeUpdatesProps = {}) {
   const queryClient = useQueryClient();
   const eventSourceRef = useRef<EventSource | null>(null);
 
@@ -18,6 +22,11 @@ export function useRealTimeUpdates() {
           queryClient.invalidateQueries({ queryKey: ['/api/company/appointments'] });
           
           console.log('📅 New appointment detected, refreshing calendar...');
+          
+          // Trigger notification callback if provided
+          if (onNewAppointment && data.appointment) {
+            onNewAppointment(data.appointment);
+          }
         }
       } catch (error) {
         console.error('Error parsing SSE message:', error);
@@ -34,7 +43,7 @@ export function useRealTimeUpdates() {
         eventSourceRef.current.close();
       }
     };
-  }, [queryClient]);
+  }, [queryClient, onNewAppointment]);
 
   return null;
 }

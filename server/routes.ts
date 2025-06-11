@@ -268,6 +268,9 @@ Responda APENAS em formato JSON válido ou "DADOS_INCOMPLETOS" se algum dado est
       console.log('✅ Appointment created successfully:', appointment.id);
       console.log(`📅 ${appointmentData.clientName} - ${service.name} - ${appointmentDate.toLocaleString('pt-BR')}`);
 
+      // Get professional name for notification
+      const professional = await storage.getProfessional(appointmentData.professionalId);
+      
       // Broadcast new appointment event to all connected clients
       broadcastEvent({
         type: 'new_appointment',
@@ -275,6 +278,7 @@ Responda APENAS em formato JSON válido ou "DADOS_INCOMPLETOS" se algum dado est
           id: appointment.id,
           clientName: appointmentData.clientName,
           serviceName: service.name,
+          professionalName: professional?.name || 'Profissional',
           appointmentDate: appointmentData.appointmentDate,
           appointmentTime: appointmentData.appointmentTime
         }

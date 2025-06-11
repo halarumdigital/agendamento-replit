@@ -109,7 +109,18 @@ export default function DashboardAppointments() {
   const { showNewAppointmentNotification, NotificationContainer } = useNotifications();
   
   // Enable real-time updates for new appointments
-  useRealTimeUpdates();
+  useRealTimeUpdates({
+    onNewAppointment: (appointmentData) => {
+      // Show notification with sound when new appointment is created via WhatsApp
+      showNewAppointmentNotification({
+        clientName: appointmentData.clientName,
+        serviceName: appointmentData.serviceName,
+        appointmentDate: appointmentData.appointmentDate,
+        appointmentTime: appointmentData.appointmentTime,
+        professionalName: appointmentData.professionalName || 'Profissional'
+      });
+    }
+  });
 
   // Fetch appointments (show all, not filtered by month)
   const { data: appointments = [], isLoading: appointmentsLoading } = useQuery<Appointment[]>({
