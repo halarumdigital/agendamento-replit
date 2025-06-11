@@ -1999,10 +1999,19 @@ Obrigado pela preferência! 🙏`;
   }
 
   async createProduct(productData: InsertProduct): Promise<Product> {
-    const result = await db.insert(products).values(productData);
+    // Insert the product
+    await db.insert(products).values(productData);
+    
+    // Get the created product by querying the most recent one for this company
     const [product] = await db.select().from(products)
-      .where(eq(products.id, result.insertId))
+      .where(eq(products.companyId, productData.companyId))
+      .orderBy(desc(products.id))
       .limit(1);
+    
+    if (!product) {
+      throw new Error("Failed to create product");
+    }
+    
     return product;
   }
 
