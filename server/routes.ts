@@ -752,6 +752,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Favicon upload endpoint
+  app.post('/api/upload/favicon', isAuthenticated, upload.single('favicon'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "Nenhum arquivo foi enviado" });
+      }
+
+      // Generate the URL for the uploaded file
+      const host = req.get('host');
+      const protocol = req.protocol;
+      const fileUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
+
+      res.json({ 
+        url: fileUrl,
+        filename: req.file.filename,
+        originalName: req.file.originalname,
+        size: req.file.size
+      });
+    } catch (error) {
+      console.error("Error uploading favicon:", error);
+      res.status(500).json({ message: "Erro ao fazer upload do favicon" });
+    }
+  });
+
   // Admin authentication routes
   app.post('/api/auth/login', async (req: any, res) => {
     try {

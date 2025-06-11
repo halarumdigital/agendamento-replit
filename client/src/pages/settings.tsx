@@ -25,7 +25,10 @@ export default function SettingsPage() {
   const [fetchingModels, setFetchingModels] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string>("");
+  const [faviconFile, setFaviconFile] = useState<File | null>(null);
+  const [faviconPreview, setFaviconPreview] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const faviconInputRef = useRef<HTMLInputElement>(null);
 
   const { data: settings, isLoading } = useQuery<GlobalSettings>({
     queryKey: ["/api/settings"],
@@ -121,6 +124,72 @@ export default function SettingsPage() {
     }
   };
 
+  const handleFaviconSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Tipo de arquivo inválido",
+          description: "Por favor, selecione uma imagem.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        toast({
+          title: "Arquivo muito grande",
+          description: "O arquivo deve ter no máximo 5MB.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setFaviconFile(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setFaviconPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadFavicon = async (): Promise<string | null> => {
+    if (!faviconFile) return null;
+    
+    const formData = new FormData();
+    formData.append('favicon', faviconFile);
+    
+    try {
+      const response = await fetch('/api/upload/favicon', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Falha no upload do favicon');
+      }
+      
+      const result = await response.json();
+      return result.url;
+    } catch (error) {
+      console.error('Error uploading favicon:', error);
+      throw error;
+    }
+  };
+
+  const removeFavicon = () => {
+    setFaviconFile(null);
+    setFaviconPreview("");
+    form.setValue("faviconUrl", "");
+    if (faviconInputRef.current) {
+      faviconInputRef.current.value = "";
+    }
+  };
+
   const form = useForm<SettingsFormData>({
     resolver: zodResolver(settingsSchema),
     defaultValues: {
@@ -196,10 +265,21 @@ export default function SettingsPage() {
         logoUrl = uploadedUrl;
       }
 
+      // Upload favicon if a new file was selected
+      let faviconUrl = data.faviconUrl || "";
+      if (faviconFile) {
+        const uploadedUrl = await uploadFavicon();
+        if (!uploadedUrl) {
+          throw new Error("Falha no upload do favicon");
+        }
+        faviconUrl = uploadedUrl;
+      }
+
       // Ensure all fields are strings for the API
       const processedData = {
         ...data,
         logoUrl,
+        faviconUrl,
         openaiModel: data.openaiModel || "gpt-4o",
         openaiTemperature: data.openaiTemperature?.toString() || "0.7",
         openaiMaxTokens: data.openaiMaxTokens?.toString() || "4000",

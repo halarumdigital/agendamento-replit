@@ -161,8 +161,9 @@ export const planSchema = z.object({
 
 // Settings validation schema
 export const settingsSchema = z.object({
-  systemName: z.string().min(1, "Nome do sistema é obrigatório"),
+  systemName: z.string().optional(),
   logoUrl: z.string().optional(),
+  faviconUrl: z.string().optional(),
   primaryColor: z.string().regex(/^#[0-9A-F]{6}$/i, "Cor primária deve ser um hex válido"),
   secondaryColor: z.string().regex(/^#[0-9A-F]{6}$/i, "Cor secundária deve ser um hex válido"),
   backgroundColor: z.string().regex(/^#[0-9A-F]{6}$/i, "Cor de fundo deve ser um hex válido"),

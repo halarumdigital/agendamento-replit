@@ -65,8 +65,9 @@ export const plans = mysqlTable("plans", {
 // Global settings table
 export const globalSettings = mysqlTable("global_settings", {
   id: int("id").primaryKey().autoincrement(),
-  systemName: varchar("system_name", { length: 255 }).notNull().default("AdminPro"),
+  systemName: varchar("system_name", { length: 255 }).default("AdminPro"),
   logoUrl: varchar("logo_url", { length: 500 }),
+  faviconUrl: varchar("favicon_url", { length: 500 }),
   primaryColor: varchar("primary_color", { length: 7 }).notNull().default("#2563eb"),
   secondaryColor: varchar("secondary_color", { length: 7 }).notNull().default("#64748b"),
   backgroundColor: varchar("background_color", { length: 7 }).notNull().default("#f8fafc"),
