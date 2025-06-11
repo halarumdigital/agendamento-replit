@@ -442,18 +442,7 @@ export default function CompanyDashboardNew() {
         </div>
       </div>
 
-      {/* Customer Trend Chart */}
-      <div className="bg-white rounded shadow-sm p-5 border border-gray-100 mb-6 mx-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold text-gray-800">Tendência de Clientes</h3>
-          <button className="text-sm text-gray-500 hover:text-purple-600">
-            <MoreHorizontal className="w-5 h-5" />
-          </button>
-        </div>
-        <div className="h-64 flex items-center justify-center bg-gray-50 rounded">
-          <p className="text-gray-500">Gráfico de Tendência</p>
-        </div>
-      </div>
+
 
       {/* Bottom Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 px-6">
