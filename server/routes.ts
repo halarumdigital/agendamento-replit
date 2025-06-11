@@ -5389,18 +5389,18 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
       console.log('Current month filter:', currentMonth);
       
       // Combinar receitas de agendamentos e transações manuais
-      const appointmentIncomeValue = parseFloat(appointmentIncome[0]?.total || 0);
-      const transactionIncomeValue = parseFloat(transactionIncome[0]?.total || 0);
+      const appointmentIncomeValue = parseFloat(appointmentIncome[0]?.total || '0');
+      const transactionIncomeValue = parseFloat(transactionIncome[0]?.total || '0');
       const monthlyIncome = appointmentIncomeValue + transactionIncomeValue;
       
-      const monthlyExpenses = parseFloat(currentMonthExpenses[0]?.total || 0);
+      const monthlyExpenses = parseFloat(currentMonthExpenses[0]?.total || '0');
       
       // Receitas do mês anterior (agendamentos + transações)
-      const prevAppointmentIncomeValue = parseFloat(previousAppointmentIncome[0]?.total || 0);
-      const prevTransactionIncomeValue = parseFloat(previousTransactionIncome[0]?.total || 0);
+      const prevAppointmentIncomeValue = parseFloat(previousAppointmentIncome[0]?.total || '0');
+      const prevTransactionIncomeValue = parseFloat(previousTransactionIncome[0]?.total || '0');
       const prevIncome = prevAppointmentIncomeValue + prevTransactionIncomeValue;
       
-      const prevExpenses = parseFloat(previousMonthExpenses[0]?.total || 0);
+      const prevExpenses = parseFloat(previousMonthExpenses[0]?.total || '0');
       
       console.log('💰 Calculated values:');
       console.log('Monthly income:', monthlyIncome, '(appointments:', appointmentIncomeValue, '+ transactions:', transactionIncomeValue, ')');
