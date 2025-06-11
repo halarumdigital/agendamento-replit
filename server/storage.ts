@@ -2226,6 +2226,69 @@ Obrigado pela preferência! 🙏`;
       ));
     return coupon;
   }
+
+  // Password Reset Token methods
+  async createPasswordResetToken(email: string, token: string): Promise<void> {
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 1); // Token expires in 1 hour
+
+    try {
+      // Try to create the table if it doesn't exist
+      await db.execute(sql`
+        CREATE TABLE IF NOT EXISTS password_reset_tokens (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          email VARCHAR(255) NOT NULL,
+          token VARCHAR(255) NOT NULL UNIQUE,
+          expires_at TIMESTAMP NOT NULL,
+          used BOOLEAN NOT NULL DEFAULT FALSE,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+    } catch (error) {
+      console.log('Password reset tokens table may already exist');
+    }
+
+    await db.execute(sql`
+      INSERT INTO password_reset_tokens (email, token, expires_at) 
+      VALUES (${email}, ${token}, ${expiresAt})
+    `);
+  }
+
+  async validatePasswordResetToken(token: string): Promise<{ email: string; valid: boolean }> {
+    try {
+      const result = await db.execute(sql`
+        SELECT email, expires_at, used 
+        FROM password_reset_tokens 
+        WHERE token = ${token} 
+        LIMIT 1
+      `) as any[];
+
+      if (!result || result.length === 0) {
+        return { email: '', valid: false };
+      }
+
+      const tokenData = result[0];
+      const now = new Date();
+      const expiresAt = new Date(tokenData.expires_at);
+
+      if (tokenData.used || now > expiresAt) {
+        return { email: tokenData.email, valid: false };
+      }
+
+      return { email: tokenData.email, valid: true };
+    } catch (error) {
+      console.error('Error validating token:', error);
+      return { email: '', valid: false };
+    }
+  }
+
+  async markPasswordResetTokenAsUsed(token: string): Promise<void> {
+    await db.execute(sql`
+      UPDATE password_reset_tokens 
+      SET used = TRUE 
+      WHERE token = ${token}
+    `);
+  }
 }
 
 // Financial tables setup
