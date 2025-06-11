@@ -35,7 +35,7 @@ export default function CompanyLoyalty() {
   });
 
   const { data: services = [], isLoading: isLoadingServices } = useQuery<Service[]>({
-    queryKey: ["/api/services"],
+    queryKey: ["/api/company/services"],
   });
 
   const { data: rewardsHistory = [], isLoading: isLoadingHistory } = useQuery<any[]>({
