@@ -266,14 +266,14 @@ export default function Companies() {
                 <div className="space-y-2">
                   <Label htmlFor="planId">Plano</Label>
                   <Select 
-                    value={editForm.watch("planId")?.toString() || ""} 
-                    onValueChange={(value) => editForm.setValue("planId", value ? parseInt(value) : null)}
+                    value={editForm.watch("planId")?.toString() || "none"} 
+                    onValueChange={(value) => editForm.setValue("planId", value === "none" ? null : parseInt(value))}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione um plano" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Nenhum plano</SelectItem>
+                      <SelectItem value="none">Nenhum plano</SelectItem>
                       {plans.map((plan) => (
                         <SelectItem key={plan.id} value={plan.id.toString()}>
                           {plan.name} - R$ {parseFloat(plan.price).toFixed(2).replace('.', ',')}
