@@ -142,25 +142,22 @@ export default function CompanyFinancial() {
     queryKey: ["/api/company/financial/transactions"],
   });
 
-  const { data: dashboardData = {
-    monthlyIncome: 0,
-    incomeGrowth: 0,
-    monthlyExpenses: 0,
-    expenseGrowth: 0,
-    totalTransactions: 0
-  }, isLoading: isLoadingDashboard } = useQuery({
-    queryKey: ["/api/company/financial/dashboard", dashboardDateFilter],
-    queryFn: async () => {
-      const url = `/api/company/financial/dashboard?month=${dashboardDateFilter}`;
-      const response = await apiRequest(url);
-      console.log('Dashboard response for', dashboardDateFilter, ':', response);
-      return response;
-    },
+  const { data: dashboardData, isLoading: isLoadingDashboard } = useQuery({
+    queryKey: [`/api/company/financial/dashboard?month=${dashboardDateFilter}`],
     enabled: !!dashboardDateFilter,
     staleTime: 0,
     gcTime: 0,
     refetchOnWindowFocus: true,
   });
+
+  // Dados seguros do dashboard com valores padrão
+  const safeData = {
+    monthlyIncome: Number(dashboardData?.monthlyIncome) || 0,
+    incomeGrowth: Number(dashboardData?.incomeGrowth) || 0,
+    monthlyExpenses: Number(dashboardData?.monthlyExpenses) || 0,
+    expenseGrowth: Number(dashboardData?.expenseGrowth) || 0,
+    totalTransactions: Number(dashboardData?.totalTransactions) || 0,
+  };
 
   // Forms
   const categoryForm = useForm<CategoryFormData>({
@@ -502,10 +499,10 @@ export default function CompanyFinancial() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold text-green-600">
-                      {formatCurrency(Number(dashboardData?.monthlyIncome) || 0)}
+                      {formatCurrency(safeData.monthlyIncome)}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      +{Number(dashboardData?.incomeGrowth) || 0}% em relação ao mês anterior
+                      +{safeData.incomeGrowth}% em relação ao mês anterior
                     </p>
                   </CardContent>
                 </Card>
@@ -517,10 +514,10 @@ export default function CompanyFinancial() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold text-red-600">
-                      {formatCurrency(Number(dashboardData?.monthlyExpenses) || 0)}
+                      {formatCurrency(safeData.monthlyExpenses)}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      +{Number(dashboardData?.expenseGrowth) || 0}% em relação ao mês anterior
+                      +{safeData.expenseGrowth}% em relação ao mês anterior
                     </p>
                   </CardContent>
                 </Card>
@@ -532,7 +529,7 @@ export default function CompanyFinancial() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold text-blue-600">
-                      {formatCurrency((Number(dashboardData?.monthlyIncome) || 0) - (Number(dashboardData?.monthlyExpenses) || 0))}
+                      {formatCurrency(safeData.monthlyIncome - safeData.monthlyExpenses)}
                     </div>
                     <p className="text-xs text-muted-foreground">
                       Receitas - Despesas do mês
@@ -547,7 +544,7 @@ export default function CompanyFinancial() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">
-                      {Number(dashboardData?.totalTransactions) || 0}
+                      {safeData.totalTransactions}
                     </div>
                     <p className="text-xs text-muted-foreground">
                       Total de transações no mês
