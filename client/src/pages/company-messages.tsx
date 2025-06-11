@@ -146,14 +146,12 @@ export default function CompanyMessages() {
       return apiRequest(`/api/company/campaigns/${id}`, "DELETE");
     },
     onSuccess: (_, deletedId) => {
-      // Remove from cache immediately
-      queryClient.setQueryData(["/api/company/campaigns"], (oldData: any) => {
-        if (!oldData) return oldData;
-        return oldData.filter((campaign: any) => campaign.id !== deletedId);
-      });
+      // Clear all campaign cache
+      queryClient.removeQueries({ queryKey: ["/api/company/campaigns"] });
       
-      // Also invalidate to ensure fresh data
+      // Force fresh fetch
       queryClient.invalidateQueries({ queryKey: ["/api/company/campaigns"] });
+      queryClient.refetchQueries({ queryKey: ["/api/company/campaigns"] });
       
       toast({
         title: "Campanha excluída",
@@ -318,7 +316,11 @@ export default function CompanyMessages() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => deleteCampaignMutation.mutate(campaign.id)}
+                        onClick={() => {
+                          console.log("Campaign object:", campaign);
+                          console.log("Campaign ID being deleted:", campaign.id);
+                          deleteCampaignMutation.mutate(campaign.id);
+                        }}
                         disabled={deleteCampaignMutation.isPending}
                       >
                         <Trash2 className="w-4 h-4" />

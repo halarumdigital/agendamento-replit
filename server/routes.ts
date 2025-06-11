@@ -4744,6 +4744,22 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
     }
   });
 
+  app.delete("/api/company/campaigns/:id", async (req, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const { id } = req.params;
+      await storage.deleteMessageCampaign(parseInt(id), companyId);
+      res.json({ message: "Campanha excluída com sucesso" });
+    } catch (error) {
+      console.error("Error deleting campaign:", error);
+      res.status(500).json({ message: "Erro ao excluir campanha" });
+    }
+  });
+
   app.get("/api/company/clients", async (req, res) => {
     try {
       const companyId = req.session.companyId;
