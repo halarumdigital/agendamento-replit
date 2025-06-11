@@ -4775,6 +4775,112 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
     }
   });
 
+  // Coupon routes
+  app.get("/api/company/coupons", async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const coupons = await storage.getCoupons(companyId);
+      res.json(coupons);
+    } catch (error) {
+      console.error("Error fetching coupons:", error);
+      res.status(500).json({ message: "Erro ao buscar cupons" });
+    }
+  });
+
+  app.post("/api/company/coupons", async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const couponData = {
+        ...req.body,
+        companyId,
+        code: req.body.code || req.body.name.toUpperCase().replace(/\s+/g, '').substring(0, 10),
+        usedCount: 0
+      };
+
+      const coupon = await storage.createCoupon(couponData);
+      res.status(201).json(coupon);
+    } catch (error) {
+      console.error("Error creating coupon:", error);
+      res.status(500).json({ message: "Erro ao criar cupom" });
+    }
+  });
+
+  app.put("/api/company/coupons/:id", async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const couponId = parseInt(req.params.id);
+      const coupon = await storage.updateCoupon(couponId, req.body);
+      res.json(coupon);
+    } catch (error) {
+      console.error("Error updating coupon:", error);
+      res.status(500).json({ message: "Erro ao atualizar cupom" });
+    }
+  });
+
+  app.delete("/api/company/coupons/:id", async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const couponId = parseInt(req.params.id);
+      await storage.deleteCoupon(couponId, companyId);
+      res.json({ message: "Cupom excluído com sucesso" });
+    } catch (error) {
+      console.error("Error deleting coupon:", error);
+      res.status(500).json({ message: "Erro ao excluir cupom" });
+    }
+  });
+
+  app.get("/api/company/coupons/validate/:code", async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const { code } = req.params;
+      const coupon = await storage.getCouponByCode(code, companyId);
+      
+      if (!coupon) {
+        return res.status(404).json({ message: "Cupom não encontrado" });
+      }
+
+      const now = new Date();
+      const validUntil = new Date(coupon.validUntil);
+      
+      if (validUntil < now) {
+        return res.status(400).json({ message: "Cupom expirado" });
+      }
+
+      if (!coupon.isActive) {
+        return res.status(400).json({ message: "Cupom inativo" });
+      }
+
+      if (coupon.usageLimit && coupon.usedCount >= coupon.usageLimit) {
+        return res.status(400).json({ message: "Cupom esgotado" });
+      }
+
+      res.json(coupon);
+    } catch (error) {
+      console.error("Error validating coupon:", error);
+      res.status(500).json({ message: "Erro ao validar cupom" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

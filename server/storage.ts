@@ -26,6 +26,7 @@ import {
   loyaltyRewardsHistory,
   products,
   messageCampaigns,
+  coupons,
   type Admin,
   type InsertAdmin,
   type Company,
@@ -78,6 +79,8 @@ import {
   type InsertProduct,
   type MessageCampaign,
   type InsertMessageCampaign,
+  type Coupon,
+  type InsertCoupon,
 } from "@shared/schema";
 import { normalizePhone, validateBrazilianPhone, comparePhones } from "../shared/phone-utils";
 
@@ -2076,15 +2079,33 @@ Obrigado pela preferência! 🙏`;
   }
 
   async createCoupon(couponData: InsertCoupon): Promise<Coupon> {
-    const [coupon] = await db.insert(coupons).values(couponData).returning();
+    await db.insert(coupons).values(couponData);
+    
+    const [coupon] = await db.select().from(coupons)
+      .where(eq(coupons.companyId, couponData.companyId))
+      .orderBy(desc(coupons.id))
+      .limit(1);
+    
+    if (!coupon) {
+      throw new Error("Failed to create coupon");
+    }
+    
     return coupon;
   }
 
   async updateCoupon(id: number, couponData: Partial<InsertCoupon>): Promise<Coupon> {
-    const [coupon] = await db.update(coupons)
+    await db.update(coupons)
       .set({ ...couponData, updatedAt: new Date() })
+      .where(eq(coupons.id, id));
+
+    const [coupon] = await db.select().from(coupons)
       .where(eq(coupons.id, id))
-      .returning();
+      .limit(1);
+      
+    if (!coupon) {
+      throw new Error("Coupon not found after update");
+    }
+    
     return coupon;
   }
 
