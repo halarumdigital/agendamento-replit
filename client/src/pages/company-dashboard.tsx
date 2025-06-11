@@ -3,6 +3,8 @@ import { useCompanyAuth } from "@/hooks/useCompanyAuth";
 
 export default function CompanyDashboard() {
   const { company, isLoading } = useCompanyAuth();
+  
+  console.log("✅ CompanyDashboard carregado - versão atualizada");
 
   if (isLoading) {
     return (
@@ -38,9 +40,9 @@ export default function CompanyDashboard() {
     <div className="p-6 bg-gray-50 min-h-screen">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
-        <p className="text-sm text-gray-500">
-          {new Date().toLocaleDateString('pt-BR', { 
+        <h1 className="text-3xl font-bold text-red-600">🔥 DASHBOARD ATUALIZADO 🔥</h1>
+        <p className="text-lg text-blue-600 font-semibold">
+          NOVA VERSÃO - {new Date().toLocaleDateString('pt-BR', { 
             weekday: 'long',
             day: '2-digit',
             month: 'long',
