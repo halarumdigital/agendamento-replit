@@ -5145,45 +5145,25 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
   app.get("/api/company/financial/transactions", requireCompanyAuth, async (req, res) => {
     try {
       const companyId = req.session.companyId!;
-      const transactions = await db.execute(sql`
-        SELECT 
-          t.*,
-          c.name as category_name,
-          c.color as category_color,
-          c.type as category_type,
-          p.name as payment_method_name,
-          p.type as payment_method_type
-        FROM financial_transactions t
-        LEFT JOIN financial_categories c ON t.category_id = c.id
-        LEFT JOIN payment_methods p ON t.payment_method_id = p.id
-        WHERE t.company_id = ${companyId} 
-        ORDER BY t.date DESC, t.created_at DESC
-      `);
+      
+      const transactions = await db.select()
+        .from(financialTransactions)
+        .where(eq(financialTransactions.companyId, companyId))
+        .orderBy(desc(financialTransactions.date), desc(financialTransactions.createdAt));
 
-      // Format transactions for frontend
-      const formattedTransactions = transactions.map((transaction: any) => ({
-        id: transaction.id,
-        description: transaction.description,
-        amount: parseFloat(transaction.amount),
-        type: transaction.type,
-        categoryId: transaction.category_id,
-        paymentMethodId: transaction.payment_method_id,
-        date: transaction.date,
-        notes: transaction.notes,
-        createdAt: transaction.created_at,
-        category: {
-          id: transaction.category_id,
-          name: transaction.category_name,
-          color: transaction.category_color,
-          type: transaction.category_type,
-        },
-        paymentMethod: {
-          id: transaction.payment_method_id,
-          name: transaction.payment_method_name,
-          type: transaction.payment_method_type,
-        },
+      // Buscar categorias e métodos de pagamento relacionados
+      const formattedTransactions = await Promise.all(transactions.map(async (transaction) => {
+        const [category] = transaction.categoryId ? await db.select().from(financialCategories).where(eq(financialCategories.id, transaction.categoryId)) : [null];
+        const [paymentMethod] = transaction.paymentMethodId ? await db.select().from(paymentMethods).where(eq(paymentMethods.id, transaction.paymentMethodId)) : [null];
+
+        return {
+          ...transaction,
+          category: category || null,
+          paymentMethod: paymentMethod || null
+        };
       }));
 
+      console.log("Financial transactions fetched:", formattedTransactions);
       res.json(formattedTransactions);
     } catch (error) {
       console.error("Error fetching financial transactions:", error);
