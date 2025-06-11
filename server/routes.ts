@@ -24,6 +24,36 @@ import {
 // Temporary in-memory storage for WhatsApp instances
 const tempWhatsappInstances: any[] = [];
 
+// Configure multer for file uploads
+const storage_multer = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(process.cwd(), 'uploads');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, `logo-${uniqueSuffix}${ext}`);
+  }
+});
+
+const upload = multer({
+  storage: storage_multer,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Apenas imagens são permitidas'));
+    }
+  }
+});
+
 // Helper function to generate public webhook URLs
 function generateWebhookUrl(req: any, instanceName: string): string {
   const host = req.get('host');
@@ -704,6 +734,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: `Erro ao buscar modelos: ${error.message}`,
         models: []
       });
+    }
+  });
+
+  // Logo upload endpoint
+  app.post('/api/upload/logo', isAuthenticated, upload.single('logo'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "Nenhum arquivo foi enviado" });
+      }
+
+      // Generate the URL for the uploaded file
+      const host = req.get('host');
+      const protocol = req.protocol;
+      const fileUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
+
+      res.json({ 
+        url: fileUrl,
+        filename: req.file.filename,
+        originalName: req.file.originalname,
+        size: req.file.size
+      });
+    } catch (error) {
+      console.error("Error uploading logo:", error);
+      res.status(500).json({ message: "Erro ao fazer upload do logo" });
     }
   });
 
