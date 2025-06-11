@@ -963,7 +963,15 @@ export default function CompanyFinancial() {
               <DialogTrigger asChild>
                 <Button onClick={() => {
                   setEditingTransaction(null);
-                  transactionForm.reset();
+                  transactionForm.reset({
+                    description: "",
+                    amount: 0,
+                    type: "expense",
+                    categoryId: 0,
+                    paymentMethodId: 0,
+                    date: new Date().toISOString().split("T")[0],
+                    notes: "",
+                  });
                 }}>
                   <Plus className="w-4 h-4 mr-2" />
                   Nova Transação
@@ -1020,7 +1028,7 @@ export default function CompanyFinancial() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Tipo *</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <Select onValueChange={field.onChange} value={field.value}>
                               <FormControl>
                                 <SelectTrigger>
                                   <SelectValue placeholder="Selecione o tipo" />
@@ -1058,7 +1066,7 @@ export default function CompanyFinancial() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Categoria *</FormLabel>
-                            <Select onValueChange={(value) => field.onChange(parseInt(value))} defaultValue={field.value?.toString()}>
+                            <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
                               <FormControl>
                                 <SelectTrigger>
                                   <SelectValue placeholder="Selecione a categoria" />
@@ -1083,7 +1091,7 @@ export default function CompanyFinancial() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Método de Pagamento *</FormLabel>
-                            <Select onValueChange={(value) => field.onChange(parseInt(value))} defaultValue={field.value?.toString()}>
+                            <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
                               <FormControl>
                                 <SelectTrigger>
                                   <SelectValue placeholder="Selecione o método" />
