@@ -248,6 +248,22 @@ export default function Plans() {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="maxProfessionals">Máximo de Profissionais</Label>
+                <Input
+                  id="maxProfessionals"
+                  type="number"
+                  min="1"
+                  {...form.register("maxProfessionals", { valueAsNumber: true })}
+                  placeholder="1"
+                />
+                {form.formState.errors.maxProfessionals && (
+                  <p className="text-sm text-red-600">
+                    {form.formState.errors.maxProfessionals.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="isActive">Status</Label>
                 <div className="flex items-center space-x-2 mt-2">
                   <Switch
@@ -462,6 +478,12 @@ export default function Plans() {
                       <span className="text-sm text-slate-600">Dias grátis:</span>
                       <span className="text-sm font-medium text-slate-900">
                         {plan.freeDays} dias
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-slate-600">Máx. profissionais:</span>
+                      <span className="text-sm font-medium text-slate-900">
+                        {plan.maxProfessionals || 1}
                       </span>
                     </div>
                   </div>

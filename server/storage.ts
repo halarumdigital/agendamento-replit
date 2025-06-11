@@ -2342,6 +2342,35 @@ export const storage = new DatabaseStorage();
   }
 })();
 
+// Ensure max_professionals column exists in plans table
+(async () => {
+  try {
+    await db.execute(sql`
+      ALTER TABLE plans 
+      ADD COLUMN IF NOT EXISTS max_professionals INT NOT NULL DEFAULT 1
+    `);
+    
+    // Update existing plans with appropriate max_professionals values
+    await db.execute(sql`
+      UPDATE plans SET max_professionals = 
+      CASE 
+        WHEN LOWER(name) LIKE '%básico%' OR LOWER(name) LIKE '%basic%' THEN 1
+        WHEN LOWER(name) LIKE '%premium%' OR LOWER(name) LIKE '%profissional%' THEN 5
+        WHEN LOWER(name) LIKE '%enterprise%' OR LOWER(name) LIKE '%empresarial%' THEN 10
+        ELSE 3
+      END
+      WHERE max_professionals = 1
+    `);
+    
+    console.log("✅ Max professionals column ensured in plans");
+  } catch (error: any) {
+    // Column might already exist, which is fine
+    if (!error.message?.includes('Duplicate column name')) {
+      console.error("❌ Error adding max_professionals column:", error);
+    }
+  }
+})();
+
 // Initialize financial tables on startup
 (async () => {
   try {
