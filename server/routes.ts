@@ -626,6 +626,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public settings route for login page (without authentication)
+  app.get('/api/public-settings', async (req, res) => {
+    try {
+      const settings = await storage.getGlobalSettings();
+      // Return only public settings needed for login page
+      res.json({
+        logoUrl: settings?.logoUrl || null,
+        systemName: settings?.systemName || null,
+        faviconUrl: settings?.faviconUrl || null
+      });
+    } catch (error) {
+      console.error("Error fetching public settings:", error);
+      res.status(500).json({ message: "Falha ao buscar configurações públicas" });
+    }
+  });
+
   // Global settings routes
   app.get('/api/settings', isAuthenticated, async (req, res) => {
     try {

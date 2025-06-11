@@ -22,9 +22,9 @@ export default function Login() {
   // Aplica tema global dinamicamente
   useGlobalTheme();
 
-  // Busca configurações globais para obter a logo
+  // Busca configurações públicas para obter a logo
   const { data: settings } = useQuery({
-    queryKey: ["/api/settings"],
+    queryKey: ["/api/public-settings"],
     retry: false,
   });
 
