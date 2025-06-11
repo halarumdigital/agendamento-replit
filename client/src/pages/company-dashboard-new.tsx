@@ -131,12 +131,18 @@ export default function CompanyDashboardNew() {
       }
     });
 
-    // Converter para formato do gráfico
+    // Calcular total para porcentagens
+    const total = Object.values(serviceCount).reduce((sum, count) => sum + count, 0);
+
+    // Converter para formato do gráfico com porcentagens
     const chartData = Object.entries(serviceCount).map(([name, value]) => {
       const service = services.find((s: any) => s.name === name);
+      const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0';
       return {
         name,
         value,
+        percentage,
+        displayName: `${name} (${percentage}%)`,
         color: service?.color || '#8884d8'
       };
     });
@@ -331,9 +337,14 @@ export default function CompanyDashboardNew() {
                   <Legend 
                     verticalAlign="bottom" 
                     height={36}
-                    formatter={(value, entry) => (
-                      <span style={{ color: entry.color }}>{value}</span>
-                    )}
+                    formatter={(value, entry) => {
+                      const data = servicesData.find(item => item.name === value);
+                      return (
+                        <span style={{ color: entry.color }}>
+                          {data?.displayName || value}
+                        </span>
+                      );
+                    }}
                   />
                 </PieChart>
               </ResponsiveContainer>
