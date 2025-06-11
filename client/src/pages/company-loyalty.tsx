@@ -188,6 +188,16 @@ export default function CompanyLoyalty() {
   };
 
   const handleDelete = (id: number) => {
+    console.log('Delete button clicked for campaign ID:', id);
+    if (!id || isNaN(id)) {
+      toast({
+        title: "Erro",
+        description: "ID da campanha inválido",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     if (confirm("Tem certeza que deseja excluir esta campanha?")) {
       deleteCampaignMutation.mutate(id);
     }
