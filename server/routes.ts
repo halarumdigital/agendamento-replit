@@ -4719,10 +4719,13 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
         return res.status(400).json({ message: "Campos obrigatórios: name, message, scheduledDate, targetType" });
       }
 
+      // Parse the date correctly to avoid timezone issues
+      const scheduledDate = new Date(req.body.scheduledDate);
+      
       const campaignData = {
         name: req.body.name,
         message: req.body.message,
-        scheduledDate: new Date(req.body.scheduledDate),
+        scheduledDate: scheduledDate,
         targetType: req.body.targetType,
         selectedClients: req.body.selectedClients || null,
         companyId,

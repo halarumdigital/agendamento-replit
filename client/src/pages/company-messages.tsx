@@ -112,8 +112,12 @@ export default function CompanyMessages() {
   // Mutation para criar campanha
   const createCampaignMutation = useMutation({
     mutationFn: async (data: CampaignFormData) => {
+      // Convert datetime-local to ISO string in local timezone
+      const localDate = new Date(data.scheduledDate);
+      
       const payload = {
         ...data,
+        scheduledDate: localDate.toISOString(),
         selectedClients: data.targetType === "specific" ? selectedClients : null,
       };
       return apiRequest("/api/company/campaigns", "POST", payload);
