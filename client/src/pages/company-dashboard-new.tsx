@@ -1,6 +1,7 @@
 import { Building2, Users, Calendar, CreditCard, Settings, FileText, User, MessageSquare, DollarSign, Clock, UserCheck, TrendingUp, TrendingDown, Plus, MoreHorizontal, Download } from "lucide-react";
 import { useCompanyAuth } from "@/hooks/useCompanyAuth";
 import { useQuery } from "@tanstack/react-query";
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
 
 export default function CompanyDashboardNew() {
   const { company, isLoading } = useCompanyAuth();
@@ -110,9 +111,43 @@ export default function CompanyDashboardNew() {
     }).length;
   };
 
+  // Calcular dados dos serviços realizados para o gráfico
+  const calculateServicesData = () => {
+    if (!Array.isArray(appointments) || !Array.isArray(services)) {
+      return [];
+    }
+
+    // Contar agendamentos concluídos por serviço
+    const completedAppointments = appointments.filter((appointment: any) => 
+      appointment.status === 'Concluído'
+    );
+
+    const serviceCount: { [key: string]: number } = {};
+    
+    completedAppointments.forEach((appointment: any) => {
+      const service = services.find((s: any) => s.id === appointment.serviceId);
+      if (service) {
+        serviceCount[service.name] = (serviceCount[service.name] || 0) + 1;
+      }
+    });
+
+    // Converter para formato do gráfico
+    const chartData = Object.entries(serviceCount).map(([name, value]) => {
+      const service = services.find((s: any) => s.name === name);
+      return {
+        name,
+        value,
+        color: service?.color || '#8884d8'
+      };
+    });
+
+    return chartData.sort((a, b) => b.value - a.value);
+  };
+
   const dailyRevenue = calculateDailyRevenue();
   const todayAppointmentsCount = calculateTodayAppointments();
   const todayClientsServed = calculateTodayClientsServed();
+  const servicesData = calculateServicesData();
 
   if (isLoading) {
     return (
@@ -276,8 +311,37 @@ export default function CompanyDashboardNew() {
               <MoreHorizontal className="w-5 h-5" />
             </button>
           </div>
-          <div className="h-80 flex items-center justify-center bg-gray-50 rounded">
-            <p className="text-gray-500">Gráfico de Serviços</p>
+          <div className="h-80">
+            {servicesData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={servicesData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={2}
+                    dataKey="value"
+                  >
+                    {servicesData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Legend 
+                    verticalAlign="bottom" 
+                    height={36}
+                    formatter={(value, entry) => (
+                      <span style={{ color: entry.color }}>{value}</span>
+                    )}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center">
+                <span className="text-gray-500">Nenhum serviço concluído</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
