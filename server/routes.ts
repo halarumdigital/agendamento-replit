@@ -4929,11 +4929,12 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
   app.get("/api/company/financial/categories", requireCompanyAuth, async (req, res) => {
     try {
       const companyId = req.session.companyId!;
-      const categories = await db.execute(sql`
-        SELECT * FROM financial_categories 
-        WHERE company_id = ${companyId} 
-        ORDER BY created_at DESC
-      `);
+      const categories = await db.select()
+        .from(financialCategories)
+        .where(eq(financialCategories.companyId, companyId))
+        .orderBy(desc(financialCategories.createdAt));
+      
+      console.log("Financial categories fetched:", categories);
       res.json(categories);
     } catch (error) {
       console.error("Error fetching financial categories:", error);
