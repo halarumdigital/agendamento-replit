@@ -819,6 +819,18 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async getProfessionalsCount(companyId: number): Promise<number> {
+    try {
+      const result = await db.select({ count: sql<number>`COUNT(*)` })
+        .from(professionals)
+        .where(eq(professionals.companyId, companyId));
+      return result[0]?.count || 0;
+    } catch (error: any) {
+      console.error("Error counting professionals:", error);
+      return 0;
+    }
+  }
+
   // Appointments operations
   async getAppointmentsByCompany(companyId: number, month?: string): Promise<Appointment[]> {
     try {

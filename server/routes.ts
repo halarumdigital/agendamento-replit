@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./auth";
 import { db, pool } from "./db";
+import { loadCompanyPlan, requirePermission, checkProfessionalsLimit, RequestWithPlan } from "./plan-middleware";
 import { insertCompanySchema, insertPlanSchema, insertGlobalSettingsSchema, insertAdminSchema, financialCategories, paymentMethods, financialTransactions, companies } from "@shared/schema";
 import bcrypt from "bcrypt";
 import { z } from "zod";
@@ -1963,9 +1964,9 @@ INSTRUÇÕES OBRIGATÓRIAS:
     }
   });
 
-  app.post('/api/company/professionals', async (req: any, res) => {
+  app.post('/api/company/professionals', loadCompanyPlan, requirePermission('professionals'), checkProfessionalsLimit, async (req: RequestWithPlan, res) => {
     try {
-      const companyId = req.session.companyId;
+      const companyId = (req.session as any).companyId;
       if (!companyId) {
         return res.status(401).json({ message: "Não autenticado" });
       }
@@ -1981,9 +1982,9 @@ INSTRUÇÕES OBRIGATÓRIAS:
     }
   });
 
-  app.put('/api/company/professionals/:id', async (req: any, res) => {
+  app.put('/api/company/professionals/:id', loadCompanyPlan, requirePermission('professionals'), async (req: RequestWithPlan, res) => {
     try {
-      const companyId = req.session.companyId;
+      const companyId = (req.session as any).companyId;
       if (!companyId) {
         return res.status(401).json({ message: "Não autenticado" });
       }
