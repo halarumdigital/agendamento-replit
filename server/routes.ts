@@ -8,6 +8,14 @@ import bcrypt from "bcrypt";
 import { z } from "zod";
 import QRCode from "qrcode";
 import { reminderScheduler, rescheduleRemindersForAppointment } from "./reminder-scheduler";
+import { 
+  getLoyaltyCampaignsByCompany, 
+  createLoyaltyCampaign, 
+  updateLoyaltyCampaign, 
+  toggleLoyaltyCampaign, 
+  deleteLoyaltyCampaign, 
+  getLoyaltyRewardsHistory 
+} from "./storage";
 
 // Temporary in-memory storage for WhatsApp instances
 const tempWhatsappInstances: any[] = [];
@@ -4511,7 +4519,7 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
         return res.status(401).json({ message: "Não autenticado" });
       }
 
-      const campaigns = await storage.getLoyaltyCampaignsByCompany(companyId);
+      const campaigns = await getLoyaltyCampaignsByCompany(companyId);
       res.json(campaigns);
     } catch (error) {
       console.error("Error getting loyalty campaigns:", error);

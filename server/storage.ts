@@ -1996,38 +1996,136 @@ export const storage = new DatabaseStorage();
   }
 })();
 
-// Loyalty Campaigns methods
+// Initialize loyalty tables
+(async () => {
+  try {
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS loyalty_campaigns (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        company_id INT NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        condition_type VARCHAR(50) NOT NULL,
+        condition_value INT NOT NULL,
+        reward_type VARCHAR(50) NOT NULL,
+        reward_value INT NOT NULL,
+        reward_service_id INT,
+        active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
+        FOREIGN KEY (reward_service_id) REFERENCES services(id) ON DELETE SET NULL
+      )
+    `);
+
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS loyalty_rewards_history (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        company_id INT NOT NULL,
+        client_id INT NOT NULL,
+        campaign_id INT NOT NULL,
+        reward_type VARCHAR(50) NOT NULL,
+        reward_value VARCHAR(255) NOT NULL,
+        used_at TIMESTAMP NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
+        FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE,
+        FOREIGN KEY (campaign_id) REFERENCES loyalty_campaigns(id) ON DELETE CASCADE
+      )
+    `);
+
+    console.log("✅ Loyalty tables created/verified");
+  } catch (error) {
+    console.error("❌ Error creating loyalty tables:", error);
+  }
+})();
+
+// Loyalty Campaigns methods using SQL queries
 export async function getLoyaltyCampaignsByCompany(companyId: number) {
   try {
-    return await db.select()
-      .from(loyaltyCampaigns)
-      .where(eq(loyaltyCampaigns.companyId, companyId))
-      .orderBy(desc(loyaltyCampaigns.createdAt));
+    const result = await db.execute(sql`
+      SELECT * FROM loyalty_campaigns 
+      WHERE company_id = ${companyId}
+      ORDER BY created_at DESC
+    `);
+    return result as any[];
   } catch (error) {
     console.error('Error getting loyalty campaigns:', error);
     throw error;
   }
 }
 
-export async function createLoyaltyCampaign(campaignData: InsertLoyaltyCampaign) {
+export async function createLoyaltyCampaign(campaignData: any) {
   try {
-    const [campaign] = await db.insert(loyaltyCampaigns)
-      .values(campaignData)
-      .returning();
-    return campaign;
+    const result = await db.execute(sql`
+      INSERT INTO loyalty_campaigns (
+        company_id, name, condition_type, condition_value, 
+        reward_type, reward_value, reward_service_id, active
+      ) VALUES (
+        ${campaignData.companyId}, ${campaignData.name}, ${campaignData.conditionType}, 
+        ${campaignData.conditionValue}, ${campaignData.rewardType}, ${campaignData.rewardValue}, 
+        ${campaignData.rewardServiceId || null}, ${campaignData.active || true}
+      )
+    `);
+    
+    // Get the created campaign
+    const campaign = await db.execute(sql`
+      SELECT * FROM loyalty_campaigns WHERE id = LAST_INSERT_ID()
+    `);
+    return (campaign as any)[0];
   } catch (error) {
     console.error('Error creating loyalty campaign:', error);
     throw error;
   }
 }
 
-export async function updateLoyaltyCampaign(id: number, updates: Partial<InsertLoyaltyCampaign>, companyId: number) {
+export async function updateLoyaltyCampaign(id: number, updates: any, companyId: number) {
   try {
-    const [campaign] = await db.update(loyaltyCampaigns)
-      .set({ ...updates, updatedAt: new Date() })
-      .where(and(eq(loyaltyCampaigns.id, id), eq(loyaltyCampaigns.companyId, companyId)))
-      .returning();
-    return campaign;
+    const fields: string[] = [];
+    const values: any[] = [];
+    
+    if (updates.name !== undefined) {
+      fields.push('name = ?');
+      values.push(updates.name);
+    }
+    if (updates.conditionType !== undefined) {
+      fields.push('condition_type = ?');
+      values.push(updates.conditionType);
+    }
+    if (updates.conditionValue !== undefined) {
+      fields.push('condition_value = ?');
+      values.push(updates.conditionValue);
+    }
+    if (updates.rewardType !== undefined) {
+      fields.push('reward_type = ?');
+      values.push(updates.rewardType);
+    }
+    if (updates.rewardValue !== undefined) {
+      fields.push('reward_value = ?');
+      values.push(updates.rewardValue);
+    }
+    if (updates.rewardServiceId !== undefined) {
+      fields.push('reward_service_id = ?');
+      values.push(updates.rewardServiceId);
+    }
+    if (updates.active !== undefined) {
+      fields.push('active = ?');
+      values.push(updates.active);
+    }
+    
+    fields.push('updated_at = NOW()');
+    values.push(id, companyId);
+    
+    await db.execute(sql.raw(`
+      UPDATE loyalty_campaigns 
+      SET ${fields.join(', ')} 
+      WHERE id = ? AND company_id = ?
+    `, values));
+    
+    // Get the updated campaign
+    const result = await db.execute(sql`
+      SELECT * FROM loyalty_campaigns WHERE id = ${id} AND company_id = ${companyId}
+    `);
+    return result.rows[0];
   } catch (error) {
     console.error('Error updating loyalty campaign:', error);
     throw error;
@@ -2036,9 +2134,11 @@ export async function updateLoyaltyCampaign(id: number, updates: Partial<InsertL
 
 export async function toggleLoyaltyCampaign(id: number, active: boolean, companyId: number) {
   try {
-    await db.update(loyaltyCampaigns)
-      .set({ active, updatedAt: new Date() })
-      .where(and(eq(loyaltyCampaigns.id, id), eq(loyaltyCampaigns.companyId, companyId)));
+    await db.execute(sql`
+      UPDATE loyalty_campaigns 
+      SET active = ${active}, updated_at = NOW()
+      WHERE id = ${id} AND company_id = ${companyId}
+    `);
   } catch (error) {
     console.error('Error toggling loyalty campaign:', error);
     throw error;
@@ -2047,8 +2147,10 @@ export async function toggleLoyaltyCampaign(id: number, active: boolean, company
 
 export async function deleteLoyaltyCampaign(id: number, companyId: number) {
   try {
-    await db.delete(loyaltyCampaigns)
-      .where(and(eq(loyaltyCampaigns.id, id), eq(loyaltyCampaigns.companyId, companyId)));
+    await db.execute(sql`
+      DELETE FROM loyalty_campaigns 
+      WHERE id = ${id} AND company_id = ${companyId}
+    `);
   } catch (error) {
     console.error('Error deleting loyalty campaign:', error);
     throw error;
@@ -2057,10 +2159,12 @@ export async function deleteLoyaltyCampaign(id: number, companyId: number) {
 
 export async function getLoyaltyRewardsHistory(companyId: number) {
   try {
-    return await db.select()
-      .from(loyaltyRewardsHistory)
-      .where(eq(loyaltyRewardsHistory.companyId, companyId))
-      .orderBy(desc(loyaltyRewardsHistory.createdAt));
+    const result = await db.execute(sql`
+      SELECT * FROM loyalty_rewards_history 
+      WHERE company_id = ${companyId}
+      ORDER BY created_at DESC
+    `);
+    return result.rows;
   } catch (error) {
     console.error('Error getting loyalty rewards history:', error);
     throw error;
