@@ -63,6 +63,21 @@ async function processPendingCampaigns() {
           console.error(`❌ Invalid campaign data:`, campaign);
           continue;
         }
+
+        // Double-check campaign status before processing
+        const [statusCheck] = await pool.execute(
+          'SELECT status FROM message_campaigns WHERE id = ?',
+          [campaign.id]
+        );
+        
+        const currentStatus = Array.isArray(statusCheck) && statusCheck.length > 0 
+          ? statusCheck[0].status 
+          : null;
+
+        if (currentStatus !== 'pending') {
+          console.log(`⏭️ Skipping campaign ${campaign.id} - status is ${currentStatus}`);
+          continue;
+        }
         
         await processCampaign(campaign);
       } catch (error) {
@@ -86,6 +101,7 @@ async function processCampaign(campaign: any) {
   console.log(`📤 Processing campaign: ${campaign.name} (ID: ${campaign.id})`);
 
   // Mark campaign as sending
+  console.log(`🔄 Marking campaign ${campaign.id} as sending`);
   await pool.execute(
     'UPDATE message_campaigns SET status = ? WHERE id = ?',
     ['sending', campaign.id]
@@ -197,12 +213,15 @@ async function processCampaign(campaign: any) {
 
     // Update campaign status
     const finalStatus = sentCount > 0 ? 'completed' : 'failed';
-    await pool.execute(
+    console.log(`🔄 Updating campaign ${campaign.id} status to: ${finalStatus}`);
+    
+    const updateResult = await pool.execute(
       'UPDATE message_campaigns SET status = ?, total_targets = ?, sent_count = ? WHERE id = ?',
       [finalStatus, totalTargets, sentCount, campaign.id]
     );
-
-    console.log(`✅ Campaign ${campaign.name} completed: ${sentCount}/${totalTargets} messages sent`);
+    
+    console.log(`✅ Campaign ${campaign.name} ${finalStatus}: ${sentCount}/${totalTargets} messages sent`);
+    console.log(`📊 Update result:`, updateResult);
 
   } catch (error) {
     console.error(`❌ Error processing campaign ${campaign.id}:`, error);
