@@ -238,7 +238,7 @@ export default function Register() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="state">Estado</Label>
+                    <Label htmlFor="state">Estado *</Label>
                     <Input
                       id="state"
                       {...form.register("state")}
