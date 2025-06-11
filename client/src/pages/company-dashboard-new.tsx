@@ -194,7 +194,7 @@ export default function CompanyDashboardNew() {
     return chartData;
   };
 
-  // Calcular agendamentos de hoje para a tabela
+  // Calcular agendamentos de hoje para a tabela (incluindo concluídos)
   const getTodayAppointments = () => {
     if (!Array.isArray(appointments)) {
       return [];
@@ -492,7 +492,6 @@ export default function CompanyDashboardNew() {
                   <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase">Serviço</th>
                   <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase">Profissional</th>
                   <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                  <th className="py-3 px-4 text-right text-xs font-medium text-gray-500 uppercase">Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -508,16 +507,11 @@ export default function CompanyDashboardNew() {
                           {appointment.status?.name || 'Pendente'}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-right">
-                        <button className="text-gray-500 hover:text-purple-600">
-                          <MoreHorizontal className="w-5 h-5" />
-                        </button>
-                      </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={6} className="py-8 text-center text-gray-500">
+                    <td colSpan={5} className="py-8 text-center text-gray-500">
                       Nenhum agendamento para hoje
                     </td>
                   </tr>
