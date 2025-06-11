@@ -3,11 +3,12 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./auth";
 import { db } from "./db";
-import { insertCompanySchema, insertPlanSchema, insertGlobalSettingsSchema, insertAdminSchema } from "@shared/schema";
+import { insertCompanySchema, insertPlanSchema, insertGlobalSettingsSchema, insertAdminSchema, financialCategories, paymentMethods, financialTransactions } from "@shared/schema";
 import bcrypt from "bcrypt";
 import { z } from "zod";
 import QRCode from "qrcode";
 import { reminderScheduler, rescheduleRemindersForAppointment } from "./reminder-scheduler";
+import { sql, eq, and, desc, asc, sum, count, gte, lte } from "drizzle-orm";
 import { 
   getLoyaltyCampaignsByCompany, 
   createLoyaltyCampaign, 
