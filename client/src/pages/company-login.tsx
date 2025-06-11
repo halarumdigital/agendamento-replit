@@ -13,7 +13,7 @@ import { useGlobalTheme } from "@/hooks/use-global-theme";
 import { Building2, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { z } from "zod";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 
 const companyLoginSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -180,6 +180,15 @@ export default function CompanyLogin() {
                 {loginMutation.isPending ? "Entrando..." : "Entrar"}
               </Button>
             </form>
+
+            <div className="text-center mt-4">
+              <Link 
+                href="/company/forgot-password" 
+                className="text-sm text-muted-foreground hover:text-primary hover:underline"
+              >
+                Esqueci minha senha
+              </Link>
+            </div>
           </CardContent>
         </Card>
       </div>
