@@ -483,6 +483,37 @@ export default function CompanyInventory() {
         </Card>
       )}
 
+      {/* Barra de busca e controles de visualização */}
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <div className="flex-1 relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            placeholder="Buscar produtos por nome..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant={viewMode === "grid" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setViewMode("grid")}
+          >
+            <Grid className="h-4 w-4 mr-2" />
+            Grade
+          </Button>
+          <Button
+            variant={viewMode === "list" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setViewMode("list")}
+          >
+            <List className="h-4 w-4 mr-2" />
+            Lista
+          </Button>
+        </div>
+      </div>
+
       {/* Lista de produtos */}
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -497,23 +528,30 @@ export default function CompanyInventory() {
             </Card>
           ))}
         </div>
-      ) : products.length === 0 ? (
+      ) : filteredProducts.length === 0 ? (
         <Card className="text-center py-12">
           <CardContent>
             <Package className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Nenhum produto cadastrado</h3>
+            <h3 className="text-lg font-semibold mb-2">
+              {searchTerm ? "Nenhum produto encontrado" : "Nenhum produto cadastrado"}
+            </h3>
             <p className="text-muted-foreground mb-4">
-              Comece cadastrando seus primeiros produtos no estoque
+              {searchTerm 
+                ? `Não encontramos produtos com "${searchTerm}". Tente outro termo de busca.`
+                : "Comece cadastrando seus primeiros produtos no estoque"
+              }
             </p>
-            <Button onClick={() => setIsCreateModalOpen(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Cadastrar Primeiro Produto
-            </Button>
+            {!searchTerm && (
+              <Button onClick={() => setIsCreateModalOpen(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Cadastrar Primeiro Produto
+              </Button>
+            )}
           </CardContent>
         </Card>
-      ) : (
+      ) : viewMode === "grid" ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {products.map((product: Product) => {
+          {filteredProducts.map((product: Product) => {
             const stockStatus = getStockStatus(product);
             return (
               <Card key={product.id} className="overflow-hidden">
@@ -582,6 +620,70 @@ export default function CompanyInventory() {
                     </Button>
                   </div>
                 </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      ) : (
+        /* Visualização em Lista */
+        <div className="space-y-4">
+          {filteredProducts.map((product: Product) => {
+            const stockStatus = getStockStatus(product);
+            return (
+              <Card key={product.id} className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      {product.photo ? (
+                        <img 
+                          src={product.photo} 
+                          alt={product.name}
+                          className="w-full h-full object-cover rounded-lg"
+                        />
+                      ) : (
+                        <ImageIcon className="w-8 h-8 text-gray-400" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-lg truncate">{product.name}</h3>
+                      {product.description && (
+                        <p className="text-muted-foreground text-sm truncate">{product.description}</p>
+                      )}
+                      <div className="flex items-center space-x-4 mt-1">
+                        <span className="text-lg font-bold text-green-600">
+                          R$ {parseFloat(product.purchasePrice).toFixed(2)}
+                        </span>
+                        <Badge variant={stockStatus.variant}>
+                          {stockStatus.label}
+                        </Badge>
+                        <span className="text-sm text-muted-foreground">
+                          {product.stockQuantity} unidades
+                        </span>
+                        {product.supplierName && (
+                          <span className="text-sm text-muted-foreground">
+                            Fornecedor: {product.supplierName}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEdit(product)}
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDelete(product.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
               </Card>
             );
           })}
