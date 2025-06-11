@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { useGlobalTheme } from "@/hooks/use-global-theme";
 import { Lock } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -19,14 +18,53 @@ export default function Login() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   
-  // Aplica tema global dinamicamente
-  useGlobalTheme();
-
-  // Busca configurações públicas para obter a logo
+  // Busca configurações públicas para obter a logo e cores
   const { data: settings } = useQuery({
     queryKey: ["/api/public-settings"],
     retry: false,
   });
+
+  // Aplica cores da configuração pública
+  useEffect(() => {
+    if (settings?.primaryColor) {
+      const root = document.documentElement;
+      
+      const hexToHsl = (hex: string) => {
+        const r = parseInt(hex.slice(1, 3), 16) / 255;
+        const g = parseInt(hex.slice(3, 5), 16) / 255;
+        const b = parseInt(hex.slice(5, 7), 16) / 255;
+
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        let h, s, l = (max + min) / 2;
+
+        if (max === min) {
+          h = s = 0;
+        } else {
+          const d = max - min;
+          s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+          switch (max) {
+            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+            case g: h = (b - r) / d + 2; break;
+            case b: h = (r - g) / d + 4; break;
+            default: h = 0;
+          }
+          h /= 6;
+        }
+
+        return `${Math.round(h * 360)}, ${Math.round(s * 100)}%, ${Math.round(l * 100)}%`;
+      };
+
+      const primaryHsl = hexToHsl(settings.primaryColor);
+      root.style.setProperty('--primary', `hsl(${primaryHsl})`);
+      root.style.setProperty('--ring', `hsl(${primaryHsl})`);
+      
+      // Criar versão clara para accent
+      const [h, s] = primaryHsl.split(',');
+      root.style.setProperty('--accent', `hsl(${h}, ${s}, 96%)`);
+      root.style.setProperty('--accent-foreground', `hsl(${primaryHsl})`);
+    }
+  }, [settings]);
 
   const form = useForm<LoginFormData>({
     defaultValues: {

@@ -630,11 +630,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/public-settings', async (req, res) => {
     try {
       const settings = await storage.getGlobalSettings();
-      // Return only public settings needed for login page
+      // Return public settings needed for login page including colors
       res.json({
         logoUrl: settings?.logoUrl || null,
         systemName: settings?.systemName || null,
-        faviconUrl: settings?.faviconUrl || null
+        faviconUrl: settings?.faviconUrl || null,
+        primaryColor: settings?.primaryColor || null,
+        secondaryColor: settings?.secondaryColor || null,
+        backgroundColor: settings?.backgroundColor || null,
+        textColor: settings?.textColor || null
       });
     } catch (error) {
       console.error("Error fetching public settings:", error);
