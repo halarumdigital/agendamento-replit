@@ -128,8 +128,13 @@ function SidebarContent() {
   const { company } = useCompanyAuth();
   const { hasPermission, isLoading } = usePlan();
   
-  const { data: settings } = useQuery<GlobalSettings>({
+  const { data: publicSettings } = useQuery<GlobalSettings>({
     queryKey: ["/api/public-settings"],
+  });
+
+  const { data: settings } = useQuery<GlobalSettings>({
+    queryKey: ["/api/settings"],
+    enabled: !!company, // Only fetch when user is authenticated
   });
 
   // Filter menu items based on plan permissions
@@ -139,9 +144,9 @@ function SidebarContent() {
     return (
       <div className="flex h-full flex-col">
         <div className="border-b p-6 flex items-center justify-center">
-          {settings?.logoUrl ? (
+          {publicSettings?.logoUrl ? (
             <img 
-              src={settings.logoUrl} 
+              src={publicSettings.logoUrl} 
               alt="Logo" 
               className="w-[165px] h-auto rounded object-contain"
             />
@@ -161,9 +166,9 @@ function SidebarContent() {
   return (
     <div className="flex h-full flex-col">
       <div className="border-b p-6 flex items-center justify-center">
-        {settings?.logoUrl ? (
+        {publicSettings?.logoUrl ? (
           <img 
-            src={settings.logoUrl} 
+            src={publicSettings.logoUrl} 
             alt="Logo" 
             className="w-[165px] h-auto rounded object-contain"
           />
@@ -192,6 +197,16 @@ function SidebarContent() {
           );
         })}
       </nav>
+      
+      {/* Custom HTML Display */}
+      {settings?.customHtml && (
+        <div className="p-4 border-t border-gray-200">
+          <div 
+            className="text-sm text-gray-700"
+            dangerouslySetInnerHTML={{ __html: settings.customHtml }}
+          />
+        </div>
+      )}
       
       <div className="border-t p-4">
         <Button
