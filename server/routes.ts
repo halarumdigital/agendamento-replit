@@ -5321,15 +5321,16 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
       const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
       const previousMonth = new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().slice(0, 7);
 
-      // Current month data
+      // Receitas: Serviços concluídos no mês atual
       const currentMonthIncome = await db.execute(sql`
-        SELECT COALESCE(SUM(amount), 0) as total
-        FROM financial_transactions 
-        WHERE company_id = ${companyId} 
-        AND type = 'income' 
-        AND DATE_FORMAT(date, '%Y-%m') = ${currentMonth}
+        SELECT COALESCE(SUM(a.price), 0) as total
+        FROM appointments a
+        WHERE a.company_id = ${companyId} 
+        AND a.status = 'CONCLUIDO'
+        AND DATE_FORMAT(a.date, '%Y-%m') = ${currentMonth}
       `);
 
+      // Despesas: Transações de despesa no mês atual
       const currentMonthExpenses = await db.execute(sql`
         SELECT COALESCE(SUM(amount), 0) as total
         FROM financial_transactions 
@@ -5338,15 +5339,16 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
         AND DATE_FORMAT(date, '%Y-%m') = ${currentMonth}
       `);
 
-      // Previous month data for comparison
+      // Receitas do mês anterior (serviços concluídos)
       const previousMonthIncome = await db.execute(sql`
-        SELECT COALESCE(SUM(amount), 0) as total
-        FROM financial_transactions 
-        WHERE company_id = ${companyId} 
-        AND type = 'income' 
-        AND DATE_FORMAT(date, '%Y-%m') = ${previousMonth}
+        SELECT COALESCE(SUM(a.price), 0) as total
+        FROM appointments a
+        WHERE a.company_id = ${companyId} 
+        AND a.status = 'CONCLUIDO'
+        AND DATE_FORMAT(a.date, '%Y-%m') = ${previousMonth}
       `);
 
+      // Despesas do mês anterior
       const previousMonthExpenses = await db.execute(sql`
         SELECT COALESCE(SUM(amount), 0) as total
         FROM financial_transactions 
