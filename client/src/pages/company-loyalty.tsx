@@ -314,11 +314,17 @@ export default function CompanyLoyalty() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {services.map((service) => (
-                              <SelectItem key={service.id} value={service.id.toString()}>
-                                {service.name}
-                              </SelectItem>
-                            ))}
+                            {isLoadingServices ? (
+                              <SelectItem value="" disabled>Carregando serviços...</SelectItem>
+                            ) : services.length === 0 ? (
+                              <SelectItem value="" disabled>Nenhum serviço encontrado</SelectItem>
+                            ) : (
+                              services.map((service) => (
+                                <SelectItem key={service.id} value={service.id.toString()}>
+                                  {service.name}
+                                </SelectItem>
+                              ))
+                            )}
                           </SelectContent>
                         </Select>
                         <FormMessage />
