@@ -242,8 +242,14 @@ Responda APENAS em formato JSON válido ou "DADOS_INCOMPLETOS" se algum dado est
       // Create client if doesn't exist
       let client;
       try {
+        // Normalize phone number for comparison (remove all non-digits)
+        const normalizePhone = (phone: string) => phone.replace(/\D/g, '');
+        const normalizedClientPhone = normalizePhone(appointmentData.clientPhone);
+        
         const existingClients = await storage.getClientsByCompany(companyId);
-        client = existingClients.find(c => c.phone === appointmentData.clientPhone);
+        client = existingClients.find(c => 
+          c.phone && normalizePhone(c.phone) === normalizedClientPhone
+        );
         
         if (!client) {
           client = await storage.createClient({
@@ -255,6 +261,8 @@ Responda APENAS em formato JSON válido ou "DADOS_INCOMPLETOS" se algum dado est
             birthDate: null
           });
           console.log('👤 New client created:', client.name);
+        } else {
+          console.log('👤 Existing client found:', client.name);
         }
       } catch (error) {
         console.error('Error creating/finding client:', error);
@@ -1485,8 +1493,14 @@ INSTRUÇÕES OBRIGATÓRIAS:
       // Create/find client
       let client;
       try {
+        // Normalize phone number for comparison (remove all non-digits)
+        const normalizePhone = (phone: string) => phone.replace(/\D/g, '');
+        const normalizedClientPhone = normalizePhone(clientPhone);
+        
         const existingClients = await storage.getClientsByCompany(companyId);
-        client = existingClients.find(c => c.phone === clientPhone);
+        client = existingClients.find(c => 
+          c.phone && normalizePhone(c.phone) === normalizedClientPhone
+        );
         
         if (!client) {
           client = await storage.createClient({
@@ -1498,6 +1512,8 @@ INSTRUÇÕES OBRIGATÓRIAS:
             birthDate: null
           });
           console.log('👤 New client created:', client.name);
+        } else {
+          console.log('👤 Existing client found:', client.name);
         }
       } catch (clientError) {
         console.error('Error handling client:', clientError);
