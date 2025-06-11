@@ -61,20 +61,17 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-slate-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {settings?.logoUrl && (
-          <div className="text-center mb-8">
-            <div className="flex justify-center mb-4">
-              <img 
-                src={settings.logoUrl} 
-                alt="Logo" 
-                className="w-24 h-24 object-contain rounded-lg"
-              />
-            </div>
-          </div>
-        )}
-
         <Card>
           <CardHeader className="pb-4">
+            {settings?.logoUrl && (
+              <div className="text-center mb-4">
+                <img 
+                  src={settings.logoUrl} 
+                  alt="Logo" 
+                  className="w-24 h-24 object-contain rounded-lg mx-auto"
+                />
+              </div>
+            )}
           </CardHeader>
           <CardContent>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
