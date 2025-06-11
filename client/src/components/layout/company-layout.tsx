@@ -16,7 +16,8 @@ import {
   CheckSquare,
   Gift,
   Package,
-  Ticket
+  Ticket,
+  DollarSign
 } from "lucide-react";
 import { useCompanyAuth } from "@/hooks/useCompanyAuth";
 
@@ -84,6 +85,11 @@ const menuItems = [
     title: "Cupons",
     href: "/company/cupons",
     icon: Ticket,
+  },
+  {
+    title: "Financeiro",
+    href: "/company/financial",
+    icon: DollarSign,
   },
   {
     title: "Configurações",

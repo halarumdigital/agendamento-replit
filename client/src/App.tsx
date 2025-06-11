@@ -23,6 +23,7 @@ import CompanyLoyalty from "@/pages/company-loyalty";
 import CompanyInventory from "@/pages/company-inventory";
 import CompanyMessages from "@/pages/company-messages";
 import CompanyCoupons from "@/pages/company-coupons";
+import CompanyFinancial from "@/pages/company-financial";
 import DashboardAppointments from "@/pages/dashboard-appointments";
 import Dashboard from "@/pages/dashboard";
 import Companies from "@/pages/companies";
@@ -114,6 +115,11 @@ function Router() {
       <Route path="/company/cupons">
         <CompanyLayout>
           <CompanyCoupons />
+        </CompanyLayout>
+      </Route>
+      <Route path="/company/financial">
+        <CompanyLayout>
+          <CompanyFinancial />
         </CompanyLayout>
       </Route>
       

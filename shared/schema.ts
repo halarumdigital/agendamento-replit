@@ -394,6 +394,45 @@ export const messageCampaigns = mysqlTable("message_campaigns", {
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
 
+// Financial categories table
+export const financialCategories = mysqlTable("financial_categories", {
+  id: int("id").primaryKey().autoincrement(),
+  companyId: int("company_id").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  type: varchar("type", { length: 20 }).notNull(), // income, expense
+  color: varchar("color", { length: 7 }).notNull().default("#3B82F6"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+});
+
+// Payment methods table
+export const paymentMethods = mysqlTable("payment_methods", {
+  id: int("id").primaryKey().autoincrement(),
+  companyId: int("company_id").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  type: varchar("type", { length: 20 }).notNull(), // cash, card, pix, transfer, other
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+});
+
+// Financial transactions table
+export const financialTransactions = mysqlTable("financial_transactions", {
+  id: int("id").primaryKey().autoincrement(),
+  companyId: int("company_id").notNull(),
+  description: varchar("description", { length: 500 }).notNull(),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  type: varchar("type", { length: 20 }).notNull(), // income, expense
+  categoryId: int("category_id").notNull(),
+  paymentMethodId: int("payment_method_id").notNull(),
+  date: date("date").notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+});
+
 // Relations
 export const companiesRelations = relations(companies, ({ many }) => ({
   professionals: many(professionals),
