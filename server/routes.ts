@@ -4947,6 +4947,12 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
       const companyId = req.session.companyId!;
       const { name, description, type, color } = req.body;
 
+      console.log("Creating financial category with data:", { companyId, name, description, type, color });
+
+      if (!name || !type || !color) {
+        return res.status(400).json({ message: "Nome, tipo e cor são obrigatórios" });
+      }
+
       const [result] = await db.insert(financialCategories).values({
         companyId,
         name,
@@ -4955,9 +4961,11 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
         color
       }).returning();
 
+      console.log("Category created successfully:", result);
       res.json(result);
     } catch (error) {
       console.error("Error creating financial category:", error);
+      console.error("Error details:", JSON.stringify(error, null, 2));
       res.status(500).json({ message: "Erro ao criar categoria financeira" });
     }
   });
