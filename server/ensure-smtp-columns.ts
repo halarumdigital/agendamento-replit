@@ -22,7 +22,7 @@ export async function ensureSmtpColumns() {
         ADD COLUMN smtp_password VARCHAR(255),
         ADD COLUMN smtp_from_email VARCHAR(255),
         ADD COLUMN smtp_from_name VARCHAR(255),
-        ADD COLUMN smtp_secure BOOLEAN DEFAULT TRUE
+        ADD COLUMN smtp_secure VARCHAR(10) DEFAULT 'tls'
       `);
       
       console.log('✅ SMTP columns added successfully');

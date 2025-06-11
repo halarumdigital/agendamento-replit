@@ -212,6 +212,7 @@ export default function SettingsPage() {
       smtpPassword: "",
       smtpFromEmail: "",
       smtpFromName: "",
+      smtpSecure: "tls",
     },
     values: settings ? {
       systemName: settings.systemName,
@@ -233,6 +234,7 @@ export default function SettingsPage() {
       smtpPassword: (settings as any).smtpPassword || "",
       smtpFromEmail: (settings as any).smtpFromEmail || "",
       smtpFromName: (settings as any).smtpFromName || "",
+      smtpSecure: (settings as any).smtpSecure || "tls",
     } : undefined,
   });
 
@@ -925,13 +927,38 @@ export default function SettingsPage() {
                     )}
                   />
 
+                  <FormField
+                    control={form.control}
+                    name="smtpSecure"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tipo de Segurança</FormLabel>
+                        <FormControl>
+                          <Select value={field.value} onValueChange={field.onChange}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione o tipo de segurança" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="tls">TLS (Recomendado)</SelectItem>
+                              <SelectItem value="ssl">SSL</SelectItem>
+                              <SelectItem value="none">Nenhum</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
                     <h4 className="font-medium text-blue-900 mb-2">Configuração SMTP:</h4>
                     <ul className="text-sm text-blue-800 space-y-1">
-                      <li>• <strong>Gmail:</strong> smtp.gmail.com, porta 587, use App Password</li>
-                      <li>• <strong>Outlook:</strong> smtp-mail.outlook.com, porta 587</li>
-                      <li>• <strong>SendGrid:</strong> smtp.sendgrid.net, porta 587</li>
-                      <li>• <strong>Mailgun:</strong> smtp.mailgun.org, porta 587</li>
+                      <li>• <strong>Gmail:</strong> smtp.gmail.com, porta 587, TLS, use App Password</li>
+                      <li>• <strong>Outlook:</strong> smtp-mail.outlook.com, porta 587, TLS</li>
+                      <li>• <strong>SendGrid:</strong> smtp.sendgrid.net, porta 587, TLS</li>
+                      <li>• <strong>Mailgun:</strong> smtp.mailgun.org, porta 587, TLS</li>
+                      <li>• <strong>TLS (587):</strong> Mais seguro e recomendado para a maioria dos provedores</li>
+                      <li>• <strong>SSL (465):</strong> Para provedores que requerem SSL exclusivo</li>
                     </ul>
                   </div>
                 </CardContent>

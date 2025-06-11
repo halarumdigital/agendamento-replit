@@ -201,6 +201,7 @@ export const settingsSchema = z.object({
   smtpPassword: z.string().optional(),
   smtpFromEmail: z.string().email("Email deve ser válido").optional().or(z.literal("")),
   smtpFromName: z.string().optional(),
+  smtpSecure: z.string().optional(),
 });
 
 export const webhookConfigSchema = z.object({
