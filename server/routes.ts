@@ -5792,7 +5792,7 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
       });
 
       // Configure nodemailer with SMTP settings
-      const nodemailer = require('nodemailer');
+      const nodemailer = await import('nodemailer');
       
       let transportConfig: any = {
         host: settings.smtpHost,
@@ -5813,7 +5813,7 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
         transportConfig.secure = false;
       }
 
-      const transporter = nodemailer.createTransporter(transportConfig);
+      const transporter = nodemailer.default.createTransport(transportConfig);
 
       // Reset password URL
       const resetUrl = `${req.protocol}://${req.get('host')}/reset-password?token=${resetToken}`;
