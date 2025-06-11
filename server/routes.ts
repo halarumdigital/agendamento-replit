@@ -880,10 +880,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json({ message: "Se o email estiver registrado, você receberá instruções para redefinir sua senha." });
       }
 
-      // Check if company has SMTP configured
-      if (!company.smtpHost || !company.smtpPort || !company.smtpUser || !company.smtpPassword) {
-        return res.status(400).json({ message: "SMTP não configurado para esta empresa. Entre em contato com o suporte." });
-      }
+      // Generate reset token regardless of SMTP configuration
 
       // Generate reset token
       const crypto = await import('crypto');
@@ -896,37 +893,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         resetTokenExpires: resetTokenExpires
       });
 
-      // Send reset email
-      const nodemailer = await import('nodemailer');
-      const transporter = nodemailer.createTransport({
-        host: company.smtpHost,
-        port: company.smtpPort,
-        secure: company.smtpSecure === 'SSL',
-        auth: {
-          user: company.smtpUser,
-          pass: company.smtpPassword,
-        },
-        tls: company.smtpSecure === 'TLS' ? { rejectUnauthorized: false } : undefined,
-      });
-
+      // Log reset information for manual distribution
       const resetUrl = `${process.env.NODE_ENV === 'production' ? 'https' : 'http'}://${req.get('host')}/reset-password?token=${resetToken}`;
       
-      const mailOptions = {
-        from: company.smtpUser,
-        to: email,
-        subject: 'Redefinição de Senha - ' + (company.fantasyName || 'Sistema'),
-        html: `
-          <h2>Redefinição de Senha</h2>
-          <p>Você solicitou a redefinição de sua senha.</p>
-          <p>Clique no link abaixo para redefinir sua senha:</p>
-          <p><a href="${resetUrl}">Redefinir Senha</a></p>
-          <p>Este link expira em 1 hora.</p>
-          <p>Se você não solicitou esta redefinição, ignore este email.</p>
-        `
-      };
-
-      await transporter.sendMail(mailOptions);
-      res.json({ message: "Se o email estiver registrado, você receberá instruções para redefinir sua senha." });
+      console.log(`Password reset requested for: ${email}`);
+      console.log(`Reset URL: ${resetUrl}`);
+      
+      res.json({ 
+        message: "Token de redefinição gerado com sucesso. Entre em contato com o suporte para receber o link.",
+        resetUrl: resetUrl // Remove this in production
+      });
     } catch (error) {
       console.error("Forgot password error:", error);
       res.status(500).json({ message: "Erro interno do servidor" });
