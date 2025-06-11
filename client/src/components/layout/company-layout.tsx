@@ -36,97 +36,97 @@ const menuItems = [
     title: "Dashboard",
     href: "/company/dashboard",
     icon: Home,
-    permission: "dashboard" as keyof PlanPermissions,
+    permission: "dashboard" as keyof PlanPermissions | null,
   },
   {
     title: "Agendamentos",
     href: "/company/appointments",
     icon: Calendar,
-    permission: "appointments" as keyof PlanPermissions,
+    permission: "appointments" as keyof PlanPermissions | null,
   },
   {
     title: "Serviços",
     href: "/company/services",
     icon: Briefcase,
-    permission: "services" as keyof PlanPermissions,
+    permission: "services" as keyof PlanPermissions | null,
   },
   {
     title: "Profissionais",
     href: "/company/professionals",
     icon: Users,
-    permission: "professionals" as keyof PlanPermissions,
+    permission: "professionals" as keyof PlanPermissions | null,
   },
   {
     title: "Clientes",
     href: "/company/clients",
     icon: Users,
-    permission: "clients" as keyof PlanPermissions,
+    permission: "clients" as keyof PlanPermissions | null,
   },
   {
     title: "Avaliações",
     href: "/company/reviews",
     icon: Star,
-    permission: "reviews" as keyof PlanPermissions,
+    permission: "reviews" as keyof PlanPermissions | null,
   },
   {
     title: "Tarefas",
     href: "/company/tasks",
     icon: CheckSquare,
-    permission: "tasks" as keyof PlanPermissions,
+    permission: "tasks" as keyof PlanPermissions | null,
   },
   {
     title: "Programa de pontos",
     href: "/company/points-program",
     icon: Gift,
-    permission: "pointsProgram" as keyof PlanPermissions,
+    permission: "pointsProgram" as keyof PlanPermissions | null,
   },
   {
     title: "Fidelidade",
     href: "/company/fidelidade",
     icon: Gift,
-    permission: "loyalty" as keyof PlanPermissions,
+    permission: "loyalty" as keyof PlanPermissions | null,
   },
   {
     title: "Estoque",
     href: "/company/estoque",
     icon: Package,
-    permission: "inventory" as keyof PlanPermissions,
+    permission: "inventory" as keyof PlanPermissions | null,
   },
   {
     title: "Mensagens",
     href: "/company/messages",
     icon: MessageSquare,
-    permission: "messages" as keyof PlanPermissions,
+    permission: "messages" as keyof PlanPermissions | null,
   },
   {
     title: "Cupons",
     href: "/company/cupons",
     icon: Ticket,
-    permission: "coupons" as keyof PlanPermissions,
+    permission: "coupons" as keyof PlanPermissions | null,
   },
   {
     title: "Financeiro",
     href: "/company/financial",
     icon: DollarSign,
-    permission: "financial" as keyof PlanPermissions,
+    permission: "financial" as keyof PlanPermissions | null,
   },
   {
     title: "Relatórios",
     href: "/company/relatorios",
     icon: BarChart3,
-    permission: "reports" as keyof PlanPermissions,
+    permission: "reports" as keyof PlanPermissions | null,
   },
   {
     title: "Configurações",
     href: "/company/settings",
     icon: Settings,
-    permission: "settings" as keyof PlanPermissions,
+    permission: "settings" as keyof PlanPermissions | null,
   },
   {
     title: "Assinatura",
     href: "/company/assinatura",
     icon: CreditCard,
-    permission: "settings" as keyof PlanPermissions, // Same permission as settings
+    permission: null, // Always visible
   },
 ];
 
@@ -145,7 +145,9 @@ function SidebarContent() {
   });
 
   // Filter menu items based on plan permissions
-  const visibleMenuItems = menuItems.filter(item => hasPermission(item.permission));
+  const visibleMenuItems = menuItems.filter(item => 
+    item.permission === null || hasPermission(item.permission)
+  );
 
   if (isLoading) {
     return (
