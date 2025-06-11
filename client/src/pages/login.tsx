@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useGlobalTheme } from "@/hooks/use-global-theme";
 import { Settings, Lock } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -16,6 +17,9 @@ interface LoginFormData {
 export default function Login() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Aplica tema global dinamicamente
+  useGlobalTheme();
 
   const form = useForm<LoginFormData>({
     defaultValues: {

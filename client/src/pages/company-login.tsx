@@ -26,6 +26,9 @@ export default function CompanyLogin() {
   const [loginError, setLoginError] = useState<string>("");
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  
+  // Aplica tema global dinamicamente
+  useGlobalTheme();
 
   const form = useForm<CompanyLoginFormData>({
     resolver: zodResolver(companyLoginSchema),
