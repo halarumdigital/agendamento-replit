@@ -1,22 +1,21 @@
 import {
-  pgTable,
+  mysqlTable,
   text,
   varchar,
   timestamp,
   json,
   index,
-  integer,
+  int,
   decimal,
   boolean,
   date,
-  serial,
-} from "drizzle-orm/pg-core";
+} from "drizzle-orm/mysql-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
 
 // Session storage table for express-session
-export const sessions = pgTable(
+export const sessions = mysqlTable(
   "sessions",
   {
     sid: varchar("sid", { length: 255 }).primaryKey(),
@@ -27,8 +26,8 @@ export const sessions = pgTable(
 );
 
 // Admin users table
-export const admins = pgTable("admins", {
-  id: serial("id").primaryKey(),
+export const admins = mysqlTable("admins", {
+  id: int("id").primaryKey().autoincrement(),
   username: varchar("username", { length: 100 }).notNull().unique(),
   email: varchar("email", { length: 255 }).notNull().unique(),
   password: varchar("password", { length: 255 }).notNull(),
@@ -36,7 +35,7 @@ export const admins = pgTable("admins", {
   lastName: varchar("last_name", { length: 100 }),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
 
 // Companies table
@@ -52,12 +51,6 @@ export const companies = mysqlTable("companies", {
   aiAgentPrompt: text("ai_agent_prompt"),
   resetToken: varchar("reset_token", { length: 255 }),
   resetTokenExpires: timestamp("reset_token_expires"),
-  // SMTP Configuration
-  smtpHost: varchar("smtp_host", { length: 255 }),
-  smtpPort: int("smtp_port"),
-  smtpUser: varchar("smtp_user", { length: 255 }),
-  smtpPassword: varchar("smtp_password", { length: 255 }),
-  smtpSecure: varchar("smtp_secure", { length: 10 }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
