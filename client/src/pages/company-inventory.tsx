@@ -11,7 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Plus, Package, Edit, Trash2, AlertTriangle, ImageIcon } from "lucide-react";
+import { Plus, Package, Edit, Trash2, AlertTriangle, ImageIcon, Search, Grid, List, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { insertProductSchema, type Product } from "@shared/schema";
@@ -32,6 +32,10 @@ type ProductFormData = z.infer<typeof productFormSchema>;
 export default function CompanyInventory() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -53,12 +57,58 @@ export default function CompanyInventory() {
     queryKey: ["/api/products"],
   });
 
+  // Função para filtrar produtos por busca
+  const filteredProducts = products.filter((product: Product) =>
+    product.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Função para upload de imagem
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        toast({
+          title: "Erro",
+          description: "A imagem deve ter no máximo 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Função para resetar o modal
+  const resetModal = () => {
+    form.reset();
+    setImageFile(null);
+    setImagePreview(null);
+    setEditingProduct(null);
+  };
+
   const createProductMutation = useMutation({
     mutationFn: async (data: ProductFormData) => {
+      let photoUrl = data.photo || null;
+      
+      // Se há um arquivo de imagem, converter para base64
+      if (imageFile) {
+        const reader = new FileReader();
+        photoUrl = await new Promise((resolve) => {
+          reader.onload = () => resolve(reader.result as string);
+          reader.readAsDataURL(imageFile);
+        });
+      }
+      
       const productData = {
         name: data.name,
         description: data.description || null,
-        photo: data.photo || null,
+        photo: photoUrl,
         purchasePrice: parseFloat(data.purchasePrice),
         supplierName: data.supplierName || null,
         stockQuantity: parseInt(data.stockQuantity),
@@ -82,7 +132,7 @@ export default function CompanyInventory() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
       setIsCreateModalOpen(false);
-      form.reset();
+      resetModal();
       toast({
         title: "Sucesso",
         description: "Produto criado com sucesso!",
@@ -99,11 +149,26 @@ export default function CompanyInventory() {
 
   const updateProductMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: ProductFormData }) => {
+      let photoUrl = data.photo || null;
+      
+      // Se há um arquivo de imagem, converter para base64
+      if (imageFile) {
+        const reader = new FileReader();
+        photoUrl = await new Promise((resolve) => {
+          reader.onload = () => resolve(reader.result as string);
+          reader.readAsDataURL(imageFile);
+        });
+      }
+      
       const productData = {
-        ...data,
+        name: data.name,
+        description: data.description || null,
+        photo: photoUrl,
         purchasePrice: parseFloat(data.purchasePrice),
+        supplierName: data.supplierName || null,
         stockQuantity: parseInt(data.stockQuantity),
         minStockLevel: data.minStockLevel ? parseInt(data.minStockLevel) : 0,
+        alertStock: data.alertStock || false,
       };
       
       const response = await fetch(`/api/products/${id}`, {
@@ -121,7 +186,7 @@ export default function CompanyInventory() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
       setEditingProduct(null);
-      form.reset();
+      resetModal();
       toast({
         title: "Sucesso",
         description: "Produto atualizado com sucesso!",
@@ -174,6 +239,8 @@ export default function CompanyInventory() {
 
   const handleEdit = (product: Product) => {
     setEditingProduct(product);
+    setImageFile(null);
+    setImagePreview(product.photo || null);
     form.reset({
       name: product.name,
       description: product.description || "",
