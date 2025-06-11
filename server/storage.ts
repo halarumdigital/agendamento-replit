@@ -2077,6 +2077,33 @@ export const storage = new DatabaseStorage();
   }
 })();
 
+// Initialize products table
+(async () => {
+  try {
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS products (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        company_id INT NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        photo VARCHAR(500),
+        description TEXT,
+        purchase_price DECIMAL(10,2) NOT NULL,
+        supplier_name VARCHAR(255),
+        stock_quantity INT NOT NULL DEFAULT 0,
+        alert_stock BOOLEAN DEFAULT FALSE,
+        min_stock_level INT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+      )
+    `);
+    
+    console.log("✅ Products table created/verified");
+  } catch (error) {
+    console.error("❌ Error creating products table:", error);
+  }
+})();
+
 // Loyalty Campaigns methods using SQL queries
 export async function getLoyaltyCampaignsByCompany(companyId: number) {
   try {

@@ -14,7 +14,8 @@ import {
   Bell,
   Star,
   CheckSquare,
-  Gift
+  Gift,
+  Package
 } from "lucide-react";
 import { useCompanyAuth } from "@/hooks/useCompanyAuth";
 
@@ -67,6 +68,11 @@ const menuItems = [
     title: "Fidelidade",
     href: "/company/fidelidade",
     icon: Gift,
+  },
+  {
+    title: "Estoque",
+    href: "/company/estoque",
+    icon: Package,
   },
   {
     title: "Configurações",
