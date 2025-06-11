@@ -157,6 +157,23 @@ export const planSchema = z.object({
   freeDays: z.number().min(0, "Dias grátis deve ser 0 ou maior"),
   price: z.string().refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) >= 0, "Preço deve ser um número válido"),
   isActive: z.boolean(),
+  permissions: z.object({
+    dashboard: z.boolean(),
+    appointments: z.boolean(),
+    services: z.boolean(),
+    professionals: z.boolean(),
+    clients: z.boolean(),
+    reviews: z.boolean(),
+    tasks: z.boolean(),
+    pointsProgram: z.boolean(),
+    loyalty: z.boolean(),
+    inventory: z.boolean(),
+    messages: z.boolean(),
+    coupons: z.boolean(),
+    financial: z.boolean(),
+    reports: z.boolean(),
+    settings: z.boolean(),
+  }),
 });
 
 // Settings validation schema

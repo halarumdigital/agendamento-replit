@@ -58,6 +58,39 @@ export const plans = mysqlTable("plans", {
   freeDays: int("free_days").notNull().default(0),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   isActive: boolean("is_active").notNull().default(true),
+  permissions: json("permissions").$type<{
+    dashboard: boolean;
+    appointments: boolean;
+    services: boolean;
+    professionals: boolean;
+    clients: boolean;
+    reviews: boolean;
+    tasks: boolean;
+    pointsProgram: boolean;
+    loyalty: boolean;
+    inventory: boolean;
+    messages: boolean;
+    coupons: boolean;
+    financial: boolean;
+    reports: boolean;
+    settings: boolean;
+  }>().default({
+    dashboard: true,
+    appointments: true,
+    services: true,
+    professionals: true,
+    clients: true,
+    reviews: false,
+    tasks: false,
+    pointsProgram: false,
+    loyalty: false,
+    inventory: false,
+    messages: false,
+    coupons: false,
+    financial: false,
+    reports: false,
+    settings: true,
+  }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });

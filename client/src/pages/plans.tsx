@@ -35,6 +35,23 @@ export default function Plans() {
       freeDays: 0,
       price: "",
       isActive: true,
+      permissions: {
+        dashboard: true,
+        appointments: true,
+        services: true,
+        professionals: true,
+        clients: true,
+        reviews: false,
+        tasks: false,
+        pointsProgram: false,
+        loyalty: false,
+        inventory: false,
+        messages: false,
+        coupons: false,
+        financial: false,
+        reports: false,
+        settings: true,
+      },
     },
   });
 
@@ -125,6 +142,23 @@ export default function Plans() {
       freeDays: plan.freeDays,
       price: plan.price,
       isActive: plan.isActive,
+      permissions: plan.permissions || {
+        dashboard: true,
+        appointments: true,
+        services: true,
+        professionals: true,
+        clients: true,
+        reviews: false,
+        tasks: false,
+        pointsProgram: false,
+        loyalty: false,
+        inventory: false,
+        messages: false,
+        coupons: false,
+        financial: false,
+        reports: false,
+        settings: true,
+      },
     });
     setIsModalOpen(true);
   };
@@ -136,6 +170,23 @@ export default function Plans() {
       freeDays: 0,
       price: "",
       isActive: true,
+      permissions: {
+        dashboard: true,
+        appointments: true,
+        services: true,
+        professionals: true,
+        clients: true,
+        reviews: false,
+        tasks: false,
+        pointsProgram: false,
+        loyalty: false,
+        inventory: false,
+        messages: false,
+        coupons: false,
+        financial: false,
+        reports: false,
+        settings: true,
+      },
     });
     setIsModalOpen(true);
   };
