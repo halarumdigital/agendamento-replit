@@ -322,7 +322,7 @@ export default function CompanyDashboardNew() {
 
     return tasks.filter((task: any) => {
       // Só incluir tarefas ativas
-      if (!task.active) return false;
+      if (!task.isActive) return false;
       
       if (!task.dueDate) return false;
       

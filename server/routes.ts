@@ -3937,7 +3937,7 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
         dueDate: req.body.dueDate,
         recurrence: req.body.recurrence || 'none',
         whatsappNumber: req.body.whatsappNumber,
-        active: req.body.isActive !== undefined ? req.body.isActive : true,
+        isActive: req.body.isActive !== undefined ? req.body.isActive : true,
         companyId
       };
 
@@ -3999,16 +3999,19 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
   // Initialize tasks table
   app.post("/api/admin/init-tasks", async (req, res) => {
     try {
-      // Create tasks table
+      // Drop and recreate tasks table to ensure correct structure
+      await db.execute(`DROP TABLE IF EXISTS tasks`);
+      
+      // Create tasks table with correct structure
       await db.execute(`
-        CREATE TABLE IF NOT EXISTS tasks (
+        CREATE TABLE tasks (
           id INT PRIMARY KEY AUTO_INCREMENT,
           name VARCHAR(255) NOT NULL,
+          description TEXT,
           due_date DATE NOT NULL,
-          recurrence ENUM('none', 'daily', 'weekly', 'biweekly', 'monthly') DEFAULT 'none',
+          recurrence VARCHAR(50) DEFAULT 'none',
           is_active BOOLEAN DEFAULT TRUE,
-          color VARCHAR(7) DEFAULT '#3b82f6',
-          whatsapp_number VARCHAR(20),
+          whatsapp_number VARCHAR(50),
           company_id INT NOT NULL,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

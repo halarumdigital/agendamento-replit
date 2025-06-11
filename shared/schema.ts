@@ -272,7 +272,7 @@ export const tasks = mysqlTable("tasks", {
   dueDate: date("due_date").notNull(),
   recurrence: varchar("recurrence", { length: 50 }).default("none"),
   whatsappNumber: varchar("whatsapp_number", { length: 50 }),
-  active: boolean("active").default(true),
+  isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
