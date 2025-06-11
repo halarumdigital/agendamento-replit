@@ -79,6 +79,7 @@ export default function CompanyTasks() {
 
   const { data: tasks = [], isLoading } = useQuery<Task[]>({
     queryKey: ["/api/company/tasks"],
+    queryFn: () => apiRequest("GET", "/api/company/tasks"),
   });
 
   const createTaskMutation = useMutation({
