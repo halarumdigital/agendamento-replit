@@ -10,7 +10,7 @@ import CompanyLayout from "./components/layout/company-layout";
 import Landing from "@/pages/landing";
 import Login from "@/pages/login";
 import CompanyLogin from "@/pages/company-login";
-import CompanyDashboard from "@/pages/company-dashboard";
+import CompanyDashboard from "@/pages/company-dashboard-new";
 import CompanySettings from "@/pages/company-settings";
 import CompanyServices from "@/pages/company-services";
 import CompanyProfessionals from "@/pages/company-professionals";
