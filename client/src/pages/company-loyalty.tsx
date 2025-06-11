@@ -178,9 +178,9 @@ export default function CompanyLoyalty() {
 
   const getConditionText = (campaign: LoyaltyCampaign) => {
     if (campaign.conditionType === "services") {
-      return `${campaign.conditionValue} serviços`;
+      return `${campaign.conditionValue || 0} serviços`;
     }
-    return `R$ ${campaign.conditionValue.toFixed(2)}`;
+    return `R$ ${(campaign.conditionValue || 0).toFixed(2)}`;
   };
 
   if (isLoadingCampaigns || isLoadingServices) {
@@ -315,9 +315,9 @@ export default function CompanyLoyalty() {
                           </FormControl>
                           <SelectContent>
                             {isLoadingServices ? (
-                              <SelectItem value="" disabled>Carregando serviços...</SelectItem>
+                              <SelectItem value="loading" disabled>Carregando serviços...</SelectItem>
                             ) : services.length === 0 ? (
-                              <SelectItem value="" disabled>Nenhum serviço encontrado</SelectItem>
+                              <SelectItem value="empty" disabled>Nenhum serviço encontrado</SelectItem>
                             ) : (
                               services.map((service) => (
                                 <SelectItem key={service.id} value={service.id.toString()}>
