@@ -166,7 +166,7 @@ export default function Register() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Celular</Label>
+                    <Label htmlFor="phone">Celular *</Label>
                     <Input
                       id="phone"
                       {...form.register("phone")}
@@ -180,7 +180,7 @@ export default function Register() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="zipCode">CEP</Label>
+                    <Label htmlFor="zipCode">CEP *</Label>
                     <Input
                       id="zipCode"
                       {...form.register("zipCode")}
@@ -194,7 +194,7 @@ export default function Register() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="number">Número</Label>
+                    <Label htmlFor="number">Número *</Label>
                     <Input
                       id="number"
                       {...form.register("number")}
@@ -210,7 +210,7 @@ export default function Register() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="neighborhood">Bairro</Label>
+                    <Label htmlFor="neighborhood">Bairro *</Label>
                     <Input
                       id="neighborhood"
                       {...form.register("neighborhood")}
@@ -224,7 +224,7 @@ export default function Register() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="city">Cidade</Label>
+                    <Label htmlFor="city">Cidade *</Label>
                     <Input
                       id="city"
                       {...form.register("city")}
