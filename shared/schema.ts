@@ -114,23 +114,7 @@ export const globalSettings = mysqlTable("global_settings", {
   openaiModel: varchar("openai_model", { length: 100 }).notNull().default("gpt-4o"),
   openaiTemperature: varchar("openai_temperature", { length: 10 }).notNull().default("0.70"),
   openaiMaxTokens: varchar("openai_max_tokens", { length: 10 }).notNull().default("4000"),
-  smtpHost: varchar("smtp_host", { length: 255 }),
-  smtpPort: int("smtp_port").default(587),
-  smtpUser: varchar("smtp_user", { length: 255 }),
-  smtpPassword: varchar("smtp_password", { length: 255 }),
-  smtpFrom: varchar("smtp_from", { length: 255 }),
-  smtpFromName: varchar("smtp_from_name", { length: 255 }),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
-});
-
-// Password reset tokens table
-export const passwordResetTokens = mysqlTable("password_reset_tokens", {
-  id: int("id").primaryKey().autoincrement(),
-  email: varchar("email", { length: 255 }).notNull(),
-  token: varchar("token", { length: 255 }).notNull().unique(),
-  expiresAt: timestamp("expires_at").notNull(),
-  used: boolean("used").notNull().default(false),
-  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // WhatsApp instances table
@@ -577,11 +561,6 @@ export const insertGlobalSettingsSchema = createInsertSchema(globalSettings).omi
   updatedAt: true,
 });
 
-export const insertPasswordResetTokenSchema = createInsertSchema(passwordResetTokens).omit({
-  id: true,
-  createdAt: true,
-});
-
 export const insertWhatsappInstanceSchema = createInsertSchema(whatsappInstances).omit({
   id: true,
   createdAt: true,
@@ -739,8 +718,6 @@ export type Plan = typeof plans.$inferSelect;
 export type InsertPlan = z.infer<typeof insertPlanSchema>;
 export type GlobalSettings = typeof globalSettings.$inferSelect;
 export type InsertGlobalSettings = z.infer<typeof insertGlobalSettingsSchema>;
-export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
-export type InsertPasswordResetToken = z.infer<typeof insertPasswordResetTokenSchema>;
 export type WhatsappInstance = typeof whatsappInstances.$inferSelect;
 export type InsertWhatsappInstance = z.infer<typeof insertWhatsappInstanceSchema>;
 export type Conversation = typeof conversations.$inferSelect;

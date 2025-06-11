@@ -10,8 +10,6 @@ import CompanyLayout from "./components/layout/company-layout";
 import Landing from "@/pages/landing";
 import Login from "@/pages/login";
 import CompanyLogin from "@/pages/company-login";
-import ForgotPassword from "@/pages/forgot-password";
-import ResetPassword from "@/pages/reset-password";
 import CompanyDashboard from "@/pages/company-dashboard-new";
 import CompanySettings from "@/pages/company-settings";
 import CompanyServices from "@/pages/company-services";
@@ -47,8 +45,6 @@ function Router() {
       <Route path="/company" component={CompanyLogin} />
       <Route path="/company/login" component={CompanyLogin} />
       <Route path="/company/auth/login" component={CompanyLogin} />
-      <Route path="/company/forgot-password" component={ForgotPassword} />
-      <Route path="/company/reset-password" component={ResetPassword} />
       <Route path="/dashboard">
         <CompanyLayout>
           <CompanyDashboard />
