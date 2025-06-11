@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Building, Edit, Trash2, Search } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
@@ -23,6 +24,7 @@ export default function Companies() {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const { data: companies = [], isLoading } = useQuery<Company[]>({
     queryKey: ["/api/companies"],
@@ -49,6 +51,7 @@ export default function Companies() {
         description: "Empresa cadastrada com sucesso!",
       });
       form.reset();
+      setIsModalOpen(false);
       queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
     },
     onError: (error: Error) => {
@@ -71,6 +74,7 @@ export default function Companies() {
       });
       form.reset();
       setEditingCompany(null);
+      setIsModalOpen(false);
       queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
     },
     onError: (error: Error) => {
@@ -119,11 +123,19 @@ export default function Companies() {
       email: company.email,
       password: "", // Don't pre-fill password for security
     });
+    setIsModalOpen(true);
   };
 
   const handleCancelEdit = () => {
     setEditingCompany(null);
     form.reset();
+    setIsModalOpen(false);
+  };
+
+  const handleNewCompany = () => {
+    setEditingCompany(null);
+    form.reset();
+    setIsModalOpen(true);
   };
 
   const filteredCompanies = companies.filter(company =>
@@ -145,26 +157,26 @@ export default function Companies() {
           <h1 className="text-2xl font-bold text-slate-900">Empresas</h1>
           <p className="text-slate-600 mt-1">Gerencie as empresas cadastradas</p>
         </div>
-        <Button className="mt-4 sm:mt-0">
+        <Button className="mt-4 sm:mt-0" onClick={handleNewCompany}>
           <Plus className="w-4 h-4 mr-2" />
-          {editingCompany ? "Editando Empresa" : "Nova Empresa"}
+          Nova Empresa
         </Button>
       </div>
 
-      {/* Company Form */}
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            {editingCompany ? "Editar Empresa" : "Cadastro de Empresa"}
-          </CardTitle>
-          <CardDescription>
-            {editingCompany 
-              ? "Atualize as informações da empresa selecionada"
-              : "Preencha os dados para cadastrar uma nova empresa"
-            }
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+      {/* Company Modal */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {editingCompany ? "Editar Empresa" : "Cadastro de Empresa"}
+            </DialogTitle>
+            <DialogDescription>
+              {editingCompany 
+                ? "Atualize as informações da empresa selecionada"
+                : "Preencha os dados para cadastrar uma nova empresa"
+              }
+            </DialogDescription>
+          </DialogHeader>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
@@ -246,11 +258,9 @@ export default function Companies() {
             </div>
 
             <div className="flex justify-end space-x-4">
-              {editingCompany && (
-                <Button type="button" variant="outline" onClick={handleCancelEdit}>
-                  Cancelar
-                </Button>
-              )}
+              <Button type="button" variant="outline" onClick={handleCancelEdit}>
+                Cancelar
+              </Button>
               <Button 
                 type="submit" 
                 disabled={createMutation.isPending || updateMutation.isPending}
@@ -259,8 +269,8 @@ export default function Companies() {
               </Button>
             </div>
           </form>
-        </CardContent>
-      </Card>
+        </DialogContent>
+      </Dialog>
 
       {/* Companies Table */}
       <Card>
