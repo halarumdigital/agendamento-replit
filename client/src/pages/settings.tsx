@@ -196,13 +196,13 @@ export default function SettingsPage() {
         logoUrl = uploadedUrl;
       }
 
-      // Convert string values to numbers for OpenAI fields and ensure required defaults
+      // Ensure all fields are strings for the API
       const processedData = {
         ...data,
         logoUrl,
         openaiModel: data.openaiModel || "gpt-4o",
-        openaiTemperature: data.openaiTemperature ? parseFloat(data.openaiTemperature.toString()) : 0.7,
-        openaiMaxTokens: data.openaiMaxTokens ? parseInt(data.openaiMaxTokens.toString()) : 4000,
+        openaiTemperature: data.openaiTemperature?.toString() || "0.7",
+        openaiMaxTokens: data.openaiMaxTokens?.toString() || "4000",
       };
       
       updateMutation.mutate(processedData);
