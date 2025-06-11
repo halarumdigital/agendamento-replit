@@ -660,6 +660,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin plans endpoint for authenticated companies
+  app.get('/api/admin-plans', async (req, res) => {
+    try {
+      const plans = await storage.getPlans();
+      const activePlans = plans.filter(plan => plan.isActive);
+      res.json(activePlans);
+    } catch (error) {
+      console.error("Error fetching admin plans:", error);
+      res.status(500).json({ message: "Erro ao buscar planos" });
+    }
+  });
+
   // Global settings routes
   app.get('/api/settings', isAuthenticated, async (req, res) => {
     try {
