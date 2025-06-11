@@ -86,7 +86,7 @@ export default function Sidebar({ systemName = "AdminPro", logoUrl }: SidebarPro
               <img 
                 src={logoUrl} 
                 alt="Logo" 
-                className="h-8 w-auto max-w-[120px] rounded object-contain"
+                className="w-[150px] h-auto rounded object-contain"
               />
             ) : (
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
