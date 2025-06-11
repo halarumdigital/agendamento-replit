@@ -1,21 +1,22 @@
 import {
-  mysqlTable,
+  pgTable,
   text,
   varchar,
   timestamp,
   json,
   index,
-  int,
+  integer,
   decimal,
   boolean,
   date,
-} from "drizzle-orm/mysql-core";
+  serial,
+} from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
 
 // Session storage table for express-session
-export const sessions = mysqlTable(
+export const sessions = pgTable(
   "sessions",
   {
     sid: varchar("sid", { length: 255 }).primaryKey(),
@@ -26,8 +27,8 @@ export const sessions = mysqlTable(
 );
 
 // Admin users table
-export const admins = mysqlTable("admins", {
-  id: int("id").primaryKey().autoincrement(),
+export const admins = pgTable("admins", {
+  id: serial("id").primaryKey(),
   username: varchar("username", { length: 100 }).notNull().unique(),
   email: varchar("email", { length: 255 }).notNull().unique(),
   password: varchar("password", { length: 255 }).notNull(),
@@ -35,7 +36,7 @@ export const admins = mysqlTable("admins", {
   lastName: varchar("last_name", { length: 100 }),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Companies table
