@@ -47,6 +47,7 @@ import {
   FileText,
   Users,
   PieChart,
+  Download,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -459,29 +460,40 @@ export default function CompanyFinancial() {
 
         {/* Dashboard Tab */}
         <TabsContent value="dashboard" className="space-y-6">
-          {/* Filtro de Data */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg font-semibold">Filtros</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <Label htmlFor="date-filter">Mês:</Label>
-                </div>
-                <Input
-                  id="date-filter"
+          {/* Header do Dashboard */}
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-800">Dashboard Financeiro</h2>
+              <p className="text-sm text-gray-500">
+                {new Date().toLocaleDateString('pt-BR', { 
+                  day: '2-digit', 
+                  month: 'long', 
+                  year: 'numeric',
+                  weekday: 'long'
+                })}
+              </p>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center bg-white rounded shadow-sm border border-gray-200 overflow-hidden">
+                <input
                   type="month"
                   value={dashboardDateFilter}
                   onChange={(e) => setDashboardDateFilter(e.target.value)}
-                  className="w-48"
+                  className="px-4 py-2 text-sm font-medium text-gray-600 border-0 focus:outline-none focus:ring-0 bg-transparent"
                 />
+                <button 
+                  className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 border-l border-gray-200"
+                  onClick={() => setDashboardDateFilter(new Date().toISOString().slice(0, 7))}
+                >
+                  Resetar
+                </button>
               </div>
-            </CardContent>
-          </Card>
+              <button className="flex items-center space-x-1 px-3 py-2 bg-white rounded shadow-sm border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                <Download className="w-4 h-4" />
+                <span>Exportar</span>
+              </button>
+            </div>
+          </div>
 
           {isLoadingDashboard ? (
             <div className="text-center py-12">
@@ -490,78 +502,86 @@ export default function CompanyFinancial() {
             </div>
           ) : (
             <>
-              {/* Resumo Financeiro */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
+              {/* Cards de Métricas */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                <div className="bg-white rounded shadow-sm p-5 border border-gray-100">
                   <div className="flex justify-between items-start mb-4">
                     <div>
                       <p className="text-sm font-medium text-gray-500">Receitas do Mês</p>
-                      <h3 className="text-2xl font-bold text-gray-800 mt-1">{formatCurrency(safeData.monthlyIncome)}</h3>
+                      <h3 className="text-2xl font-bold text-gray-800">{formatCurrency(safeData.monthlyIncome)}</h3>
                     </div>
-                    <div className="w-12 h-12 flex items-center justify-center rounded-full bg-green-100 text-green-600">
-                      <TrendingUp className="w-6 h-6" />
+                    <div className="w-10 h-10 flex items-center justify-center rounded-full bg-green-100 text-green-600">
+                      <TrendingUp className="w-5 h-5" />
                     </div>
                   </div>
                   <div className="flex items-center">
                     <div className="flex items-center text-green-600 text-sm font-medium">
-                      <TrendingUp className="w-4 h-4 mr-1" />
+                      <div className="w-4 h-4 flex items-center justify-center mr-1">
+                        <TrendingUp className="w-4 h-4" />
+                      </div>
                       <span>{safeData.incomeGrowth}%</span>
                     </div>
                     <span className="text-xs text-gray-500 ml-2">vs. mês anterior</span>
                   </div>
                 </div>
 
-                <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
+                <div className="bg-white rounded shadow-sm p-5 border border-gray-100">
                   <div className="flex justify-between items-start mb-4">
                     <div>
                       <p className="text-sm font-medium text-gray-500">Despesas do Mês</p>
-                      <h3 className="text-2xl font-bold text-gray-800 mt-1">{formatCurrency(safeData.monthlyExpenses)}</h3>
+                      <h3 className="text-2xl font-bold text-gray-800">{formatCurrency(safeData.monthlyExpenses)}</h3>
                     </div>
-                    <div className="w-12 h-12 flex items-center justify-center rounded-full bg-red-100 text-red-600">
-                      <TrendingDown className="w-6 h-6" />
+                    <div className="w-10 h-10 flex items-center justify-center rounded-full bg-red-100 text-red-600">
+                      <TrendingDown className="w-5 h-5" />
                     </div>
                   </div>
                   <div className="flex items-center">
                     <div className="flex items-center text-red-600 text-sm font-medium">
-                      <TrendingDown className="w-4 h-4 mr-1" />
+                      <div className="w-4 h-4 flex items-center justify-center mr-1">
+                        <TrendingDown className="w-4 h-4" />
+                      </div>
                       <span>{safeData.expenseGrowth}%</span>
                     </div>
                     <span className="text-xs text-gray-500 ml-2">vs. mês anterior</span>
                   </div>
                 </div>
 
-                <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
+                <div className="bg-white rounded shadow-sm p-5 border border-gray-100">
                   <div className="flex justify-between items-start mb-4">
                     <div>
                       <p className="text-sm font-medium text-gray-500">Lucro Líquido</p>
-                      <h3 className="text-2xl font-bold text-gray-800 mt-1">{formatCurrency(safeData.monthlyIncome - safeData.monthlyExpenses)}</h3>
+                      <h3 className="text-2xl font-bold text-gray-800">{formatCurrency(safeData.monthlyIncome - safeData.monthlyExpenses)}</h3>
                     </div>
-                    <div className="w-12 h-12 flex items-center justify-center rounded-full bg-blue-100 text-blue-600">
-                      <DollarSign className="w-6 h-6" />
+                    <div className="w-10 h-10 flex items-center justify-center rounded-full bg-blue-100 text-blue-600">
+                      <DollarSign className="w-5 h-5" />
                     </div>
                   </div>
                   <div className="flex items-center">
                     <div className="flex items-center text-blue-600 text-sm font-medium">
-                      <DollarSign className="w-4 h-4 mr-1" />
+                      <div className="w-4 h-4 flex items-center justify-center mr-1">
+                        <DollarSign className="w-4 h-4" />
+                      </div>
                       <span>Lucro</span>
                     </div>
                     <span className="text-xs text-gray-500 ml-2">receitas - despesas</span>
                   </div>
                 </div>
 
-                <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
+                <div className="bg-white rounded shadow-sm p-5 border border-gray-100">
                   <div className="flex justify-between items-start mb-4">
                     <div>
                       <p className="text-sm font-medium text-gray-500">Transações</p>
-                      <h3 className="text-2xl font-bold text-gray-800 mt-1">{safeData.totalTransactions}</h3>
+                      <h3 className="text-2xl font-bold text-gray-800">{safeData.totalTransactions}</h3>
                     </div>
-                    <div className="w-12 h-12 flex items-center justify-center rounded-full bg-purple-100 text-purple-600">
-                      <Receipt className="w-6 h-6" />
+                    <div className="w-10 h-10 flex items-center justify-center rounded-full bg-purple-100 text-purple-600">
+                      <Receipt className="w-5 h-5" />
                     </div>
                   </div>
                   <div className="flex items-center">
                     <div className="flex items-center text-purple-600 text-sm font-medium">
-                      <Receipt className="w-4 h-4 mr-1" />
+                      <div className="w-4 h-4 flex items-center justify-center mr-1">
+                        <Receipt className="w-4 h-4" />
+                      </div>
                       <span>Total</span>
                     </div>
                     <span className="text-xs text-gray-500 ml-2">transações do mês</span>
