@@ -112,8 +112,10 @@ export default function CompanyMessages() {
   // Mutation para criar campanha
   const createCampaignMutation = useMutation({
     mutationFn: async (data: CampaignFormData) => {
-      // Convert datetime-local to ISO string in local timezone
+      // Convert datetime-local to GMT-3 timezone
       const localDate = new Date(data.scheduledDate);
+      // Subtract 3 hours to convert from local time to GMT-3
+      localDate.setHours(localDate.getHours() - 3);
       
       const payload = {
         ...data,
@@ -322,9 +324,14 @@ export default function CompanyMessages() {
                   <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center">
                       <Calendar className="w-4 h-4 mr-1" />
-                      {format(new Date(campaign.scheduledDate), "dd/MM/yyyy 'às' HH:mm", {
-                        locale: ptBR,
-                      })}
+                      {(() => {
+                        const date = new Date(campaign.scheduledDate);
+                        // Adjust for GMT-3 display
+                        date.setHours(date.getHours() + 3);
+                        return format(date, "dd/MM/yyyy 'às' HH:mm", {
+                          locale: ptBR,
+                        });
+                      })()}
                     </div>
                     <div className="flex items-center">
                       <Users className="w-4 h-4 mr-1" />
