@@ -43,7 +43,7 @@ export default function CompanyLogin() {
 
   const loginMutation = useMutation({
     mutationFn: async (data: CompanyLoginFormData) => {
-      const response = await apiRequest("/api/auth/company-login", "POST", data);
+      const response = await apiRequest("POST", "/api/auth/company-login", data);
       return response;
     },
     onSuccess: (data) => {
