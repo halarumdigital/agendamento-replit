@@ -17,7 +17,8 @@ import {
   Gift,
   Package,
   Ticket,
-  DollarSign
+  DollarSign,
+  BarChart3
 } from "lucide-react";
 import { useCompanyAuth } from "@/hooks/useCompanyAuth";
 
@@ -90,6 +91,11 @@ const menuItems = [
     title: "Financeiro",
     href: "/company/financial",
     icon: DollarSign,
+  },
+  {
+    title: "Relatórios",
+    href: "/company/relatorios",
+    icon: BarChart3,
   },
   {
     title: "Configurações",
