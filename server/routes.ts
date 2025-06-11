@@ -5321,13 +5321,21 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
       const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
       const previousMonth = new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().slice(0, 7);
 
-      // Receitas: Serviços concluídos no mês atual
-      const currentMonthIncome = await db.execute(sql`
+      // Receitas: Serviços concluídos + transações de receita no mês atual
+      const appointmentIncome = await db.execute(sql`
         SELECT COALESCE(SUM(a.total_price), 0) as total
         FROM appointments a
         WHERE a.company_id = ${companyId} 
         AND a.status = 'Concluído'
         AND DATE_FORMAT(a.appointment_date, '%Y-%m') = ${currentMonth}
+      `);
+
+      const transactionIncome = await db.execute(sql`
+        SELECT COALESCE(SUM(amount), 0) as total
+        FROM financial_transactions 
+        WHERE company_id = ${companyId} 
+        AND type = 'income' 
+        AND DATE_FORMAT(date, '%Y-%m') = ${currentMonth}
       `);
 
       // Despesas: Transações de despesa no mês atual
@@ -5339,13 +5347,21 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
         AND DATE_FORMAT(date, '%Y-%m') = ${currentMonth}
       `);
 
-      // Receitas do mês anterior (serviços concluídos)
-      const previousMonthIncome = await db.execute(sql`
+      // Receitas do mês anterior (serviços + transações)
+      const previousAppointmentIncome = await db.execute(sql`
         SELECT COALESCE(SUM(a.total_price), 0) as total
         FROM appointments a
         WHERE a.company_id = ${companyId} 
         AND a.status = 'Concluído'
         AND DATE_FORMAT(a.appointment_date, '%Y-%m') = ${previousMonth}
+      `);
+
+      const previousTransactionIncome = await db.execute(sql`
+        SELECT COALESCE(SUM(amount), 0) as total
+        FROM financial_transactions 
+        WHERE company_id = ${companyId} 
+        AND type = 'income' 
+        AND DATE_FORMAT(date, '%Y-%m') = ${previousMonth}
       `);
 
       // Despesas do mês anterior
@@ -5365,9 +5381,18 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
         AND DATE_FORMAT(date, '%Y-%m') = ${currentMonth}
       `);
 
-      const monthlyIncome = parseFloat(currentMonthIncome[0]?.total || 0);
+      // Combinar receitas de agendamentos e transações manuais
+      const appointmentIncomeValue = parseFloat(appointmentIncome[0]?.total || 0);
+      const transactionIncomeValue = parseFloat(transactionIncome[0]?.total || 0);
+      const monthlyIncome = appointmentIncomeValue + transactionIncomeValue;
+      
       const monthlyExpenses = parseFloat(currentMonthExpenses[0]?.total || 0);
-      const prevIncome = parseFloat(previousMonthIncome[0]?.total || 0);
+      
+      // Receitas do mês anterior (agendamentos + transações)
+      const prevAppointmentIncomeValue = parseFloat(previousAppointmentIncome[0]?.total || 0);
+      const prevTransactionIncomeValue = parseFloat(previousTransactionIncome[0]?.total || 0);
+      const prevIncome = prevAppointmentIncomeValue + prevTransactionIncomeValue;
+      
       const prevExpenses = parseFloat(previousMonthExpenses[0]?.total || 0);
 
       // Calculate growth percentages
