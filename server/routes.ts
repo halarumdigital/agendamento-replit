@@ -5059,16 +5059,37 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
       const companyId = req.session.companyId!;
       const { name, description, type, isActive } = req.body;
 
-      const result = await db.execute(sql`
-        INSERT INTO payment_methods (company_id, name, description, type, is_active)
-        VALUES (${companyId}, ${name}, ${description || null}, ${type}, ${isActive})
-      `);
+      if (!name || !type) {
+        return res.status(400).json({ message: "Nome e tipo são obrigatórios" });
+      }
 
-      const paymentMethod = await db.execute(sql`
-        SELECT * FROM payment_methods WHERE id = ${result.insertId}
-      `);
+      const result = await db.insert(paymentMethods).values({
+        companyId,
+        name,
+        description: description || null,
+        type,
+        isActive: isActive !== undefined ? isActive : true
+      });
 
-      res.json(paymentMethod[0]);
+      // Buscar o método criado
+      const insertId = result.insertId || result[0]?.insertId;
+      
+      if (!insertId) {
+        const [createdMethod] = await db.select()
+          .from(paymentMethods)
+          .where(and(eq(paymentMethods.companyId, companyId), eq(paymentMethods.name, name)))
+          .orderBy(desc(paymentMethods.id))
+          .limit(1);
+        
+        return res.json(createdMethod);
+      }
+
+      const [createdMethod] = await db.select()
+        .from(paymentMethods)
+        .where(eq(paymentMethods.id, insertId))
+        .limit(1);
+
+      res.json(createdMethod);
     } catch (error) {
       console.error("Error creating payment method:", error);
       res.status(500).json({ message: "Erro ao criar método de pagamento" });
@@ -5105,10 +5126,12 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
       const companyId = req.session.companyId!;
       const paymentMethodId = parseInt(req.params.id);
 
-      await db.execute(sql`
-        DELETE FROM payment_methods 
-        WHERE id = ${paymentMethodId} AND company_id = ${companyId}
-      `);
+      if (!paymentMethodId || isNaN(paymentMethodId)) {
+        return res.status(400).json({ message: "ID do método de pagamento inválido" });
+      }
+
+      await db.delete(paymentMethods)
+        .where(and(eq(paymentMethods.id, paymentMethodId), eq(paymentMethods.companyId, companyId)));
 
       res.json({ message: "Método de pagamento removido com sucesso" });
     } catch (error) {
