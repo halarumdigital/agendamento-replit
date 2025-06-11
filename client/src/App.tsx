@@ -21,6 +21,7 @@ import CompanyTasks from "@/pages/company-tasks";
 import CompanyPointsProgram from "@/pages/company-points-program";
 import CompanyLoyalty from "@/pages/company-loyalty";
 import CompanyInventory from "@/pages/company-inventory";
+import CompanyMessages from "@/pages/company-messages";
 import DashboardAppointments from "@/pages/dashboard-appointments";
 import Dashboard from "@/pages/dashboard";
 import Companies from "@/pages/companies";
@@ -102,6 +103,11 @@ function Router() {
       <Route path="/company/estoque">
         <CompanyLayout>
           <CompanyInventory />
+        </CompanyLayout>
+      </Route>
+      <Route path="/company/messages">
+        <CompanyLayout>
+          <CompanyMessages />
         </CompanyLayout>
       </Route>
       

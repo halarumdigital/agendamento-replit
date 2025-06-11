@@ -75,6 +75,11 @@ const menuItems = [
     icon: Package,
   },
   {
+    title: "Mensagens",
+    href: "/company/messages",
+    icon: MessageSquare,
+  },
+  {
     title: "Configurações",
     href: "/company/settings",
     icon: Settings,

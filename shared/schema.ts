@@ -362,6 +362,22 @@ export const products = mysqlTable("products", {
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
 
+// Message campaigns table
+export const messageCampaigns = mysqlTable("message_campaigns", {
+  id: int("id").primaryKey().autoincrement(),
+  companyId: int("company_id").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  message: text("message").notNull(),
+  scheduledDate: timestamp("scheduled_date").notNull(),
+  status: varchar("status", { length: 50 }).notNull().default("pending"), // pending, sending, completed, failed
+  targetType: varchar("target_type", { length: 20 }).notNull(), // all, specific
+  selectedClients: json("selected_clients"), // array of client IDs for specific targeting
+  sentCount: int("sent_count").default(0),
+  totalTargets: int("total_targets").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+});
+
 // Relations
 export const companiesRelations = relations(companies, ({ many }) => ({
   professionals: many(professionals),
@@ -377,6 +393,14 @@ export const companiesRelations = relations(companies, ({ many }) => ({
   loyaltyCampaigns: many(loyaltyCampaigns),
   loyaltyRewardsHistory: many(loyaltyRewardsHistory),
   products: many(products),
+  messageCampaigns: many(messageCampaigns),
+}));
+
+export const messageCampaignsRelations = relations(messageCampaigns, ({ one }) => ({
+  company: one(companies, {
+    fields: [messageCampaigns.companyId],
+    references: [companies.id],
+  }),
 }));
 
 export const clientsRelations = relations(clients, ({ one }) => ({
