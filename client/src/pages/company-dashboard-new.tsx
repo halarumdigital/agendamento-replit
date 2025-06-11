@@ -1,7 +1,7 @@
 import { Building2, Users, Calendar, CreditCard, Settings, FileText, User, MessageSquare, DollarSign, Clock, UserCheck, TrendingUp, TrendingDown, Plus, MoreHorizontal, Download } from "lucide-react";
 import { useCompanyAuth } from "@/hooks/useCompanyAuth";
 import { useQuery } from "@tanstack/react-query";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 
 export default function CompanyDashboardNew() {
   const { company, isLoading } = useCompanyAuth();
@@ -150,10 +150,55 @@ export default function CompanyDashboardNew() {
     return chartData.sort((a, b) => b.value - a.value);
   };
 
+  // Calcular dados mensais de receita para o gráfico
+  const calculateMonthlyRevenue = () => {
+    if (!Array.isArray(appointments)) {
+      return [];
+    }
+
+    // Filtrar agendamentos concluídos
+    const completedAppointments = appointments.filter((appointment: any) => 
+      appointment.status === 'Concluído'
+    );
+
+    // Agrupar por mês
+    const monthlyData: { [key: string]: number } = {};
+    
+    completedAppointments.forEach((appointment: any) => {
+      const appointmentDate = new Date(appointment.appointmentDate);
+      const monthKey = `${appointmentDate.getFullYear()}-${String(appointmentDate.getMonth() + 1).padStart(2, '0')}`;
+      const price = parseFloat(appointment.totalPrice || '0');
+      
+      monthlyData[monthKey] = (monthlyData[monthKey] || 0) + price;
+    });
+
+    // Converter para formato do gráfico com nomes dos meses em português
+    const monthNames = [
+      'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
+      'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
+    ];
+
+    const chartData = Object.entries(monthlyData)
+      .map(([monthKey, revenue]) => {
+        const [year, month] = monthKey.split('-');
+        const monthName = monthNames[parseInt(month) - 1];
+        return {
+          month: `${monthName}/${year.slice(-2)}`,
+          receita: revenue,
+          monthKey
+        };
+      })
+      .sort((a, b) => a.monthKey.localeCompare(b.monthKey))
+      .slice(-12); // Últimos 12 meses
+
+    return chartData;
+  };
+
   const dailyRevenue = calculateDailyRevenue();
   const todayAppointmentsCount = calculateTodayAppointments();
   const todayClientsServed = calculateTodayClientsServed();
   const servicesData = calculateServicesData();
+  const monthlyRevenueData = calculateMonthlyRevenue();
 
   if (isLoading) {
     return (
@@ -299,13 +344,53 @@ export default function CompanyDashboardNew() {
         {/* Revenue Chart */}
         <div className="bg-white rounded shadow-sm p-5 border border-gray-100 lg:col-span-2">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold text-gray-800">Faturamento Semanal</h3>
+            <h3 className="text-lg font-semibold text-gray-800">Faturamento Mensal</h3>
             <button className="text-sm text-gray-500 hover:text-purple-600">
               <MoreHorizontal className="w-5 h-5" />
             </button>
           </div>
-          <div className="h-80 flex items-center justify-center bg-gray-50 rounded">
-            <p className="text-gray-500">Gráfico de Faturamento</p>
+          <div className="h-80">
+            {monthlyRevenueData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={monthlyRevenueData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis 
+                    dataKey="month" 
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 12, fill: '#666' }}
+                  />
+                  <YAxis 
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 12, fill: '#666' }}
+                    tickFormatter={(value) => `R$ ${value.toLocaleString('pt-BR')}`}
+                  />
+                  <Tooltip 
+                    formatter={(value: number) => [`R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 'Receita']}
+                    labelStyle={{ color: '#333' }}
+                    contentStyle={{ 
+                      backgroundColor: '#fff', 
+                      border: '1px solid #e5e7eb', 
+                      borderRadius: '6px',
+                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                    }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="receita" 
+                    stroke="#8b5cf6" 
+                    strokeWidth={3}
+                    dot={{ fill: '#8b5cf6', strokeWidth: 2, r: 4 }}
+                    activeDot={{ r: 6, stroke: '#8b5cf6', strokeWidth: 2 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center">
+                <span className="text-gray-500">Nenhum dado de faturamento disponível</span>
+              </div>
+            )}
           </div>
         </div>
 
