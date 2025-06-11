@@ -68,7 +68,7 @@ export default function Login() {
                 <img 
                   src={settings.logoUrl} 
                   alt="Logo" 
-                  className="w-24 h-24 object-contain rounded-lg mx-auto"
+                  className="w-full h-32 object-contain mx-auto"
                 />
               </div>
             )}
