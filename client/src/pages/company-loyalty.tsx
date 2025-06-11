@@ -17,7 +17,9 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { insertLoyaltyCampaignSchema } from "@shared/schema";
 import type { LoyaltyCampaign, Service } from "@shared/schema";
 
-const formSchema = insertLoyaltyCampaignSchema.extend({
+const formSchema = insertLoyaltyCampaignSchema.omit({
+  companyId: true,
+}).extend({
   conditionType: z.enum(["services", "amount"]),
   rewardType: z.enum(["service", "discount"]),
 });
@@ -137,10 +139,6 @@ export default function CompanyLoyalty() {
   });
 
   const handleSubmit = (data: FormData) => {
-    console.log("handleSubmit chamado com data:", data);
-    console.log("Erros do formulário:", form.formState.errors);
-    console.log("Form válido:", form.formState.isValid);
-    
     if (editingCampaign) {
       updateCampaignMutation.mutate({ id: editingCampaign.id, data });
     } else {
@@ -392,7 +390,6 @@ export default function CompanyLoyalty() {
                   <Button
                     type="submit"
                     disabled={createCampaignMutation.isPending || updateCampaignMutation.isPending}
-                    onClick={() => console.log("Botão Criar Campanha clicado")}
                   >
                     {editingCampaign ? "Atualizar" : "Criar"} Campanha
                   </Button>
