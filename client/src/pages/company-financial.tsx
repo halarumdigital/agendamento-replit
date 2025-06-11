@@ -148,18 +148,18 @@ export default function CompanyFinancial() {
     monthlyExpenses: 0,
     expenseGrowth: 0,
     totalTransactions: 0
-  }, isLoading: isLoadingDashboard } = useQuery<{
-    monthlyIncome: number;
-    incomeGrowth: number;
-    monthlyExpenses: number;
-    expenseGrowth: number;
-    totalTransactions: number;
-  }>({
+  }, isLoading: isLoadingDashboard } = useQuery({
     queryKey: ["/api/company/financial/dashboard", dashboardDateFilter],
-    queryFn: () => {
+    queryFn: async () => {
       const url = `/api/company/financial/dashboard?month=${dashboardDateFilter}`;
-      return apiRequest(url);
+      const response = await apiRequest(url);
+      console.log('Dashboard response for', dashboardDateFilter, ':', response);
+      return response;
     },
+    enabled: !!dashboardDateFilter,
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnWindowFocus: true,
   });
 
   // Forms
@@ -502,10 +502,10 @@ export default function CompanyFinancial() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold text-green-600">
-                      {formatCurrency(dashboardData?.monthlyIncome || 0)}
+                      {formatCurrency(Number(dashboardData?.monthlyIncome) || 0)}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      +{dashboardData?.incomeGrowth || 0}% em relação ao mês anterior
+                      +{Number(dashboardData?.incomeGrowth) || 0}% em relação ao mês anterior
                     </p>
                   </CardContent>
                 </Card>
