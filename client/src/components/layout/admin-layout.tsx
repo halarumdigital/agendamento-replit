@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import Sidebar from "./sidebar";
+import { useGlobalTheme } from "@/hooks/use-global-theme";
 import type { GlobalSettings } from "@shared/schema";
 
 interface AdminLayoutProps {
@@ -10,6 +11,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const { data: settings } = useQuery<GlobalSettings>({
     queryKey: ["/api/settings"],
   });
+  
+  // Aplica tema global dinamicamente
+  useGlobalTheme();
 
   return (
     <div className="min-h-screen flex">

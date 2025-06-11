@@ -21,6 +21,7 @@ import {
   BarChart3
 } from "lucide-react";
 import { useCompanyAuth } from "@/hooks/useCompanyAuth";
+import { useGlobalTheme } from "@/hooks/use-global-theme";
 
 interface CompanyLayoutProps {
   children: React.ReactNode;
@@ -152,6 +153,9 @@ function SidebarContent() {
 
 export default function CompanyLayout({ children }: CompanyLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  
+  // Aplica tema global dinamicamente
+  useGlobalTheme();
 
   return (
     <>
