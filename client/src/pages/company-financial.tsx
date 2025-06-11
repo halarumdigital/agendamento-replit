@@ -959,7 +959,21 @@ export default function CompanyFinancial() {
               <h2 className="text-2xl font-bold">Transações</h2>
               <p className="text-muted-foreground">Gerencie todas as transações financeiras</p>
             </div>
-            <Dialog open={isTransactionModalOpen} onOpenChange={setIsTransactionModalOpen}>
+            <Dialog open={isTransactionModalOpen} onOpenChange={(open) => {
+              setIsTransactionModalOpen(open);
+              if (!open) {
+                setEditingTransaction(null);
+                transactionForm.reset({
+                  description: "",
+                  amount: 0,
+                  type: "expense",
+                  categoryId: 0,
+                  paymentMethodId: 0,
+                  date: new Date().toISOString().split("T")[0],
+                  notes: "",
+                });
+              }
+            }}>
               <DialogTrigger asChild>
                 <Button onClick={() => {
                   setEditingTransaction(null);
