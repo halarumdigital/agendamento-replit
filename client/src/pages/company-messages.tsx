@@ -320,9 +320,14 @@ export default function CompanyMessages() {
                   <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center">
                       <Calendar className="w-4 h-4 mr-1" />
-                      {format(new Date(campaign.scheduledDate), "dd/MM/yyyy 'às' HH:mm", {
-                        locale: ptBR,
-                      })}
+                      {(() => {
+                        const date = new Date(campaign.scheduledDate);
+                        // Add 3 hours to compensate for GMT-3 timezone display
+                        const adjustedDate = new Date(date.getTime() + (3 * 60 * 60 * 1000));
+                        return format(adjustedDate, "dd/MM/yyyy 'às' HH:mm", {
+                          locale: ptBR,
+                        });
+                      })()}
                     </div>
                     <div className="flex items-center">
                       <Users className="w-4 h-4 mr-1" />
