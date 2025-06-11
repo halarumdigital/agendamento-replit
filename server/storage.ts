@@ -301,8 +301,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCompanyByEmail(email: string): Promise<Company | undefined> {
-    const [company] = await db.select().from(companies).where(eq(companies.email, email));
-    return company;
+    console.log('Searching for company with email:', email);
+    try {
+      const result = await db.select().from(companies).where(eq(companies.email, email));
+      console.log('Database query result:', result);
+      const [company] = result;
+      console.log('Company found:', company ? 'Yes' : 'No', company);
+      return company;
+    } catch (error) {
+      console.error('Error in getCompanyByEmail:', error);
+      return undefined;
+    }
   }
 
   async createCompany(companyData: InsertCompany): Promise<Company> {
