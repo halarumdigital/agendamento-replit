@@ -103,8 +103,22 @@ export default function CompanyTasks() {
   });
 
   const updateTaskMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<TaskFormData> }) =>
-      apiRequest("PATCH", `/api/company/tasks/${id}`, data),
+    mutationFn: ({ id, data }: { id: number; data: Partial<TaskFormData> }) => {
+      return fetch(`/api/company/tasks/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(data),
+      }).then(async (res) => {
+        if (!res.ok) {
+          const error = await res.json();
+          throw new Error(error.message || 'Erro ao atualizar tarefa');
+        }
+        return res.json();
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/company/tasks"] });
       setIsDialogOpen(false);
@@ -125,7 +139,18 @@ export default function CompanyTasks() {
   });
 
   const deleteTaskMutation = useMutation({
-    mutationFn: (id: number) => apiRequest("DELETE", `/api/company/tasks/${id}`),
+    mutationFn: (id: number) => {
+      return fetch(`/api/company/tasks/${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      }).then(async (res) => {
+        if (!res.ok) {
+          const error = await res.json();
+          throw new Error(error.message || 'Erro ao excluir tarefa');
+        }
+        return res.json();
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/company/tasks"] });
       toast({
