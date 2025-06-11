@@ -136,10 +136,17 @@ export async function ensureConversationTables() {
       CREATE INDEX IF NOT EXISTS idx_timestamp ON messages(timestamp)
     `);
     
-    await db.execute(sql`
-      ALTER TABLE messages ADD CONSTRAINT fk_messages_conversation 
-      FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE
-    `);
+    try {
+      await db.execute(sql`
+        ALTER TABLE messages ADD CONSTRAINT fk_messages_conversation 
+        FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE
+      `);
+    } catch (error: any) {
+      // Ignora se a constraint já existe
+      if (error.code !== 'ER_DUP_KEYNAME' && error.code !== 'ER_CANT_CREATE_TABLE') {
+        throw error;
+      }
+    }
     
     console.log("✅ Conversation and message tables created/verified");
   } catch (error) {
