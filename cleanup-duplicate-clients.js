@@ -1,4 +1,4 @@
-const mysql = require('mysql2/promise');
+import mysql from 'mysql2/promise';
 
 async function cleanupDuplicateClients() {
   const connection = await mysql.createConnection({
