@@ -155,7 +155,7 @@ export default function SettingsPage() {
 
   const updateMutation = useMutation({
     mutationFn: async (data: SettingsFormData) => {
-      await apiRequest("PUT", "/api/settings", data);
+      return await apiRequest("PUT", "/api/settings", data);
     },
     onSuccess: () => {
       toast({
@@ -187,12 +187,13 @@ export default function SettingsPage() {
   const onSubmit = async (data: SettingsFormData) => {
     try {
       // Upload logo if a new file was selected
-      let logoUrl = data.logoUrl;
+      let logoUrl = data.logoUrl || "";
       if (logoFile) {
-        logoUrl = await uploadLogo();
-        if (!logoUrl) {
+        const uploadedUrl = await uploadLogo();
+        if (!uploadedUrl) {
           throw new Error("Falha no upload do logo");
         }
+        logoUrl = uploadedUrl;
       }
 
       // Convert string values to numbers for OpenAI fields and ensure required defaults
@@ -297,7 +298,7 @@ export default function SettingsPage() {
                               <div className="flex items-center gap-4 p-4 border rounded-lg bg-gray-50">
                                 <div className="relative">
                                   <img
-                                    src={logoPreview || field.value || settings?.logoUrl}
+                                    src={logoPreview || field.value || settings?.logoUrl || ""}
                                     alt="Logo atual"
                                     className="w-16 h-16 object-contain rounded border bg-white"
                                   />
