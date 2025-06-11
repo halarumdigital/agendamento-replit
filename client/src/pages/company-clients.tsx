@@ -73,11 +73,15 @@ function ClientServiceHistory({ clientId, clientName }: ClientServiceHistoryProp
   console.log('Client appointments data:', appointments);
 
   const completedAppointments = appointments.filter(apt => 
-    apt.statusName === 'Concluído' || apt.statusName === 'Finalizado'
+    apt.statusName === 'Concluído' || apt.statusName === 'Finalizado' || apt.statusName === 'Confirmado'
   );
 
-  const totalSpent = completedAppointments
+  // Calculate total for all appointments for historical purposes
+  const totalSpent = appointments
     .reduce((total, apt) => total + (apt.price || 0), 0);
+  
+  // Count only completed appointments for services count
+  const completedServicesCount = completedAppointments.length;
 
   if (isLoading) {
     return (
@@ -106,9 +110,9 @@ function ClientServiceHistory({ clientId, clientName }: ClientServiceHistoryProp
           <CardContent className="p-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-blue-600">
-                {completedAppointments.length}
+                {appointments.length}
               </div>
-              <div className="text-sm text-gray-500">Serviços Concluídos</div>
+              <div className="text-sm text-gray-500">Serviços Realizados</div>
             </div>
           </CardContent>
         </Card>
