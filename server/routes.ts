@@ -5856,6 +5856,12 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
     }
   });
 
+  // Test endpoint for JSON parsing
+  app.post("/api/test-json", (req, res) => {
+    console.log("Test JSON body:", req.body);
+    res.json({ received: req.body });
+  });
+
   // Reset password with token
   app.post("/api/auth/reset-password", async (req, res) => {
     try {
