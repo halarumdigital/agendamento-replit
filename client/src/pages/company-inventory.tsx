@@ -477,7 +477,7 @@ export default function CompanyInventory() {
                     <div className="flex justify-between">
                       <span>Preço de compra:</span>
                       <span className="font-medium">
-                        R$ {product.purchasePrice.toFixed(2)}
+                        R$ {parseFloat(product.purchasePrice).toFixed(2)}
                       </span>
                     </div>
                     
