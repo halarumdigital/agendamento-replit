@@ -309,24 +309,13 @@ export default function Register() {
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-4 pt-6">
+              <div className="flex justify-center pt-6">
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="flex-1 h-12 text-lg"
+                  className="w-full max-w-md h-12 text-lg bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
                 >
-                  {isLoading ? "Cadastrando..." : "Criar Conta"}
-                </Button>
-                
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="flex-1 h-12 text-lg"
-                  asChild
-                >
-                  <Link href="/assinatura">
-                    Ver Planos
-                  </Link>
+                  {isLoading ? "Processando..." : "Avançar"}
                 </Button>
               </div>
 
