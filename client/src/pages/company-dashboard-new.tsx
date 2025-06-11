@@ -321,8 +321,8 @@ export default function CompanyDashboardNew() {
     const threeDaysFromNow = new Date(today.getTime() + (3 * 24 * 60 * 60 * 1000));
 
     return tasks.filter((task: any) => {
-      // Só incluir tarefas ativas e não concluídas
-      if (!task.active || task.completed) return false;
+      // Só incluir tarefas ativas
+      if (!task.active) return false;
       
       if (!task.dueDate) return false;
       
