@@ -145,7 +145,9 @@ export default function CompanyMessages() {
       return apiRequest(`/api/company/campaigns/${id}`, "DELETE");
     },
     onSuccess: () => {
+      // Force refetch and remove from cache
       queryClient.invalidateQueries({ queryKey: ["/api/company/campaigns"] });
+      queryClient.refetchQueries({ queryKey: ["/api/company/campaigns"] });
       toast({
         title: "Campanha excluída",
         description: "A campanha foi excluída com sucesso.",
