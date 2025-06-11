@@ -24,6 +24,7 @@ import {
   pointsHistory,
   loyaltyCampaigns,
   loyaltyRewardsHistory,
+  products,
   type Admin,
   type InsertAdmin,
   type Company,

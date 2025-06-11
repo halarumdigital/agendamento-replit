@@ -346,6 +346,22 @@ export const loyaltyRewardsHistory = mysqlTable("loyalty_rewards_history", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Products table
+export const products = mysqlTable("products", {
+  id: int("id").primaryKey().autoincrement(),
+  companyId: int("company_id").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  photo: varchar("photo", { length: 500 }),
+  description: text("description"),
+  purchasePrice: decimal("purchase_price", { precision: 10, scale: 2 }).notNull(),
+  supplierName: varchar("supplier_name", { length: 255 }),
+  stockQuantity: int("stock_quantity").notNull().default(0),
+  alertStock: boolean("alert_stock").default(false),
+  minStockLevel: int("min_stock_level").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+});
+
 // Relations
 export const companiesRelations = relations(companies, ({ many }) => ({
   professionals: many(professionals),
@@ -360,6 +376,7 @@ export const companiesRelations = relations(companies, ({ many }) => ({
   pointsCampaigns: many(pointsCampaigns),
   loyaltyCampaigns: many(loyaltyCampaigns),
   loyaltyRewardsHistory: many(loyaltyRewardsHistory),
+  products: many(products),
 }));
 
 export const clientsRelations = relations(clients, ({ one }) => ({
@@ -538,6 +555,12 @@ export const insertTaskSchema = createInsertSchema(tasks).omit({
   updatedAt: true,
 });
 
+export const insertProductSchema = createInsertSchema(products).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Type exports
 export type Admin = typeof admins.$inferSelect;
 export type InsertAdmin = z.infer<typeof insertAdminSchema>;
@@ -587,3 +610,5 @@ export type LoyaltyRewardsHistory = typeof loyaltyRewardsHistory.$inferSelect;
 export type InsertLoyaltyRewardsHistory = z.infer<typeof insertLoyaltyRewardsHistorySchema>;
 export type Task = typeof tasks.$inferSelect;
 export type InsertTask = z.infer<typeof insertTaskSchema>;
+export type Product = typeof products.$inferSelect;
+export type InsertProduct = z.infer<typeof insertProductSchema>;
