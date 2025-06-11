@@ -330,24 +330,56 @@ const broadcastEvent = (eventData: any) => {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Test endpoint for notification system (before auth middleware)
-  app.get('/api/test-notification', (req, res) => {
+  app.get('/api/test-notification', async (req, res) => {
     console.log('🔔 Test notification endpoint called');
     
-    // Broadcast a test appointment event
-    broadcastEvent({
-      type: 'new_appointment',
-      appointment: {
-        id: 999,
-        clientName: 'Cliente Teste',
-        serviceName: 'Hidratação Teste',
-        professionalName: 'Profissional Teste',
-        appointmentDate: '2025-06-13',
-        appointmentTime: '10:00'
-      }
-    });
-    
-    console.log('📡 Test notification broadcast sent');
-    res.json({ message: 'Test notification sent', success: true });
+    try {
+      // Create a real test appointment to trigger notifications
+      const testAppointment = {
+        companyId: 1,
+        serviceId: 11, // Corte de Cabelo
+        professionalId: 5, // Magnus
+        clientName: 'Teste Notificação',
+        clientPhone: '49999999999',
+        appointmentDate: new Date('2025-06-13T00:00:00.000Z'),
+        appointmentTime: '10:00',
+        duration: 45,
+        status: 'Pendente',
+        totalPrice: '35.00',
+        notes: 'Agendamento teste para notificação',
+        reminderSent: false
+      };
+
+      const appointment = await storage.createAppointment(testAppointment);
+      console.log('✅ Test appointment created:', appointment.id);
+
+      // Get service and professional info for notification
+      const service = await storage.getService(testAppointment.serviceId);
+      const professional = await storage.getProfessional(testAppointment.professionalId);
+
+      // Broadcast new appointment event
+      broadcastEvent({
+        type: 'new_appointment',
+        appointment: {
+          id: appointment.id,
+          clientName: testAppointment.clientName,
+          serviceName: service?.name || 'Serviço Teste',
+          professionalName: professional?.name || 'Profissional Teste',
+          appointmentDate: '2025-06-13',
+          appointmentTime: '10:00'
+        }
+      });
+      
+      console.log('📡 Real appointment notification broadcast sent');
+      res.json({ 
+        message: 'Test appointment created and notification sent', 
+        success: true,
+        appointmentId: appointment.id
+      });
+    } catch (error) {
+      console.error('❌ Error creating test appointment:', error);
+      res.status(500).json({ error: 'Failed to create test appointment' });
+    }
   });
 
   // Auth middleware
