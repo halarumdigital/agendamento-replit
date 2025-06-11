@@ -851,6 +851,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Temporary password reset route
+  app.post('/api/temp-reset-password', async (req: any, res) => {
+    try {
+      const hashedPassword = await bcrypt.hash('123456', 10);
+      await db.update(companies)
+        .set({ password: hashedPassword })
+        .where(eq(companies.email, 'damaceno02@hotmail.com'));
+      res.json({ message: "Password reset to 123456" });
+    } catch (error) {
+      console.error("Password reset error:", error);
+      res.status(500).json({ message: "Error resetting password" });
+    }
+  });
+
   // Company login route
   app.post('/api/auth/company-login', async (req: any, res) => {
     try {
