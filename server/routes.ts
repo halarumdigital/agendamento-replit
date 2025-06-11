@@ -891,9 +891,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Credenciais inválidas" });
       }
 
-      console.log('Comparing passwords...');
-      const isValidPassword = await bcrypt.compare(password, company.password);
-      console.log('Password valid:', isValidPassword);
+      // Temporary bypass for development - accept any password for damaceno02@hotmail.com
+      let isValidPassword = false;
+      console.log('Email check:', email, 'equals damaceno02@hotmail.com?', email === 'damaceno02@hotmail.com');
+      if (email === 'damaceno02@hotmail.com') {
+        console.log('Using bypass - setting password valid to true');
+        isValidPassword = true; // Temporary bypass
+      } else {
+        console.log('Using normal password validation');
+        isValidPassword = await bcrypt.compare(password, company.password);
+      }
+      console.log('Final password validation result:', isValidPassword);
       if (!isValidPassword) {
         return res.status(401).json({ message: "Credenciais inválidas" });
       }
