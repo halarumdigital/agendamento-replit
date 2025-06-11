@@ -171,8 +171,8 @@ export const settingsSchema = z.object({
   evolutionApiGlobalKey: z.string().optional(),
   openaiApiKey: z.string().optional(),
   openaiModel: z.string().optional(),
-  openaiTemperature: z.number().min(0).max(2, "Temperatura deve estar entre 0 e 2").optional(),
-  openaiMaxTokens: z.number().min(1).max(200000, "Tokens deve estar entre 1 e 200000").optional(),
+  openaiTemperature: z.string().optional(),
+  openaiMaxTokens: z.string().optional(),
 });
 
 export const webhookConfigSchema = z.object({

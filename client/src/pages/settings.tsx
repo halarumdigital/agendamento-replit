@@ -148,8 +148,8 @@ export default function SettingsPage() {
       evolutionApiGlobalKey: settings.evolutionApiGlobalKey || "",
       openaiApiKey: (settings as any).openaiApiKey || "",
       openaiModel: (settings as any).openaiModel || "gpt-4o",
-      openaiTemperature: parseFloat((settings as any).openaiTemperature) || 0.7,
-      openaiMaxTokens: (settings as any).openaiMaxTokens || 4000,
+      openaiTemperature: (settings as any).openaiTemperature?.toString() || "0.7",
+      openaiMaxTokens: (settings as any).openaiMaxTokens?.toString() || "4000",
     } : undefined,
   });
 
