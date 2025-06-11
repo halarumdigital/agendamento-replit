@@ -137,6 +137,10 @@ export default function CompanyLoyalty() {
   });
 
   const handleSubmit = (data: FormData) => {
+    console.log("handleSubmit chamado com data:", data);
+    console.log("Erros do formulário:", form.formState.errors);
+    console.log("Form válido:", form.formState.isValid);
+    
     if (editingCampaign) {
       updateCampaignMutation.mutate({ id: editingCampaign.id, data });
     } else {
@@ -388,6 +392,7 @@ export default function CompanyLoyalty() {
                   <Button
                     type="submit"
                     disabled={createCampaignMutation.isPending || updateCampaignMutation.isPending}
+                    onClick={() => console.log("Botão Criar Campanha clicado")}
                   >
                     {editingCampaign ? "Atualizar" : "Criar"} Campanha
                   </Button>
