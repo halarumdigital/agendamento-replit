@@ -445,6 +445,96 @@ export default function SettingsPage() {
                   />
                 </CardContent>
               </Card>
+
+              {/* Favicon Upload Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Image className="w-5 h-5" />
+                    Favicon do Sistema
+                  </CardTitle>
+                  <CardDescription>
+                    Adicione um favicon personalizado que aparecerá na aba do navegador.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <FormField
+                    control={form.control}
+                    name="faviconUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Favicon</FormLabel>
+                        <FormControl>
+                          <div className="space-y-4">
+                            {/* Preview do favicon atual */}
+                            {(faviconPreview || field.value) && (
+                              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                <div className="relative">
+                                  <img 
+                                    src={faviconPreview || field.value} 
+                                    alt="Favicon preview" 
+                                    className="w-8 h-8 rounded object-cover border"
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={removeFavicon}
+                                    className="absolute -top-2 -right-2 w-6 h-6 p-0 rounded-full"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                                <div className="flex-1">
+                                  <p className="text-sm font-medium text-gray-700">
+                                    {faviconFile ? faviconFile.name : "Favicon configurado"}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Área de upload */}
+                            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+                              <input
+                                ref={faviconInputRef}
+                                type="file"
+                                accept="image/*"
+                                onChange={handleFaviconSelect}
+                                className="hidden"
+                                id="favicon-upload"
+                              />
+                              <label htmlFor="favicon-upload" className="cursor-pointer">
+                                <div className="mx-auto flex flex-col items-center">
+                                  <Upload className="w-8 h-8 text-gray-400 mb-2" />
+                                  <p className="text-sm font-medium text-gray-700 mb-1">
+                                    Clique para selecionar uma imagem
+                                  </p>
+                                  <p className="text-xs text-gray-500">
+                                    PNG, JPG, ICO até 5MB (recomendado: 32x32px)
+                                  </p>
+                                </div>
+                              </label>
+                            </div>
+
+                            {/* Campo de URL alternativo */}
+                            <div className="space-y-2">
+                              <Label className="text-sm text-gray-600">
+                                Ou insira uma URL da imagem:
+                              </Label>
+                              <Input 
+                                placeholder="https://exemplo.com/favicon.ico" 
+                                {...field}
+                                className="text-sm"
+                              />
+                            </div>
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
             </TabsContent>
 
             <TabsContent value="appearance" className="space-y-6">
