@@ -94,3 +94,36 @@ export const companySchema = z.object({
   planId: z.number().min(1, "Plano é obrigatório"),
   isActive: z.boolean().default(true),
 });
+
+export const planSchema = z.object({
+  name: z.string().min(2, "Nome do plano deve ter pelo menos 2 caracteres"),
+  freeDays: z.number().min(0, "Dias grátis deve ser maior ou igual a 0"),
+  price: z.string().min(1, "Preço é obrigatório"),
+  maxProfessionals: z.number().min(1, "Máximo de profissionais deve ser pelo menos 1"),
+  isActive: z.boolean().default(true),
+  permissions: z.record(z.boolean()).default({}),
+});
+
+export const settingsSchema = z.object({
+  systemName: z.string().min(1, "Nome do sistema é obrigatório"),
+  logoUrl: z.string().optional(),
+  faviconUrl: z.string().optional(),
+  primaryColor: z.string().min(4, "Cor primária é obrigatória"),
+  secondaryColor: z.string().min(4, "Cor secundária é obrigatória"),
+  backgroundColor: z.string().min(4, "Cor de fundo é obrigatória"),
+  textColor: z.string().min(4, "Cor do texto é obrigatória"),
+  evolutionApiUrl: z.string().optional(),
+  evolutionApiGlobalKey: z.string().optional(),
+  openaiApiKey: z.string().optional(),
+  openaiModel: z.string().optional(),
+  openaiTemperature: z.string().optional(),
+  openaiMaxTokens: z.string().optional(),
+  smtpHost: z.string().optional(),
+  smtpPort: z.string().optional(),
+  smtpUser: z.string().optional(),
+  smtpPassword: z.string().optional(),
+  smtpFromEmail: z.string().optional(),
+  smtpFromName: z.string().optional(),
+  smtpSecure: z.string().optional(),
+  customHtml: z.string().optional(),
+});
