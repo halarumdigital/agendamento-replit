@@ -59,6 +59,14 @@ interface ClientServiceHistoryProps {
 function ClientServiceHistory({ clientId, clientName }: ClientServiceHistoryProps) {
   const { data: appointments = [], isLoading } = useQuery<AppointmentHistory[]>({
     queryKey: ['/api/company/appointments/client', clientId],
+    queryFn: async () => {
+      const response = await fetch(`/api/company/appointments/client/${clientId}`);
+      if (!response.ok) {
+        throw new Error('Erro ao buscar histórico do cliente');
+      }
+      return response.json();
+    },
+    enabled: !!clientId,
   });
 
   // Debug log to see what data we're getting
