@@ -311,6 +311,27 @@ const broadcastEvent = (eventData: any) => {
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Test endpoint for notification system (before auth middleware)
+  app.get('/api/test-notification', (req, res) => {
+    console.log('🔔 Test notification endpoint called');
+    
+    // Broadcast a test appointment event
+    broadcastEvent({
+      type: 'new_appointment',
+      appointment: {
+        id: 999,
+        clientName: 'Cliente Teste',
+        serviceName: 'Hidratação Teste',
+        professionalName: 'Profissional Teste',
+        appointmentDate: '2025-06-13',
+        appointmentTime: '10:00'
+      }
+    });
+    
+    console.log('📡 Test notification broadcast sent');
+    res.json({ message: 'Test notification sent', success: true });
+  });
+
   // Auth middleware
   await setupAuth(app);
 
@@ -338,6 +359,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       sseConnections.delete(res);
     });
   });
+
+
 
   // Simple admin authentication using hardcoded credentials for demo
   const ADMIN_CREDENTIALS = {
