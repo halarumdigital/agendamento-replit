@@ -382,7 +382,7 @@ export default function SettingsPage() {
                                   <img
                                     src={logoPreview || field.value || settings?.logoUrl || ""}
                                     alt="Logo atual"
-                                    className="w-16 h-16 object-contain rounded border bg-white"
+                                    className="h-12 w-auto max-w-[150px] object-contain rounded border bg-white px-2"
                                   />
                                   <Button
                                     type="button"
