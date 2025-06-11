@@ -37,27 +37,25 @@ export default function CompanyLoyalty() {
   });
 
   // Process campaigns data to ensure proper structure
-  console.log('Raw campaignsData:', campaignsData);
   const campaigns = Array.isArray(campaignsData) 
-    ? campaignsData.flat().flat().filter(campaign => campaign && typeof campaign === 'object').map((campaign: any) => {
-        console.log('Processing campaign:', campaign);
-        const processed = {
-          ...campaign,
-          id: campaign.id || campaign.campaign_id,
-          companyId: campaign.company_id || campaign.companyId,
-          conditionType: campaign.condition_type || campaign.conditionType,
-          conditionValue: campaign.condition_value || campaign.conditionValue,
-          rewardType: campaign.reward_type || campaign.rewardType,
-          rewardValue: campaign.reward_value || campaign.rewardValue,
-          rewardServiceId: campaign.reward_service_id || campaign.rewardServiceId,
-          active: campaign.active !== null ? campaign.active : true
-        };
-        console.log('Processed campaign:', processed);
-        return processed;
-      })
+    ? campaignsData.flat().flat().filter(campaign => 
+        campaign && 
+        typeof campaign === 'object' && 
+        !campaign._buf && // Filter out Buffer objects
+        campaign.id && 
+        typeof campaign.id === 'number'
+      ).map((campaign: any) => ({
+        ...campaign,
+        id: campaign.id || campaign.campaign_id,
+        companyId: campaign.company_id || campaign.companyId,
+        conditionType: campaign.condition_type || campaign.conditionType,
+        conditionValue: campaign.condition_value || campaign.conditionValue,
+        rewardType: campaign.reward_type || campaign.rewardType,
+        rewardValue: campaign.reward_value || campaign.rewardValue,
+        rewardServiceId: campaign.reward_service_id || campaign.rewardServiceId,
+        active: campaign.active !== null ? campaign.active : true
+      }))
     : [];
-  
-  console.log('Final campaigns array:', campaigns);
 
   const { data: services = [], isLoading: isLoadingServices } = useQuery<Service[]>({
     queryKey: ["/api/company/services"],

@@ -47,7 +47,7 @@ export default function CompanyLogin() {
       setLocation("/dashboard");
     },
     onError: (error: any) => {
-      const errorMessage = error.message || "Credenciais inválidas";
+      const errorMessage = "Email ou senha errada";
       setLoginError(errorMessage);
       toast({
         title: "Erro no login",
