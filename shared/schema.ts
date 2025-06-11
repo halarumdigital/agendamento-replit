@@ -121,7 +121,7 @@ export const globalSettings = mysqlTable("global_settings", {
   smtpPassword: varchar("smtp_password", { length: 255 }),
   smtpFromEmail: varchar("smtp_from_email", { length: 255 }),
   smtpFromName: varchar("smtp_from_name", { length: 255 }),
-  smtpSecure: boolean("smtp_secure").default(true),
+  smtpSecure: varchar("smtp_secure", { length: 10 }).default("tls"),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
 

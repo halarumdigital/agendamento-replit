@@ -28,6 +28,17 @@ export async function ensureSmtpColumns() {
       console.log('✅ SMTP columns added successfully');
     } else {
       console.log('✅ SMTP columns already exist');
+      
+      // Check if smtp_secure is boolean and convert to varchar
+      try {
+        await pool.execute(`
+          ALTER TABLE global_settings 
+          MODIFY COLUMN smtp_secure VARCHAR(10) DEFAULT 'tls'
+        `);
+        console.log('✅ smtp_secure column updated to VARCHAR');
+      } catch (error: any) {
+        console.log('smtp_secure column type already correct or error:', error.message);
+      }
     }
   } catch (error: any) {
     console.error('❌ Error ensuring SMTP columns:', error.message);
