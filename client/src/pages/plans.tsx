@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Tags, Edit, Trash2 } from "lucide-react";
@@ -286,6 +287,146 @@ export default function Plans() {
                   <Label htmlFor="isActive" className="text-sm">
                     {form.watch("isActive") ? "Ativo" : "Inativo"}
                   </Label>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <Label className="text-base font-medium">Permissões do Plano</Label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-4 border rounded-lg bg-slate-50">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="dashboard"
+                    checked={form.watch("permissions.dashboard")}
+                    onCheckedChange={(checked) => form.setValue("permissions.dashboard", !!checked)}
+                  />
+                  <Label htmlFor="dashboard" className="text-sm">Dashboard</Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="appointments"
+                    checked={form.watch("permissions.appointments")}
+                    onCheckedChange={(checked) => form.setValue("permissions.appointments", !!checked)}
+                  />
+                  <Label htmlFor="appointments" className="text-sm">Agendamentos</Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="services"
+                    checked={form.watch("permissions.services")}
+                    onCheckedChange={(checked) => form.setValue("permissions.services", !!checked)}
+                  />
+                  <Label htmlFor="services" className="text-sm">Serviços</Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="professionals"
+                    checked={form.watch("permissions.professionals")}
+                    onCheckedChange={(checked) => form.setValue("permissions.professionals", !!checked)}
+                  />
+                  <Label htmlFor="professionals" className="text-sm">Profissionais</Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="clients"
+                    checked={form.watch("permissions.clients")}
+                    onCheckedChange={(checked) => form.setValue("permissions.clients", !!checked)}
+                  />
+                  <Label htmlFor="clients" className="text-sm">Clientes</Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="reviews"
+                    checked={form.watch("permissions.reviews")}
+                    onCheckedChange={(checked) => form.setValue("permissions.reviews", !!checked)}
+                  />
+                  <Label htmlFor="reviews" className="text-sm">Avaliações</Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="tasks"
+                    checked={form.watch("permissions.tasks")}
+                    onCheckedChange={(checked) => form.setValue("permissions.tasks", !!checked)}
+                  />
+                  <Label htmlFor="tasks" className="text-sm">Tarefas</Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="pointsProgram"
+                    checked={form.watch("permissions.pointsProgram")}
+                    onCheckedChange={(checked) => form.setValue("permissions.pointsProgram", !!checked)}
+                  />
+                  <Label htmlFor="pointsProgram" className="text-sm">Programa de Pontos</Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="loyalty"
+                    checked={form.watch("permissions.loyalty")}
+                    onCheckedChange={(checked) => form.setValue("permissions.loyalty", !!checked)}
+                  />
+                  <Label htmlFor="loyalty" className="text-sm">Fidelidade</Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="inventory"
+                    checked={form.watch("permissions.inventory")}
+                    onCheckedChange={(checked) => form.setValue("permissions.inventory", !!checked)}
+                  />
+                  <Label htmlFor="inventory" className="text-sm">Estoque</Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="messages"
+                    checked={form.watch("permissions.messages")}
+                    onCheckedChange={(checked) => form.setValue("permissions.messages", !!checked)}
+                  />
+                  <Label htmlFor="messages" className="text-sm">Mensagens</Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="coupons"
+                    checked={form.watch("permissions.coupons")}
+                    onCheckedChange={(checked) => form.setValue("permissions.coupons", !!checked)}
+                  />
+                  <Label htmlFor="coupons" className="text-sm">Cupons</Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="financial"
+                    checked={form.watch("permissions.financial")}
+                    onCheckedChange={(checked) => form.setValue("permissions.financial", !!checked)}
+                  />
+                  <Label htmlFor="financial" className="text-sm">Financeiro</Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="reports"
+                    checked={form.watch("permissions.reports")}
+                    onCheckedChange={(checked) => form.setValue("permissions.reports", !!checked)}
+                  />
+                  <Label htmlFor="reports" className="text-sm">Relatórios</Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="settings"
+                    checked={form.watch("permissions.settings")}
+                    onCheckedChange={(checked) => form.setValue("permissions.settings", !!checked)}
+                  />
+                  <Label htmlFor="settings" className="text-sm">Configurações</Label>
                 </div>
               </div>
             </div>
