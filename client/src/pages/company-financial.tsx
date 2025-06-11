@@ -460,11 +460,11 @@ export default function CompanyFinancial() {
 
         {/* Dashboard Tab */}
         <TabsContent value="dashboard" className="space-y-6">
-          {/* Header do Dashboard */}
-          <div className="flex justify-between items-center mb-6">
+          {/* Header Moderno do Dashboard */}
+          <div className="flex justify-between items-center mb-8">
             <div>
-              <h2 className="text-xl font-semibold text-gray-800">Dashboard Financeiro</h2>
-              <p className="text-sm text-gray-500">
+              <h1 className="text-2xl font-bold text-gray-900">Dashboard Financeiro</h1>
+              <p className="text-sm text-gray-500 mt-1">
                 {new Date().toLocaleDateString('pt-BR', { 
                   day: '2-digit', 
                   month: 'long', 
@@ -474,7 +474,7 @@ export default function CompanyFinancial() {
               </p>
             </div>
             <div className="flex items-center space-x-4">
-              <div className="flex items-center bg-white rounded shadow-sm border border-gray-200 overflow-hidden">
+              <div className="flex items-center bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                 <input
                   type="month"
                   value={dashboardDateFilter}
@@ -488,9 +488,9 @@ export default function CompanyFinancial() {
                   Resetar
                 </button>
               </div>
-              <button className="flex items-center space-x-1 px-3 py-2 bg-white rounded shadow-sm border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50">
+              <button className="flex items-center space-x-2 px-4 py-2 bg-white rounded-lg shadow-sm border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
                 <Download className="w-4 h-4" />
-                <span>Exportar</span>
+                <span>Exportar Relatório</span>
               </button>
             </div>
           </div>
@@ -502,26 +502,26 @@ export default function CompanyFinancial() {
             </div>
           ) : (
             <>
-              {/* Cards de Métricas */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                <div className="bg-white rounded shadow-sm p-5 border border-gray-100">
+              {/* Cards de Métricas - Estilo Moderno */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-50 hover:shadow-xl transition-all duration-300">
                   <div className="flex justify-between items-start mb-4">
                     <div>
-                      <p className="text-sm font-medium text-gray-500">Receitas do Mês</p>
-                      <h3 className="text-2xl font-bold text-gray-800">{formatCurrency(safeData.monthlyIncome)}</h3>
+                      <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">Receitas do Mês</p>
+                      <h3 className="text-3xl font-bold text-gray-900 mt-2">{formatCurrency(safeData.monthlyIncome)}</h3>
                     </div>
-                    <div className="w-10 h-10 flex items-center justify-center rounded-full bg-green-100 text-green-600">
-                      <TrendingUp className="w-5 h-5" />
+                    <div className="w-12 h-12 flex items-center justify-center rounded-full bg-gradient-to-r from-green-400 to-green-600 text-white shadow-lg">
+                      <TrendingUp className="w-6 h-6" />
                     </div>
                   </div>
                   <div className="flex items-center">
-                    <div className="flex items-center text-green-600 text-sm font-medium">
-                      <div className="w-4 h-4 flex items-center justify-center mr-1">
+                    <div className="flex items-center text-green-600 text-sm font-semibold">
+                      <div className="w-4 h-4 flex items-center justify-center mr-2">
                         <TrendingUp className="w-4 h-4" />
                       </div>
-                      <span>{safeData.incomeGrowth}%</span>
+                      <span>+{safeData.incomeGrowth}%</span>
                     </div>
-                    <span className="text-xs text-gray-500 ml-2">vs. mês anterior</span>
+                    <span className="text-xs text-gray-400 ml-2">vs. mês anterior</span>
                   </div>
                 </div>
 
