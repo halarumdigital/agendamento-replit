@@ -73,6 +73,8 @@ import {
   type InsertLoyaltyCampaign,
   type LoyaltyRewardsHistory,
   type InsertLoyaltyRewardsHistory,
+  type Product,
+  type InsertProduct,
 } from "@shared/schema";
 import { normalizePhone, validateBrazilianPhone, comparePhones } from "../shared/phone-utils";
 
@@ -1982,6 +1984,41 @@ Obrigado pela preferência! 🙏`;
 
   async deletePointsCampaign(id: number): Promise<void> {
     await db.delete(pointsCampaigns).where(eq(pointsCampaigns.id, id));
+  }
+
+  // Product operations
+  async getProducts(companyId: number): Promise<Product[]> {
+    return await db.select().from(products)
+      .where(eq(products.companyId, companyId))
+      .orderBy(desc(products.createdAt));
+  }
+
+  async getProduct(id: number): Promise<Product | undefined> {
+    const [product] = await db.select().from(products).where(eq(products.id, id));
+    return product;
+  }
+
+  async createProduct(productData: InsertProduct): Promise<Product> {
+    const result = await db.insert(products).values(productData);
+    const [product] = await db.select().from(products)
+      .where(eq(products.id, result.insertId))
+      .limit(1);
+    return product;
+  }
+
+  async updateProduct(id: number, productData: Partial<InsertProduct>): Promise<Product> {
+    await db.update(products)
+      .set({ ...productData, updatedAt: new Date() })
+      .where(eq(products.id, id));
+    
+    const [product] = await db.select().from(products)
+      .where(eq(products.id, id))
+      .limit(1);
+    return product;
+  }
+
+  async deleteProduct(id: number): Promise<void> {
+    await db.delete(products).where(eq(products.id, id));
   }
 }
 

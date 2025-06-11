@@ -4611,6 +4611,84 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
     }
   });
 
+  // Products routes
+  app.get("/api/products", async (req, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const products = await storage.getProducts(companyId);
+      res.json(products);
+    } catch (error) {
+      console.error("Error getting products:", error);
+      res.status(500).json({ message: "Erro ao buscar produtos" });
+    }
+  });
+
+  app.post("/api/products", async (req, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const productData = { ...req.body, companyId };
+      const product = await storage.createProduct(productData);
+      res.status(201).json(product);
+    } catch (error) {
+      console.error("Error creating product:", error);
+      res.status(500).json({ message: "Erro ao criar produto" });
+    }
+  });
+
+  app.put("/api/products/:id", async (req, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const productId = parseInt(req.params.id);
+      
+      // Verify product exists and belongs to company
+      const existingProduct = await storage.getProduct(productId);
+      if (!existingProduct || existingProduct.companyId !== companyId) {
+        return res.status(404).json({ message: "Produto não encontrado" });
+      }
+
+      const product = await storage.updateProduct(productId, req.body);
+      res.json(product);
+    } catch (error) {
+      console.error("Error updating product:", error);
+      res.status(500).json({ message: "Erro ao atualizar produto" });
+    }
+  });
+
+  app.delete("/api/products/:id", async (req, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const productId = parseInt(req.params.id);
+      
+      // Verify product exists and belongs to company
+      const existingProduct = await storage.getProduct(productId);
+      if (!existingProduct || existingProduct.companyId !== companyId) {
+        return res.status(404).json({ message: "Produto não encontrado" });
+      }
+
+      await storage.deleteProduct(productId);
+      res.json({ message: "Produto excluído com sucesso" });
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      res.status(500).json({ message: "Erro ao excluir produto" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
