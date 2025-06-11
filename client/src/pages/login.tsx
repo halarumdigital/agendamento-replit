@@ -74,14 +74,7 @@ export default function Login() {
         )}
 
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Lock className="w-5 h-5 mr-2" />
-              Login de Administrador
-            </CardTitle>
-            <CardDescription>
-              Faça login com suas credenciais de administrador
-            </CardDescription>
+          <CardHeader className="pb-4">
           </CardHeader>
           <CardContent>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
