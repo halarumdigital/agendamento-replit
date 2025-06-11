@@ -140,9 +140,19 @@ function Router() {
       {/* Protected Admin Routes */}
       {isAdminAuthenticated && (
         <>
+          <Route path="/admin/companies">
+            <AdminLayout>
+              <Companies />
+            </AdminLayout>
+          </Route>
           <Route path="/administrador/empresas">
             <AdminLayout>
               <Companies />
+            </AdminLayout>
+          </Route>
+          <Route path="/admin/plans">
+            <AdminLayout>
+              <Plans />
             </AdminLayout>
           </Route>
           <Route path="/administrador/planos">
@@ -150,9 +160,19 @@ function Router() {
               <Plans />
             </AdminLayout>
           </Route>
+          <Route path="/admin/status">
+            <AdminLayout>
+              <Status />
+            </AdminLayout>
+          </Route>
           <Route path="/administrador/status">
             <AdminLayout>
               <Status />
+            </AdminLayout>
+          </Route>
+          <Route path="/admin/settings">
+            <AdminLayout>
+              <SettingsPage />
             </AdminLayout>
           </Route>
           <Route path="/administrador/configuracoes">

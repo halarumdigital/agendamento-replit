@@ -83,7 +83,7 @@ export default function Companies() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: Partial<CompanyFormData> }) => {
+    mutationFn: async ({ id, data }: { id: number; data: Partial<CompanyEditFormData> }) => {
       await apiRequest("PUT", `/api/companies/${id}`, data);
     },
     onSuccess: () => {
@@ -91,7 +91,7 @@ export default function Companies() {
         title: "Sucesso",
         description: "Empresa atualizada com sucesso!",
       });
-      form.reset();
+      editForm.reset();
       setEditingCompany(null);
       setIsModalOpen(false);
       queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
@@ -126,21 +126,24 @@ export default function Companies() {
   });
 
   const onSubmit = (data: CompanyFormData) => {
+    createMutation.mutate(data);
+  };
+
+  const onEditSubmit = (data: CompanyEditFormData) => {
     if (editingCompany) {
       updateMutation.mutate({ id: editingCompany.id, data });
-    } else {
-      createMutation.mutate(data);
     }
   };
 
   const handleEdit = (company: Company) => {
     setEditingCompany(company);
-    form.reset({
+    editForm.reset({
       fantasyName: company.fantasyName,
       document: company.document,
       address: company.address,
       email: company.email,
-      password: "", // Don't pre-fill password for security
+      planId: company.planId || null,
+      isActive: company.isActive ?? true,
     });
     setIsModalOpen(true);
   };
@@ -148,6 +151,7 @@ export default function Companies() {
   const handleCancelEdit = () => {
     setEditingCompany(null);
     form.reset();
+    editForm.reset();
     setIsModalOpen(false);
   };
 
@@ -196,98 +200,208 @@ export default function Companies() {
               }
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+{editingCompany ? (
+            <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="fantasyName">Nome Fantasia</Label>
+                  <Input
+                    id="fantasyName"
+                    {...editForm.register("fantasyName")}
+                    placeholder="Digite o nome fantasia"
+                  />
+                  {editForm.formState.errors.fantasyName && (
+                    <p className="text-sm text-red-600">
+                      {editForm.formState.errors.fantasyName.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="document">CNPJ / CPF</Label>
+                  <Input
+                    id="document"
+                    {...editForm.register("document")}
+                    placeholder="00.000.000/0000-00"
+                    disabled
+                  />
+                  {editForm.formState.errors.document && (
+                    <p className="text-sm text-red-600">
+                      {editForm.formState.errors.document.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+
               <div className="space-y-2">
-                <Label htmlFor="fantasyName">Nome Fantasia</Label>
+                <Label htmlFor="address">Endereço</Label>
                 <Input
-                  id="fantasyName"
-                  {...form.register("fantasyName")}
-                  placeholder="Digite o nome fantasia"
+                  id="address"
+                  {...editForm.register("address")}
+                  placeholder="Digite o endereço completo"
                 />
-                {form.formState.errors.fantasyName && (
+                {editForm.formState.errors.address && (
                   <p className="text-sm text-red-600">
-                    {form.formState.errors.fantasyName.message}
+                    {editForm.formState.errors.address.message}
                   </p>
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="document">CNPJ / CPF</Label>
-                <Input
-                  id="document"
-                  {...form.register("document")}
-                  onChange={handleDocumentChange}
-                  placeholder="00.000.000/0000-00"
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="email">E-mail</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    {...editForm.register("email")}
+                    placeholder="contato@empresa.com"
+                  />
+                  {editForm.formState.errors.email && (
+                    <p className="text-sm text-red-600">
+                      {editForm.formState.errors.email.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="planId">Plano</Label>
+                  <Select 
+                    value={editForm.watch("planId")?.toString() || ""} 
+                    onValueChange={(value) => editForm.setValue("planId", value ? parseInt(value) : null)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um plano" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Nenhum plano</SelectItem>
+                      {plans.map((plan) => (
+                        <SelectItem key={plan.id} value={plan.id.toString()}>
+                          {plan.name} - R$ {parseFloat(plan.price).toFixed(2).replace('.', ',')}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {editForm.formState.errors.planId && (
+                    <p className="text-sm text-red-600">
+                      {editForm.formState.errors.planId.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="isActive"
+                  checked={editForm.watch("isActive")}
+                  onCheckedChange={(checked) => editForm.setValue("isActive", checked)}
                 />
-                {form.formState.errors.document && (
+                <Label htmlFor="isActive">Empresa ativa</Label>
+              </div>
+
+              <div className="flex justify-end space-x-4">
+                <Button type="button" variant="outline" onClick={handleCancelEdit}>
+                  Cancelar
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={updateMutation.isPending}
+                >
+                  Atualizar Empresa
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="fantasyName">Nome Fantasia</Label>
+                  <Input
+                    id="fantasyName"
+                    {...form.register("fantasyName")}
+                    placeholder="Digite o nome fantasia"
+                  />
+                  {form.formState.errors.fantasyName && (
+                    <p className="text-sm text-red-600">
+                      {form.formState.errors.fantasyName.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="document">CNPJ / CPF</Label>
+                  <Input
+                    id="document"
+                    {...form.register("document")}
+                    onChange={handleDocumentChange}
+                    placeholder="00.000.000/0000-00"
+                  />
+                  {form.formState.errors.document && (
+                    <p className="text-sm text-red-600">
+                      {form.formState.errors.document.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="address">Endereço</Label>
+                <Input
+                  id="address"
+                  {...form.register("address")}
+                  placeholder="Digite o endereço completo"
+                />
+                {form.formState.errors.address && (
                   <p className="text-sm text-red-600">
-                    {form.formState.errors.document.message}
+                    {form.formState.errors.address.message}
                   </p>
                 )}
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="address">Endereço</Label>
-              <Input
-                id="address"
-                {...form.register("address")}
-                placeholder="Digite o endereço completo"
-              />
-              {form.formState.errors.address && (
-                <p className="text-sm text-red-600">
-                  {form.formState.errors.address.message}
-                </p>
-              )}
-            </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="email">E-mail</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    {...form.register("email")}
+                    placeholder="contato@empresa.com"
+                  />
+                  {form.formState.errors.email && (
+                    <p className="text-sm text-red-600">
+                      {form.formState.errors.email.message}
+                    </p>
+                  )}
+                </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="email">E-mail</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  {...form.register("email")}
-                  placeholder="contato@empresa.com"
-                />
-                {form.formState.errors.email && (
-                  <p className="text-sm text-red-600">
-                    {form.formState.errors.email.message}
-                  </p>
-                )}
+                <div className="space-y-2">
+                  <Label htmlFor="password">Senha</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    {...form.register("password")}
+                    placeholder="Digite a senha"
+                  />
+                  {form.formState.errors.password && (
+                    <p className="text-sm text-red-600">
+                      {form.formState.errors.password.message}
+                    </p>
+                  )}
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password">
-                  {editingCompany ? "Nova Senha (opcional)" : "Senha"}
-                </Label>
-                <Input
-                  id="password"
-                  type="password"
-                  {...form.register("password")}
-                  placeholder="Digite a senha"
-                />
-                {form.formState.errors.password && (
-                  <p className="text-sm text-red-600">
-                    {form.formState.errors.password.message}
-                  </p>
-                )}
+              <div className="flex justify-end space-x-4">
+                <Button type="button" variant="outline" onClick={handleCancelEdit}>
+                  Cancelar
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={createMutation.isPending}
+                >
+                  Cadastrar Empresa
+                </Button>
               </div>
-            </div>
-
-            <div className="flex justify-end space-x-4">
-              <Button type="button" variant="outline" onClick={handleCancelEdit}>
-                Cancelar
-              </Button>
-              <Button 
-                type="submit" 
-                disabled={createMutation.isPending || updateMutation.isPending}
-              >
-                {editingCompany ? "Atualizar Empresa" : "Cadastrar Empresa"}
-              </Button>
-            </div>
-          </form>
+            </form>
+          )}
         </DialogContent>
       </Dialog>
 
@@ -333,6 +447,7 @@ export default function Companies() {
                     <TableHead>Empresa</TableHead>
                     <TableHead>CNPJ/CPF</TableHead>
                     <TableHead>E-mail</TableHead>
+                    <TableHead>Plano</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Ações</TableHead>
                   </TableRow>
@@ -355,8 +470,20 @@ export default function Companies() {
                       </TableCell>
                       <TableCell>{company.email}</TableCell>
                       <TableCell>
-                        <Badge variant="secondary" className="bg-green-100 text-green-800">
-                          Ativo
+                        {company.planId ? (
+                          <Badge variant="default">
+                            {plans.find(p => p.id === company.planId)?.name || 'Plano não encontrado'}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline">Sem plano</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant={company.isActive ? "default" : "secondary"} 
+                          className={company.isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}
+                        >
+                          {company.isActive ? "Ativo" : "Inativo"}
                         </Badge>
                       </TableCell>
                       <TableCell>
