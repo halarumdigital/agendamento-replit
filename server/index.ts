@@ -4,6 +4,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { ensureConversationTables, storage } from "./storage";
 import { ensureReviewTables } from "./create-reviews-tables";
+import { startCampaignScheduler } from "./campaign-scheduler";
 
 const app = express();
 app.use(express.json());
@@ -45,6 +46,9 @@ app.use((req, res, next) => {
   
   // Initialize review tables
   await ensureReviewTables();
+  
+  // Start campaign scheduler
+  startCampaignScheduler();
   
   const server = await registerRoutes(app);
 
