@@ -24,6 +24,12 @@ export default function CompanyDashboardNew() {
     enabled: !!company
   });
 
+  // Buscar clientes para aniversariantes
+  const { data: clients = [] } = useQuery({
+    queryKey: ['/api/company/clients'],
+    enabled: !!company
+  });
+
   // Calcular faturamento do dia dos agendamentos concluídos
   const calculateDailyRevenue = () => {
     if (!Array.isArray(appointments) || !Array.isArray(services)) {
@@ -258,6 +264,45 @@ export default function CompanyDashboardNew() {
   };
 
   const lowStockAlerts = getLowStockAlerts();
+
+  // Calcular aniversariantes do mês
+  const getMonthlyBirthdays = () => {
+    if (!Array.isArray(clients)) {
+      return [];
+    }
+
+    const now = new Date();
+    const currentMonth = now.getMonth() + 1; // getMonth() retorna 0-11
+    const monthNames = [
+      '', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+    ];
+    
+    return clients.filter((client: any) => {
+      if (!client.birthDate) return false;
+      
+      try {
+        const birthDate = new Date(client.birthDate);
+        if (isNaN(birthDate.getTime())) return false;
+        
+        const clientMonth = birthDate.getMonth() + 1;
+        return clientMonth === currentMonth;
+      } catch {
+        return false;
+      }
+    }).map((client: any) => {
+      const birthDate = new Date(client.birthDate);
+      const day = birthDate.getDate();
+      return {
+        id: client.id,
+        name: client.name,
+        birthDay: day,
+        birthDate: `${day} de ${monthNames[currentMonth]}`
+      };
+    }).sort((a: any, b: any) => a.birthDay - b.birthDay);
+  };
+
+  const monthlyBirthdays = getMonthlyBirthdays();
 
   if (isLoading) {
     return (
@@ -584,24 +629,23 @@ export default function CompanyDashboardNew() {
           <div className="mb-5">
             <h4 className="text-sm font-medium text-gray-600 mb-3">Aniversariantes do Mês</h4>
             <div className="space-y-3">
-              <div className="flex items-center p-3 bg-blue-50 rounded border border-blue-100">
-                <div className="w-8 h-8 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 mr-3">
-                  🎂
+              {monthlyBirthdays.length > 0 ? (
+                monthlyBirthdays.map((birthday: any) => (
+                  <div key={birthday.id} className="flex items-center p-3 bg-blue-50 rounded border border-blue-100">
+                    <div className="w-8 h-8 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 mr-3">
+                      🎂
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-800">{birthday.name}</p>
+                      <p className="text-xs text-gray-500">{birthday.birthDate}</p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="p-3 bg-gray-50 rounded border border-gray-100 text-center">
+                  <p className="text-sm text-gray-600">Nenhum aniversariante este mês</p>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-800">Mariana Almeida</p>
-                  <p className="text-xs text-gray-500">12 de Junho</p>
-                </div>
-              </div>
-              <div className="flex items-center p-3 bg-blue-50 rounded border border-blue-100">
-                <div className="w-8 h-8 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 mr-3">
-                  🎂
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-800">Paulo Rodrigues</p>
-                  <p className="text-xs text-gray-500">18 de Junho</p>
-                </div>
-              </div>
+              )}
             </div>
           </div>
           
