@@ -2236,6 +2236,22 @@ export const storage = new DatabaseStorage();
   }
 })();
 
+// Ensure favicon_url column exists in global_settings
+(async () => {
+  try {
+    await db.execute(sql`
+      ALTER TABLE global_settings 
+      ADD COLUMN IF NOT EXISTS favicon_url VARCHAR(500) AFTER logo_url
+    `);
+    console.log("✅ Favicon column ensured in global_settings");
+  } catch (error: any) {
+    // Column might already exist, which is fine
+    if (!error.message?.includes('Duplicate column name')) {
+      console.error("❌ Error adding favicon column:", error);
+    }
+  }
+})();
+
 // Initialize financial tables on startup
 (async () => {
   try {

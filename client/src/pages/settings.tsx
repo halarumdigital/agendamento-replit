@@ -195,6 +195,7 @@ export default function SettingsPage() {
     defaultValues: {
       systemName: "",
       logoUrl: "",
+      faviconUrl: "",
       primaryColor: "#2563eb",
       secondaryColor: "#64748b",
       backgroundColor: "#f8fafc",
@@ -209,6 +210,7 @@ export default function SettingsPage() {
     values: settings ? {
       systemName: settings.systemName,
       logoUrl: settings.logoUrl || "",
+      faviconUrl: settings.faviconUrl || "",
       primaryColor: settings.primaryColor,
       secondaryColor: settings.secondaryColor,
       backgroundColor: settings.backgroundColor,
