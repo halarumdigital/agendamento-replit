@@ -344,18 +344,12 @@ export class DatabaseStorage implements IStorage {
   async updateGlobalSettings(settingsData: Partial<InsertGlobalSettings>): Promise<GlobalSettings> {
     const existingSettings = await this.getGlobalSettings();
     
-    // Convert numeric fields to strings for database storage
-    const processedData = { ...settingsData };
-    if (typeof processedData.openaiTemperature === 'number') {
-      (processedData as any).openaiTemperature = processedData.openaiTemperature.toString();
-    }
-    
     if (existingSettings) {
-      await db.update(globalSettings).set(processedData as any).where(eq(globalSettings.id, existingSettings.id));
+      await db.update(globalSettings).set(settingsData).where(eq(globalSettings.id, existingSettings.id));
       const [updatedSettings] = await db.select().from(globalSettings).where(eq(globalSettings.id, existingSettings.id));
       return updatedSettings;
     } else {
-      await db.insert(globalSettings).values(processedData as any);
+      await db.insert(globalSettings).values(settingsData);
       const [newSettings] = await db.select().from(globalSettings).limit(1);
       return newSettings;
     }

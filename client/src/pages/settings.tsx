@@ -599,7 +599,7 @@ export default function SettingsPage() {
                             max="2"
                             placeholder="0.7" 
                             {...field}
-                            onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                            onChange={(e) => field.onChange(e.target.value)}
                           />
                         </FormControl>
                         <FormMessage />
@@ -620,7 +620,7 @@ export default function SettingsPage() {
                             max="200000"
                             placeholder="4000" 
                             {...field}
-                            onChange={(e) => field.onChange(parseInt(e.target.value))}
+                            onChange={(e) => field.onChange(e.target.value)}
                           />
                         </FormControl>
                         <FormMessage />

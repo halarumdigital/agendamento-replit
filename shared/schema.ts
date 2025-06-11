@@ -75,8 +75,8 @@ export const globalSettings = mysqlTable("global_settings", {
   evolutionApiGlobalKey: varchar("evolution_api_global_key", { length: 500 }),
   openaiApiKey: varchar("openai_api_key", { length: 500 }),
   openaiModel: varchar("openai_model", { length: 100 }).notNull().default("gpt-4o"),
-  openaiTemperature: decimal("openai_temperature", { precision: 3, scale: 2 }).notNull().default("0.70").$type<number>(),
-  openaiMaxTokens: int("openai_max_tokens").notNull().default(4000),
+  openaiTemperature: varchar("openai_temperature", { length: 10 }).notNull().default("0.70"),
+  openaiMaxTokens: varchar("openai_max_tokens", { length: 10 }).notNull().default("4000"),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
 

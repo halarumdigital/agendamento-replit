@@ -655,16 +655,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put('/api/settings', isAuthenticated, async (req, res) => {
     try {
-      // Convert string values to numbers for OpenAI fields
-      const processedData = { ...req.body };
-      if (processedData.openaiTemperature) {
-        processedData.openaiTemperature = parseFloat(processedData.openaiTemperature);
-      }
-      if (processedData.openaiMaxTokens) {
-        processedData.openaiMaxTokens = parseInt(processedData.openaiMaxTokens);
-      }
-
-      const validatedData = insertGlobalSettingsSchema.partial().parse(processedData);
+      const validatedData = insertGlobalSettingsSchema.partial().parse(req.body);
       const settings = await storage.updateGlobalSettings(validatedData);
       res.json(settings);
     } catch (error) {
