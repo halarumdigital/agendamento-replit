@@ -4539,7 +4539,7 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
         companyId
       };
 
-      const campaign = await storage.createLoyaltyCampaign(campaignData);
+      const campaign = await createLoyaltyCampaign(campaignData);
       res.json(campaign);
     } catch (error) {
       console.error("Error creating loyalty campaign:", error);
@@ -4555,7 +4555,7 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
       }
 
       const { id } = req.params;
-      const campaign = await storage.updateLoyaltyCampaign(parseInt(id), req.body, companyId);
+      const campaign = await updateLoyaltyCampaign(parseInt(id), req.body, companyId);
       res.json(campaign);
     } catch (error) {
       console.error("Error updating loyalty campaign:", error);
@@ -4572,7 +4572,7 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
 
       const { id } = req.params;
       const { active } = req.body;
-      await storage.toggleLoyaltyCampaign(parseInt(id), active, companyId);
+      await toggleLoyaltyCampaign(parseInt(id), active, companyId);
       res.json({ message: "Status da campanha atualizado" });
     } catch (error) {
       console.error("Error toggling loyalty campaign:", error);
@@ -4588,7 +4588,7 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
       }
 
       const { id } = req.params;
-      await storage.deleteLoyaltyCampaign(parseInt(id), companyId);
+      await deleteLoyaltyCampaign(parseInt(id), companyId);
       res.json({ message: "Campanha de fidelidade removida" });
     } catch (error) {
       console.error("Error deleting loyalty campaign:", error);
@@ -4603,7 +4603,7 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
         return res.status(401).json({ message: "Não autenticado" });
       }
 
-      const history = await storage.getLoyaltyRewardsHistory(companyId);
+      const history = await getLoyaltyRewardsHistory(companyId);
       res.json(history);
     } catch (error) {
       console.error("Error getting loyalty rewards history:", error);
