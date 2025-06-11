@@ -4947,16 +4947,15 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
       const companyId = req.session.companyId!;
       const { name, description, type, color } = req.body;
 
-      const result = await db.execute(sql`
-        INSERT INTO financial_categories (company_id, name, description, type, color)
-        VALUES (${companyId}, ${name}, ${description || null}, ${type}, ${color})
-      `);
+      const [result] = await db.insert(financialCategories).values({
+        companyId,
+        name,
+        description: description || null,
+        type,
+        color
+      }).returning();
 
-      const category = await db.execute(sql`
-        SELECT * FROM financial_categories WHERE id = ${result.insertId}
-      `);
-
-      res.json(category[0]);
+      res.json(result);
     } catch (error) {
       console.error("Error creating financial category:", error);
       res.status(500).json({ message: "Erro ao criar categoria financeira" });
@@ -4993,10 +4992,12 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
       const companyId = req.session.companyId!;
       const categoryId = parseInt(req.params.id);
 
-      await db.execute(sql`
-        DELETE FROM financial_categories 
-        WHERE id = ${categoryId} AND company_id = ${companyId}
-      `);
+      if (isNaN(categoryId)) {
+        return res.status(400).json({ message: "ID da categoria inválido" });
+      }
+
+      await db.delete(financialCategories)
+        .where(and(eq(financialCategories.id, categoryId), eq(financialCategories.companyId, companyId)));
 
       res.json({ message: "Categoria removida com sucesso" });
     } catch (error) {
