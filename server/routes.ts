@@ -5197,47 +5197,55 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
       const companyId = req.session.companyId!;
       const { description, amount, type, categoryId, paymentMethodId, date, notes } = req.body;
 
-      const result = await db.execute(sql`
-        INSERT INTO financial_transactions 
-        (company_id, description, amount, type, category_id, payment_method_id, date, notes)
-        VALUES (${companyId}, ${description}, ${amount}, ${type}, ${categoryId}, ${paymentMethodId}, ${date}, ${notes || null})
-      `);
+      if (!description || !amount || !type || !categoryId || !paymentMethodId || !date) {
+        return res.status(400).json({ message: "Todos os campos obrigatórios devem ser preenchidos" });
+      }
 
-      const transaction = await db.execute(sql`
-        SELECT 
-          t.*,
-          c.name as category_name,
-          c.color as category_color,
-          c.type as category_type,
-          p.name as payment_method_name,
-          p.type as payment_method_type
-        FROM financial_transactions t
-        LEFT JOIN financial_categories c ON t.category_id = c.id
-        LEFT JOIN payment_methods p ON t.payment_method_id = p.id
-        WHERE t.id = ${result.insertId}
-      `);
+      const result = await db.insert(financialTransactions).values({
+        companyId,
+        description,
+        amount: parseFloat(amount),
+        type,
+        categoryId: parseInt(categoryId),
+        paymentMethodId: parseInt(paymentMethodId),
+        date: new Date(date),
+        notes: notes || null
+      });
+
+      // Buscar a transação criada com relacionamentos
+      const insertId = result.insertId || result[0]?.insertId;
+      
+      if (!insertId) {
+        const [createdTransaction] = await db.select()
+          .from(financialTransactions)
+          .where(and(eq(financialTransactions.companyId, companyId), eq(financialTransactions.description, description)))
+          .orderBy(desc(financialTransactions.id))
+          .limit(1);
+        
+        const [category] = await db.select().from(financialCategories).where(eq(financialCategories.id, categoryId));
+        const [paymentMethod] = await db.select().from(paymentMethods).where(eq(paymentMethods.id, paymentMethodId));
+        
+        const formattedTransaction = {
+          ...createdTransaction,
+          category: category || null,
+          paymentMethod: paymentMethod || null
+        };
+        
+        return res.json(formattedTransaction);
+      }
+
+      const [transaction] = await db.select()
+        .from(financialTransactions)
+        .where(eq(financialTransactions.id, insertId))
+        .limit(1);
+
+      const [category] = await db.select().from(financialCategories).where(eq(financialCategories.id, categoryId));
+      const [paymentMethod] = await db.select().from(paymentMethods).where(eq(paymentMethods.id, paymentMethodId));
 
       const formattedTransaction = {
-        id: transaction[0].id,
-        description: transaction[0].description,
-        amount: parseFloat(transaction[0].amount),
-        type: transaction[0].type,
-        categoryId: transaction[0].category_id,
-        paymentMethodId: transaction[0].payment_method_id,
-        date: transaction[0].date,
-        notes: transaction[0].notes,
-        createdAt: transaction[0].created_at,
-        category: {
-          id: transaction[0].category_id,
-          name: transaction[0].category_name,
-          color: transaction[0].category_color,
-          type: transaction[0].category_type,
-        },
-        paymentMethod: {
-          id: transaction[0].payment_method_id,
-          name: transaction[0].payment_method_name,
-          type: transaction[0].payment_method_type,
-        },
+        ...transaction,
+        category: category || null,
+        paymentMethod: paymentMethod || null
       };
 
       res.json(formattedTransaction);
