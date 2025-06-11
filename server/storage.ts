@@ -886,33 +886,42 @@ export class DatabaseStorage implements IStorage {
     try {
       console.log('📊 Getting detailed appointments for reports, company:', companyId);
       
-      const results = await db.execute(`
-        SELECT 
-          a.id,
-          a.client_name as clientName,
-          a.client_phone as clientPhone,
-          a.client_email as clientEmail,
-          a.appointment_date as date,
-          a.appointment_time as time,
-          a.status,
-          a.total_price as price,
-          a.notes,
-          a.created_at as createdAt,
-          s.name as serviceName,
-          s.price as servicePrice,
-          p.name as professionalName
-        FROM appointments a
-        LEFT JOIN services s ON a.service_id = s.id
-        LEFT JOIN professionals p ON a.professional_id = p.id
-        WHERE a.company_id = ${companyId}
-        ORDER BY a.appointment_date DESC, a.appointment_time DESC
-      `);
+      const results = await db.select({
+        id: appointments.id,
+        clientName: appointments.clientName,
+        clientPhone: appointments.clientPhone,
+        clientEmail: appointments.clientEmail,
+        date: appointments.appointmentDate,
+        time: appointments.appointmentTime,
+        status: appointments.status,
+        price: appointments.totalPrice,
+        notes: appointments.notes,
+        createdAt: appointments.createdAt,
+        serviceName: services.name,
+        servicePrice: services.price,
+        professionalName: professionals.name
+      })
+      .from(appointments)
+      .leftJoin(services, eq(appointments.serviceId, services.id))
+      .leftJoin(professionals, eq(appointments.professionalId, professionals.id))
+      .where(eq(appointments.companyId, companyId))
+      .orderBy(appointments.appointmentDate, appointments.appointmentTime);
       
-      // Convert price to number and format data
-      const formattedResults = (results as any[]).map(appointment => ({
-        ...appointment,
-        price: parseFloat(appointment.price) || 0,
-        date: appointment.date instanceof Date ? appointment.date.toISOString().split('T')[0] : appointment.date
+      // Format data properly
+      const formattedResults = results.map(appointment => ({
+        id: appointment.id,
+        clientName: appointment.clientName || 'Cliente não informado',
+        clientPhone: appointment.clientPhone || '',
+        clientEmail: appointment.clientEmail || '',
+        date: appointment.date instanceof Date ? appointment.date.toISOString().split('T')[0] : appointment.date,
+        time: appointment.time || '',
+        status: appointment.status || 'agendado',
+        price: parseFloat(String(appointment.price || 0)),
+        notes: appointment.notes || '',
+        createdAt: appointment.createdAt,
+        serviceName: appointment.serviceName || 'Serviço não informado',
+        servicePrice: parseFloat(String(appointment.servicePrice || 0)),
+        professionalName: appointment.professionalName || 'Profissional não informado'
       }));
       
       console.log(`📊 Found ${formattedResults.length} detailed appointments for reports`);
