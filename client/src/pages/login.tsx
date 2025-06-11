@@ -59,7 +59,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-slate-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <Card>
           <CardHeader className="pb-4">
@@ -82,9 +82,10 @@ export default function Login() {
                   {...form.register("username", { required: "Usuário é obrigatório" })}
                   placeholder="Digite seu usuário"
                   disabled={isLoading}
+                  className="border-input focus:border-primary focus:ring-primary"
                 />
                 {form.formState.errors.username && (
-                  <p className="text-sm text-red-600">
+                  <p className="text-sm text-destructive">
                     {form.formState.errors.username.message}
                   </p>
                 )}
@@ -98,9 +99,10 @@ export default function Login() {
                   {...form.register("password", { required: "Senha é obrigatória" })}
                   placeholder="Digite sua senha"
                   disabled={isLoading}
+                  className="border-input focus:border-primary focus:ring-primary"
                 />
                 {form.formState.errors.password && (
-                  <p className="text-sm text-red-600">
+                  <p className="text-sm text-destructive">
                     {form.formState.errors.password.message}
                   </p>
                 )}
@@ -108,18 +110,18 @@ export default function Login() {
 
               <Button 
                 type="submit" 
-                className="w-full"
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                 disabled={isLoading}
               >
                 {isLoading ? "Entrando..." : "Entrar"}
               </Button>
             </form>
 
-            <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-              <h4 className="text-sm font-medium text-blue-900 mb-2">
+            <div className="mt-6 p-4 bg-accent rounded-lg">
+              <h4 className="text-sm font-medium text-accent-foreground mb-2">
                 Credenciais de Demonstração:
               </h4>
-              <p className="text-sm text-blue-700">
+              <p className="text-sm text-accent-foreground">
                 <strong>Usuário:</strong> admin<br />
                 <strong>Senha:</strong> admin123
               </p>

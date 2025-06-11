@@ -62,6 +62,10 @@ export function useGlobalTheme() {
         root.style.setProperty('--accent-foreground', `hsl(${primaryHsl})`);
         root.style.setProperty('--sidebar-accent', `hsl(${h}, ${s}, 96%)`);
         root.style.setProperty('--sidebar-accent-foreground', `hsl(${primaryHsl})`);
+        
+        // Força aplicação em botões e elementos interativos
+        root.style.setProperty('--primary-button-bg', `hsl(${primaryHsl})`);
+        root.style.setProperty('--primary-button-hover', `hsl(${h}, ${s}, ${Math.max(parseInt(primaryHsl.split(', ')[2]) - 10, 10)}%)`);
       }
 
       if (settings.backgroundColor) {
