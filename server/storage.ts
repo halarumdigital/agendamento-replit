@@ -2047,7 +2047,7 @@ export async function getLoyaltyCampaignsByCompany(companyId: number) {
       WHERE company_id = ${companyId}
       ORDER BY created_at DESC
     `);
-    return result as any[];
+    return Array.isArray(result) ? result : [result];
   } catch (error) {
     console.error('Error getting loyalty campaigns:', error);
     throw error;
@@ -2138,6 +2138,12 @@ export async function toggleLoyaltyCampaign(id: number, active: boolean, company
 
 export async function deleteLoyaltyCampaign(id: number, companyId: number) {
   try {
+    console.log('Deleting campaign with ID:', id, 'for company:', companyId);
+    
+    if (!id || isNaN(id)) {
+      throw new Error('Invalid campaign ID provided');
+    }
+    
     await db.execute(sql`
       DELETE FROM loyalty_campaigns 
       WHERE id = ${id} AND company_id = ${companyId}

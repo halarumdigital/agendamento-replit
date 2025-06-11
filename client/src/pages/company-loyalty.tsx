@@ -32,9 +32,24 @@ export default function CompanyLoyalty() {
   const { toast } = useToast();
 
   // Queries
-  const { data: campaigns = [], isLoading: isLoadingCampaigns } = useQuery<LoyaltyCampaign[]>({
+  const { data: campaignsData = [], isLoading: isLoadingCampaigns } = useQuery<any>({
     queryKey: ["/api/loyalty-campaigns"],
   });
+
+  // Process campaigns data to ensure proper structure
+  const campaigns = Array.isArray(campaignsData) 
+    ? campaignsData.flat().map((campaign: any) => ({
+        ...campaign,
+        id: campaign.id || campaign.campaign_id,
+        companyId: campaign.company_id || campaign.companyId,
+        conditionType: campaign.condition_type || campaign.conditionType,
+        conditionValue: campaign.condition_value || campaign.conditionValue,
+        rewardType: campaign.reward_type || campaign.rewardType,
+        rewardValue: campaign.reward_value || campaign.rewardValue,
+        rewardServiceId: campaign.reward_service_id || campaign.rewardServiceId,
+        active: campaign.active !== null ? campaign.active : true
+      }))
+    : [];
 
   const { data: services = [], isLoading: isLoadingServices } = useQuery<Service[]>({
     queryKey: ["/api/company/services"],
