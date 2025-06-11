@@ -20,14 +20,14 @@ export function useNotifications() {
   const [notifications, setNotifications] = useState<NotificationData[]>([]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Criar som de notificação usando Web Audio API
+  // Criar som de campainha alta usando Web Audio API
   useEffect(() => {
-    const createNotificationSound = () => {
+    const createBellSound = () => {
       try {
         const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
         
-        // Criar um som estilo WhatsApp (duas notas)
-        const createTone = (frequency: number, startTime: number, duration: number) => {
+        // Criar som de campainha com múltiplas frequências e volume alto
+        const createBellTone = (frequency: number, startTime: number, duration: number, volume: number = 0.8) => {
           const oscillator = audioContext.createOscillator();
           const gainNode = audioContext.createGain();
           
@@ -35,11 +35,11 @@ export function useNotifications() {
           gainNode.connect(audioContext.destination);
           
           oscillator.frequency.setValueAtTime(frequency, startTime);
-          oscillator.type = 'sine';
+          oscillator.type = 'triangle'; // Som mais metálico como campainha
           
-          // Envelope para suavizar o som
+          // Volume alto com decay natural de campainha
           gainNode.gain.setValueAtTime(0, startTime);
-          gainNode.gain.linearRampToValueAtTime(0.3, startTime + 0.01);
+          gainNode.gain.linearRampToValueAtTime(volume, startTime + 0.01);
           gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
           
           oscillator.start(startTime);
@@ -47,14 +47,27 @@ export function useNotifications() {
         };
         
         const currentTime = audioContext.currentTime;
-        createTone(800, currentTime, 0.2); // Primeira nota
-        createTone(600, currentTime + 0.25, 0.2); // Segunda nota
+        
+        // Primeira batida da campainha (3 tons sobrepostos para som rico)
+        createBellTone(1200, currentTime, 0.8, 0.9); // Tom principal alto
+        createBellTone(1800, currentTime, 0.6, 0.6); // Harmônico agudo
+        createBellTone(800, currentTime, 0.4, 0.5);  // Tom grave de suporte
+        
+        // Segunda batida mais intensa
+        createBellTone(1200, currentTime + 0.4, 0.8, 1.0);
+        createBellTone(1800, currentTime + 0.4, 0.6, 0.7);
+        createBellTone(800, currentTime + 0.4, 0.4, 0.6);
+        
+        // Terceira batida para dar mais presença
+        createBellTone(1200, currentTime + 0.8, 0.6, 0.8);
+        createBellTone(1800, currentTime + 0.8, 0.4, 0.5);
+        
       } catch (error) {
-        console.error('Erro ao criar som de notificação:', error);
+        console.error('Erro ao criar som de campainha:', error);
       }
     };
     
-    audioRef.current = { play: createNotificationSound } as any;
+    audioRef.current = { play: createBellSound } as any;
   }, []);
 
   const playNotificationSound = useCallback(() => {
