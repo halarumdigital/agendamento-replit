@@ -564,7 +564,7 @@ export default function CompanyFinancial() {
                               {transaction.type === "income" ? "+" : "-"}{formatCurrency(transaction.amount)}
                             </p>
                             <p className="text-sm text-muted-foreground">
-                              {format(new Date(transaction.date), "dd/MM/yyyy", { locale: ptBR })}
+                              {transaction.date ? format(new Date(transaction.date), "dd/MM/yyyy", { locale: ptBR }) : "Data não informada"}
                             </p>
                           </div>
                         </div>
@@ -1179,11 +1179,11 @@ export default function CompanyFinancial() {
                           <div className="flex-1 min-w-0">
                             <h3 className="font-semibold">{transaction.description}</h3>
                             <div className="flex flex-wrap gap-2 text-sm text-muted-foreground mt-1">
-                              <span>{transaction.category?.name}</span>
-                              <span>•</span>
-                              <span>{getPaymentTypeLabel(transaction.paymentMethod?.type)}</span>
-                              <span>•</span>
-                              <span>{transaction.date ? format(new Date(transaction.date), "dd/MM/yyyy", { locale: ptBR }) : "Data não informada"}</span>
+                              <span key="category">{transaction.category?.name}</span>
+                              <span key="sep1">•</span>
+                              <span key="payment">{getPaymentTypeLabel(transaction.paymentMethod?.type)}</span>
+                              <span key="sep2">•</span>
+                              <span key="date">{transaction.date ? format(new Date(transaction.date), "dd/MM/yyyy", { locale: ptBR }) : "Data não informada"}</span>
                             </div>
                             {transaction.notes && (
                               <p className="text-sm text-muted-foreground mt-2">{transaction.notes}</p>
