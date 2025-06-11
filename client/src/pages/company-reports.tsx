@@ -4,9 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon, Users, Scissors, TrendingUp, Phone, Mail, User, Clock, DollarSign } from "lucide-react";
-import { format } from "date-fns";
+import { format, isAfter, isBefore, isSameDay, parseISO, startOfDay, endOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 interface Appointment {
   id: number;
@@ -63,6 +67,8 @@ interface TotalReport {
 
 export default function CompanyReports() {
   const [activeTab, setActiveTab] = useState("clients");
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
 
   const { data: appointments = [], isLoading: appointmentsLoading } = useQuery<Appointment[]>({
     queryKey: ["/api/company/appointments/detailed"],
@@ -128,11 +134,32 @@ export default function CompanyReports() {
     },
   });
 
+  // Função para filtrar agendamentos por data
+  const filterAppointmentsByDate = (appointments: Appointment[]): Appointment[] => {
+    if (!startDate && !endDate) return appointments;
+
+    return appointments.filter(appointment => {
+      const appointmentDate = parseISO(appointment.date);
+      
+      if (startDate && endDate) {
+        return appointmentDate >= startOfDay(startDate) && appointmentDate <= endOfDay(endDate);
+      } else if (startDate) {
+        return appointmentDate >= startOfDay(startDate);
+      } else if (endDate) {
+        return appointmentDate <= endOfDay(endDate);
+      }
+      return true;
+    });
+  };
+
+  // Aplicar filtro de data aos agendamentos
+  const filteredAppointments = filterAppointmentsByDate(appointments);
+
   // Processar dados para relatórios
   const generateClientReports = (): ClientReport[] => {
     const clientMap = new Map<string, ClientReport>();
 
-    appointments.forEach(appointment => {
+    filteredAppointments.forEach(appointment => {
       const key = appointment.clientName;
       if (!clientMap.has(key)) {
         clientMap.set(key, {
@@ -162,7 +189,7 @@ export default function CompanyReports() {
   const generateProfessionalReports = (): ProfessionalReport[] => {
     const professionalMap = new Map<string, ProfessionalReport>();
 
-    appointments.forEach(appointment => {
+    filteredAppointments.forEach(appointment => {
       const key = appointment.professionalName;
       if (!professionalMap.has(key)) {
         professionalMap.set(key, {
@@ -199,7 +226,7 @@ export default function CompanyReports() {
   const generateServiceReports = (): ServiceReport[] => {
     const serviceMap = new Map<string, ServiceReport>();
 
-    appointments.forEach(appointment => {
+    filteredAppointments.forEach(appointment => {
       const key = appointment.serviceName;
       if (!serviceMap.has(key)) {
         serviceMap.set(key, {
@@ -230,8 +257,8 @@ export default function CompanyReports() {
     const professionalReports = generateProfessionalReports();
     const serviceReports = generateServiceReports();
 
-    const totalRevenue = appointments.reduce((sum, apt) => sum + (apt.price || 0), 0);
-    const totalAppointments = appointments.length;
+    const totalRevenue = filteredAppointments.reduce((sum, apt) => sum + (apt.price || 0), 0);
+    const totalAppointments = filteredAppointments.length;
 
     return {
       totalAppointments,
