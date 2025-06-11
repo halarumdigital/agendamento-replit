@@ -150,9 +150,6 @@ export default function CompanyFinancial() {
     refetchOnWindowFocus: true,
   });
 
-  // Debug para ver os dados recebidos
-  console.log('Dashboard data received:', dashboardData);
-  
   // Dados seguros do dashboard com valores padrão
   const safeData = {
     monthlyIncome: Number(dashboardData?.monthlyIncome) || 0,
@@ -495,65 +492,81 @@ export default function CompanyFinancial() {
             <>
               {/* Resumo Financeiro */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Receitas do Mês</CardTitle>
-                    <TrendingUp className="h-4 w-4 text-green-600" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-green-600">
-                      {formatCurrency(safeData.monthlyIncome)}
+                <div className="bg-white rounded-lg shadow-sm p-5 border border-gray-100">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">Receitas do Mês</p>
+                      <h3 className="text-2xl font-bold text-gray-800">{formatCurrency(safeData.monthlyIncome)}</h3>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      +{safeData.incomeGrowth}% em relação ao mês anterior
-                    </p>
-                  </CardContent>
-                </Card>
+                    <div className="w-10 h-10 flex items-center justify-center rounded-full bg-green-100 text-green-600">
+                      <TrendingUp className="w-5 h-5" />
+                    </div>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="flex items-center text-green-600 text-sm font-medium">
+                      <TrendingUp className="w-4 h-4 mr-1" />
+                      <span>{safeData.incomeGrowth}%</span>
+                    </div>
+                    <span className="text-xs text-gray-500 ml-2">vs. mês anterior</span>
+                  </div>
+                </div>
 
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Despesas do Mês</CardTitle>
-                    <TrendingDown className="h-4 w-4 text-red-600" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-red-600">
-                      {formatCurrency(safeData.monthlyExpenses)}
+                <div className="bg-white rounded-lg shadow-sm p-5 border border-gray-100">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">Despesas do Mês</p>
+                      <h3 className="text-2xl font-bold text-gray-800">{formatCurrency(safeData.monthlyExpenses)}</h3>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      +{safeData.expenseGrowth}% em relação ao mês anterior
-                    </p>
-                  </CardContent>
-                </Card>
+                    <div className="w-10 h-10 flex items-center justify-center rounded-full bg-red-100 text-red-600">
+                      <TrendingDown className="w-5 h-5" />
+                    </div>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="flex items-center text-red-600 text-sm font-medium">
+                      <TrendingDown className="w-4 h-4 mr-1" />
+                      <span>{safeData.expenseGrowth}%</span>
+                    </div>
+                    <span className="text-xs text-gray-500 ml-2">vs. mês anterior</span>
+                  </div>
+                </div>
 
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Lucro Líquido</CardTitle>
-                    <DollarSign className="h-4 w-4 text-blue-600" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-blue-600">
-                      {formatCurrency(safeData.monthlyIncome - safeData.monthlyExpenses)}
+                <div className="bg-white rounded-lg shadow-sm p-5 border border-gray-100">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">Lucro Líquido</p>
+                      <h3 className="text-2xl font-bold text-gray-800">{formatCurrency(safeData.monthlyIncome - safeData.monthlyExpenses)}</h3>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      Receitas - Despesas do mês
-                    </p>
-                  </CardContent>
-                </Card>
+                    <div className="w-10 h-10 flex items-center justify-center rounded-full bg-blue-100 text-blue-600">
+                      <DollarSign className="w-5 h-5" />
+                    </div>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="flex items-center text-blue-600 text-sm font-medium">
+                      <DollarSign className="w-4 h-4 mr-1" />
+                      <span>Lucro</span>
+                    </div>
+                    <span className="text-xs text-gray-500 ml-2">receitas - despesas</span>
+                  </div>
+                </div>
 
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Transações</CardTitle>
-                    <Receipt className="h-4 w-4 text-gray-600" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">
-                      {safeData.totalTransactions}
+                <div className="bg-white rounded-lg shadow-sm p-5 border border-gray-100">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">Transações</p>
+                      <h3 className="text-2xl font-bold text-gray-800">{safeData.totalTransactions}</h3>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      Total de transações no mês
-                    </p>
-                  </CardContent>
-                </Card>
+                    <div className="w-10 h-10 flex items-center justify-center rounded-full bg-purple-100 text-purple-600">
+                      <Receipt className="w-5 h-5" />
+                    </div>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="flex items-center text-purple-600 text-sm font-medium">
+                      <Receipt className="w-4 h-4 mr-1" />
+                      <span>Total</span>
+                    </div>
+                    <span className="text-xs text-gray-500 ml-2">transações do mês</span>
+                  </div>
+                </div>
               </div>
 
               {/* Transações Recentes */}
