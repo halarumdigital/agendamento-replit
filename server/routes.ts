@@ -78,14 +78,32 @@ async function createAppointmentFromConversation(conversationId: number, company
   try {
     console.log('📅 Creating appointment from conversation:', conversationId);
     
-    // Check if appointment already exists for this conversation
+    // Check if appointment already exists for this conversation within the last 10 minutes
     const existingAppointments = await storage.getAppointmentsByCompany(companyId);
     const conversationAppointment = existingAppointments.find(apt => 
-      apt.notes && apt.notes.includes(`Conversa ID: ${conversationId}`)
+      apt.notes && apt.notes.includes(`Conversa ID: ${conversationId}`) &&
+      apt.createdAt && new Date(apt.createdAt).getTime() > (Date.now() - 10 * 60 * 1000)
     );
     
     if (conversationAppointment) {
-      console.log('ℹ️ Appointment already exists for this conversation:', conversationAppointment.id);
+      console.log('ℹ️ Recent appointment already exists for this conversation:', conversationAppointment.id);
+      
+      // Still broadcast the event for notification purposes
+      const service = await storage.getService(conversationAppointment.serviceId);
+      const professional = await storage.getProfessional(conversationAppointment.professionalId);
+      
+      broadcastEvent({
+        type: 'new_appointment',
+        appointment: {
+          id: conversationAppointment.id,
+          clientName: conversationAppointment.clientName,
+          serviceName: service?.name || 'Serviço',
+          professionalName: professional?.name || 'Profissional',
+          appointmentDate: conversationAppointment.appointmentDate,
+          appointmentTime: conversationAppointment.appointmentTime
+        }
+      });
+      
       return;
     }
     
