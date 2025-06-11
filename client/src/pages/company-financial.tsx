@@ -127,19 +127,31 @@ export default function CompanyFinancial() {
   const queryClient = useQueryClient();
 
   // Queries
-  const { data: categories = [], isLoading: isLoadingCategories } = useQuery({
+  const { data: categories = [], isLoading: isLoadingCategories } = useQuery<Category[]>({
     queryKey: ["/api/company/financial/categories"],
   });
 
-  const { data: paymentMethods = [], isLoading: isLoadingPayments } = useQuery({
+  const { data: paymentMethods = [], isLoading: isLoadingPayments } = useQuery<PaymentMethod[]>({
     queryKey: ["/api/company/financial/payment-methods"],
   });
 
-  const { data: transactions = [], isLoading: isLoadingTransactions } = useQuery({
+  const { data: transactions = [], isLoading: isLoadingTransactions } = useQuery<Transaction[]>({
     queryKey: ["/api/company/financial/transactions"],
   });
 
-  const { data: dashboardData, isLoading: isLoadingDashboard } = useQuery({
+  const { data: dashboardData = {
+    monthlyIncome: 0,
+    incomeGrowth: 0,
+    monthlyExpenses: 0,
+    expenseGrowth: 0,
+    totalTransactions: 0
+  }, isLoading: isLoadingDashboard } = useQuery<{
+    monthlyIncome: number;
+    incomeGrowth: number;
+    monthlyExpenses: number;
+    expenseGrowth: number;
+    totalTransactions: number;
+  }>({
     queryKey: ["/api/company/financial/dashboard"],
   });
 
@@ -456,10 +468,10 @@ export default function CompanyFinancial() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold text-green-600">
-                      {formatCurrency(dashboardData?.monthlyIncome || 0)}
+                      {formatCurrency(dashboardData.monthlyIncome)}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      +{dashboardData?.incomeGrowth || 0}% em relação ao mês anterior
+                      +{dashboardData.incomeGrowth}% em relação ao mês anterior
                     </p>
                   </CardContent>
                 </Card>
@@ -471,10 +483,10 @@ export default function CompanyFinancial() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold text-red-600">
-                      {formatCurrency(dashboardData?.monthlyExpenses || 0)}
+                      {formatCurrency(dashboardData.monthlyExpenses)}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      +{dashboardData?.expenseGrowth || 0}% em relação ao mês anterior
+                      +{dashboardData.expenseGrowth}% em relação ao mês anterior
                     </p>
                   </CardContent>
                 </Card>
@@ -486,7 +498,7 @@ export default function CompanyFinancial() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold text-blue-600">
-                      {formatCurrency((dashboardData?.monthlyIncome || 0) - (dashboardData?.monthlyExpenses || 0))}
+                      {formatCurrency(dashboardData.monthlyIncome - dashboardData.monthlyExpenses)}
                     </div>
                     <p className="text-xs text-muted-foreground">
                       Receitas - Despesas do mês
@@ -501,7 +513,7 @@ export default function CompanyFinancial() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">
-                      {dashboardData?.totalTransactions || 0}
+                      {dashboardData.totalTransactions}
                     </div>
                     <p className="text-xs text-muted-foreground">
                       Total de transações no mês
