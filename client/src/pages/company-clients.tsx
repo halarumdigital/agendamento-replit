@@ -106,7 +106,7 @@ function ClientServiceHistory({ clientId, clientName }: ClientServiceHistoryProp
   return (
     <div className="space-y-4">
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="text-center">
@@ -125,6 +125,17 @@ function ClientServiceHistory({ clientId, clientName }: ClientServiceHistoryProp
                 {appointments.length}
               </div>
               <div className="text-sm text-gray-500">Serviços Realizados</div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-purple-600">
+                {isLoadingPoints ? '...' : (clientPoints?.totalPoints || 0)}
+              </div>
+              <div className="text-sm text-gray-500">Pontos de Fidelidade</div>
             </div>
           </CardContent>
         </Card>
