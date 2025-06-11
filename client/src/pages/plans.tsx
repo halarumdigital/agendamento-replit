@@ -130,9 +130,17 @@ export default function Plans() {
   });
 
   const onSubmit = (data: PlanFormData) => {
+    console.log("=== FORM SUBMIT ===");
+    console.log("Data:", data);
+    console.log("EditingPlan:", editingPlan);
+    console.log("Form valid:", form.formState.isValid);
+    console.log("Form errors:", form.formState.errors);
+    
     if (editingPlan) {
+      console.log("Calling update mutation...");
       updateMutation.mutate({ id: editingPlan.id, data });
     } else {
+      console.log("Calling create mutation...");
       createMutation.mutate(data);
     }
   };
@@ -439,6 +447,7 @@ export default function Plans() {
               <Button 
                 type="submit" 
                 disabled={createMutation.isPending || updateMutation.isPending}
+                onClick={() => console.log("Button clicked! Form validation:", form.trigger())}
               >
                 {editingPlan ? "Atualizar Plano" : "Criar Plano"}
               </Button>
