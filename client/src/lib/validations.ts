@@ -194,6 +194,13 @@ export const settingsSchema = z.object({
   openaiModel: z.string().optional(),
   openaiTemperature: z.string().optional(),
   openaiMaxTokens: z.string().optional(),
+  // SMTP fields
+  smtpHost: z.string().optional(),
+  smtpPort: z.string().optional(),
+  smtpUser: z.string().optional(),
+  smtpPassword: z.string().optional(),
+  smtpFromEmail: z.string().email("Email deve ser válido").optional().or(z.literal("")),
+  smtpFromName: z.string().optional(),
 });
 
 export const webhookConfigSchema = z.object({
