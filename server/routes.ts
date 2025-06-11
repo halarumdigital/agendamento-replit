@@ -5865,6 +5865,9 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
   // Reset password with token
   app.post("/api/auth/reset-password", async (req, res) => {
     try {
+      console.log("Reset password - Raw body:", JSON.stringify(req.body));
+      console.log("Reset password - Body type:", typeof req.body);
+      console.log("Reset password - Body keys:", Object.keys(req.body || {}));
       const { token, password } = req.body;
       
       if (!token || !password) {
