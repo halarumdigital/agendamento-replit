@@ -631,7 +631,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/public-settings', async (req, res) => {
     try {
       const settings = await storage.getGlobalSettings();
-      // Return public settings needed for login page including colors
+      // Return public settings needed for login page including colors and custom HTML
       res.json({
         logoUrl: settings?.logoUrl || null,
         systemName: settings?.systemName || null,
@@ -639,7 +639,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         primaryColor: settings?.primaryColor || null,
         secondaryColor: settings?.secondaryColor || null,
         backgroundColor: settings?.backgroundColor || null,
-        textColor: settings?.textColor || null
+        textColor: settings?.textColor || null,
+        customHtml: settings?.customHtml || null
       });
     } catch (error) {
       console.error("Error fetching public settings:", error);

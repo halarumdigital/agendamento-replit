@@ -199,11 +199,11 @@ function SidebarContent() {
       </nav>
       
       {/* Custom HTML Display */}
-      {settings?.customHtml && (
+      {publicSettings?.customHtml && (
         <div className="p-4 border-t border-gray-200">
           <div 
             className="text-sm text-gray-700"
-            dangerouslySetInnerHTML={{ __html: settings.customHtml }}
+            dangerouslySetInnerHTML={{ __html: publicSettings.customHtml }}
           />
         </div>
       )}
