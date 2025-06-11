@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./auth";
 import { db, pool } from "./db";
-import { insertCompanySchema, insertPlanSchema, insertGlobalSettingsSchema, insertAdminSchema, financialCategories, paymentMethods, financialTransactions } from "@shared/schema";
+import { insertCompanySchema, insertPlanSchema, insertGlobalSettingsSchema, insertAdminSchema, financialCategories, paymentMethods, financialTransactions, companies } from "@shared/schema";
 import bcrypt from "bcrypt";
 import { z } from "zod";
 import QRCode from "qrcode";
@@ -893,12 +893,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update company with reset token
       await storage.updateCompany(company.id, {
         resetToken,
-        resetTokenExpiry: resetTokenExpires
+        resetTokenExpires: resetTokenExpires
       });
 
       // Send reset email
       const nodemailer = await import('nodemailer');
-      const transporter = nodemailer.createTransporter({
+      const transporter = nodemailer.createTransport({
         host: company.smtpHost,
         port: company.smtpPort,
         secure: company.smtpSecure === 'SSL',
@@ -947,7 +947,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const company = await storage.getCompanyByResetToken(token);
-      if (!company || !company.resetTokenExpiry || new Date() > new Date(company.resetTokenExpiry)) {
+      if (!company || !company.resetTokenExpires || new Date() > new Date(company.resetTokenExpires)) {
         return res.status(400).json({ message: "Token inválido ou expirado" });
       }
 
@@ -958,7 +958,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateCompany(company.id, {
         password: hashedPassword,
         resetToken: null,
-        resetTokenExpiry: null
+        resetTokenExpires: null
       });
 
       res.json({ message: "Senha redefinida com sucesso" });
