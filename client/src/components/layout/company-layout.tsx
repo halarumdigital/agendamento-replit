@@ -132,9 +132,10 @@ function SidebarContent() {
   if (isLoading) {
     return (
       <div className="flex h-full flex-col">
-        <div className="border-b p-6">
-          <h2 className="text-lg font-semibold">{company?.fantasyName || "Empresa"}</h2>
-          <p className="text-sm text-muted-foreground">Painel de Controle</p>
+        <div className="border-b p-6 flex items-center justify-center">
+          <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg flex items-center justify-center">
+            <span className="text-white font-bold text-lg">S</span>
+          </div>
         </div>
         <div className="flex-1 flex items-center justify-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -145,9 +146,10 @@ function SidebarContent() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="border-b p-6">
-        <h2 className="text-lg font-semibold">{company?.fantasyName || "Empresa"}</h2>
-        <p className="text-sm text-muted-foreground">Painel de Controle</p>
+      <div className="border-b p-6 flex items-center justify-center">
+        <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg flex items-center justify-center">
+          <span className="text-white font-bold text-lg">S</span>
+        </div>
       </div>
       
       <nav className="flex-1 space-y-2 p-4">
