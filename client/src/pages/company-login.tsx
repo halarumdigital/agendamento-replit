@@ -110,25 +110,27 @@ export default function CompanyLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <Card className="shadow-lg">
-          <CardHeader className="text-center pb-4">
+        <Card>
+          <CardHeader className="pb-4">
             {settings?.logoUrl && (
-              <div className="mb-4">
+              <div className="text-center mb-4">
                 <img 
                   src={settings.logoUrl} 
                   alt="Logo" 
-                  className="w-32 h-32 object-contain mx-auto"
+                  className="w-full h-32 object-contain mx-auto"
                 />
               </div>
             )}
-            <h1 className="text-2xl font-bold text-foreground">
-              Acesso da Empresa
-            </h1>
-            <p className="text-muted-foreground">
-              {showForgotPassword ? "Recuperar Senha" : "Entre com suas credenciais"}
-            </p>
+            <div className="text-center space-y-2">
+              <h1 className="text-2xl font-bold text-foreground">
+                Acesso da Empresa
+              </h1>
+              <p className="text-muted-foreground">
+                {showForgotPassword ? "Recuperar Senha" : "Entre com suas credenciais"}
+              </p>
+            </div>
           </CardHeader>
           
           <CardContent>
@@ -148,7 +150,7 @@ export default function CompanyLogin() {
                     {...form.register("email")}
                     placeholder="Digite seu email"
                     disabled={loginMutation.isPending}
-                    className="h-12"
+                    className="border-input focus:border-primary focus:ring-primary"
                   />
                   {form.formState.errors.email && (
                     <p className="text-sm text-destructive">
@@ -166,7 +168,7 @@ export default function CompanyLogin() {
                       {...form.register("password")}
                       placeholder="Digite sua senha"
                       disabled={loginMutation.isPending}
-                      className="h-12 pr-12"
+                      className="border-input focus:border-primary focus:ring-primary pr-12"
                     />
                     <Button
                       type="button"
@@ -203,7 +205,7 @@ export default function CompanyLogin() {
 
                 <Button 
                   type="submit" 
-                  className="w-full h-12"
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                   disabled={loginMutation.isPending}
                 >
                   {loginMutation.isPending ? "Entrando..." : "Entrar"}
