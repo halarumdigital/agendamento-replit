@@ -201,7 +201,12 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
     }
     
     // Extract other data with improved patterns
-    let extractedTime = aiResponse.match(/(\d{1,2}):?(\d{0,2})h?/)?.[0] || allConversationText.match(/(\d{1,2}):?(\d{0,2})h?/)?.[0];
+    // First try to extract from AI response (usually more accurate)
+    let extractedTime = aiResponse.match(/às (\d{1,2}):(\d{2})/)?.[0]?.replace('às ', '') ||
+      aiResponse.match(/às (\d{1,2})/)?.[1] + ':00' ||
+      allConversationText.match(/(\d{1,2}):(\d{2})/)?.[0] ||
+      allConversationText.match(/(\d{1,2})h/)?.[1] + ':00';
+    
     let extractedDay = aiResponse.match(patterns.day)?.[1] || allConversationText.match(patterns.day)?.[1];
     let extractedProfessional = aiResponse.match(patterns.professional)?.[1]?.trim() || allConversationText.match(patterns.professional)?.[1]?.trim();
     let extractedService = aiResponse.match(patterns.service)?.[1]?.trim() || allConversationText.match(patterns.service)?.[1]?.trim();
@@ -1875,10 +1880,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if it's a message event (handle both formats)
       const isMessageEventArray = (webhookData.event === 'messages.upsert' || webhookData.event === 'MESSAGES_UPSERT') && webhookData.data?.messages?.length > 0;
       const isMessageEventDirect = (webhookData.event === 'messages.upsert' || webhookData.event === 'MESSAGES_UPSERT') && webhookData.data?.key && webhookData.data?.message;
-      const isMessageEvent = isMessageEventArray || isMessageEventDirect;
+      // Also check for direct message structure without specific event (like from our test)
+      const isDirectMessage = webhookData.data?.key && webhookData.data?.message && !webhookData.event;
+      const isMessageEvent = isMessageEventArray || isMessageEventDirect || isDirectMessage;
       
       console.log('🔍 Debug - isMessageEventArray:', isMessageEventArray);
       console.log('🔍 Debug - isMessageEventDirect:', isMessageEventDirect);
+      console.log('🔍 Debug - isDirectMessage:', isDirectMessage);
       console.log('🔍 Debug - Has key:', !!webhookData.data?.key);
       console.log('🔍 Debug - Has message:', !!webhookData.data?.message);
       
