@@ -277,6 +277,12 @@ Responda APENAS em formato JSON válido ou "DADOS_INCOMPLETOS" se algum dado est
     try {
       const appointmentData = JSON.parse(extractedData);
       
+      // Se o telefone não foi extraído corretamente da conversa, usar o telefone da conversa
+      if (!appointmentData.clientPhone || appointmentData.clientPhone === 'DADOS_INCOMPLETOS') {
+        appointmentData.clientPhone = conversationData.phoneNumber;
+        console.log('🔧 Fixed phone using conversation data:', appointmentData.clientPhone);
+      }
+      
       console.log('🔍 DETAILED DEBUG - Appointment data extracted:', JSON.stringify(appointmentData, null, 2));
       
       // VALIDAÇÃO CRÍTICA: Verificar se todos os campos obrigatórios estão presentes
@@ -1244,10 +1250,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log('📋 Simulando extração de dados:', testExtractedData);
       
-      // Criar conversa de teste primeiro
+      // Primeiro verificar e criar instância WhatsApp se necessário
+      let whatsappInstanceId = 1;
+      try {
+        await db.execute(sql`
+          INSERT IGNORE INTO whatsapp_instances (id, instance_name, phone_number, status, company_id, created_at) 
+          VALUES (1, 'test-instance', '5511999999999', 'connected', ${companyId}, NOW())
+        `);
+        console.log('✅ Instância WhatsApp criada/verificada');
+      } catch (error) {
+        console.log('⚠️ Instância WhatsApp já existe ou erro na criação');
+      }
+
+      // Criar conversa de teste
       const testConversation = await storage.createConversation({
         companyId,
-        whatsappInstanceId: 1, // Assumindo instância ID 1 existe
+        whatsappInstanceId,
         phoneNumber: '5511999999999',
         contactName: 'Gilliard',
         lastMessageAt: new Date()
