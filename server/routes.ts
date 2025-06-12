@@ -112,7 +112,14 @@ async function generateAvailabilityInfo(professionals: any[], existingAppointmen
           return false;
         }
         // Convert appointment date to string for comparison
-        const aptDateString = new Date(apt.appointmentDate).toISOString().split('T')[0];
+        const aptDate = new Date(apt.appointmentDate);
+        const aptDateString = aptDate.toISOString().split('T')[0];
+        
+        // Debug log to see the comparison
+        if (prof.id === 4 || prof.id === 5) {
+          console.log(`🔍 Comparing appointment: ${aptDateString} vs ${day.date} for professional ${prof.name} (${prof.id})`);
+        }
+        
         return aptDateString === day.date;
       });
       
