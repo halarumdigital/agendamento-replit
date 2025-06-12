@@ -368,14 +368,16 @@ Responda APENAS em formato JSON válido ou "DADOS_INCOMPLETOS" se algum dado est
 
       console.log('📋 Appointment payload before creation:', JSON.stringify(appointmentPayload, null, 2));
       
+      let appointment;
       try {
-        const appointment = await storage.createAppointment(appointmentPayload);
+        appointment = await storage.createAppointment(appointmentPayload);
         console.log('✅ Appointment created successfully with ID:', appointment.id);
         console.log('🎯 SUCCESS: Appointment saved to database');
       } catch (createError) {
         console.error('❌ CRITICAL ERROR: Failed to create appointment in database:', createError);
         throw createError;
       }
+      
       console.log(`📅 ${appointmentData.clientName} - ${service.name} - ${appointmentDate.toLocaleString('pt-BR')}`);
 
       // Get professional name for notification
@@ -1220,6 +1222,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating AI agent config:", error);
       res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  // Test endpoint para diagnosticar problema do agendamento Gilliard
+  app.post('/api/test/gilliard-appointment', async (req: any, res) => {
+    try {
+      console.log('🧪 TESTING: Simulando caso do agendamento Gilliard confirmado mas não salvo');
+      
+      const companyId = 1; // ID da empresa
+      const conversationId = 999; // ID teste da conversa
+      
+      // Dados exatos do agendamento Gilliard confirmado
+      const testExtractedData = JSON.stringify({
+        clientName: "Gilliard",
+        clientPhone: "5511999999999", // Telefone válido brasileiro
+        professionalId: 5, // Magnus (conforme logs)
+        serviceId: 8, // Hidratação (conforme logs)
+        appointmentDate: "2025-06-13", // Sábado 11/11 conforme imagem
+        appointmentTime: "09:00" // 09:00 conforme confirmação
+      });
+      
+      console.log('📋 Simulando extração de dados:', testExtractedData);
+      
+      // Simular inserção direta dos dados na conversa para teste
+      await storage.createMessage({
+        conversationId,
+        content: 'TESTE: Obrigado. Gilliard! Seu agendamento está confirmado para uma hidratação com o Magnus no sábado, dia 11/11, às 09:00. Qualquer dúvida ou alteração, estou à disposição. Tenha um ótimo dia!',
+        isFromUser: false,
+        messageId: 'test-message-123',
+        timestamp: new Date()
+      });
+      
+      // Simular o processo completo de criação
+      await createAppointmentFromConversation(conversationId, companyId);
+      
+      res.json({ 
+        success: true, 
+        message: 'Teste do agendamento Gilliard executado. Verifique os logs.',
+        testData: testExtractedData
+      });
+      
+    } catch (error) {
+      console.error('❌ Erro no teste do agendamento Gilliard:', error);
+      res.status(500).json({ error: error.message });
     }
   });
 
