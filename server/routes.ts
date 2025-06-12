@@ -146,43 +146,54 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
       service: /(escova|corte|hidratação|manicure|pedicure)/i
     };
     
-    // Try to extract from AI response first, then from conversation
-    let extractedName = aiResponse.match(patterns.clientName)?.[1]?.trim();
-    let extractedTime = aiResponse.match(patterns.time)?.[1];
-    let extractedDay = aiResponse.match(patterns.day)?.[1];
-    let extractedProfessional = aiResponse.match(patterns.professional)?.[1]?.trim();
-    let extractedService = aiResponse.match(patterns.service)?.[1]?.trim();
+    // Extract client name from conversation text using better patterns
+    let extractedName = null;
     
-    // Try conversation text for missing data, but prioritize most recent user message for name
-    if (!extractedTime) extractedTime = allConversationText.match(patterns.time)?.[1];
-    if (!extractedDay) extractedDay = allConversationText.match(patterns.day)?.[1];
-    if (!extractedProfessional) extractedProfessional = allConversationText.match(patterns.professional)?.[1]?.trim();
-    if (!extractedService) extractedService = allConversationText.match(patterns.service)?.[1]?.trim();
+    // Look for names in the conversation text with better patterns
+    const namePatterns = [
+      /\b([A-ZÀÁÉÍÓÚ][a-záéíóúâêôã]+\s+[A-ZÀÁÉÍÓÚ][a-záéíóúâêôã]+)\b/g, // "João Silva" with accents
+      /(?:me chamo|sou o|nome é|eu sou)\s+([A-ZÀ-ÿ][a-zA-ZÀ-ÿ\s]+?)(?=,|\.|$)/i,
+      /^([A-ZÀ-ÿ][a-záéíóúâêôã]+\s+[A-ZÀ-ÿ][a-záéíóúâêôã]+)/m // Line starting with name
+    ];
     
-    // For client name, always check the most recent user messages first
-    if (!extractedName) {
-      const recentMessages = await storage.getRecentMessages(conversationId, 10);
-      const recentUserMessages = recentMessages.filter(m => m.role === 'user');
-      
-      // Check each recent message for name patterns (newest first)
-      for (const msg of recentUserMessages.reverse()) {
-        const nameMatch = msg.content.match(patterns.clientName);
-        if (nameMatch && nameMatch[1]) {
-          extractedName = nameMatch[1].trim();
-          console.log(`📝 Found name in recent message: "${extractedName}" from: "${msg.content}"`);
-          break;
+    // Try each pattern on conversation text
+    for (const pattern of namePatterns) {
+      let matches = allConversationText.match(pattern);
+      if (matches) {
+        for (let match of matches) {
+          const potentialName = match.trim();
+          if (potentialName && 
+              potentialName.length > 3 && 
+              potentialName.length < 50 &&
+              !potentialName.toLowerCase().includes('whatsapp') &&
+              !potentialName.toLowerCase().includes('confirmo') &&
+              !potentialName.toLowerCase().includes('profissional') &&
+              !potentialName.toLowerCase().includes('serviço') &&
+              !potentialName.toLowerCase().includes('agendar') &&
+              /^[A-ZÀ-ÿ][a-záéíóúâêôã]+\s+[A-ZÀ-ÿ][a-záéíóúâêôã]+$/.test(potentialName)) {
+            extractedName = potentialName;
+            console.log(`📝 Found name: "${extractedName}" using pattern`);
+            break;
+          }
         }
+        if (extractedName) break;
       }
-      
-      // If still no name, try existing client lookup
-      if (!extractedName) {
-        const clients = await storage.getClientsByCompany(companyId);
-        const normalizedPhone = phoneNumber.replace(/\D/g, '');
-        const existingClient = clients.find(c => 
-          c.phone && c.phone.replace(/\D/g, '') === normalizedPhone
-        );
-        extractedName = existingClient?.name || 'Cliente WhatsApp';
-      }
+    }
+    
+    // Extract other data
+    let extractedTime = aiResponse.match(patterns.time)?.[1] || allConversationText.match(patterns.time)?.[1];
+    let extractedDay = aiResponse.match(patterns.day)?.[1] || allConversationText.match(patterns.day)?.[1];
+    let extractedProfessional = aiResponse.match(patterns.professional)?.[1]?.trim() || allConversationText.match(patterns.professional)?.[1]?.trim();
+    let extractedService = aiResponse.match(patterns.service)?.[1]?.trim() || allConversationText.match(patterns.service)?.[1]?.trim();
+    
+    // If no name found, check existing clients by phone
+    if (!extractedName) {
+      const clients = await storage.getClientsByCompany(companyId);
+      const normalizedPhone = phoneNumber.replace(/\D/g, '');
+      const existingClient = clients.find(c => 
+        c.phone && c.phone.replace(/\D/g, '') === normalizedPhone
+      );
+      extractedName = existingClient?.name || null;
     }
     
     console.log('📋 Extracted from AI response and conversation:', {
@@ -269,12 +280,31 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
     );
     
     if (!client) {
-      console.log(`🆕 Creating new client: ${extractedName} with phone ${phoneNumber}`);
+      // Format phone number properly for Brazil
+      let formattedPhone = phoneNumber;
+      if (phoneNumber.length >= 10) {
+        // Handle different phone number formats
+        const digits = phoneNumber.replace(/\D/g, '');
+        if (digits.length === 13 && digits.startsWith('55')) {
+          // Remove country code 55 and format as (XX) XXXXX-XXXX
+          const number = digits.substring(2);
+          formattedPhone = `(${number.substring(0, 2)}) ${number.substring(2, 7)}-${number.substring(7)}`;
+        } else if (digits.length === 11) {
+          // Format as (XX) XXXXX-XXXX
+          formattedPhone = `(${digits.substring(0, 2)}) ${digits.substring(2, 7)}-${digits.substring(7)}`;
+        } else if (digits.length === 10) {
+          // Format as (XX) XXXX-XXXX
+          formattedPhone = `(${digits.substring(0, 2)}) ${digits.substring(2, 6)}-${digits.substring(6)}`;
+        }
+      }
+      
+      const clientName = extractedName || `Cliente ${formattedPhone}`;
+      console.log(`🆕 Creating new client: ${clientName} with phone ${formattedPhone}`);
       
       client = await storage.createClient({
         companyId,
-        name: extractedName,
-        phone: phoneNumber, // Use the actual WhatsApp phone number
+        name: clientName,
+        phone: formattedPhone,
         email: null,
         notes: null,
         birthDate: null
