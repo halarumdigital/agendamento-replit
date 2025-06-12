@@ -1376,9 +1376,9 @@ export default function DashboardAppointments() {
                                       <div className="flex items-center gap-2 mb-2">
                                         <div
                                           className="w-2 h-2 rounded-full"
-                                          style={{ backgroundColor: appointment.service.color || '#3b82f6' }}
+                                          style={{ backgroundColor: appointment.service?.color || '#3b82f6' }}
                                         />
-                                        <span className="text-xs text-gray-600">{appointment.service.name}</span>
+                                        <span className="text-xs text-gray-600">{appointment.service?.name || 'Serviço não encontrado'}</span>
                                       </div>
                                       <div className="text-xs text-gray-500 mb-1">
                                         {services.find(s => s.id === appointment.serviceId)?.duration} minutos - R$ {services.find(s => s.id === appointment.serviceId)?.price}

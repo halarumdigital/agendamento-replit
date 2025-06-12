@@ -489,7 +489,7 @@ Responda APENAS em formato JSON válido ou "DADOS_INCOMPLETOS" se algum dado est
         appointmentDate: appointmentDate,
         appointmentTime: appointmentData.appointmentTime,
         duration: service.duration || 60,
-        status: 'agendado',
+        status: 'Pendente',
         totalPrice: String(service.price || 0),
         notes: `Agendamento criado via WhatsApp - Conversa ID: ${conversationId}`,
         reminderSent: false
@@ -595,7 +595,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         appointmentTime: '15:00',
         duration: 30,
         totalPrice: 25.00,
-        status: 'agendado',
+        status: 'Pendente',
         notes: 'Teste direto MySQL - criado via endpoint'
       });
       
@@ -621,7 +621,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         appointmentDate: new Date('2025-06-13T00:00:00.000Z'),
         appointmentTime: '10:00',
         duration: 45,
-        status: 'agendado',
+        status: 'Pendente',
         totalPrice: '35.00',
         notes: 'Agendamento teste para notificação',
         reminderSent: false
