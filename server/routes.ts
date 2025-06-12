@@ -118,6 +118,122 @@ async function generateAvailabilityInfo(professionals: any[], existingAppointmen
   return availabilityText;
 }
 
+async function createAppointmentFromAIConfirmation(conversationId: number, companyId: number, aiResponse: string, phoneNumber: string) {
+  try {
+    console.log('🎯 Creating appointment from AI confirmation');
+    
+    // Extract appointment details from AI response using regex patterns
+    const patterns = {
+      clientName: /(?:agendamento.*?para|confirmado para)\s+([A-Za-zÀ-ÿ\s]+?)(?:\s+para|\s+com|\s+no|\s+às|$)/i,
+      time: /(?:às|as)\s+(\d{1,2}:?\d{0,2})/i,
+      day: /(segunda|terça|quarta|quinta|sexta|sábado|domingo)/i,
+      professional: /profissional\s+([A-Za-zÀ-ÿ\s]+?)(?:\s+para|\s+no|$)/i,
+      service: /(?:serviço|para)\s+(?:de\s+)?([A-Za-zÀ-ÿ\s]+?)(?:\.|$)/i
+    };
+    
+    const extractedName = aiResponse.match(patterns.clientName)?.[1]?.trim();
+    const extractedTime = aiResponse.match(patterns.time)?.[1];
+    const extractedDay = aiResponse.match(patterns.day)?.[1];
+    const extractedProfessional = aiResponse.match(patterns.professional)?.[1]?.trim();
+    const extractedService = aiResponse.match(patterns.service)?.[1]?.trim();
+    
+    console.log('📋 Extracted from AI response:', {
+      clientName: extractedName,
+      time: extractedTime,
+      day: extractedDay,
+      professional: extractedProfessional,
+      service: extractedService
+    });
+    
+    // Get professionals and services to match extracted data
+    const professionals = await storage.getProfessionalsByCompany(companyId);
+    const services = await storage.getServicesByCompany(companyId);
+    
+    // Find matching professional
+    const professional = professionals.find(p => 
+      p.name.toLowerCase().includes(extractedProfessional?.toLowerCase() || '')
+    );
+    
+    // Find matching service (prioritize common services)
+    const service = services.find(s => 
+      s.name.toLowerCase().includes(extractedService?.toLowerCase() || 'corte')
+    ) || services.find(s => s.name.toLowerCase().includes('corte'));
+    
+    if (!professional || !service || !extractedName || !extractedTime) {
+      console.log('⚠️ Insufficient data extracted from AI response');
+      return;
+    }
+    
+    // Calculate appointment date
+    const today = new Date();
+    const dayMap = { 'domingo': 0, 'segunda': 1, 'terça': 2, 'quarta': 3, 'quinta': 4, 'sexta': 5, 'sábado': 6 };
+    const targetDay = dayMap[extractedDay?.toLowerCase() as keyof typeof dayMap];
+    
+    let appointmentDate = new Date(today);
+    if (targetDay !== undefined) {
+      const daysUntilTarget = targetDay - today.getDay();
+      appointmentDate.setDate(today.getDate() + (daysUntilTarget <= 0 ? daysUntilTarget + 7 : daysUntilTarget));
+    }
+    
+    // Format time
+    const formattedTime = extractedTime.includes(':') ? extractedTime : `${extractedTime}:00`;
+    
+    // Create client if not exists
+    const normalizedPhone = phoneNumber.replace(/\D/g, '');
+    const existingClients = await storage.getClientsByCompany(companyId);
+    let client = existingClients.find(c => 
+      c.phone && c.phone.replace(/\D/g, '') === normalizedPhone
+    );
+    
+    if (!client) {
+      client = await storage.createClient({
+        companyId,
+        name: extractedName,
+        phone: phoneNumber,
+        email: null,
+        notes: null,
+        birthDate: null
+      });
+    }
+    
+    // Create appointment
+    const appointment = await storage.createAppointment({
+      companyId,
+      professionalId: professional.id,
+      serviceId: service.id,
+      clientName: extractedName,
+      clientPhone: phoneNumber,
+      clientEmail: null,
+      appointmentDate,
+      appointmentTime: formattedTime,
+      duration: service.duration || 30,
+      price: service.price || 0,
+      status: 'agendado',
+      notes: `Agendamento confirmado via WhatsApp - Conversa ID: ${conversationId}`,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+    
+    console.log(`✅ Appointment created from AI confirmation: ${extractedName} - ${service.name} - ${appointmentDate.toLocaleDateString()} ${formattedTime}`);
+    
+    // Broadcast notification
+    broadcastEvent({
+      type: 'new_appointment',
+      appointment: {
+        id: appointment.id,
+        clientName: extractedName,
+        serviceName: service.name,
+        professionalName: professional.name,
+        appointmentDate: appointmentDate.toISOString().split('T')[0],
+        appointmentTime: formattedTime
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Error creating appointment from AI confirmation:', error);
+  }
+}
+
 async function createAppointmentFromConversation(conversationId: number, companyId: number) {
   try {
     console.log('📅 Creating appointment from conversation:', conversationId);
@@ -1671,12 +1787,25 @@ INSTRUÇÕES OBRIGATÓRIAS:
                 });
                 console.log('✅ AI response saved to conversation history');
                 
-                // Always check for appointment creation after AI response
-                try {
+                // Check for appointment confirmation in AI response
+                const confirmationKeywords = [
+                  'agendamento está confirmado',
+                  'confirmado para',
+                  'agendado para',
+                  'seu agendamento',
+                  'aguardamos você'
+                ];
+                
+                const hasConfirmation = confirmationKeywords.some(keyword => 
+                  aiResponse.toLowerCase().includes(keyword.toLowerCase())
+                );
+                
+                if (hasConfirmation) {
+                  console.log('🎯 AI confirmed appointment, creating directly...');
+                  await createAppointmentFromAIConfirmation(conversation.id, company.id, aiResponse, phoneNumber);
+                } else {
                   console.log('🔍 Checking conversation for appointment data...');
                   await createAppointmentFromConversation(conversation.id, company.id);
-                } catch (error) {
-                  console.log('ℹ️ No appointment data found or error:', error);
                 }
                 
               } else {
