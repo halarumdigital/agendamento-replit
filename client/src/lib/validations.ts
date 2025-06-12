@@ -70,8 +70,6 @@ export const companyAiAgentSchema = z.object({
 
 export const whatsappInstanceSchema = z.object({
   instanceName: z.string().min(3, "Nome da instância deve ter pelo menos 3 caracteres"),
-  apiKey: z.string().min(10, "Chave da API é obrigatória"),
-  apiUrl: z.string().url("URL da API inválida"),
 });
 
 export const webhookConfigSchema = z.object({

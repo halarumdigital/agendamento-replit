@@ -325,8 +325,7 @@ export default function CompanySettings() {
   // Function to poll for QR code updates from database
   const pollForQrCode = async (instanceName: string): Promise<string | null> => {
     try {
-      const response = await apiRequest("GET", "/api/company/whatsapp/instances");
-      const instances = await response.json();
+      const instances = await apiRequest("GET", "/api/company/whatsapp/instances");
       const instance = instances.find((inst: any) => inst.instanceName === instanceName);
       return instance?.qrCode || null;
     } catch (error) {
@@ -355,13 +354,7 @@ export default function CompanySettings() {
     mutationFn: async (instanceName: string) => {
       console.log(`🚀 Connecting instance: ${instanceName}`);
       // Trigger connection in Evolution API
-      const response = await apiRequest("GET", `/api/company/whatsapp/instances/${instanceName}/connect`);
-      if (!response.ok) {
-        const error = await response.text();
-        console.error("❌ Connection API error:", error);
-        throw new Error(error);
-      }
-      const result = await response.json();
+      const result = await apiRequest("GET", `/api/company/whatsapp/instances/${instanceName}/connect`);
       console.log("📱 Connect API Response:", result);
       return result;
     },
