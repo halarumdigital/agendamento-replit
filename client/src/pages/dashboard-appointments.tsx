@@ -438,8 +438,8 @@ export default function DashboardAppointments() {
               <div
                 key={appointment.id}
                 className="group text-xs p-1.5 rounded text-white cursor-pointer hover:opacity-80 transition-opacity"
-                style={{ backgroundColor: appointment.service.color || '#3b82f6' }}
-                title={`${appointment.appointmentTime} - ${appointment.clientName} - ${appointment.service.name}`}
+                style={{ backgroundColor: appointment.service?.color || '#3b82f6' }}
+                title={`${appointment.appointmentTime} - ${appointment.clientName} - ${appointment.service?.name || 'Serviço'}`}
                 onClick={(e) => {
                   e.stopPropagation();
                   setSelectedAppointment(appointment);
