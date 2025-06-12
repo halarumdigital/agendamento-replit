@@ -139,7 +139,7 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
     
     // Enhanced patterns for better extraction from AI response and conversation
     const patterns = {
-      clientName: /(?:Até lá,|breve,)\s+([A-Za-zÀ-ÿ]+)(?:[!,\s]|$)/i,
+      clientName: /(?:meu nome é|me chamo|sou|eu sou)\s+([A-Za-zÀ-ÿ\s]+?)(?:\s(?:e\s)?(?:meu\s)?telefone|\.|\,|$)/i,
       time: /(?:às|as)\s+(\d{1,2}:?\d{0,2})/i,
       day: /(segunda|terça|quarta|quinta|sexta|sábado|domingo)/i,
       professional: /\b(Magnus|Silva|Flavio)\b/i,
@@ -153,20 +153,36 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
     let extractedProfessional = aiResponse.match(patterns.professional)?.[1]?.trim();
     let extractedService = aiResponse.match(patterns.service)?.[1]?.trim();
     
-    // Fallback to conversation text if not found in AI response
+    // Try conversation text for missing data, but prioritize most recent user message for name
     if (!extractedTime) extractedTime = allConversationText.match(patterns.time)?.[1];
     if (!extractedDay) extractedDay = allConversationText.match(patterns.day)?.[1];
     if (!extractedProfessional) extractedProfessional = allConversationText.match(patterns.professional)?.[1]?.trim();
     if (!extractedService) extractedService = allConversationText.match(patterns.service)?.[1]?.trim();
     
-    // Try to extract name from phone number if still not found
+    // For client name, always check the most recent user messages first
     if (!extractedName) {
-      const clients = await storage.getClientsByCompany(companyId);
-      const normalizedPhone = phoneNumber.replace(/\D/g, '');
-      const existingClient = clients.find(c => 
-        c.phone && c.phone.replace(/\D/g, '') === normalizedPhone
-      );
-      extractedName = existingClient?.name || 'Gilliard'; // Use known client name
+      const recentMessages = await storage.getRecentMessages(conversationId, 10);
+      const recentUserMessages = recentMessages.filter(m => m.role === 'user');
+      
+      // Check each recent message for name patterns (newest first)
+      for (const msg of recentUserMessages.reverse()) {
+        const nameMatch = msg.content.match(patterns.clientName);
+        if (nameMatch && nameMatch[1]) {
+          extractedName = nameMatch[1].trim();
+          console.log(`📝 Found name in recent message: "${extractedName}" from: "${msg.content}"`);
+          break;
+        }
+      }
+      
+      // If still no name, try existing client lookup
+      if (!extractedName) {
+        const clients = await storage.getClientsByCompany(companyId);
+        const normalizedPhone = phoneNumber.replace(/\D/g, '');
+        const existingClient = clients.find(c => 
+          c.phone && c.phone.replace(/\D/g, '') === normalizedPhone
+        );
+        extractedName = existingClient?.name || 'Cliente WhatsApp';
+      }
     }
     
     console.log('📋 Extracted from AI response and conversation:', {
@@ -339,7 +355,7 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
     const appointmentNotification = {
       type: 'new_appointment',
       appointment: {
-        id: appointment.insertId || appointment.id || Date.now(), // Fallback ID
+        id: appointment.id || Date.now(), // Use appointment ID directly
         clientName: extractedName,
         serviceName: service.name,
         professionalName: professional?.name || 'Profissional',
