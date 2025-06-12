@@ -139,7 +139,7 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
     
     // Enhanced patterns for better extraction from AI response and conversation
     const patterns = {
-      clientName: /(?:meu nome é|me chamo|sou|eu sou)\s+([A-Za-zÀ-ÿ\s]+?)(?:\s(?:e\s)?(?:meu\s)?telefone|\.|\,|$)/i,
+      clientName: /\b([A-Z][a-zA-ZÀ-ÿ]+\s+[A-Z][a-zA-ZÀ-ÿ]+)\b/g, // Matches "João Silva" pattern
       time: /(?:às|as)\s+(\d{1,2}:?\d{0,2})/i,
       day: /(segunda|terça|quarta|quinta|sexta|sábado|domingo)/i,
       professional: /\b(Magnus|Silva|Flavio)\b/i,
@@ -259,6 +259,9 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
     const normalizedPhone = phoneNumber.replace(/\D/g, '');
     const existingClients = await storage.getClientsByCompany(companyId);
     
+    console.log(`🔍 Looking for existing client with phone: ${normalizedPhone}`);
+    console.log(`📋 Existing clients:`, existingClients.map(c => ({ name: c.name, phone: c.phone })));
+    
     // Try to find existing client by phone or name
     let client = existingClients.find(c => 
       (c.phone && c.phone.replace(/\D/g, '') === normalizedPhone) ||
@@ -266,17 +269,18 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
     );
     
     if (!client) {
-      // Use a valid Brazilian phone format
-      const formattedPhone = `(49) 99921-4230`; // Standard format
+      console.log(`🆕 Creating new client: ${extractedName} with phone ${phoneNumber}`);
       
       client = await storage.createClient({
         companyId,
         name: extractedName,
-        phone: formattedPhone,
+        phone: phoneNumber, // Use the actual WhatsApp phone number
         email: null,
         notes: null,
         birthDate: null
       });
+    } else {
+      console.log(`✅ Found existing client: ${client.name} (ID: ${client.id})`);
     }
     
     // Check for appointment conflicts before creating

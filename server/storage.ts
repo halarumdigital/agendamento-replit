@@ -1469,7 +1469,9 @@ export class DatabaseStorage implements IStorage {
         );
 
         if (duplicateClient) {
-          throw new Error(`Já existe um cliente cadastrado com este telefone: ${duplicateClient.name}`);
+          // Return the existing client instead of throwing an error
+          console.log(`📞 Client with phone ${clientData.phone} already exists: ${duplicateClient.name}`);
+          return duplicateClient;
         }
       }
 
