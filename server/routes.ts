@@ -2044,7 +2044,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Handle both text and audio messages
         const hasTextContent = message?.message?.conversation || message?.message?.extendedTextMessage?.text;
-        const hasAudioContent = message?.message?.audioMessage;
+        const hasAudioContent = message?.message?.audioMessage || message?.messageType === 'audioMessage';
         const isTextMessage = hasTextContent && !message?.key?.fromMe;
         const isAudioMessage = hasAudioContent && !message?.key?.fromMe;
         
@@ -2058,10 +2058,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log('📞 Phone number:', phoneNumber);
           
           // Process audio message if present
-          if (isAudioMessage && message?.message?.audioMessage) {
+          if (isAudioMessage) {
             console.log('🎵 Processing audio message...');
+            console.log('📊 Full message structure:', JSON.stringify(message, null, 2));
             try {
-              const audioBase64 = message.message.audioMessage.base64;
+              // Get audio data from webhook structure
+              const audioBase64 = message.audio;
+              
+              console.log('🔍 Audio base64 found:', !!audioBase64);
+              console.log('🔍 Audio length:', audioBase64?.length || 0);
+              
               if (audioBase64) {
                 console.log('🔊 Audio base64 received, transcribing with OpenAI Whisper...');
                 
@@ -2083,13 +2089,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   const fallbackResponse = "Desculpe, não consegui entender o áudio que você enviou. Pode escrever sua mensagem por texto, por favor? 📝";
                   
                   try {
-                    await sendWhatsAppMessage(instanceName, phoneNumber, fallbackResponse);
-                    console.log('✅ Fallback response sent for failed audio transcription');
-                    return res.status(200).json({ 
-                      received: true, 
-                      processed: true, 
-                      reason: 'Audio transcription failed, fallback response sent' 
+                    // Send fallback response using Evolution API
+                    const fallbackEvolutionResponse = await fetch(`${globalSettings.evolutionApiUrl}/message/sendText/${instanceName}`, {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': globalSettings.evolutionApiGlobalKey!
+                      },
+                      body: JSON.stringify({
+                        number: phoneNumber,
+                        text: fallbackResponse
+                      })
                     });
+                    
+                    if (fallbackEvolutionResponse.ok) {
+                      console.log('✅ Fallback response sent for failed audio transcription');
+                      return res.status(200).json({ 
+                        received: true, 
+                        processed: true, 
+                        reason: 'Audio transcription failed, fallback response sent' 
+                      });
+                    } else {
+                      console.error('❌ Failed to send fallback response via Evolution API');
+                      return res.status(200).json({ received: true, processed: false, reason: 'Audio transcription and fallback failed' });
+                    }
                   } catch (sendError) {
                     console.error('❌ Failed to send fallback response:', sendError);
                     return res.status(200).json({ received: true, processed: false, reason: 'Audio transcription and fallback failed' });
