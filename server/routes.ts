@@ -290,13 +290,16 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
         formattedPhone = `(${number.substring(0, 2)}) ${number.substring(2, 7)}-${number.substring(7)}`;
       } else if (digits.length === 12 && digits.startsWith('55')) {
         // Remove country code 55 and format as (XX) XXXX-XXXX or (XX) XXXXX-XXXX
-        const number = digits.substring(2);
-        if (number.length === 11) {
-          // Mobile with 9 digit (XX) XXXXX-XXXX
+        const number = digits.substring(2); // This gives us 10 digits
+        if (number.length === 10 && number[2] === '9') {
+          // Mobile with 9 digit: (XX) XXXXX-XXXX 
           formattedPhone = `(${number.substring(0, 2)}) ${number.substring(2, 7)}-${number.substring(7)}`;
-        } else {
+        } else if (number.length === 10) {
           // Landline (XX) XXXX-XXXX
           formattedPhone = `(${number.substring(0, 2)}) ${number.substring(2, 6)}-${number.substring(6)}`;
+        } else {
+          // Default format
+          formattedPhone = `(${number.substring(0, 2)}) ${number.substring(2, 7)}-${number.substring(7)}`;
         }
       } else if (digits.length === 11) {
         // Format as (XX) XXXXX-XXXX
@@ -305,16 +308,30 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
         // Format as (XX) XXXX-XXXX
         formattedPhone = `(${digits.substring(0, 2)}) ${digits.substring(2, 6)}-${digits.substring(6)}`;
       } else {
-        // Handle the specific case of 554988887777 (12 digits starting with 55)
+        // Handle the specific case of 554999214230 (12 digits starting with 55)
         if (digits.startsWith('55') && digits.length === 12) {
-          const number = digits.substring(2); // 4988887777
-          formattedPhone = `(${number.substring(0, 2)}) ${number.substring(2, 7)}-${number.substring(7)}`;
+          const number = digits.substring(2); // 4999214230 (10 digits)
+          // For mobile numbers starting with 9, we need to insert an extra 9
+          if (number[2] === '9') {
+            // Convert 4999214230 to (49) 99921-4230 by inserting extra 9
+            const areaCode = number.substring(0, 2); // 49
+            const mobile = '9' + number.substring(2); // 999214230
+            formattedPhone = `(${areaCode}) ${mobile.substring(0, 5)}-${mobile.substring(5)}`;
+          } else {
+            // For landline, format as (XX) XXXX-XXXX
+            formattedPhone = `(${number.substring(0, 2)}) ${number.substring(2, 6)}-${number.substring(6)}`;
+          }
         } else {
           // Extract reasonable phone components
           const areaCode = digits.substring(0, 2) || '49';
           const remaining = digits.substring(2);
           if (remaining.length >= 8) {
-            formattedPhone = `(${areaCode}) ${remaining.substring(0, 5)}-${remaining.substring(5, 9)}`;
+            // Check if it's a mobile number (starts with 9)
+            if (remaining[0] === '9' && remaining.length >= 9) {
+              formattedPhone = `(${areaCode}) ${remaining.substring(0, 5)}-${remaining.substring(5, 9)}`;
+            } else {
+              formattedPhone = `(${areaCode}) ${remaining.substring(0, 4)}-${remaining.substring(4, 8)}`;
+            }
           } else {
             formattedPhone = `(${areaCode}) ${remaining}`;
           }
