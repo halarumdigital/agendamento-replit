@@ -273,6 +273,9 @@ export default function SettingsPage() {
   });
 
   const onSubmit = async (data: SettingsFormData) => {
+    console.log("Form submission started with data:", data);
+    console.log("Form errors:", form.formState.errors);
+    
     try {
       // Upload logo if a new file was selected
       let logoUrl = data.logoUrl || "";
@@ -304,8 +307,10 @@ export default function SettingsPage() {
         openaiMaxTokens: data.openaiMaxTokens?.toString() || "4000",
       };
       
+      console.log("Processed data being sent:", processedData);
       updateMutation.mutate(processedData);
     } catch (error: any) {
+      console.error("Form submission error:", error);
       toast({
         title: "Erro no upload",
         description: error.message || "Falha ao fazer upload do logo",
