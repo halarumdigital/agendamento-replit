@@ -200,8 +200,8 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
       }
     }
     
-    // Extract other data
-    let extractedTime = aiResponse.match(patterns.time)?.[1] || allConversationText.match(patterns.time)?.[1];
+    // Extract other data with improved patterns
+    let extractedTime = aiResponse.match(/(\d{1,2}):?(\d{0,2})h?/)?.[0] || allConversationText.match(/(\d{1,2}):?(\d{0,2})h?/)?.[0];
     let extractedDay = aiResponse.match(patterns.day)?.[1] || allConversationText.match(patterns.day)?.[1];
     let extractedProfessional = aiResponse.match(patterns.professional)?.[1]?.trim() || allConversationText.match(patterns.professional)?.[1]?.trim();
     let extractedService = aiResponse.match(patterns.service)?.[1]?.trim() || allConversationText.match(patterns.service)?.[1]?.trim();
