@@ -207,7 +207,7 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
       appointmentDate,
       appointmentTime: formattedTime,
       duration: service.duration || 30,
-      price: service.price || 0,
+      totalPrice: service.price || 0,
       status: 'agendado',
       notes: `Agendamento confirmado via WhatsApp - Conversa ID: ${conversationId}`,
       createdAt: new Date(),
@@ -1793,16 +1793,29 @@ INSTRUÇÕES OBRIGATÓRIAS:
                   'confirmado para',
                   'agendado para',
                   'seu agendamento',
-                  'aguardamos você'
+                  'aguardamos você',
+                  'perfeito',
+                  'confirmado'
                 ];
                 
                 const hasConfirmation = confirmationKeywords.some(keyword => 
                   aiResponse.toLowerCase().includes(keyword.toLowerCase())
                 );
                 
+                console.log('🔍 AI Response analysis:', {
+                  hasConfirmation,
+                  aiResponse: aiResponse.substring(0, 100) + '...'
+                });
+                
                 if (hasConfirmation) {
                   console.log('🎯 AI confirmed appointment, creating directly...');
-                  await createAppointmentFromAIConfirmation(conversation.id, company.id, aiResponse, phoneNumber);
+                  try {
+                    await createAppointmentFromAIConfirmation(conversation.id, company.id, aiResponse, phoneNumber);
+                  } catch (error) {
+                    console.error('❌ Error in AI confirmation appointment creation:', error);
+                    // Fallback to regular conversation analysis
+                    await createAppointmentFromConversation(conversation.id, company.id);
+                  }
                 } else {
                   console.log('🔍 Checking conversation for appointment data...');
                   await createAppointmentFromConversation(conversation.id, company.id);
