@@ -151,7 +151,12 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
     let extractedName: string | null = null;
     
     // First, try to extract name from AI response (often contains confirmed name)
-    const aiNameMatch = aiResponse.match(/\b([A-ZÀÁÉÍÓÚ][a-záéíóúâêôã]+)(?:,|\!|\.)/);
+    // Look for pattern like "Obrigada, Nome!" or "Claro, Nome!" or after "Claro," 
+    let aiNameMatch = aiResponse.match(/(?:Obrigada|confirmação),\s+([A-ZÀÁÉÍÓÚ][a-záéíóúâêôã]+)(?:,|\!|\.)/);
+    if (!aiNameMatch) {
+      // Try pattern "Claro, Nome!" specifically
+      aiNameMatch = aiResponse.match(/Claro,\s+([A-ZÀÁÉÍÓÚ][a-záéíóúâêôã]+)(?:,|\!|\.)/);
+    }
     if (aiNameMatch) {
       extractedName = aiNameMatch[1];
       console.log(`📝 Found name: "${extractedName}" from AI response`);
@@ -160,6 +165,7 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
     // If no name in AI response, look for names in conversation text
     if (!extractedName) {
       const namePatterns = [
+        /(?:Confirmo:|agendar|nome)\s*:?\s*([A-ZÀÁÉÍÓÚ][a-záéíóúâêôã]+)/i, // "Confirmo: Maicon" or "agendar Maicon"
         /\b([A-ZÀÁÉÍÓÚ][a-záéíóúâêôã]+\s+[A-ZÀÁÉÍÓÚ][a-záéíóúâêôã]+)\b/g, // "João Silva" with accents
         /(?:me chamo|sou o|nome é|eu sou)\s+([A-ZÀ-ÿ][a-zA-ZÀ-ÿ\s]+?)(?=,|\.|$)/i,
         /^([A-ZÀ-ÿ][a-záéíóúâêôã]+\s+[A-ZÀ-ÿ][a-záéíóúâêôã]+)/m, // Line starting with name
