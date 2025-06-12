@@ -14,8 +14,7 @@ const pool = mysql.createPool({
   database: process.env.MYSQL_DATABASE,
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0,
-  ssl: false
+  queueLimit: 0
 });
 
 export const db = drizzle(pool, { 
