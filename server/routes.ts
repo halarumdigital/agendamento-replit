@@ -282,8 +282,11 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
     
     if (!client) {
       // Use proper Brazilian phone formatting from phone-utils
+      console.log(`📞 Processing phone: ${phoneNumber}`);
       const normalizedPhone = normalizePhone(phoneNumber);
+      console.log(`📞 Normalized: ${normalizedPhone}`);
       const formattedPhone = formatBrazilianPhone(normalizedPhone);
+      console.log(`📞 Formatted: ${formattedPhone}`);
       
       if (!formattedPhone) {
         console.log(`❌ Invalid phone number format: ${phoneNumber}`);

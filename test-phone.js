@@ -1,11 +1,5 @@
-// Utilitários para normalização e validação de telefones
-
-/**
- * Normaliza um número de telefone removendo formatação
- * @param phone - Número de telefone com ou sem formatação
- * @returns Número normalizado apenas com dígitos
- */
-export function normalizePhone(phone: string | null | undefined): string {
+// Test phone normalization for WhatsApp numbers
+function normalizePhone(phone) {
   if (!phone) return '';
   
   // Remove todos os caracteres não numéricos
@@ -33,12 +27,7 @@ export function normalizePhone(phone: string | null | undefined): string {
   return normalized;
 }
 
-/**
- * Valida se um telefone brasileiro é válido
- * @param phone - Número de telefone
- * @returns true se válido, false caso contrário
- */
-export function validateBrazilianPhone(phone: string): boolean {
+function validateBrazilianPhone(phone) {
   const normalized = normalizePhone(phone);
   
   // Deve ter 10 ou 11 dígitos (celular ou fixo)
@@ -68,12 +57,7 @@ export function validateBrazilianPhone(phone: string): boolean {
   return true;
 }
 
-/**
- * Formata um telefone brasileiro
- * @param phone - Número de telefone
- * @returns Telefone formatado ou string vazia se inválido
- */
-export function formatBrazilianPhone(phone: string): string {
+function formatBrazilianPhone(phone) {
   const normalized = normalizePhone(phone);
   
   if (!validateBrazilianPhone(normalized)) {
@@ -89,17 +73,9 @@ export function formatBrazilianPhone(phone: string): string {
   }
 }
 
-/**
- * Compara dois telefones ignorando formatação
- * @param phone1 - Primeiro telefone
- * @param phone2 - Segundo telefone
- * @returns true se são o mesmo número
- */
-export function comparePhones(phone1: string | null | undefined, phone2: string | null | undefined): boolean {
-  const normalized1 = normalizePhone(phone1);
-  const normalized2 = normalizePhone(phone2);
-  
-  if (!normalized1 || !normalized2) return false;
-  
-  return normalized1 === normalized2;
-}
+// Test with WhatsApp number format
+const testPhone = '554999214230';
+console.log('Testing phone:', testPhone);
+console.log('Normalized:', normalizePhone(testPhone));
+console.log('Valid:', validateBrazilianPhone(normalizePhone(testPhone)));
+console.log('Formatted:', formatBrazilianPhone(normalizePhone(testPhone)));
