@@ -389,8 +389,10 @@ async function createAppointmentFromConversation(conversationId: number, company
         daysUntilTarget += 7;
       }
       
-      date.setDate(date.getDate() + daysUntilTarget);
-      return date.toISOString().split('T')[0];
+      // Criar nova data para evitar modificar a original
+      const resultDate = new Date(date);
+      resultDate.setDate(resultDate.getDate() + daysUntilTarget);
+      return resultDate.toISOString().split('T')[0];
     }
 
     const extractionPrompt = `Analise esta conversa de WhatsApp e extraia os dados do agendamento em formato JSON.
@@ -437,12 +439,16 @@ INSTRUÇÕES PARA DATAS:
 
 REGRAS CRÍTICAS - SÓ EXTRAIA SE TODOS ESTES DADOS ESTÃO EXPLICITAMENTE CONFIRMADOS NA CONVERSA:
 - Nome COMPLETO do cliente (não apenas primeiro nome)
-- Telefone COMPLETO do cliente com DDD (exemplo: 11999887766)
+- Telefone COMPLETO do cliente com DDD fornecido pelo próprio cliente (exemplo: 11999887766)
 - Profissional ESPECÍFICO escolhido e confirmado (use o ID correto da lista acima)
 - Serviço ESPECÍFICO escolhido e confirmado (use o ID correto da lista acima)  
 - Data E hora EXATAS confirmadas pelo cliente (extraia o horário PRECISO mencionado)
+- Cliente deve ter CONFIRMADO EXPLICITAMENTE todos os dados ("sim, confirmo", "pode agendar", "está correto")
 
-ATENÇÃO: Se o cliente ainda está fornecendo dados ou falta telefone/confirmação final, responda "DADOS_INCOMPLETOS"
+ATENÇÃO CRÍTICA: 
+- Se o cliente ainda está fornecendo dados, negociando horários, ou perguntando disponibilidade, responda "DADOS_INCOMPLETOS"
+- Se o cliente apenas sugeriu horário mas NÃO confirmou explicitamente, responda "DADOS_INCOMPLETOS"
+- Se falta qualquer dado ou confirmação explícita final, responda "DADOS_INCOMPLETOS"
 
 Responda APENAS em formato JSON válido ou "DADOS_INCOMPLETOS" se algum dado estiver faltando:
 {
