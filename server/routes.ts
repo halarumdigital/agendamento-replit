@@ -121,23 +121,48 @@ async function generateAvailabilityInfo(professionals: any[], existingAppointmen
 async function createAppointmentFromAIConfirmation(conversationId: number, companyId: number, aiResponse: string, phoneNumber: string) {
   try {
     console.log('🎯 Creating appointment from AI confirmation');
+    console.log('🔍 AI Response to analyze:', aiResponse);
     
-    // Extract appointment details from AI response using regex patterns
+    // Get conversation history to extract appointment data from user messages
+    const messages = await storage.getMessagesByConversation(conversationId);
+    const userMessages = messages.filter(m => m.role === 'user').map(m => m.content);
+    const allConversationText = userMessages.join(' ');
+    
+    console.log('📚 User conversation text:', allConversationText);
+    
+    // Enhanced patterns for better extraction from AI response and conversation
     const patterns = {
-      clientName: /(?:agendamento.*?para|confirmado para)\s+([A-Za-zÀ-ÿ\s]+?)(?:\s+para|\s+com|\s+no|\s+às|$)/i,
+      clientName: /(?:Perfeito,|Obrigado,|para)\s+([A-Za-zÀ-ÿ]+)(?:[!,\s]|$)/i,
       time: /(?:às|as)\s+(\d{1,2}:?\d{0,2})/i,
       day: /(segunda|terça|quarta|quinta|sexta|sábado|domingo)/i,
-      professional: /profissional\s+([A-Za-zÀ-ÿ\s]+?)(?:\s+para|\s+no|$)/i,
-      service: /(?:serviço|para)\s+(?:de\s+)?([A-Za-zÀ-ÿ\s]+?)(?:\.|$)/i
+      professional: /\b(Magnus|Silva|Flavio)\b/i,
+      service: /(escova|corte|hidratação|manicure|pedicure)/i
     };
     
-    const extractedName = aiResponse.match(patterns.clientName)?.[1]?.trim();
-    const extractedTime = aiResponse.match(patterns.time)?.[1];
-    const extractedDay = aiResponse.match(patterns.day)?.[1];
-    const extractedProfessional = aiResponse.match(patterns.professional)?.[1]?.trim();
-    const extractedService = aiResponse.match(patterns.service)?.[1]?.trim();
+    // Try to extract from AI response first, then from conversation
+    let extractedName = aiResponse.match(patterns.clientName)?.[1]?.trim();
+    let extractedTime = aiResponse.match(patterns.time)?.[1];
+    let extractedDay = aiResponse.match(patterns.day)?.[1];
+    let extractedProfessional = aiResponse.match(patterns.professional)?.[1]?.trim();
+    let extractedService = aiResponse.match(patterns.service)?.[1]?.trim();
     
-    console.log('📋 Extracted from AI response:', {
+    // Fallback to conversation text if not found in AI response
+    if (!extractedTime) extractedTime = allConversationText.match(patterns.time)?.[1];
+    if (!extractedDay) extractedDay = allConversationText.match(patterns.day)?.[1];
+    if (!extractedProfessional) extractedProfessional = allConversationText.match(patterns.professional)?.[1]?.trim();
+    if (!extractedService) extractedService = allConversationText.match(patterns.service)?.[1]?.trim();
+    
+    // Try to extract name from phone number if still not found
+    if (!extractedName) {
+      const clients = await storage.getClientsByCompany(companyId);
+      const normalizedPhone = phoneNumber.replace(/\D/g, '');
+      const existingClient = clients.find(c => 
+        c.phone && c.phone.replace(/\D/g, '') === normalizedPhone
+      );
+      extractedName = existingClient?.name || 'Cliente';
+    }
+    
+    console.log('📋 Extracted from AI response and conversation:', {
       clientName: extractedName,
       time: extractedTime,
       day: extractedDay,
@@ -149,18 +174,47 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
     const professionals = await storage.getProfessionalsByCompany(companyId);
     const services = await storage.getServicesByCompany(companyId);
     
-    // Find matching professional
-    const professional = professionals.find(p => 
-      p.name.toLowerCase().includes(extractedProfessional?.toLowerCase() || '')
-    );
+    // Find matching professional by name
+    let professional = null;
+    if (extractedProfessional) {
+      professional = professionals.find(p => 
+        p.name.toLowerCase() === extractedProfessional.toLowerCase()
+      );
+    }
     
-    // Find matching service (prioritize common services)
-    const service = services.find(s => 
-      s.name.toLowerCase().includes(extractedService?.toLowerCase() || 'corte')
-    ) || services.find(s => s.name.toLowerCase().includes('corte'));
+    // Find matching service
+    let service = null;
+    if (extractedService) {
+      service = services.find(s => 
+        s.name.toLowerCase().includes(extractedService.toLowerCase())
+      );
+    }
     
-    if (!professional || !service || !extractedName || !extractedTime) {
+    // If service not found, try to find from common services
+    if (!service) {
+      service = services.find(s => s.name.toLowerCase().includes('escova')) ||
+               services.find(s => s.name.toLowerCase().includes('corte')) ||
+               services[0]; // fallback to first service
+    }
+    
+    // If professional not found, try to find from conversation text
+    if (!professional) {
+      for (const prof of professionals) {
+        if (allConversationText.toLowerCase().includes(prof.name.toLowerCase()) ||
+            aiResponse.toLowerCase().includes(prof.name.toLowerCase())) {
+          professional = prof;
+          break;
+        }
+      }
+    }
+    
+    if (!professional || !service || !extractedTime) {
       console.log('⚠️ Insufficient data extracted from AI response');
+      console.log('Missing:', { 
+        professional: !professional ? 'professional' : 'ok',
+        service: !service ? 'service' : 'ok', 
+        time: !extractedTime ? 'time' : 'ok'
+      });
       return;
     }
     
@@ -208,7 +262,7 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
       appointmentTime: formattedTime,
       duration: service.duration || 30,
       totalPrice: service.price || 0,
-      status: 'agendado',
+      status: 'Pendente',
       notes: `Agendamento confirmado via WhatsApp - Conversa ID: ${conversationId}`,
       createdAt: new Date(),
       updatedAt: new Date()
