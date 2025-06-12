@@ -147,37 +147,50 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
       service: /(escova|corte|hidratação|manicure|pedicure)/i
     };
     
-    // Extract client name from conversation text using better patterns
-    let extractedName = null;
+    // Extract client name from AI response first, then conversation text
+    let extractedName: string | null = null;
     
-    // Look for names in the conversation text with better patterns
-    const namePatterns = [
-      /\b([A-ZÀÁÉÍÓÚ][a-záéíóúâêôã]+\s+[A-ZÀÁÉÍÓÚ][a-záéíóúâêôã]+)\b/g, // "João Silva" with accents
-      /(?:me chamo|sou o|nome é|eu sou)\s+([A-ZÀ-ÿ][a-zA-ZÀ-ÿ\s]+?)(?=,|\.|$)/i,
-      /^([A-ZÀ-ÿ][a-záéíóúâêôã]+\s+[A-ZÀ-ÿ][a-záéíóúâêôã]+)/m // Line starting with name
-    ];
+    // First, try to extract name from AI response (often contains confirmed name)
+    const aiNameMatch = aiResponse.match(/\b([A-ZÀÁÉÍÓÚ][a-záéíóúâêôã]+)(?:,|\!|\.)/);
+    if (aiNameMatch) {
+      extractedName = aiNameMatch[1];
+      console.log(`📝 Found name: "${extractedName}" from AI response`);
+    }
     
-    // Try each pattern on conversation text
-    for (const pattern of namePatterns) {
-      let matches = allConversationText.match(pattern);
-      if (matches) {
-        for (let match of matches) {
-          const potentialName = match.trim();
-          if (potentialName && 
-              potentialName.length > 3 && 
-              potentialName.length < 50 &&
-              !potentialName.toLowerCase().includes('whatsapp') &&
-              !potentialName.toLowerCase().includes('confirmo') &&
-              !potentialName.toLowerCase().includes('profissional') &&
-              !potentialName.toLowerCase().includes('serviço') &&
-              !potentialName.toLowerCase().includes('agendar') &&
-              /^[A-ZÀ-ÿ][a-záéíóúâêôã]+\s+[A-ZÀ-ÿ][a-záéíóúâêôã]+$/.test(potentialName)) {
-            extractedName = potentialName;
-            console.log(`📝 Found name: "${extractedName}" using pattern`);
-            break;
+    // If no name in AI response, look for names in conversation text
+    if (!extractedName) {
+      const namePatterns = [
+        /\b([A-ZÀÁÉÍÓÚ][a-záéíóúâêôã]+\s+[A-ZÀÁÉÍÓÚ][a-záéíóúâêôã]+)\b/g, // "João Silva" with accents
+        /(?:me chamo|sou o|nome é|eu sou)\s+([A-ZÀ-ÿ][a-zA-ZÀ-ÿ\s]+?)(?=,|\.|$)/i,
+        /^([A-ZÀ-ÿ][a-záéíóúâêôã]+\s+[A-ZÀ-ÿ][a-záéíóúâêôã]+)/m, // Line starting with name
+        /\b([A-ZÀÁÉÍÓÚ][a-záéíóúâêôã]+)\b/g // Single names like "Gilliard"
+      ];
+    
+      // Try each pattern on conversation text
+      for (const pattern of namePatterns) {
+        let matches = allConversationText.match(pattern);
+        if (matches) {
+          for (let match of matches) {
+            const potentialName = match.trim();
+            if (potentialName && 
+                potentialName.length > 2 && 
+                potentialName.length < 50 &&
+                !potentialName.toLowerCase().includes('whatsapp') &&
+                !potentialName.toLowerCase().includes('confirmo') &&
+                !potentialName.toLowerCase().includes('profissional') &&
+                !potentialName.toLowerCase().includes('serviço') &&
+                !potentialName.toLowerCase().includes('agendar') &&
+                !potentialName.toLowerCase().includes('magnus') &&
+                !potentialName.toLowerCase().includes('silva') &&
+                !potentialName.toLowerCase().includes('flavio') &&
+                /^[A-ZÀ-ÿ][a-záéíóúâêôã]+(\s+[A-ZÀ-ÿ][a-záéíóúâêôã]+)*$/.test(potentialName)) {
+              extractedName = potentialName;
+              console.log(`📝 Found name: "${extractedName}" using pattern`);
+              break;
+            }
           }
+          if (extractedName) break;
         }
-        if (extractedName) break;
       }
     }
     
@@ -277,7 +290,7 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
     // Try to find existing client by phone or name
     let client = existingClients.find(c => 
       (c.phone && c.phone.replace(/\D/g, '') === normalizedPhone) ||
-      (c.name && c.name.toLowerCase() === extractedName.toLowerCase())
+      (c.name && extractedName && c.name.toLowerCase() === extractedName.toLowerCase())
     );
     
     if (!client) {
