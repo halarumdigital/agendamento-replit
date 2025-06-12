@@ -150,7 +150,13 @@ async function createAppointmentFromConversation(conversationId: number, company
       return;
     }
     
-    // Get conversation messages
+    // Get conversation and messages
+    const conversation = await storage.getConversation(conversationId);
+    if (!conversation) {
+      console.log('⚠️ Conversation not found:', conversationId);
+      return;
+    }
+    
     const messages = await storage.getMessagesByConversation(conversationId);
     const conversationText = messages.map(m => `${m.role}: ${m.content}`).join('\n');
     
@@ -279,7 +285,7 @@ Responda APENAS em formato JSON válido ou "DADOS_INCOMPLETOS" se algum dado est
       
       // Se o telefone não foi extraído corretamente da conversa, usar o telefone da conversa
       if (!appointmentData.clientPhone || appointmentData.clientPhone === 'DADOS_INCOMPLETOS') {
-        appointmentData.clientPhone = conversationData.phoneNumber;
+        appointmentData.clientPhone = conversation.phoneNumber;
         console.log('🔧 Fixed phone using conversation data:', appointmentData.clientPhone);
       }
       
