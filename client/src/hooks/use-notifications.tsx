@@ -18,6 +18,7 @@ interface NotificationData {
 
 export function useNotifications() {
   const [notifications, setNotifications] = useState<NotificationData[]>([]);
+  const [dismissedNotifications, setDismissedNotifications] = useState<Set<string>>(new Set());
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Criar som de campainha alta usando Web Audio API
@@ -77,6 +78,17 @@ export function useNotifications() {
   }, []);
 
   const addNotification = useCallback((notification: Omit<NotificationData, 'id' | 'timestamp'>) => {
+    // Criar uma chave única para identificar a notificação baseada no conteúdo
+    const notificationKey = notification.appointment 
+      ? `${notification.appointment.clientName}-${notification.appointment.appointmentDate}-${notification.appointment.appointmentTime}`
+      : `${notification.type}-${notification.title}-${notification.message}`;
+    
+    // Verificar se esta notificação já foi dispensada
+    if (dismissedNotifications.has(notificationKey)) {
+      console.log('Notificação já foi dispensada, ignorando:', notificationKey);
+      return;
+    }
+
     const newNotification: NotificationData = {
       ...notification,
       id: Math.random().toString(36).substr(2, 9),
@@ -85,11 +97,18 @@ export function useNotifications() {
 
     setNotifications(prev => [...prev, newNotification]);
     playNotificationSound();
-  }, [playNotificationSound]);
+  }, [playNotificationSound, dismissedNotifications]);
 
   const removeNotification = useCallback((id: string) => {
+    // Encontrar a notificação que está sendo removida para adicionar à lista de dispensadas
+    const notification = notifications.find(n => n.id === id);
+    if (notification?.appointment) {
+      const notificationKey = `${notification.appointment.clientName}-${notification.appointment.appointmentDate}-${notification.appointment.appointmentTime}`;
+      setDismissedNotifications(prev => new Set([...prev, notificationKey]));
+    }
+    
     setNotifications(prev => prev.filter(n => n.id !== id));
-  }, []);
+  }, [notifications]);
 
   const showNewAppointmentNotification = useCallback((appointment: {
     clientName: string;
