@@ -277,9 +277,18 @@ Responda APENAS em formato JSON válido ou "DADOS_INCOMPLETOS" se algum dado est
     try {
       const appointmentData = JSON.parse(extractedData);
       
-      console.log('✅ Final appointment data extracted:', appointmentData);
+      console.log('🔍 DETAILED DEBUG - Appointment data extracted:', JSON.stringify(appointmentData, null, 2));
       
       // VALIDAÇÃO CRÍTICA: Verificar se todos os campos obrigatórios estão presentes
+      console.log('🔍 Validating required fields:', {
+        clientName: !!appointmentData.clientName,
+        clientPhone: !!appointmentData.clientPhone,
+        professionalId: !!appointmentData.professionalId,
+        serviceId: !!appointmentData.serviceId,
+        appointmentDate: !!appointmentData.appointmentDate,
+        appointmentTime: !!appointmentData.appointmentTime
+      });
+      
       if (!appointmentData.clientName || !appointmentData.clientPhone || 
           !appointmentData.professionalId || !appointmentData.serviceId ||
           !appointmentData.appointmentDate || !appointmentData.appointmentTime) {
@@ -287,16 +296,18 @@ Responda APENAS em formato JSON válido ou "DADOS_INCOMPLETOS" se algum dado est
         return;
       }
 
-      // VALIDAÇÃO ADICIONAL: Verificar se o telefone é válido (mínimo 10 dígitos)
+      // VALIDAÇÃO ADICIONAL: Verificar se o telefone é válido (mínimo 8 dígitos)
       const phoneDigits = appointmentData.clientPhone.replace(/\D/g, '');
-      if (phoneDigits.length < 10) {
+      console.log('🔍 Phone validation - Original:', appointmentData.clientPhone, 'Digits only:', phoneDigits, 'Length:', phoneDigits.length);
+      
+      if (phoneDigits.length < 8) {
         console.log('⚠️ Invalid phone number format, skipping creation');
         return;
       }
 
-      // VALIDAÇÃO ADICIONAL: Verificar se o nome não é apenas um primeiro nome
-      if (appointmentData.clientName.trim().split(' ').length < 2) {
-        console.log('⚠️ Incomplete client name (need full name), skipping creation');
+      // VALIDAÇÃO ADICIONAL: Verificar se o nome tem pelo menos 2 caracteres
+      if (appointmentData.clientName.trim().length < 2) {
+        console.log('⚠️ Client name too short, skipping creation');
         return;
       }
 
@@ -357,9 +368,14 @@ Responda APENAS em formato JSON válido ou "DADOS_INCOMPLETOS" se algum dado est
 
       console.log('📋 Appointment payload before creation:', JSON.stringify(appointmentPayload, null, 2));
       
-      const appointment = await storage.createAppointment(appointmentPayload);
-
-      console.log('✅ Appointment created successfully:', appointment.id);
+      try {
+        const appointment = await storage.createAppointment(appointmentPayload);
+        console.log('✅ Appointment created successfully with ID:', appointment.id);
+        console.log('🎯 SUCCESS: Appointment saved to database');
+      } catch (createError) {
+        console.error('❌ CRITICAL ERROR: Failed to create appointment in database:', createError);
+        throw createError;
+      }
       console.log(`📅 ${appointmentData.clientName} - ${service.name} - ${appointmentDate.toLocaleString('pt-BR')}`);
 
       // Get professional name for notification
