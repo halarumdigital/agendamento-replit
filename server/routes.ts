@@ -105,12 +105,16 @@ async function generateAvailabilityInfo(professionals: any[], existingAppointmen
       }
       
       // Find appointments for this specific date
-      const dayAppointments = existingAppointments.filter(apt => 
-        apt.professionalId === prof.id && 
-        apt.status !== 'Cancelado' && 
-        apt.status !== 'cancelado' &&
-        apt.appointmentDate === day.date
-      );
+      const dayAppointments = existingAppointments.filter(apt => {
+        if (apt.professionalId !== prof.id || 
+            apt.status === 'Cancelado' || 
+            apt.status === 'cancelado') {
+          return false;
+        }
+        // Convert appointment date to string for comparison
+        const aptDateString = new Date(apt.appointmentDate).toISOString().split('T')[0];
+        return aptDateString === day.date;
+      });
       
       if (dayAppointments.length > 0) {
         const times = dayAppointments.map(apt => apt.appointmentTime).sort();
@@ -2100,11 +2104,11 @@ INSTRUÇÕES OBRIGATÓRIAS:
 - Se cliente falar "sexta" ou "sexta-feira", use a data da sexta-feira listada acima
 - Esta confirmação com a data CORRETA é OBRIGATÓRIA antes de prosseguir para o horário
 - CRÍTICO: VERIFICAÇÃO DE DISPONIBILIDADE POR DATA ESPECÍFICA:
-  * Quando cliente mencionar um dia (ex: "terça"), verifique APENAS os agendamentos daquela data específica
-  * Se não há agendamentos listados para aquela data específica, o dia está LIVRE
-  * NÃO considere agendamentos de outros dias como ocupação
-  * Exemplo: Se cliente quer "terça-feira 17/06" e não há agendamentos para 17/06, responda que está DISPONÍVEL
-  * APENAS declare ocupado se houver agendamento específico naquela data e horário
+  * ANTES de confirmar qualquer horário, consulte a seção "DISPONIBILIDADE REAL DOS PROFISSIONAIS POR DATA" acima
+  * Se a informação mostrar "OCUPADO às [horários]" para aquela data, NÃO confirme esses horários
+  * Se a informação mostrar "LIVRE", o horário está disponível
+  * NUNCA confirme horários que aparecem como "OCUPADO" na lista de disponibilidade
+  * Sempre sugira horários alternativos se o solicitado estiver ocupado
 - Verifique se o profissional trabalha no dia solicitado
 - Verifique se o horário está dentro do expediente (09:00 às 18:00)
 - Se horário disponível, confirme a disponibilidade
