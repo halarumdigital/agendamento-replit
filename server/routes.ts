@@ -263,6 +263,45 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
       });
     }
     
+    // Check for appointment conflicts before creating
+    console.log(`🔍 Checking for appointment conflicts: ${professional.name} on ${appointmentDate.toISOString().split('T')[0]} at ${formattedTime}`);
+    
+    const conflictCheck = await db.execute(sql`
+      SELECT id, client_name, appointment_time, duration 
+      FROM appointments 
+      WHERE company_id = ${companyId} 
+        AND professional_id = ${professional.id}
+        AND appointment_date = ${appointmentDate.toISOString().split('T')[0]}
+        AND appointment_time = ${formattedTime}
+        AND status != 'Cancelado'
+    `);
+    
+    if (conflictCheck.length > 0) {
+      const existingAppointment = conflictCheck[0];
+      console.log(`❌ Appointment conflict detected! Existing appointment: ${existingAppointment.client_name} at ${existingAppointment.appointment_time}`);
+      
+      // Send conflict notification via WhatsApp
+      const conflictMessage = `❌ Conflito de horário detectado!\n\nO horário ${formattedTime} do dia ${appointmentDate.toLocaleDateString('pt-BR')} com ${professional.name} já está ocupado por ${existingAppointment.client_name}.\n\nPor favor, escolha outro horário disponível.`;
+      
+      try {
+        await fetch(`${evolutionApiUrl}/message/sendText/${apikey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            number: phoneNumber,
+            text: conflictMessage
+          })
+        });
+        console.log(`⚠️ Conflict notification sent to ${phoneNumber}`);
+      } catch (error) {
+        console.error('❌ Error sending conflict notification:', error);
+      }
+      
+      return; // Exit early, don't create appointment
+    }
+    
+    console.log(`✅ No conflicts found. Creating appointment for ${extractedName}`);
+    
     // Create appointment
     const appointment = await storage.createAppointment({
       companyId,
