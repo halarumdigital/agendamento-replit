@@ -1231,7 +1231,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('🧪 TESTING: Simulando caso do agendamento Gilliard confirmado mas não salvo');
       
       const companyId = 1; // ID da empresa
-      const conversationId = 999; // ID teste da conversa
       
       // Dados exatos do agendamento Gilliard confirmado
       const testExtractedData = JSON.stringify({
@@ -1245,17 +1244,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log('📋 Simulando extração de dados:', testExtractedData);
       
+      // Criar conversa de teste primeiro
+      const testConversation = await storage.createConversation({
+        companyId,
+        whatsappInstanceId: 1, // Assumindo instância ID 1 existe
+        phoneNumber: '5511999999999',
+        contactName: 'Gilliard',
+        lastMessageAt: new Date()
+      });
+      
+      const testConversationId = testConversation.id;
+      
       // Simular inserção direta dos dados na conversa para teste
       await storage.createMessage({
-        conversationId,
+        conversationId: testConversationId,
         content: 'TESTE: Obrigado. Gilliard! Seu agendamento está confirmado para uma hidratação com o Magnus no sábado, dia 11/11, às 09:00. Qualquer dúvida ou alteração, estou à disposição. Tenha um ótimo dia!',
-        isFromUser: false,
+        role: 'assistant',
         messageId: 'test-message-123',
         timestamp: new Date()
       });
       
-      // Simular o processo completo de criação
-      await createAppointmentFromConversation(conversationId, companyId);
+      // Simular o processo completo de criação usando a conversa correta
+      await createAppointmentFromConversation(testConversationId, companyId);
       
       res.json({ 
         success: true, 
