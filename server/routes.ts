@@ -100,13 +100,25 @@ async function generateAvailabilityInfo(professionals: any[], existingAppointmen
     
     console.log(`🔍 DEBUG - Profissional ${prof.name} (ID: ${prof.id}) tem ${profAppointments.length} agendamentos ativos`);
     
-    if (profAppointments.length > 0) {
+    // Agrupar agendamentos por data para exibir apenas dias com agendamentos
+    const appointmentsByDate = new Map();
+    profAppointments.forEach(apt => {
+      const dateKey = apt.appointmentDate;
+      if (!appointmentsByDate.has(dateKey)) {
+        appointmentsByDate.set(dateKey, []);
+      }
+      appointmentsByDate.get(dateKey).push(apt);
+    });
+    
+    if (appointmentsByDate.size > 0) {
       availabilityText += `- Agendamentos ocupados:\n`;
-      profAppointments.forEach(apt => {
-        const aptDate = new Date(apt.appointmentDate + 'T00:00:00');
+      appointmentsByDate.forEach((appointments, dateKey) => {
+        const aptDate = new Date(dateKey + 'T00:00:00');
         const dayName = dayNames[aptDate.getDay()];
-        availabilityText += `  • ${dayName} ${apt.appointmentTime} - OCUPADO\n`;
-        console.log(`🔍 DEBUG - Agendamento: ${dayName} ${apt.appointmentTime} (Data: ${apt.appointmentDate})`);
+        appointments.forEach(apt => {
+          availabilityText += `  • ${dayName} ${apt.appointmentTime} - OCUPADO\n`;
+          console.log(`🔍 DEBUG - Agendamento: ${dayName} ${apt.appointmentTime} (Data: ${apt.appointmentDate})`);
+        });
       });
     } else {
       availabilityText += `- LIVRE (sem agendamentos confirmados)\n`;
@@ -367,12 +379,12 @@ async function createAppointmentFromConversation(conversationId: number, company
       const currentDay = date.getDay();
       let daysUntilTarget = targetDay - currentDay;
       
-      // If target day is today, use today
+      // Se o dia alvo é hoje, usar o próximo
       if (daysUntilTarget === 0) {
-        return date.toISOString().split('T')[0];
+        daysUntilTarget = 7; // Próxima semana
       }
       
-      // If target day has passed this week, get next week's occurrence
+      // Se o dia já passou esta semana, pegar a próxima ocorrência
       if (daysUntilTarget < 0) {
         daysUntilTarget += 7;
       }
@@ -1812,9 +1824,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const OpenAI = (await import('openai')).default;
               const openai = new OpenAI({ apiKey: globalSettings.openaiApiKey });
 
+              // Add current date context for accurate AI responses
+              const today = new Date();
+              const getNextWeekdayDateForAI = (dayName: string): string => {
+                const dayMap: { [key: string]: number } = {
+                  'domingo': 0, 'segunda': 1, 'terça': 2, 'quarta': 3, 
+                  'quinta': 4, 'sexta': 5, 'sábado': 6
+                };
+                
+                const targetDay = dayMap[dayName.toLowerCase()];
+                if (targetDay === undefined) return '';
+                
+                const date = new Date();
+                const currentDay = date.getDay();
+                let daysUntilTarget = targetDay - currentDay;
+                
+                // Se o dia alvo é hoje, usar o próximo
+                if (daysUntilTarget === 0) {
+                  daysUntilTarget = 7; // Próxima semana
+                }
+                
+                // Se o dia já passou esta semana, pegar a próxima ocorrência
+                if (daysUntilTarget < 0) {
+                  daysUntilTarget += 7;
+                }
+                
+                date.setDate(date.getDate() + daysUntilTarget);
+                return date.toLocaleDateString('pt-BR');
+              };
+
               const systemPrompt = `${company.aiAgentPrompt}
 
 Importante: Você está representando a empresa "${company.fantasyName}" via WhatsApp. 
+
+HOJE É: ${today.toLocaleDateString('pt-BR')} (${['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'][today.getDay()]})
+
+PRÓXIMOS DIAS DA SEMANA:
+- Domingo: ${getNextWeekdayDateForAI('domingo')} 
+- Segunda-feira: ${getNextWeekdayDateForAI('segunda')}
+- Terça-feira: ${getNextWeekdayDateForAI('terça')}
+- Quarta-feira: ${getNextWeekdayDateForAI('quarta')}
+- Quinta-feira: ${getNextWeekdayDateForAI('quinta')}
+- Sexta-feira: ${getNextWeekdayDateForAI('sexta')}
+- Sábado: ${getNextWeekdayDateForAI('sábado')}
 
 PROFISSIONAIS DISPONÍVEIS PARA AGENDAMENTO:
 ${availableProfessionals || 'Nenhum profissional cadastrado no momento'}
@@ -1831,10 +1883,11 @@ INSTRUÇÕES OBRIGATÓRIAS:
 - Use o formato: "Aqui estão os serviços disponíveis:\n[lista dos serviços]\n\nQual serviço você gostaria de agendar?"
 - Após a escolha do serviço, peça o nome completo
 - Após o nome, peça a data e hora desejada
-- REGRA OBRIGATÓRIA DE CONFIRMAÇÃO DE DATA: Quando cliente mencionar dias da semana (segunda, terça, quarta, quinta, sexta, sábado, domingo), SEMPRE confirme o dia específico do mês
-- Exemplo: Se cliente falar "quarta-feira", responda "Quarta-feira dia 11/06. Está correto?" 
-- Exemplo: Se cliente falar "sexta", responda "Sexta-feira dia 13/06. Confirma?"
-- Esta confirmação é OBRIGATÓRIA antes de prosseguir com o agendamento
+- REGRA OBRIGATÓRIA DE CONFIRMAÇÃO DE DATA: Quando cliente mencionar dias da semana, SEMPRE use as datas corretas listadas acima
+- IMPORTANTE: Use EXATAMENTE as datas da seção "PRÓXIMOS DIAS DA SEMANA" acima
+- Se cliente falar "segunda" ou "segunda-feira", use a data da segunda-feira listada acima
+- Se cliente falar "sexta" ou "sexta-feira", use a data da sexta-feira listada acima
+- Esta confirmação com a data CORRETA é OBRIGATÓRIA antes de prosseguir com o agendamento
 - IMPORTANTE: Quando cliente sugerir data/hora, SEMPRE verifique a disponibilidade real usando as informações acima
 - Verifique se o profissional trabalha no dia solicitado
 - Verifique se o horário está dentro do expediente
