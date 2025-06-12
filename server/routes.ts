@@ -67,7 +67,19 @@ function generateWebhookUrl(req: any, instanceName: string): string {
 async function generateAvailabilityInfo(professionals: any[], existingAppointments: any[]): Promise<string> {
   const dayNames = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
   
-  let availabilityText = 'DISPONIBILIDADE REAL DOS PROFISSIONAIS (CONSULTE ANTES DE CONFIRMAR):\n\n';
+  // Generate next 7 days for reference
+  const nextDays = [];
+  for (let i = 0; i < 7; i++) {
+    const date = new Date();
+    date.setDate(date.getDate() + i);
+    nextDays.push({
+      date: date.toISOString().split('T')[0],
+      dayName: dayNames[date.getDay()],
+      formatted: date.toLocaleDateString('pt-BR')
+    });
+  }
+  
+  let availabilityText = 'DISPONIBILIDADE REAL DOS PROFISSIONAIS POR DATA:\n\n';
   
   for (const prof of professionals) {
     if (!prof.active) continue;
@@ -79,49 +91,32 @@ async function generateAvailabilityInfo(professionals: any[], existingAppointmen
     const workStart = prof.workStartTime || '09:00';
     const workEnd = prof.workEndTime || '18:00';
     
-    availabilityText += `- Trabalha: ${workDays.map((day: number) => dayNames[day]).join(', ')}\n`;
-    availabilityText += `- Horário: ${workStart} às ${workEnd}\n`;
+    availabilityText += `- Horário de trabalho: ${workStart} às ${workEnd}\n`;
+    availabilityText += `- Dias de trabalho: ${workDays.map((day: number) => dayNames[day]).join(', ')}\n\n`;
     
-    // Verificar sábado especificamente (dia 6)
-    if (workDays.includes(6)) {
-      availabilityText += `- SÁBADO: DISPONÍVEL (${workStart} às ${workEnd})\n`;
-    } else {
-      availabilityText += `- SÁBADO: NÃO TRABALHA\n`;
-    }
-    
-    // Filtrar agendamentos ativos apenas para este profissional
-    const profAppointments = existingAppointments.filter(apt => 
-      apt.professionalId === prof.id && 
-      apt.status !== 'Cancelado' && 
-      apt.status !== 'cancelado' &&
-      apt.appointmentDate && 
-      apt.appointmentTime
-    );
-    
-    console.log(`🔍 DEBUG - Profissional ${prof.name} (ID: ${prof.id}) tem ${profAppointments.length} agendamentos ativos`);
-    
-    // Agrupar agendamentos por data para exibir apenas dias com agendamentos
-    const appointmentsByDate = new Map();
-    profAppointments.forEach(apt => {
-      const dateKey = apt.appointmentDate;
-      if (!appointmentsByDate.has(dateKey)) {
-        appointmentsByDate.set(dateKey, []);
+    // Check availability for next 7 days
+    for (const day of nextDays) {
+      const dayOfWeek = new Date(day.date + 'T00:00:00').getDay();
+      
+      if (!workDays.includes(dayOfWeek)) {
+        availabilityText += `  ${day.dayName} (${day.formatted}): NÃO TRABALHA\n`;
+        continue;
       }
-      appointmentsByDate.get(dateKey).push(apt);
-    });
-    
-    if (appointmentsByDate.size > 0) {
-      availabilityText += `- Agendamentos ocupados:\n`;
-      appointmentsByDate.forEach((appointments, dateKey) => {
-        const aptDate = new Date(dateKey + 'T00:00:00');
-        const dayName = dayNames[aptDate.getDay()];
-        appointments.forEach(apt => {
-          availabilityText += `  • ${dayName} ${apt.appointmentTime} - OCUPADO\n`;
-          console.log(`🔍 DEBUG - Agendamento: ${dayName} ${apt.appointmentTime} (Data: ${apt.appointmentDate})`);
-        });
-      });
-    } else {
-      availabilityText += `- LIVRE (sem agendamentos confirmados)\n`;
+      
+      // Find appointments for this specific date
+      const dayAppointments = existingAppointments.filter(apt => 
+        apt.professionalId === prof.id && 
+        apt.status !== 'Cancelado' && 
+        apt.status !== 'cancelado' &&
+        apt.appointmentDate === day.date
+      );
+      
+      if (dayAppointments.length > 0) {
+        const times = dayAppointments.map(apt => apt.appointmentTime).sort();
+        availabilityText += `  ${day.dayName} (${day.formatted}): OCUPADO às ${times.join(', ')}\n`;
+      } else {
+        availabilityText += `  ${day.dayName} (${day.formatted}): LIVRE (${workStart} às ${workEnd})\n`;
+      }
     }
     
     availabilityText += '\n';
@@ -295,7 +290,7 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
         id: appointment.id,
         clientName: extractedName,
         serviceName: service.name,
-        professionalName: professional.name,
+        professionalName: professional?.name || 'Profissional',
         appointmentDate: appointmentDate.toISOString().split('T')[0],
         appointmentTime: formattedTime
       }
@@ -1894,11 +1889,16 @@ INSTRUÇÕES OBRIGATÓRIAS:
 - Se cliente falar "segunda" ou "segunda-feira", use a data da segunda-feira listada acima
 - Se cliente falar "sexta" ou "sexta-feira", use a data da sexta-feira listada acima
 - Esta confirmação com a data CORRETA é OBRIGATÓRIA antes de prosseguir com o agendamento
-- IMPORTANTE: Quando cliente sugerir data/hora, SEMPRE verifique a disponibilidade real usando as informações acima
+- CRÍTICO: VERIFICAÇÃO DE DISPONIBILIDADE POR DATA ESPECÍFICA:
+  * Quando cliente mencionar um dia (ex: "terça"), verifique APENAS os agendamentos daquela data específica
+  * Se não há agendamentos listados para aquela data específica, o dia está LIVRE
+  * NÃO considere agendamentos de outros dias como ocupação
+  * Exemplo: Se cliente quer "terça-feira 17/06" e não há agendamentos para 17/06, responda que está DISPONÍVEL
+  * APENAS declare ocupado se houver agendamento específico naquela data e horário
 - Verifique se o profissional trabalha no dia solicitado
-- Verifique se o horário está dentro do expediente
-- Verifique se não há conflito com agendamentos existentes
-- Se horário não disponível, sugira alternativas baseadas na agenda real
+- Verifique se o horário está dentro do expediente (09:00 às 18:00)
+- Se horário disponível, confirme a disponibilidade
+- Se horário ocupado, sugira alternativas no mesmo dia
 - Após confirmar disponibilidade, peça o telefone para finalizar
 - Quando tiver TODOS os dados (profissional, serviço, nome, data/hora disponível, telefone), confirme o agendamento
 - NÃO invente serviços - use APENAS os serviços listados acima
