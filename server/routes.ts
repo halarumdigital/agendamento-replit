@@ -1958,24 +1958,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       console.log('✅ Processing message event:', webhookData.event);
-      // Handle both formats: array format and direct format
-      const message = isMessageEventArray ? webhookData.data.messages[0] : webhookData.data;
+      // Handle multiple formats: array format, direct format, and wrapped format
+      let message;
+      if (isMessageEventArray) {
+        message = webhookData.data.messages[0];
+      } else if (isDirectMessage) {
+        message = webhookData;
+      } else if (isWrappedMessage) {
+        message = webhookData.data;
+      } else {
+        message = webhookData.data;
+      }
+      
+      console.log('🔍 Message object after assignment:', JSON.stringify(message, null, 2));
+      
+      if (!message) {
+        console.log('❌ Message object is null or undefined');
+        return res.status(200).json({ received: true, processed: false, reason: 'Message object is null' });
+      }
         
-        // Only process text messages from users (not from the bot itself)
-        console.log('📱 Message type:', message.messageType);
-        console.log('👤 From me:', message.key.fromMe);
-        console.log('📞 Remote JID:', message.key.remoteJid);
+      // Only process text messages from users (not from the bot itself)
+      console.log('📱 Message type:', message?.messageType || 'text');
+      console.log('👤 From me:', message?.key?.fromMe);
+      console.log('📞 Remote JID:', message?.key?.remoteJid);
         
         // Handle both 'textMessage' and 'conversation' message types
-        const hasTextContent = message.message?.conversation || message.message?.extendedTextMessage?.text;
-        const isTextMessage = hasTextContent && !message.key.fromMe;
+        const hasTextContent = message?.message?.conversation || message?.message?.extendedTextMessage?.text;
+        const isTextMessage = hasTextContent && !message?.key?.fromMe;
         
         // Debug logging (can be removed in production)
         // console.log('🔍 Message content:', hasTextContent);
         
         if (isTextMessage) {
-          const phoneNumber = message.key.remoteJid.replace('@s.whatsapp.net', '');
-          const messageText = message.message.conversation || message.message.extendedTextMessage?.text;
+          const phoneNumber = message?.key?.remoteJid?.replace('@s.whatsapp.net', '') || '';
+          const messageText = message?.message?.conversation || message?.message?.extendedTextMessage?.text;
           
           console.log('📞 Phone number:', phoneNumber);
           console.log('💬 Message text:', messageText);
