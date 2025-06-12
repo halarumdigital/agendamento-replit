@@ -48,14 +48,42 @@ async function transcribeAudio(audioBase64: string, openaiApiKey: string): Promi
     const OpenAI = (await import('openai')).default;
     const openai = new OpenAI({ apiKey: openaiApiKey });
     
-    // Convert base64 to buffer and save as temporary file
+    // Convert base64 to buffer
     const audioBuffer = Buffer.from(audioBase64, 'base64');
-    const tempFilePath = path.join('/tmp', `audio_${Date.now()}.ogg`);
+    
+    // WhatsApp typically sends audio as OGG Opus format, but we'll try to detect
+    let extension = 'ogg'; // Default to ogg for WhatsApp
+    if (audioBuffer.length > 4) {
+      const header = audioBuffer.subarray(0, 4);
+      const headerStr = header.toString('ascii', 0, 4);
+      
+      if (header[0] === 0xFF && (header[1] & 0xF0) === 0xF0) {
+        extension = 'mp3';
+      } else if (headerStr === 'OggS') {
+        extension = 'ogg';
+      } else if (headerStr === 'RIFF') {
+        extension = 'wav';
+      } else if (headerStr.includes('ftyp')) {
+        extension = 'm4a';
+      } else {
+        // WhatsApp commonly uses OGG format even without proper header
+        extension = 'ogg';
+      }
+    }
+    
+    const tempFilePath = path.join('/tmp', `audio_${Date.now()}.${extension}`);
+    
+    // Ensure /tmp directory exists
+    if (!fs.existsSync('/tmp')) {
+      fs.mkdirSync('/tmp', { recursive: true });
+    }
     
     fs.writeFileSync(tempFilePath, audioBuffer);
     
     // Create a readable stream for OpenAI
     const audioStream = fs.createReadStream(tempFilePath);
+    
+    console.log(`🎵 Transcribing audio file: ${extension} format, size: ${audioBuffer.length} bytes`);
     
     // Transcribe using OpenAI Whisper
     const transcription = await openai.audio.transcriptions.create({
@@ -3761,6 +3789,41 @@ INSTRUÇÕES OBRIGATÓRIAS:
       }
     } catch (error) {
       console.error('Configure webhook error:', error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  // Test audio transcription
+  app.post('/api/test/audio-transcription', async (req: any, res) => {
+    try {
+      const { audioBase64 } = req.body;
+      if (!audioBase64) {
+        return res.status(400).json({ message: "Audio base64 é obrigatório" });
+      }
+
+      // Get global OpenAI settings
+      const globalSettings = await storage.getGlobalSettings();
+      if (!globalSettings || !globalSettings.openaiApiKey) {
+        return res.status(400).json({ message: "OpenAI não configurada" });
+      }
+
+      console.log('🎵 Testing audio transcription...');
+      const transcription = await transcribeAudio(audioBase64, globalSettings.openaiApiKey);
+      
+      if (transcription) {
+        res.json({ 
+          success: true, 
+          transcription: transcription,
+          message: "Áudio transcrito com sucesso" 
+        });
+      } else {
+        res.status(400).json({ 
+          success: false, 
+          message: "Falha na transcrição do áudio" 
+        });
+      }
+    } catch (error: any) {
+      console.error("Error testing audio transcription:", error);
       res.status(500).json({ message: "Erro interno do servidor" });
     }
   });
