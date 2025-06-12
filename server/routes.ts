@@ -2078,8 +2078,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   messageText = transcription;
                   console.log('✅ Audio transcribed:', messageText);
                 } else {
-                  console.log('❌ Failed to transcribe audio');
-                  return res.status(200).json({ received: true, processed: false, reason: 'Audio transcription failed' });
+                  console.log('❌ Failed to transcribe audio, sending fallback response');
+                  // Send a helpful fallback response for failed audio transcription
+                  const fallbackResponse = "Desculpe, não consegui entender o áudio que você enviou. Pode escrever sua mensagem por texto, por favor? 📝";
+                  
+                  try {
+                    await sendWhatsAppMessage(instanceName, phoneNumber, fallbackResponse);
+                    console.log('✅ Fallback response sent for failed audio transcription');
+                    return res.status(200).json({ 
+                      received: true, 
+                      processed: true, 
+                      reason: 'Audio transcription failed, fallback response sent' 
+                    });
+                  } catch (sendError) {
+                    console.error('❌ Failed to send fallback response:', sendError);
+                    return res.status(200).json({ received: true, processed: false, reason: 'Audio transcription and fallback failed' });
+                  }
                 }
               } else {
                 console.log('❌ No audio base64 data found');
