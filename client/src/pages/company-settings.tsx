@@ -263,7 +263,7 @@ export default function CompanySettings() {
   const configureWebhookMutation = useMutation({
     mutationFn: async (instanceId: number) => {
       const response = await apiRequest("POST", `/api/company/whatsapp/instances/${instanceId}/configure-webhook`);
-      return await response.json();
+      return response;
     },
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/company/whatsapp/instances"] });
