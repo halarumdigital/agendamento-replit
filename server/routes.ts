@@ -211,15 +211,53 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
       }
     }
     
-    // Extract other data with improved patterns
-    // First try to extract from AI response (usually more accurate)
-    let timeMatch = aiResponse.match(/às (\d{1,2}):(\d{2})/) || allConversationText.match(/às (\d{1,2}):(\d{2})/) || allConversationText.match(/(\d{1,2}):(\d{2})/);
-    let extractedTime = timeMatch ? timeMatch[0].replace('às ', '') : null;
+    // Enhanced time extraction with comprehensive patterns
+    let extractedTime: string | null = null;
     
-    // If no complete time found, try single hour patterns
-    if (!extractedTime) {
-      let hourMatch = aiResponse.match(/às (\d{1,2})/) || allConversationText.match(/(\d{1,2})h/);
-      extractedTime = hourMatch ? hourMatch[1] + ':00' : null;
+    // Try multiple time patterns in order of specificity
+    const timePatterns = [
+      // AI response patterns
+      /Horário:\s*(\d{1,2}:\d{2})/i,           // "Horário: 09:00"
+      /(?:às|as)\s+(\d{1,2}:\d{2})/i,          // "às 09:00"
+      /(\d{1,2}:\d{2})/g,                      // Any "09:00" format
+      // Conversation patterns  
+      /(?:às|as)\s+(\d{1,2})/i,                // "às 9"
+      /(\d{1,2})h/i,                           // "9h"
+      /(\d{1,2})(?=\s|$)/                      // Single digit followed by space or end
+    ];
+    
+    // Check AI response first (more reliable), then conversation
+    const searchTexts = [aiResponse, allConversationText];
+    
+    for (const text of searchTexts) {
+      for (const pattern of timePatterns) {
+        const matches = text.match(pattern);
+        if (matches) {
+          let timeCandidate = matches[1];
+          
+          // Validate time format
+          if (timeCandidate && timeCandidate.includes(':')) {
+            // Already in HH:MM format
+            const [hour, minute] = timeCandidate.split(':');
+            const h = parseInt(hour);
+            const m = parseInt(minute);
+            if (h >= 0 && h <= 23 && m >= 0 && m <= 59) {
+              extractedTime = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+              console.log(`🕐 Extracted time from ${text === aiResponse ? 'AI response' : 'conversation'}: "${extractedTime}"`);
+              break;
+            }
+          } else if (timeCandidate) {
+            // Hour only, add :00
+            const hour = parseInt(timeCandidate);
+            if (hour >= 0 && hour <= 23) {
+              extractedTime = `${hour.toString().padStart(2, '0')}:00`;
+              console.log(`🕐 Extracted hour from ${text === aiResponse ? 'AI response' : 'conversation'}: "${extractedTime}"`);
+              break;
+            }
+          }
+        }
+      }
+      if (extractedTime) break;
     }
     
     let extractedDay = aiResponse.match(patterns.day)?.[1] || allConversationText.match(patterns.day)?.[1];
@@ -1898,18 +1936,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json({ received: true, processed: true, type: 'qrcode' });
       }
 
-      // Check if it's a message event (handle both formats)
+      // Check if it's a message event (handle multiple formats)
       const isMessageEventArray = (webhookData.event === 'messages.upsert' || webhookData.event === 'MESSAGES_UPSERT') && webhookData.data?.messages?.length > 0;
       const isMessageEventDirect = (webhookData.event === 'messages.upsert' || webhookData.event === 'MESSAGES_UPSERT') && webhookData.data?.key && webhookData.data?.message;
-      // Also check for direct message structure without specific event (like from our test)
-      const isDirectMessage = webhookData.data?.key && webhookData.data?.message && !webhookData.event;
-      const isMessageEvent = isMessageEventArray || isMessageEventDirect || isDirectMessage;
+      // Check for direct message structure without specific event (like from our test)
+      const isDirectMessage = webhookData.key && webhookData.message && !webhookData.event;
+      // Check for message data wrapped in data property 
+      const isWrappedMessage = webhookData.data?.key && webhookData.data?.message;
+      const isMessageEvent = isMessageEventArray || isMessageEventDirect || isDirectMessage || isWrappedMessage;
       
       console.log('🔍 Debug - isMessageEventArray:', isMessageEventArray);
       console.log('🔍 Debug - isMessageEventDirect:', isMessageEventDirect);
       console.log('🔍 Debug - isDirectMessage:', isDirectMessage);
-      console.log('🔍 Debug - Has key:', !!webhookData.data?.key);
-      console.log('🔍 Debug - Has message:', !!webhookData.data?.message);
+      console.log('🔍 Debug - isWrappedMessage:', isWrappedMessage);
+      console.log('🔍 Debug - Has key:', !!webhookData.key || !!webhookData.data?.key);
+      console.log('🔍 Debug - Has message:', !!webhookData.message || !!webhookData.data?.message);
       
       if (!isMessageEvent) {
         console.log('❌ Event not processed:', webhookData.event);
