@@ -220,7 +220,15 @@ ${services.map(s => `- ${s.name} (ID: ${s.id})`).join('\n')}
 CONVERSA:
 ${conversationText}
 
-INSTRUÇÕES IMPORTANTES PARA DATAS:
+INSTRUÇÕES CRÍTICAS PARA EXTRAÇÃO DE HORÁRIO:
+- EXTRAIA EXATAMENTE o horário mencionado pelo cliente na conversa
+- Se cliente disse "10:00", use "10:00"
+- Se cliente disse "às 10", use "10:00"
+- Se cliente disse "meio-dia", use "12:00"
+- Se cliente disse "duas da tarde", use "14:00"
+- NÃO use horários padrão - SEMPRE extraia o horário EXATO da conversa
+
+INSTRUÇÕES PARA DATAS:
 - Se mencionado "sexta-feira" ou "sexta", use: ${getNextWeekdayDate('sexta')}
 - Se mencionado "segunda-feira" ou "segunda", use: ${getNextWeekdayDate('segunda')}
 - Se mencionado "terça-feira" ou "terça", use: ${getNextWeekdayDate('terça')}
@@ -228,12 +236,12 @@ INSTRUÇÕES IMPORTANTES PARA DATAS:
 - Se mencionado "quinta-feira" ou "quinta", use: ${getNextWeekdayDate('quinta')}
 - Se mencionado "sábado", use: ${getNextWeekdayDate('sábado')}
 
-Extraia APENAS se TODOS os dados estiverem presentes na conversa:
+IMPORTANTE: Extraia APENAS se TODOS os dados estiverem presentes na conversa:
 - Nome do cliente
 - Telefone do cliente  
 - Profissional escolhido (use o ID correto da lista acima)
 - Serviço escolhido (use o ID correto da lista acima)
-- Data e hora do agendamento (use as datas calculadas acima para dias da semana)
+- Data e hora EXATA do agendamento (extraia o horário PRECISO mencionado pelo cliente)
 
 Responda APENAS em formato JSON válido ou "DADOS_INCOMPLETOS" se algum dado estiver faltando:
 {
