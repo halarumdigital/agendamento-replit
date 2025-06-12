@@ -2054,13 +2054,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
               // Save user message
               console.log('💾 Saving user message to database');
+              console.log('🕐 Message timestamp raw:', message.messageTimestamp);
+              
+              const messageTimestamp = message.messageTimestamp 
+                ? new Date(message.messageTimestamp * 1000) 
+                : new Date();
+              
+              console.log('🕐 Processed timestamp:', messageTimestamp.toISOString());
+              
               await storage.createMessage({
                 conversationId: conversation.id,
-                messageId: message.key?.id,
+                messageId: message.key?.id || `msg_${Date.now()}`,
                 content: messageText,
                 role: 'user',
                 messageType: message.messageType || 'text',
-                timestamp: new Date(message.messageTimestamp * 1000),
+                timestamp: messageTimestamp,
               });
 
               // Get conversation history (last 10 messages for context)

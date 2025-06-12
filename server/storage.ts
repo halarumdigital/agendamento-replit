@@ -616,9 +616,12 @@ export class DatabaseStorage implements IStorage {
 
   async updateConversation(id: number, conversationData: Partial<InsertConversation>): Promise<Conversation> {
     try {
+      // Create a safe update object without problematic timestamps
+      const updateData = { ...conversationData };
+      
       await db
         .update(conversations)
-        .set({ ...conversationData, updatedAt: new Date() })
+        .set(updateData)
         .where(eq(conversations.id, id));
       
       // Get the updated conversation
@@ -648,17 +651,26 @@ export class DatabaseStorage implements IStorage {
       // Ensure tables exist first
       await ensureConversationTables();
       
+      // Create a safe message object with proper timestamp handling
+      const safeMessageData = {
+        ...messageData,
+        timestamp: messageData.timestamp || new Date(),
+        createdAt: new Date()
+      };
+      
+      console.log('💾 Creating message with data:', JSON.stringify(safeMessageData, null, 2));
+      
       await db
         .insert(messages)
-        .values(messageData);
+        .values(safeMessageData);
       
       // Get the created message by timestamp and conversation
       const [message] = await db.select().from(messages)
         .where(
           and(
-            eq(messages.conversationId, messageData.conversationId),
-            eq(messages.content, messageData.content),
-            eq(messages.role, messageData.role)
+            eq(messages.conversationId, safeMessageData.conversationId),
+            eq(messages.content, safeMessageData.content),
+            eq(messages.role, safeMessageData.role)
           )
         )
         .orderBy(desc(messages.timestamp))
