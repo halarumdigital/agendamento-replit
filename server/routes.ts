@@ -1210,28 +1210,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const modelsData = await openaiResponse.json();
       
-      // Filter for GPT models only and sort by relevance
-      const gptModels = modelsData.data
-        .filter((model: any) => model.id.includes('gpt'))
+      // Filter for chat completion models and sort by relevance
+      const chatModels = modelsData.data
+        .filter((model: any) => {
+          const id = model.id.toLowerCase();
+          return (
+            id.includes('gpt') || 
+            id.includes('o1') || 
+            id.includes('chatgpt') ||
+            id.includes('text-davinci')
+          ) && !id.includes('embedding') && !id.includes('whisper') && !id.includes('dall-e');
+        })
         .map((model: any) => ({
           id: model.id,
-          name: model.id,
+          name: model.id
+            .replace('gpt-4o-mini', 'GPT-4o Mini (Rápido)')
+            .replace('gpt-4o', 'GPT-4o (Mais Avançado)')
+            .replace('gpt-4-turbo', 'GPT-4 Turbo')
+            .replace('gpt-4', 'GPT-4')
+            .replace('gpt-3.5-turbo', 'GPT-3.5 Turbo (Econômico)')
+            .replace('o1-preview', 'O1 Preview (Reasoning)')
+            .replace('o1-mini', 'O1 Mini (Reasoning)')
+            .replace('chatgpt-4o-latest', 'ChatGPT-4o Latest'),
           created: model.created
         }))
         .sort((a: any, b: any) => {
-          // Sort by model priority: gpt-4o, gpt-4, gpt-3.5
+          // Sort by model priority and recency
           const priority = (id: string) => {
             if (id.includes('gpt-4o')) return 1;
-            if (id.includes('gpt-4')) return 2;
-            if (id.includes('gpt-3.5')) return 3;
-            return 4;
+            if (id.includes('o1')) return 2;
+            if (id.includes('chatgpt-4o')) return 3;
+            if (id.includes('gpt-4')) return 4;
+            if (id.includes('gpt-3.5')) return 5;
+            return 6;
           };
-          return priority(a.id) - priority(b.id);
+          const priorityDiff = priority(a.id) - priority(b.id);
+          if (priorityDiff !== 0) return priorityDiff;
+          return b.created - a.created; // Newer models first within same priority
         });
 
       res.json({
-        models: gptModels,
-        message: `${gptModels.length} modelos encontrados`
+        models: chatModels,
+        message: `${chatModels.length} modelos encontrados`
       });
     } catch (error: any) {
       console.error("Error fetching OpenAI models:", error);

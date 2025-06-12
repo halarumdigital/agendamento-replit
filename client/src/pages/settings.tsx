@@ -798,7 +798,18 @@ export default function SettingsPage() {
                                 <SelectItem value="gpt-4o">GPT-4o (Mais avançado)</SelectItem>
                                 <SelectItem value="gpt-4o-mini">GPT-4o Mini (Mais rápido)</SelectItem>
                                 <SelectItem value="gpt-4-turbo">GPT-4 Turbo</SelectItem>
+                                <SelectItem value="gpt-4-turbo-preview">GPT-4 Turbo Preview</SelectItem>
+                                <SelectItem value="gpt-4">GPT-4</SelectItem>
+                                <SelectItem value="gpt-4-0613">GPT-4 (06/13)</SelectItem>
+                                <SelectItem value="gpt-4-32k">GPT-4 32K</SelectItem>
+                                <SelectItem value="gpt-4-32k-0613">GPT-4 32K (06/13)</SelectItem>
                                 <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo (Econômico)</SelectItem>
+                                <SelectItem value="gpt-3.5-turbo-0125">GPT-3.5 Turbo (01/25)</SelectItem>
+                                <SelectItem value="gpt-3.5-turbo-1106">GPT-3.5 Turbo (11/06)</SelectItem>
+                                <SelectItem value="gpt-3.5-turbo-16k">GPT-3.5 Turbo 16K</SelectItem>
+                                <SelectItem value="o1-preview">O1 Preview (Reasoning)</SelectItem>
+                                <SelectItem value="o1-mini">O1 Mini (Reasoning)</SelectItem>
+                                <SelectItem value="chatgpt-4o-latest">ChatGPT-4o Latest</SelectItem>
                               </>
                             )}
                           </SelectContent>
