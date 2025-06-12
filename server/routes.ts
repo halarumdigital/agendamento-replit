@@ -284,17 +284,22 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
     console.log(`✅ Appointment created from AI confirmation: ${extractedName} - ${service.name} - ${appointmentDate.toLocaleDateString()} ${formattedTime}`);
     
     // Broadcast notification
-    broadcastEvent({
-      type: 'new_appointment',
-      appointment: {
-        id: appointment.id,
-        clientName: extractedName,
-        serviceName: service.name,
-        professionalName: professional?.name || 'Profissional',
-        appointmentDate: appointmentDate.toISOString().split('T')[0],
-        appointmentTime: formattedTime
-      }
-    });
+    try {
+      broadcastEvent({
+        type: 'new_appointment',
+        appointment: {
+          id: appointment.insertId || appointment.id,
+          clientName: extractedName,
+          serviceName: service.name,
+          professionalName: professional?.name || 'Profissional',
+          appointmentDate: appointmentDate.toISOString().split('T')[0],
+          appointmentTime: formattedTime
+        }
+      });
+      console.log('✅ Broadcast notification sent successfully');
+    } catch (broadcastError) {
+      console.error('⚠️ Broadcast error (appointment still created):', broadcastError);
+    }
     
   } catch (error) {
     console.error('❌ Error creating appointment from AI confirmation:', error);
@@ -1883,12 +1888,15 @@ INSTRUÇÕES OBRIGATÓRIAS:
 - Após a escolha do profissional, ofereça IMEDIATAMENTE a lista completa de serviços disponíveis
 - Use o formato: "Aqui estão os serviços disponíveis:\n[lista dos serviços]\n\nQual serviço você gostaria de agendar?"
 - Após a escolha do serviço, peça o nome completo
-- Após o nome, peça a data e hora desejada
+- Após o nome, peça PRIMEIRO a data desejada (em etapas separadas):
+  1. ETAPA 1 - DATA: Pergunte "Em qual dia você gostaria de agendar?" e aguarde a resposta
+  2. ETAPA 2 - HORÁRIO: Apenas APÓS receber a data, pergunte "Qual horário você prefere?"
+- NUNCA peça data e horário na mesma mensagem - sempre separado em duas etapas
 - REGRA OBRIGATÓRIA DE CONFIRMAÇÃO DE DATA: Quando cliente mencionar dias da semana, SEMPRE use as datas corretas listadas acima
 - IMPORTANTE: Use EXATAMENTE as datas da seção "PRÓXIMOS DIAS DA SEMANA" acima
 - Se cliente falar "segunda" ou "segunda-feira", use a data da segunda-feira listada acima
 - Se cliente falar "sexta" ou "sexta-feira", use a data da sexta-feira listada acima
-- Esta confirmação com a data CORRETA é OBRIGATÓRIA antes de prosseguir com o agendamento
+- Esta confirmação com a data CORRETA é OBRIGATÓRIA antes de prosseguir para o horário
 - CRÍTICO: VERIFICAÇÃO DE DISPONIBILIDADE POR DATA ESPECÍFICA:
   * Quando cliente mencionar um dia (ex: "terça"), verifique APENAS os agendamentos daquela data específica
   * Se não há agendamentos listados para aquela data específica, o dia está LIVRE
