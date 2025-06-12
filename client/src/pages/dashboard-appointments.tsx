@@ -1064,7 +1064,7 @@ export default function DashboardAppointments() {
 
                   <div>
                     <label className="text-sm font-medium text-gray-700">Serviço</label>
-                    <p className="text-sm">{selectedAppointment.service.name}</p>
+                    <p className="text-sm">{selectedAppointment.service?.name || 'Serviço não encontrado'}</p>
                     <p className="text-xs text-gray-500">
                       {services.find(s => s.id === selectedAppointment.serviceId)?.duration || 'N/A'} minutos - R$ {services.find(s => s.id === selectedAppointment.serviceId)?.price || 'N/A'}
                     </p>
@@ -1072,7 +1072,7 @@ export default function DashboardAppointments() {
 
                   <div>
                     <label className="text-sm font-medium text-gray-700">Profissional</label>
-                    <p className="text-sm">{selectedAppointment.professional.name}</p>
+                    <p className="text-sm">{selectedAppointment.professional?.name || 'Profissional não encontrado'}</p>
                   </div>
 
                   <div>
@@ -1384,7 +1384,7 @@ export default function DashboardAppointments() {
                                         {services.find(s => s.id === appointment.serviceId)?.duration} minutos - R$ {services.find(s => s.id === appointment.serviceId)?.price}
                                       </div>
                                       <div className="text-xs text-gray-500">
-                                        {appointment.professional.name}
+                                        {appointment.professional?.name || 'Profissional não encontrado'}
                                       </div>
                                       <div className="text-xs text-gray-500 mt-1">
                                         {format(new Date(appointment.appointmentDate), 'dd/MM/yyyy')}
