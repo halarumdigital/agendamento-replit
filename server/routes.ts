@@ -283,22 +283,30 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
     
     console.log(`✅ Appointment created from AI confirmation: ${extractedName} - ${service.name} - ${appointmentDate.toLocaleDateString()} ${formattedTime}`);
     
-    // Broadcast notification
+    // Force immediate refresh of appointments list
+    console.log('📡 Broadcasting new appointment notification...');
+    
+    // Broadcast notification with complete appointment data
+    const appointmentNotification = {
+      type: 'new_appointment',
+      appointment: {
+        id: appointment.insertId || appointment.id || Date.now(), // Fallback ID
+        clientName: extractedName,
+        serviceName: service.name,
+        professionalName: professional?.name || 'Profissional',
+        appointmentDate: appointmentDate.toISOString().split('T')[0],
+        appointmentTime: formattedTime,
+        professionalId: professional.id,
+        serviceId: service.id,
+        status: 'Pendente'
+      }
+    };
+    
     try {
-      broadcastEvent({
-        type: 'new_appointment',
-        appointment: {
-          id: appointment.insertId || appointment.id,
-          clientName: extractedName,
-          serviceName: service.name,
-          professionalName: professional?.name || 'Profissional',
-          appointmentDate: appointmentDate.toISOString().split('T')[0],
-          appointmentTime: formattedTime
-        }
-      });
-      console.log('✅ Broadcast notification sent successfully');
+      broadcastEvent(appointmentNotification);
+      console.log('✅ Broadcast notification sent:', JSON.stringify(appointmentNotification, null, 2));
     } catch (broadcastError) {
-      console.error('⚠️ Broadcast error (appointment still created):', broadcastError);
+      console.error('⚠️ Broadcast error:', broadcastError);
     }
     
   } catch (error) {
@@ -752,17 +760,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     // Add connection to store
     sseConnections.add(res);
+    console.log(`📡 New SSE connection added. Total connections: ${sseConnections.size}`);
+
+    // Send initial connection confirmation
+    res.write('data: {"type":"connection_established","message":"SSE connected successfully"}\n\n');
 
     // Send keep-alive ping every 30 seconds
     const keepAlive = setInterval(() => {
-      res.write('data: {"type":"ping"}\n\n');
+      try {
+        res.write('data: {"type":"ping"}\n\n');
+      } catch (error) {
+        clearInterval(keepAlive);
+        sseConnections.delete(res);
+      }
     }, 30000);
 
     // Clean up on disconnect
     req.on('close', () => {
       clearInterval(keepAlive);
       sseConnections.delete(res);
+      console.log(`📡 SSE connection closed. Remaining connections: ${sseConnections.size}`);
     });
+  });
+
+  // Test endpoint to trigger notification
+  app.post('/api/test/notification-trigger', async (req, res) => {
+    try {
+      console.log(`📡 Testing notification system. Active SSE connections: ${sseConnections.size}`);
+      
+      // Broadcast test notification
+      const testNotification = {
+        type: 'new_appointment',
+        appointment: {
+          id: Date.now(),
+          clientName: 'Teste Notificação',
+          serviceName: 'Corte de Cabelo',
+          professionalName: 'Magnus',
+          appointmentDate: '2025-06-17',
+          appointmentTime: '15:00',
+          status: 'Pendente'
+        }
+      };
+
+      broadcastEvent(testNotification);
+      console.log('✅ Test notification broadcast sent:', JSON.stringify(testNotification, null, 2));
+      
+      res.json({ 
+        success: true, 
+        activeConnections: sseConnections.size,
+        notification: testNotification
+      });
+    } catch (error) {
+      console.error('❌ Error sending test notification:', error);
+      res.status(500).json({ error: 'Failed to send test notification' });
+    }
   });
 
 
