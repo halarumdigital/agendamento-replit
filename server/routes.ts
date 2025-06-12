@@ -384,7 +384,7 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
     const appointmentNotification = {
       type: 'new_appointment',
       appointment: {
-        id: appointment.id || Date.now(), // Use appointment ID directly
+        id: appointment?.id || Date.now(), // Use appointment ID if available
         clientName: extractedName,
         serviceName: service.name,
         professionalName: professional?.name || 'Profissional',
