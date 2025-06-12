@@ -42,6 +42,38 @@ const storage_multer = multer.diskStorage({
   }
 });
 
+// Function to transcribe audio using OpenAI Whisper
+async function transcribeAudio(audioBase64: string, openaiApiKey: string): Promise<string | null> {
+  try {
+    const OpenAI = (await import('openai')).default;
+    const openai = new OpenAI({ apiKey: openaiApiKey });
+    
+    // Convert base64 to buffer and save as temporary file
+    const audioBuffer = Buffer.from(audioBase64, 'base64');
+    const tempFilePath = path.join('/tmp', `audio_${Date.now()}.ogg`);
+    
+    fs.writeFileSync(tempFilePath, audioBuffer);
+    
+    // Create a readable stream for OpenAI
+    const audioStream = fs.createReadStream(tempFilePath);
+    
+    // Transcribe using OpenAI Whisper
+    const transcription = await openai.audio.transcriptions.create({
+      file: audioStream,
+      model: "whisper-1",
+      language: "pt", // Portuguese language
+    });
+    
+    // Clean up temporary file
+    fs.unlinkSync(tempFilePath);
+    
+    return transcription.text;
+  } catch (error) {
+    console.error('Error transcribing audio:', error);
+    return null;
+  }
+}
+
 const upload = multer({
   storage: storage_multer,
   limits: {
@@ -1982,22 +2014,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('👤 From me:', message?.key?.fromMe);
       console.log('📞 Remote JID:', message?.key?.remoteJid);
         
-        // Handle both 'textMessage' and 'conversation' message types
+        // Handle both text and audio messages
         const hasTextContent = message?.message?.conversation || message?.message?.extendedTextMessage?.text;
+        const hasAudioContent = message?.message?.audioMessage;
         const isTextMessage = hasTextContent && !message?.key?.fromMe;
+        const isAudioMessage = hasAudioContent && !message?.key?.fromMe;
         
-        // Debug logging (can be removed in production)
-        // console.log('🔍 Message content:', hasTextContent);
+        console.log('🎵 Audio message detected:', !!hasAudioContent);
+        console.log('💬 Text message detected:', !!hasTextContent);
         
-        if (isTextMessage) {
+        if (isTextMessage || isAudioMessage) {
           const phoneNumber = message?.key?.remoteJid?.replace('@s.whatsapp.net', '') || '';
-          const messageText = message?.message?.conversation || message?.message?.extendedTextMessage?.text;
+          let messageText = message?.message?.conversation || message?.message?.extendedTextMessage?.text;
           
           console.log('📞 Phone number:', phoneNumber);
+          
+          // Process audio message if present
+          if (isAudioMessage && message?.message?.audioMessage) {
+            console.log('🎵 Processing audio message...');
+            try {
+              const audioBase64 = message.message.audioMessage.base64;
+              if (audioBase64) {
+                console.log('🔊 Audio base64 received, transcribing with OpenAI Whisper...');
+                
+                // Get global OpenAI settings
+                const globalSettings = await storage.getGlobalSettings();
+                if (!globalSettings || !globalSettings.openaiApiKey) {
+                  console.log('❌ OpenAI not configured for audio transcription');
+                  return res.status(400).json({ error: 'OpenAI not configured' });
+                }
+
+                // Transcribe audio using OpenAI Whisper
+                const transcription = await transcribeAudio(audioBase64, globalSettings.openaiApiKey);
+                if (transcription) {
+                  messageText = transcription;
+                  console.log('✅ Audio transcribed:', messageText);
+                } else {
+                  console.log('❌ Failed to transcribe audio');
+                  return res.status(200).json({ received: true, processed: false, reason: 'Audio transcription failed' });
+                }
+              } else {
+                console.log('❌ No audio base64 data found');
+                return res.status(200).json({ received: true, processed: false, reason: 'No audio data' });
+              }
+            } catch (error) {
+              console.error('❌ Error processing audio:', error);
+              return res.status(200).json({ received: true, processed: false, reason: 'Audio processing error' });
+            }
+          }
+          
           console.log('💬 Message text:', messageText);
           
           if (messageText) {
-            console.log('✅ Message text found, proceeding with AI processing...');
+            console.log('✅ Message content found, proceeding with AI processing...');
             // Find company by instance name
             console.log('🔍 Searching for instance:', instanceName);
             const whatsappInstance = await storage.getWhatsappInstanceByName(instanceName);
