@@ -2025,17 +2025,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('✅ Processing message event:', webhookData.event);
       // Handle multiple formats: array format, direct format, and wrapped format
       let message;
+      console.log('🔍 Debug message assignment conditions:');
+      console.log('  - isMessageEventArray:', isMessageEventArray);
+      console.log('  - isDirectMessage:', isDirectMessage);
+      console.log('  - isAudioMessageDirect:', isAudioMessageDirect);
+      console.log('  - isWrappedMessage:', isWrappedMessage);
+      
       if (isMessageEventArray) {
         message = webhookData.data.messages[0];
-      } else if (isDirectMessage) {
+        console.log('📦 Using array format message');
+      } else if (isDirectMessage || isAudioMessageDirect) {
         message = webhookData;
+        console.log('📱 Using direct format message (includes audio)');
       } else if (isWrappedMessage) {
         message = webhookData.data;
+        console.log('📋 Using wrapped format message');
       } else {
-        message = webhookData.data;
+        message = webhookData.data || webhookData;
+        console.log('🔄 Using fallback format message');
       }
       
-      console.log('🔍 Message object after assignment:', JSON.stringify(message, null, 2));
+      console.log('🔍 Message object after assignment:', message);
+      console.log('🔍 Message exists?', !!message);
+      console.log('🔍 webhookData exists?', !!webhookData);
       
       if (!message) {
         console.log('❌ Message object is null or undefined');
