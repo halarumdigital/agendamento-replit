@@ -224,9 +224,13 @@ INSTRUÇÕES CRÍTICAS PARA EXTRAÇÃO DE HORÁRIO:
 - EXTRAIA EXATAMENTE o horário mencionado pelo cliente na conversa
 - Se cliente disse "10:00", use "10:00"
 - Se cliente disse "às 10", use "10:00"
+- Se cliente disse "às 11", use "11:00"
+- Se cliente disse "11 horas", use "11:00"
 - Se cliente disse "meio-dia", use "12:00"
 - Se cliente disse "duas da tarde", use "14:00"
-- NÃO use horários padrão - SEMPRE extraia o horário EXATO da conversa
+- Se cliente disse "as 11", use "11:00"
+- NÃO use horários padrão como 09:00 ou 10:00 - SEMPRE extraia o horário EXATO da conversa
+- ATENÇÃO: "às 11" deve ser "11:00", NÃO "10:00"
 
 INSTRUÇÕES PARA DATAS:
 - Se mencionado "sexta-feira" ou "sexta", use: ${getNextWeekdayDate('sexta')}
@@ -236,12 +240,14 @@ INSTRUÇÕES PARA DATAS:
 - Se mencionado "quinta-feira" ou "quinta", use: ${getNextWeekdayDate('quinta')}
 - Se mencionado "sábado", use: ${getNextWeekdayDate('sábado')}
 
-IMPORTANTE: Extraia APENAS se TODOS os dados estiverem presentes na conversa:
-- Nome do cliente
-- Telefone do cliente  
-- Profissional escolhido (use o ID correto da lista acima)
-- Serviço escolhido (use o ID correto da lista acima)
-- Data e hora EXATA do agendamento (extraia o horário PRECISO mencionado pelo cliente)
+REGRAS CRÍTICAS - SÓ EXTRAIA SE TODOS ESTES DADOS ESTÃO EXPLICITAMENTE CONFIRMADOS NA CONVERSA:
+- Nome COMPLETO do cliente (não apenas primeiro nome)
+- Telefone COMPLETO do cliente com DDD (exemplo: 11999887766)
+- Profissional ESPECÍFICO escolhido e confirmado (use o ID correto da lista acima)
+- Serviço ESPECÍFICO escolhido e confirmado (use o ID correto da lista acima)  
+- Data E hora EXATAS confirmadas pelo cliente (extraia o horário PRECISO mencionado)
+
+ATENÇÃO: Se o cliente ainda está fornecendo dados ou falta telefone/confirmação final, responda "DADOS_INCOMPLETOS"
 
 Responda APENAS em formato JSON válido ou "DADOS_INCOMPLETOS" se algum dado estiver faltando:
 {
@@ -271,15 +277,26 @@ Responda APENAS em formato JSON válido ou "DADOS_INCOMPLETOS" se algum dado est
     try {
       const appointmentData = JSON.parse(extractedData);
       
-      // Use the date exactly as extracted by AI - no automatic corrections
-
-      console.log('✅ Final appointment data with corrected date:', appointmentData);
+      console.log('✅ Final appointment data extracted:', appointmentData);
       
-      // Validate required fields
+      // VALIDAÇÃO CRÍTICA: Verificar se todos os campos obrigatórios estão presentes
       if (!appointmentData.clientName || !appointmentData.clientPhone || 
           !appointmentData.professionalId || !appointmentData.serviceId ||
           !appointmentData.appointmentDate || !appointmentData.appointmentTime) {
-        console.log('⚠️ Missing required appointment fields');
+        console.log('⚠️ Missing required appointment fields, skipping creation');
+        return;
+      }
+
+      // VALIDAÇÃO ADICIONAL: Verificar se o telefone é válido (mínimo 10 dígitos)
+      const phoneDigits = appointmentData.clientPhone.replace(/\D/g, '');
+      if (phoneDigits.length < 10) {
+        console.log('⚠️ Invalid phone number format, skipping creation');
+        return;
+      }
+
+      // VALIDAÇÃO ADICIONAL: Verificar se o nome não é apenas um primeiro nome
+      if (appointmentData.clientName.trim().split(' ').length < 2) {
+        console.log('⚠️ Incomplete client name (need full name), skipping creation');
         return;
       }
 
