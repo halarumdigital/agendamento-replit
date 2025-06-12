@@ -2000,17 +2000,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const isMessageEventArray = (webhookData.event === 'messages.upsert' || webhookData.event === 'MESSAGES_UPSERT') && webhookData.data?.messages?.length > 0;
       const isMessageEventDirect = (webhookData.event === 'messages.upsert' || webhookData.event === 'MESSAGES_UPSERT') && webhookData.data?.key && webhookData.data?.message;
       // Check for direct message structure without specific event (like from our test)
-      const isDirectMessage = webhookData.key && webhookData.message && !webhookData.event;
+      const isDirectMessage = !!webhookData.key && !!webhookData.message && !webhookData.event;
       // Check for message data wrapped in data property 
       const isWrappedMessage = webhookData.data?.key && webhookData.data?.message;
-      const isMessageEvent = isMessageEventArray || isMessageEventDirect || isDirectMessage || isWrappedMessage;
+      // Check for audio message without message wrapper
+      const isAudioMessageDirect = !!webhookData.key && webhookData.messageType === 'audioMessage' && !!webhookData.audio;
+      const isMessageEvent = isMessageEventArray || isMessageEventDirect || isDirectMessage || isWrappedMessage || isAudioMessageDirect;
       
       console.log('🔍 Debug - isMessageEventArray:', isMessageEventArray);
       console.log('🔍 Debug - isMessageEventDirect:', isMessageEventDirect);
       console.log('🔍 Debug - isDirectMessage:', isDirectMessage);
       console.log('🔍 Debug - isWrappedMessage:', isWrappedMessage);
+      console.log('🔍 Debug - isAudioMessageDirect:', isAudioMessageDirect);
       console.log('🔍 Debug - Has key:', !!webhookData.key || !!webhookData.data?.key);
       console.log('🔍 Debug - Has message:', !!webhookData.message || !!webhookData.data?.message);
+      console.log('🔍 Debug - messageType:', webhookData.messageType);
+      console.log('🔍 Debug - Has audio:', !!webhookData.audio);
       
       if (!isMessageEvent) {
         console.log('❌ Event not processed:', webhookData.event);
