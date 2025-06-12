@@ -82,33 +82,34 @@ async function generateAvailabilityInfo(professionals: any[], existingAppointmen
     availabilityText += `- Trabalha: ${workDays.map((day: number) => dayNames[day]).join(', ')}\n`;
     availabilityText += `- Horário: ${workStart} às ${workEnd}\n`;
     
-    // Check if works on Friday (day 5)
-    if (workDays.includes(5)) {
-      availabilityText += `- SEXTA-FEIRA: DISPONÍVEL (${workStart} às ${workEnd})\n`;
+    // Verificar sábado especificamente (dia 6)
+    if (workDays.includes(6)) {
+      availabilityText += `- SÁBADO: DISPONÍVEL (${workStart} às ${workEnd})\n`;
     } else {
-      availabilityText += `- SEXTA-FEIRA: NÃO TRABALHA\n`;
+      availabilityText += `- SÁBADO: NÃO TRABALHA\n`;
     }
     
-    // Check existing appointments for this week
-    const today = new Date();
-    const weekStart = new Date(today);
-    weekStart.setDate(today.getDate() - today.getDay()); // Start of week (Sunday)
-    
+    // Filtrar agendamentos ativos apenas para este profissional
     const profAppointments = existingAppointments.filter(apt => 
       apt.professionalId === prof.id && 
-      new Date(apt.appointmentDate) >= weekStart &&
-      apt.status !== 'Cancelado'
+      apt.status !== 'Cancelado' && 
+      apt.status !== 'cancelado' &&
+      apt.appointmentDate && 
+      apt.appointmentTime
     );
+    
+    console.log(`🔍 DEBUG - Profissional ${prof.name} (ID: ${prof.id}) tem ${profAppointments.length} agendamentos ativos`);
     
     if (profAppointments.length > 0) {
       availabilityText += `- Agendamentos ocupados:\n`;
       profAppointments.forEach(apt => {
-        const date = new Date(apt.appointmentDate);
-        const dayName = dayNames[date.getDay()];
+        const aptDate = new Date(apt.appointmentDate + 'T00:00:00');
+        const dayName = dayNames[aptDate.getDay()];
         availabilityText += `  • ${dayName} ${apt.appointmentTime} - OCUPADO\n`;
+        console.log(`🔍 DEBUG - Agendamento: ${dayName} ${apt.appointmentTime} (Data: ${apt.appointmentDate})`);
       });
     } else {
-      availabilityText += `- Esta semana: LIVRE (sem agendamentos)\n`;
+      availabilityText += `- LIVRE (sem agendamentos confirmados)\n`;
     }
     
     availabilityText += '\n';
