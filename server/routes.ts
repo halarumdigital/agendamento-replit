@@ -552,6 +552,60 @@ const broadcastEvent = (eventData: any) => {
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
+
+  // Test endpoint to check appointments in MySQL
+  app.get('/api/test/appointments-count', async (req, res) => {
+    try {
+      const appointments = await storage.getAppointmentsByCompany(1);
+      console.log('📊 Current appointments in MySQL:', appointments.length);
+      
+      const saturdayAppointments = appointments.filter(apt => {
+        const aptDate = new Date(apt.appointmentDate);
+        return aptDate.getDay() === 6; // Saturday
+      });
+      
+      res.json({
+        total: appointments.length,
+        saturday: saturdayAppointments.length,
+        latest: appointments.slice(-2).map(apt => ({
+          id: apt.id,
+          clientName: apt.clientName,
+          date: apt.appointmentDate,
+          time: apt.appointmentTime,
+          professional: apt.professional?.name
+        }))
+      });
+    } catch (error) {
+      console.error('❌ Error checking appointments:', error);
+      res.status(500).json({ error: 'Database error' });
+    }
+  });
+
+  // Test endpoint to create appointment directly in MySQL
+  app.post('/api/test/create-appointment', async (req, res) => {
+    try {
+      const appointment = await storage.createAppointment({
+        companyId: 1,
+        professionalId: 4, // Silva
+        serviceId: 1, // Corte
+        clientName: 'Gilliard Teste MySQL',
+        clientPhone: '554999214230',
+        clientEmail: null,
+        appointmentDate: new Date('2025-06-14'), // Saturday
+        appointmentTime: '15:00',
+        duration: 30,
+        totalPrice: 25.00,
+        status: 'agendado',
+        notes: 'Teste direto MySQL - criado via endpoint'
+      });
+      
+      console.log('✅ Test appointment created in MySQL:', appointment);
+      res.json({ success: true, appointment });
+    } catch (error) {
+      console.error('❌ Error creating test appointment:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
   // Test endpoint for notification system (before auth middleware)
   app.get('/api/test-notification', async (req, res) => {
     console.log('🔔 Test notification endpoint called');
