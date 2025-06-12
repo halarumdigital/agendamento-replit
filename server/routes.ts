@@ -489,7 +489,7 @@ Responda APENAS em formato JSON válido ou "DADOS_INCOMPLETOS" se algum dado est
         appointmentDate: appointmentDate,
         appointmentTime: appointmentData.appointmentTime,
         duration: service.duration || 60,
-        status: 'Pendente',
+        status: 'agendado',
         totalPrice: String(service.price || 0),
         notes: `Agendamento criado via WhatsApp - Conversa ID: ${conversationId}`,
         reminderSent: false

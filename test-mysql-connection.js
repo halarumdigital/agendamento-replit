@@ -1,12 +1,13 @@
-const mysql = require('mysql2/promise');
+import mysql from 'mysql2/promise';
 
 async function testMySQLConnection() {
   try {
     const connection = await mysql.createConnection({
-      host: process.env.MYSQL_HOST || 'localhost',
-      user: process.env.MYSQL_USER || 'root',
-      password: process.env.MYSQL_PASSWORD || '',
-      database: process.env.MYSQL_DATABASE || 'salon_db'
+      host: '69.62.101.23',
+      port: 3306,
+      user: 'gilliard_salao',
+      password: 'NQEc0ViGRJpS',
+      database: 'gilliard_salao'
     });
 
     console.log('✅ Connected to MySQL successfully');
