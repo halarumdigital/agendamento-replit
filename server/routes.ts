@@ -282,19 +282,42 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
     if (!client) {
       // Format phone number properly for Brazil
       let formattedPhone = phoneNumber;
-      if (phoneNumber.length >= 10) {
-        // Handle different phone number formats
-        const digits = phoneNumber.replace(/\D/g, '');
-        if (digits.length === 13 && digits.startsWith('55')) {
-          // Remove country code 55 and format as (XX) XXXXX-XXXX
-          const number = digits.substring(2);
+      const digits = phoneNumber.replace(/\D/g, '');
+      
+      if (digits.length === 13 && digits.startsWith('55')) {
+        // Remove country code 55 and format as (XX) XXXXX-XXXX
+        const number = digits.substring(2);
+        formattedPhone = `(${number.substring(0, 2)}) ${number.substring(2, 7)}-${number.substring(7)}`;
+      } else if (digits.length === 12 && digits.startsWith('55')) {
+        // Remove country code 55 and format as (XX) XXXX-XXXX or (XX) XXXXX-XXXX
+        const number = digits.substring(2);
+        if (number.length === 11) {
+          // Mobile with 9 digit (XX) XXXXX-XXXX
           formattedPhone = `(${number.substring(0, 2)}) ${number.substring(2, 7)}-${number.substring(7)}`;
-        } else if (digits.length === 11) {
-          // Format as (XX) XXXXX-XXXX
-          formattedPhone = `(${digits.substring(0, 2)}) ${digits.substring(2, 7)}-${digits.substring(7)}`;
-        } else if (digits.length === 10) {
-          // Format as (XX) XXXX-XXXX
-          formattedPhone = `(${digits.substring(0, 2)}) ${digits.substring(2, 6)}-${digits.substring(6)}`;
+        } else {
+          // Landline (XX) XXXX-XXXX
+          formattedPhone = `(${number.substring(0, 2)}) ${number.substring(2, 6)}-${number.substring(6)}`;
+        }
+      } else if (digits.length === 11) {
+        // Format as (XX) XXXXX-XXXX
+        formattedPhone = `(${digits.substring(0, 2)}) ${digits.substring(2, 7)}-${digits.substring(7)}`;
+      } else if (digits.length === 10) {
+        // Format as (XX) XXXX-XXXX
+        formattedPhone = `(${digits.substring(0, 2)}) ${digits.substring(2, 6)}-${digits.substring(6)}`;
+      } else {
+        // Handle the specific case of 554988887777 (12 digits starting with 55)
+        if (digits.startsWith('55') && digits.length === 12) {
+          const number = digits.substring(2); // 4988887777
+          formattedPhone = `(${number.substring(0, 2)}) ${number.substring(2, 7)}-${number.substring(7)}`;
+        } else {
+          // Extract reasonable phone components
+          const areaCode = digits.substring(0, 2) || '49';
+          const remaining = digits.substring(2);
+          if (remaining.length >= 8) {
+            formattedPhone = `(${areaCode}) ${remaining.substring(0, 5)}-${remaining.substring(5, 9)}`;
+          } else {
+            formattedPhone = `(${areaCode}) ${remaining}`;
+          }
         }
       }
       
