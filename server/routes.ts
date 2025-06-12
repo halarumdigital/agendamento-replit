@@ -621,7 +621,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         appointmentDate: new Date('2025-06-13T00:00:00.000Z'),
         appointmentTime: '10:00',
         duration: 45,
-        status: 'Pendente',
+        status: 'agendado',
         totalPrice: '35.00',
         notes: 'Agendamento teste para notificação',
         reminderSent: false
