@@ -202,10 +202,14 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
     
     // Extract other data with improved patterns
     // First try to extract from AI response (usually more accurate)
-    let extractedTime = aiResponse.match(/às (\d{1,2}):(\d{2})/)?.[0]?.replace('às ', '') ||
-      aiResponse.match(/às (\d{1,2})/)?.[1] + ':00' ||
-      allConversationText.match(/(\d{1,2}):(\d{2})/)?.[0] ||
-      allConversationText.match(/(\d{1,2})h/)?.[1] + ':00';
+    let timeMatch = aiResponse.match(/às (\d{1,2}):(\d{2})/) || allConversationText.match(/às (\d{1,2}):(\d{2})/) || allConversationText.match(/(\d{1,2}):(\d{2})/);
+    let extractedTime = timeMatch ? timeMatch[0].replace('às ', '') : null;
+    
+    // If no complete time found, try single hour patterns
+    if (!extractedTime) {
+      let hourMatch = aiResponse.match(/às (\d{1,2})/) || allConversationText.match(/(\d{1,2})h/);
+      extractedTime = hourMatch ? hourMatch[1] + ':00' : null;
+    }
     
     let extractedDay = aiResponse.match(patterns.day)?.[1] || allConversationText.match(patterns.day)?.[1];
     let extractedProfessional = aiResponse.match(patterns.professional)?.[1]?.trim() || allConversationText.match(patterns.professional)?.[1]?.trim();
@@ -228,6 +232,12 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
       professional: extractedProfessional,
       service: extractedService
     });
+
+    // Validate required data before proceeding
+    if (!extractedTime || extractedTime === 'undefined:00') {
+      console.log('❌ Invalid time extracted, cannot create appointment');
+      return;
+    }
     
     // Get professionals and services to match extracted data
     const professionals = await storage.getProfessionalsByCompany(companyId);
