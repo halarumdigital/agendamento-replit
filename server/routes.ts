@@ -584,15 +584,15 @@ async function createAppointmentFromConversation(conversationId: number, company
   try {
     console.log('📅 Checking conversation for complete appointment confirmation:', conversationId);
     
-    // Check if appointment already exists for this conversation within the last 30 minutes
+    // Check if appointment already exists for this conversation within the last 5 minutes (only to prevent duplicates)
     const existingAppointments = await storage.getAppointmentsByCompany(companyId);
     const conversationAppointment = existingAppointments.find(apt => 
       apt.notes && apt.notes.includes(`Conversa ID: ${conversationId}`) &&
-      apt.createdAt && new Date(apt.createdAt).getTime() > (Date.now() - 30 * 60 * 1000)
+      apt.createdAt && new Date(apt.createdAt).getTime() > (Date.now() - 5 * 60 * 1000)
     );
     
     if (conversationAppointment) {
-      console.log('ℹ️ Recent appointment already exists for this conversation, skipping creation');
+      console.log('ℹ️ Recent appointment already exists for this conversation (within 5 min), skipping creation');
       return;
     }
     
@@ -608,6 +608,9 @@ async function createAppointmentFromConversation(conversationId: number, company
     
     // REGRA CRÍTICA: Só criar agendamento se houver confirmação explícita final
     const finalConfirmationPhrases = [
+      'sim',
+      'ok', 
+      'confirmo',
       'sim, confirmo',
       'sim, está correto',
       'sim, pode agendar',
@@ -619,14 +622,23 @@ async function createAppointmentFromConversation(conversationId: number, company
       'pode agendar sim'
     ];
     
-    const hasFinalConfirmation = finalConfirmationPhrases.some(phrase => 
+    // Get last user message to check for recent confirmation
+    const lastUserMessage = messages.filter(m => m.role === 'user').pop();
+    const hasRecentConfirmation = lastUserMessage && 
+      finalConfirmationPhrases.some(phrase => 
+        lastUserMessage.content.toLowerCase().trim() === phrase.toLowerCase()
+      );
+    
+    const hasAnyConfirmation = finalConfirmationPhrases.some(phrase => 
       conversationText.toLowerCase().includes(phrase.toLowerCase())
     );
     
-    if (!hasFinalConfirmation) {
+    if (!hasRecentConfirmation && !hasAnyConfirmation) {
       console.log('⚠️ No final confirmation (sim/ok) found in conversation, skipping appointment creation');
       return;
     }
+    
+    console.log('✅ Confirmation detected in conversation, proceeding with appointment creation');
 
     // VERIFICAÇÃO ADICIONAL: Deve ter data específica mencionada na mesma mensagem ou contexto próximo
     const dateSpecificPhrases = [
@@ -2209,9 +2221,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
 
             try {
-              // Find or create conversation
+              // Find or create conversation - prioritize most recent conversation for this phone number
               console.log('💬 Managing conversation for:', phoneNumber);
+              
+              // First, try to find existing conversation for this exact instance
               let conversation = await storage.getConversation(company.id, whatsappInstance.id, phoneNumber);
+              
+              // If no conversation for this instance, look for any recent conversation for this phone number
+              if (!conversation) {
+                console.log('🔍 No conversation for this instance, checking for recent conversations for phone number');
+                const allConversations = await storage.getConversationsByCompany(company.id);
+                const phoneConversations = allConversations
+                  .filter(conv => conv.phoneNumber === phoneNumber)
+                  .sort((a, b) => new Date(b.lastMessageAt || 0).getTime() - new Date(a.lastMessageAt || 0).getTime());
+                
+                if (phoneConversations.length > 0) {
+                  conversation = phoneConversations[0]; // Most recent conversation
+                  console.log('✅ Found recent conversation ID:', conversation.id, 'continuing it');
+                  
+                  // Update the conversation to use current instance
+                  await storage.updateConversation(conversation.id, {
+                    whatsappInstanceId: whatsappInstance.id,
+                    lastMessageAt: new Date(),
+                    contactName: message.pushName || conversation.contactName,
+                  });
+                }
+              }
               
               if (!conversation) {
                 console.log('🆕 Creating new conversation');
