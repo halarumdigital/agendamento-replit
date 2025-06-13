@@ -72,6 +72,8 @@ export const plans = mysqlTable("plans", {
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   maxProfessionals: int("max_professionals").notNull().default(1),
   isActive: boolean("is_active").notNull().default(true),
+  stripeProductId: varchar("stripe_product_id", { length: 255 }),
+  stripePriceId: varchar("stripe_price_id", { length: 255 }),
   permissions: json("permissions").$type<{
     dashboard: boolean;
     appointments: boolean;

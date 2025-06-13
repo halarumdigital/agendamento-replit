@@ -2530,6 +2530,28 @@ export const storage = new DatabaseStorage();
   }
 })();
 
+// Ensure Stripe columns exist in plans table
+(async () => {
+  try {
+    await db.execute(sql`
+      ALTER TABLE plans 
+      ADD COLUMN IF NOT EXISTS stripe_product_id VARCHAR(255)
+    `);
+    
+    await db.execute(sql`
+      ALTER TABLE plans 
+      ADD COLUMN IF NOT EXISTS stripe_price_id VARCHAR(255)
+    `);
+    
+    console.log("✅ Stripe columns ensured in plans table");
+  } catch (error: any) {
+    // Columns might already exist, which is fine
+    if (!error.message?.includes('Duplicate column name')) {
+      console.error("❌ Error adding Stripe columns:", error);
+    }
+  }
+})();
+
 // Ensure plan_id and is_active columns exist in companies table
 (async () => {
   try {

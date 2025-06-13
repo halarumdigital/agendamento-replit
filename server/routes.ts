@@ -6899,33 +6899,25 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
         console.log(`✅ Cliente criado no Stripe com ID: ${stripeCustomerId}`);
       }
 
-      // Create price for the plan (you would normally do this once and store the price ID)
-      // For now, we'll create it dynamically
-      const product = await stripeService.createProduct({
-        name: selectedPlan.name,
-        description: `Plano ${selectedPlan.name}`,
-        metadata: {
-          planId: planId || 'basic'
-        }
-      });
+      // Validate that plan has Stripe Price ID configured
+      if (!selectedPlan.stripePriceId) {
+        return res.status(400).json({
+          message: `Plano "${selectedPlan.name}" não possui ID do Stripe configurado. Configure stripe_price_id no banco de dados.`,
+          error: "MISSING_STRIPE_PRICE_ID"
+        });
+      }
 
-      const price = await stripeService.createPrice({
-        productId: product.id,
-        unitAmount: parseFloat(selectedPlan.price),
-        currency: 'brl',
-        recurring: {
-          interval: 'month'
-        }
-      });
+      console.log(`📋 Usando plano: ${selectedPlan.name} (Stripe Price ID: ${selectedPlan.stripePriceId})`);
 
-      // Create subscription (without trial period for testing)
+      // Create subscription using existing Stripe Price ID (without trial period)
       const subscription = await stripeService.createSubscription({
         customerId: stripeCustomerId,
-        priceId: price.id,
+        priceId: selectedPlan.stripePriceId,
         trialPeriodDays: 0, // Remove trial period so subscription appears as active
         metadata: {
           companyId: companyId ? companyId.toString() : 'test',
-          planId: planId || 'basic'
+          planId: planId || 'basic',
+          planName: selectedPlan.name
         }
       });
 
