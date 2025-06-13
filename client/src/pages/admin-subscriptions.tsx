@@ -275,6 +275,73 @@ export default function AdminSubscriptions() {
         </Button>
       </div>
 
+      {/* Filtros */}
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold">Filtros</CardTitle>
+          <CardDescription>
+            Filtre as assinaturas por data e status
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="startDate">Data de Início</Label>
+              <Input
+                id="startDate"
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-full"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="endDate">Data de Fim</Label>
+              <Input
+                id="endDate"
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-full"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="status">Status da Assinatura</Label>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecionar status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os Status</SelectItem>
+                  <SelectItem value="active">Ativa</SelectItem>
+                  <SelectItem value="past_due">Em Atraso</SelectItem>
+                  <SelectItem value="canceled">Cancelada</SelectItem>
+                  <SelectItem value="incomplete">Incompleta</SelectItem>
+                  <SelectItem value="trialing">Teste</SelectItem>
+                  <SelectItem value="unpaid">Não Paga</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex items-end">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setStartDate("");
+                  setEndDate("");
+                  setStatusFilter("all");
+                }}
+                className="w-full"
+              >
+                Limpar Filtros
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Cards de Resumo */}
       <div className="grid gap-6 md:grid-cols-4 mb-8">
         <Card>
@@ -283,7 +350,13 @@ export default function AdminSubscriptions() {
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{subscriptions?.length || 0}</div>
+            <div className="text-2xl font-bold">{filteredSubscriptions.length}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {filteredSubscriptions.length !== subscriptions?.length ? 
+                `de ${subscriptions?.length || 0} total` : 
+                ''
+              }
+            </p>
           </CardContent>
         </Card>
 
@@ -343,7 +416,7 @@ export default function AdminSubscriptions() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {subscriptions?.map((subscription) => (
+                {filteredSubscriptions.map((subscription) => (
                   <TableRow key={subscription.companyId}>
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-2">
