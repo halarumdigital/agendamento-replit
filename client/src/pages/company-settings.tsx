@@ -1272,24 +1272,7 @@ export default function CompanySettings() {
         </TabsContent>
 
         <TabsContent value="reminders" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="w-5 h-5" />
-                Lembretes de Agendamento
-              </CardTitle>
-              <CardDescription>
-                Configure lembretes automáticos para agendamentos.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center p-6 bg-gray-50 rounded-lg border border-dashed">
-                <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-600 mb-2">Funcionalidade em desenvolvimento</p>
-                <p className="text-sm text-gray-500">Lembretes automáticos serão implementados em breve</p>
-              </div>
-            </CardContent>
-          </Card>
+
         </TabsContent>
 
         <TabsContent value="birthdays" className="space-y-6">

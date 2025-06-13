@@ -630,21 +630,6 @@ export default function DashboardAppointments() {
             <p className="text-gray-600">Gerencie seus agendamentos e horários</p>
           </div>
           <div className="flex items-center gap-4">
-            <Button 
-              onClick={() => showNewAppointmentNotification({
-                clientName: "Cliente Teste",
-                serviceName: "Teste de Som",
-                appointmentDate: format(new Date(), 'yyyy-MM-dd'),
-                appointmentTime: format(new Date(), 'HH:mm'),
-                professionalName: "Profissional Teste"
-              })}
-              variant="outline"
-              size="sm"
-              className="bg-yellow-50 hover:bg-yellow-100 border-yellow-300"
-            >
-              🔔 Testar Campainha
-            </Button>
-            
             <Select value={filterProfessional} onValueChange={setFilterProfessional}>
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="Filtrar por profissional" />
