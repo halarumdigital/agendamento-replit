@@ -21,15 +21,15 @@ export async function ensureAdminAlertsTables() {
       )
     `);
 
-    // Create company_alert_views table
+    // Create alert_companies table (for targeting specific companies)
     await pool.execute(`
-      CREATE TABLE IF NOT EXISTS company_alert_views (
+      CREATE TABLE IF NOT EXISTS alert_companies (
         id INT AUTO_INCREMENT PRIMARY KEY,
-        company_id INT NOT NULL,
         alert_id INT NOT NULL,
-        viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        company_id INT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (alert_id) REFERENCES admin_alerts(id) ON DELETE CASCADE,
-        UNIQUE KEY unique_company_alert (company_id, alert_id)
+        UNIQUE KEY unique_alert_company (alert_id, company_id)
       )
     `);
 
