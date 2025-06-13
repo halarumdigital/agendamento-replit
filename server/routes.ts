@@ -7282,30 +7282,8 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
       const company = await storage.createCompany(companyData);
       
       // Create customer in Asaas automatically
-      console.log('🏢 Iniciando integração com Asaas para empresa:', company.fantasyName);
-      try {
-        console.log('🏢 Criando cliente no Asaas para empresa:', company.fantasyName);
-        const customerData = {
-          name: company.fantasyName,
-          cpfCnpj: company.document,
-          email: company.email,
-          phone: company.phone || '',
-          externalReference: `company_${company.id}`,
-          observations: `Cliente criado automaticamente durante cadastro da empresa`
-        };
-
-        const asaasCustomer = await asaasService.createCustomer(customerData);
-        console.log('✅ Cliente criado no Asaas:', asaasCustomer.id);
-
-        // Update company with Asaas customer ID
-        await storage.updateCompanyAsaasId(company.id, asaasCustomer.id);
-        console.log('✅ Empresa atualizada com ID do cliente Asaas');
-
-      } catch (asaasError: any) {
-        console.error('⚠️ Erro ao criar cliente no Asaas (empresa criada com sucesso):', asaasError);
-        // Company was created successfully, but Asaas integration failed
-        // This is not a blocking error for registration
-      }
+      // Future billing integration can be added here
+      console.log('✅ Empresa cadastrada com sucesso');
       
       res.status(201).json({ 
         message: "Empresa cadastrada com sucesso",
