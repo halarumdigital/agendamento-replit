@@ -2307,6 +2307,46 @@ Obrigado pela preferência! 🙏`;
       ));
     return coupon;
   }
+
+  // Subscription management methods
+  async getCompanyById(companyId: number): Promise<Company | undefined> {
+    const [company] = await db.select().from(companies).where(eq(companies.id, companyId));
+    return company;
+  }
+
+  async getPlanById(planId: number): Promise<Plan | undefined> {
+    const [plan] = await db.select().from(plans).where(eq(plans.id, planId));
+    return plan;
+  }
+
+  async updateCompanyAsaasId(companyId: number, asaasCustomerId: string): Promise<void> {
+    await db.execute(sql`
+      UPDATE companies 
+      SET asaas_customer_id = ${asaasCustomerId}
+      WHERE id = ${companyId}
+    `);
+  }
+
+  async updateCompanySubscription(companyId: number, subscriptionData: {
+    planId: number;
+    asaasSubscriptionId: string;
+    subscriptionStatus: string;
+    nextDueDate: Date;
+    trialEndsAt: Date;
+  }): Promise<void> {
+    await db.execute(sql`
+      UPDATE companies 
+      SET 
+        plan_id = ${subscriptionData.planId},
+        asaas_subscription_id = ${subscriptionData.asaasSubscriptionId},
+        subscription_status = ${subscriptionData.subscriptionStatus},
+        subscription_next_due_date = ${subscriptionData.nextDueDate.toISOString().split('T')[0]},
+        trial_ends_at = ${subscriptionData.trialEndsAt.toISOString().split('T')[0]},
+        is_active = TRUE,
+        updated_at = NOW()
+      WHERE id = ${companyId}
+    `);
+  }
 }
 
 // Financial tables setup
@@ -2359,47 +2399,25 @@ async function ensureFinancialTables() {
   `);
 
   console.log("✅ Financial tables created/verified");
+
+  // Add subscription columns to companies table
+  try {
+    await db.execute(sql`
+      ALTER TABLE companies 
+      ADD COLUMN IF NOT EXISTS asaas_customer_id VARCHAR(255),
+      ADD COLUMN IF NOT EXISTS asaas_subscription_id VARCHAR(255),
+      ADD COLUMN IF NOT EXISTS subscription_status VARCHAR(50),
+      ADD COLUMN IF NOT EXISTS subscription_next_due_date DATE,
+      ADD COLUMN IF NOT EXISTS trial_ends_at DATE
+    `);
+    console.log("✅ Subscription columns added to companies table");
+  } catch (error: any) {
+    // Columns might already exist, which is fine
+    if (!error.message?.includes('Duplicate column name')) {
+      console.error("❌ Error adding subscription columns:", error);
+    }
+  }
 }
-
-// Add methods to DatabaseStorage class for subscription management
-DatabaseStorage.prototype.updateCompanyAsaasId = async function(companyId: number, asaasCustomerId: string): Promise<void> {
-  await db.execute(sql`
-    UPDATE companies 
-    SET asaas_customer_id = ${asaasCustomerId}
-    WHERE id = ${companyId}
-  `);
-};
-
-DatabaseStorage.prototype.updateCompanySubscription = async function(companyId: number, subscriptionData: {
-  planId: number;
-  asaasSubscriptionId: string;
-  subscriptionStatus: string;
-  nextDueDate: Date;
-  trialEndsAt: Date;
-}): Promise<void> {
-  await db.execute(sql`
-    UPDATE companies 
-    SET 
-      plan_id = ${subscriptionData.planId},
-      asaas_subscription_id = ${subscriptionData.asaasSubscriptionId},
-      subscription_status = ${subscriptionData.subscriptionStatus},
-      subscription_next_due_date = ${subscriptionData.nextDueDate},
-      trial_ends_at = ${subscriptionData.trialEndsAt},
-      is_active = TRUE,
-      updated_at = NOW()
-    WHERE id = ${companyId}
-  `);
-};
-
-DatabaseStorage.prototype.getPlanById = async function(planId: number): Promise<Plan | undefined> {
-  const [plan] = await db.select().from(plans).where(eq(plans.id, planId));
-  return plan;
-};
-
-DatabaseStorage.prototype.getCompanyById = async function(companyId: number): Promise<Company | undefined> {
-  const [company] = await db.select().from(companies).where(eq(companies.id, companyId));
-  return company;
-};
 
 export const storage = new DatabaseStorage();
 

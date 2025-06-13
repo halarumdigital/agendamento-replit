@@ -6993,15 +6993,15 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
       console.log('🎁 Dias grátis:', plan.freeDays);
 
       // 2. Create or get customer in Asaas
-      let asaasCustomerId = company.asaasCustomerId;
+      let asaasCustomerId = (company as any).asaasCustomerId;
 
       if (!asaasCustomerId) {
         console.log('👤 Criando cliente no Asaas...');
         const customerData = {
-          name: company.name,
+          name: company.fantasyName || company.email,
           cpfCnpj: company.document || '00000000000',
           email: company.email || holderInfo.email,
-          phone: company.phone || holderInfo.phone,
+          phone: (company as any).phone || holderInfo.phone,
           externalReference: `company_${companyId}`,
           observations: `Cliente criado para assinatura do plano ${plan.name}`
         };
