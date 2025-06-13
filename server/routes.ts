@@ -6966,6 +6966,43 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
     }
   });
 
+  // Test route for Asaas integration
+  app.post("/api/test/asaas-customer", async (req, res) => {
+    try {
+      console.log('🔄 Testando criação de cliente no Asaas...');
+      
+      const customerData = {
+        name: "Salão Beleza Total - Teste",
+        cpfCnpj: "12345678901",
+        email: "contato@salaobelezatotal.com",
+        phone: "11987654321",
+        externalReference: "company_test_001",
+        observations: "Cliente criado via sistema de teste"
+      };
+      
+      const customer = await asaasService.createCustomer(customerData);
+      
+      res.json({
+        success: true,
+        message: "Cliente criado com sucesso no Asaas!",
+        customer: {
+          id: customer.id,
+          name: customer.name,
+          email: customer.email,
+          cpfCnpj: customer.cpfCnpj,
+          dateCreated: customer.dateCreated
+        }
+      });
+      
+    } catch (error) {
+      console.error('❌ Erro ao testar Asaas:', error);
+      res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : "Erro ao criar cliente no Asaas"
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   // Admin management routes
   app.get("/api/admins", isAuthenticated, async (req, res) => {
