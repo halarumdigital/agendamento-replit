@@ -7218,7 +7218,7 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
   app.get("/api/public/plans", async (req, res) => {
     try {
       const [result] = await db.execute(sql`
-        SELECT id, name, description, price, stripe_price_id as stripePriceId, features
+        SELECT id, name, price, stripe_price_id as stripePriceId, features
         FROM plans 
         WHERE active = 1
         ORDER BY price ASC
@@ -7229,7 +7229,14 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
       // Parse features JSON and add popular flag for middle-priced plan
       const processedPlans = plans.map((plan: any, index: number) => ({
         ...plan,
-        features: plan.features ? JSON.parse(plan.features) : [],
+        description: `Plano ${plan.name} - Ideal para seu negócio`,
+        features: plan.features ? JSON.parse(plan.features) : [
+          "Agendamentos ilimitados",
+          "Gestão de clientes",
+          "Relatórios básicos",
+          "Suporte por email",
+          "Backup automático"
+        ],
         popular: index === Math.floor(plans.length / 2) // Mark middle plan as popular
       }));
 
