@@ -597,9 +597,10 @@ async function createAppointmentFromConversation(conversationId: number, company
     }
     
     // Get conversation and messages
-    const conversation = await storage.getConversation(conversationId);
+    const allConversations = await storage.getConversationsByCompany(companyId);
+    const conversation = allConversations.find(conv => conv.id === conversationId);
     if (!conversation) {
-      console.log('⚠️ Conversation not found:', conversationId);
+      console.log('⚠️ Conversa não encontrada:', conversationId);
       return;
     }
     
@@ -634,11 +635,11 @@ async function createAppointmentFromConversation(conversationId: number, company
     );
     
     if (!hasRecentConfirmation && !hasAnyConfirmation) {
-      console.log('⚠️ No final confirmation (sim/ok) found in conversation, skipping appointment creation');
+      console.log('⚠️ Nenhuma confirmação final (sim/ok) encontrada na conversa, pulando criação de agendamento');
       return;
     }
     
-    console.log('✅ Confirmation detected in conversation, proceeding with appointment creation');
+    console.log('✅ Confirmação detectada na conversa, prosseguindo com criação de agendamento');
 
     // VERIFICAÇÃO ADICIONAL: Deve ter data específica mencionada na mesma mensagem ou contexto próximo
     const dateSpecificPhrases = [
@@ -2229,16 +2230,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
               
               // If no conversation for this instance, look for any recent conversation for this phone number
               if (!conversation) {
-                console.log('🔍 No conversation for this instance, checking for recent conversations for phone number');
+                console.log('🔍 Nenhuma conversa para esta instância, verificando conversas recentes para o número');
                 const allConversations = await storage.getConversationsByCompany(company.id);
                 const phoneConversations = allConversations
                   .filter(conv => conv.phoneNumber === phoneNumber)
                   .sort((a, b) => new Date(b.lastMessageAt || 0).getTime() - new Date(a.lastMessageAt || 0).getTime());
                 
-                if (phoneConversations.length > 0) {
-                  conversation = phoneConversations[0]; // Most recent conversation
-                  console.log('✅ Found recent conversation ID:', conversation.id, 'continuing it');
-                  
+                // Special case: if user is sending a simple confirmation, find conversation with AI confirmation
+                const isSimpleConfirmation = /^(sim|ok|confirmo)$/i.test(messageText.toLowerCase().trim());
+                
+                if (isSimpleConfirmation && phoneConversations.length > 0) {
+                  // Look for conversation with recent AI confirmation message
+                  for (const conv of phoneConversations) {
+                    const recentMessages = await storage.getMessagesByConversation(conv.id);
+                    const lastAiMessage = recentMessages.filter(m => m.role === 'assistant').pop();
+                    
+                    if (lastAiMessage && lastAiMessage.content.includes('confirmado')) {
+                      conversation = conv;
+                      console.log('✅ Encontrada conversa com confirmação da IA ID:', conversation.id);
+                      break;
+                    }
+                  }
+                }
+                
+                // If not found or not a confirmation, use most recent
+                if (!conversation && phoneConversations.length > 0) {
+                  conversation = phoneConversations[0];
+                  console.log('✅ Usando conversa mais recente ID:', conversation.id);
+                }
+                
+                if (conversation) {
                   // Update the conversation to use current instance
                   await storage.updateConversation(conversation.id, {
                     whatsappInstanceId: whatsappInstance.id,
@@ -2487,8 +2508,43 @@ INSTRUÇÕES OBRIGATÓRIAS:
                 });
                 
                 // Always check conversation for appointment data after AI response
-                console.log('🔍 Checking conversation for appointment data...');
-                await createAppointmentFromConversation(conversation.id, company.id);
+                console.log('🔍 Verificando conversa para dados de agendamento...');
+                
+                // Check if this is a confirmation response (SIM/OK) after AI summary
+                const isConfirmationResponse = /\b(sim|ok|confirmo)\b/i.test(messageText.toLowerCase().trim());
+                
+                if (isConfirmationResponse) {
+                  console.log('🎯 Confirmação SIM/OK detectada! Buscando agendamento para criar...');
+                  
+                  // Look for any recent conversation with appointment data for this phone
+                  const allConversations = await storage.getConversationsByCompany(company.id);
+                  const phoneConversations = allConversations
+                    .filter(conv => conv.phoneNumber === phoneNumber)
+                    .sort((a, b) => new Date(b.lastMessageAt || 0).getTime() - new Date(a.lastMessageAt || 0).getTime());
+                  
+                  let appointmentCreated = false;
+                  
+                  for (const conv of phoneConversations) {
+                    const messages = await storage.getMessagesByConversation(conv.id);
+                    const hasAiConfirmation = messages.some(m => 
+                      m.role === 'assistant' && m.content.includes('confirmado')
+                    );
+                    
+                    if (hasAiConfirmation) {
+                      console.log('✅ Encontrada conversa com confirmação da IA, criando agendamento...');
+                      await createAppointmentFromAIConfirmation(conv.id, company.id, aiResponse, phoneNumber);
+                      appointmentCreated = true;
+                      break;
+                    }
+                  }
+                  
+                  if (!appointmentCreated) {
+                    console.log('⚠️ Nenhuma conversa com confirmação encontrada, tentando criar do contexto atual');
+                    await createAppointmentFromConversation(conversation.id, company.id);
+                  }
+                } else {
+                  await createAppointmentFromConversation(conversation.id, company.id);
+                }
                 
               } else {
                 const errorText = await evolutionResponse.text();
