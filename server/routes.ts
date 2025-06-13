@@ -537,43 +537,75 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
     console.log(`🔍 Checking for appointment conflicts: ${professional.name} on ${appointmentDate.toISOString().split('T')[0]} at ${formattedTime}`);
     
     try {
-      const [conflictRows] = await pool.execute(
-        `SELECT id, client_name, appointment_time, duration 
+      // Parse the requested time to minutes for overlap calculation
+      const [requestedHour, requestedMin] = formattedTime.split(':').map(Number);
+      const requestedTimeInMinutes = requestedHour * 60 + requestedMin;
+      const serviceDuration = service.duration || 30; // Default 30 minutes if not specified
+      const requestedEndTimeInMinutes = requestedTimeInMinutes + serviceDuration;
+      
+      console.log(`📊 Novo agendamento: ${formattedTime} (${requestedTimeInMinutes}min) - Duração: ${serviceDuration}min - Fim: ${Math.floor(requestedEndTimeInMinutes/60)}:${String(requestedEndTimeInMinutes%60).padStart(2,'0')}`);
+      
+      // Get all appointments for this professional on this date (not just exact time match)
+      const [existingRows] = await pool.execute(
+        `SELECT id, client_name, client_phone, appointment_time, duration 
          FROM appointments 
          WHERE company_id = ? 
            AND professional_id = ?
            AND appointment_date = ?
-           AND appointment_time = ?
            AND status != 'Cancelado'`,
-        [companyId, professional.id, appointmentDate.toISOString().split('T')[0], formattedTime]
+        [companyId, professional.id, appointmentDate.toISOString().split('T')[0]]
       ) as any;
       
-      if (conflictRows.length > 0) {
-        const existingAppointment = conflictRows[0];
-        console.log(`🔍 Conflito encontrado: ${existingAppointment.client_name} às ${existingAppointment.appointment_time}`);
+      let hasConflict = false;
+      let conflictingAppointment = null;
+      
+      for (const existing of existingRows) {
+        const [existingHour, existingMin] = existing.appointment_time.split(':').map(Number);
+        const existingTimeInMinutes = existingHour * 60 + existingMin;
+        const existingDuration = existing.duration || 30;
+        const existingEndTimeInMinutes = existingTimeInMinutes + existingDuration;
         
-        // Check if conflict is with same phone number (same client updating appointment)
-        const existingPhone = existingAppointment.client_phone?.replace(/\D/g, '');
-        const newPhone = phoneNumber.replace(/\D/g, '');
+        console.log(`📋 Agendamento existente: ${existing.appointment_time} (${existingTimeInMinutes}min) - Duração: ${existingDuration}min - Fim: ${Math.floor(existingEndTimeInMinutes/60)}:${String(existingEndTimeInMinutes%60).padStart(2,'0')}`);
         
-        if (existingPhone === newPhone) {
-          console.log(`✅ Conflito com o mesmo cliente, atualizando agendamento existente`);
-          // Update existing appointment instead of creating new one
-          await storage.updateAppointment(existingAppointment.id, {
-            appointmentTime: formattedTime,
-            appointmentDate,
-            updatedAt: new Date(),
-            notes: `Agendamento atualizado via WhatsApp - Conversa ID: ${conversationId}`
-          });
-          console.log(`✅ Agendamento ${existingAppointment.id} atualizado com sucesso`);
-          return;
+        // Check for time overlap: new appointment overlaps if it starts before existing ends AND ends after existing starts
+        const hasOverlap = (
+          (requestedTimeInMinutes < existingEndTimeInMinutes) && 
+          (requestedEndTimeInMinutes > existingTimeInMinutes)
+        );
+        
+        if (hasOverlap) {
+          console.log(`⚠️ Conflito de horário detectado: ${existing.client_name} (${existing.appointment_time}-${Math.floor(existingEndTimeInMinutes/60)}:${String(existingEndTimeInMinutes%60).padStart(2,'0')}) vs novo (${formattedTime}-${Math.floor(requestedEndTimeInMinutes/60)}:${String(requestedEndTimeInMinutes%60).padStart(2,'0')})`);
+          
+          // Check if conflict is with same phone number (same client updating appointment)
+          const existingPhone = existing.client_phone?.replace(/\D/g, '');
+          const newPhone = phoneNumber.replace(/\D/g, '');
+          
+          if (existingPhone === newPhone) {
+            console.log(`✅ Conflito com o mesmo cliente, atualizando agendamento existente`);
+            // Update existing appointment instead of creating new one
+            await storage.updateAppointment(existing.id, {
+              appointmentTime: formattedTime,
+              appointmentDate,
+              duration: serviceDuration,
+              updatedAt: new Date(),
+              notes: `Agendamento atualizado via WhatsApp - Conversa ID: ${conversationId}`
+            });
+            console.log(`✅ Agendamento ${existing.id} atualizado com sucesso`);
+            return;
+          }
+          
+          hasConflict = true;
+          conflictingAppointment = existing;
+          break;
         }
-        
-        // Different client - genuine conflict, but proceed with explicit confirmation
-        console.log(`⚠️ Conflito com cliente diferente, mas criando devido à confirmação explícita`);
       }
       
-      console.log(`✅ No conflicts found. Creating appointment for ${extractedName}`);
+      if (hasConflict && conflictingAppointment) {
+        console.log(`❌ Conflito com cliente diferente: ${conflictingAppointment.client_name} às ${conflictingAppointment.appointment_time}`);
+        console.log(`⚠️ Conflito detectado, mas prosseguindo devido à confirmação explícita do usuário`);
+      } else {
+        console.log(`✅ Nenhum conflito encontrado. Criando agendamento para ${extractedName}`);
+      }
     } catch (dbError) {
       console.error('❌ Error checking appointment conflicts:', dbError);
       // Continue with appointment creation if conflict check fails
