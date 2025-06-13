@@ -2565,6 +2565,11 @@ export const storage = new DatabaseStorage();
       ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE
     `);
     
+    await db.execute(sql`
+      ALTER TABLE companies 
+      ADD COLUMN IF NOT EXISTS plan_status VARCHAR(50) DEFAULT 'inactive'
+    `);
+    
     console.log("✅ Company plan and status columns ensured");
   } catch (error: any) {
     // Columns might already exist, which is fine

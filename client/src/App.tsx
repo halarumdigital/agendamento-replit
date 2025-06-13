@@ -30,6 +30,7 @@ import Dashboard from "@/pages/dashboard";
 import Companies from "@/pages/companies";
 import Plans from "@/pages/plans";
 import Admins from "@/pages/admins";
+import AdminStripePlans from "@/pages/admin-stripe-plans";
 import SettingsPage from "@/pages/settings";
 import Status from "@/pages/status";
 import PublicReview from "@/pages/public-review";
@@ -200,6 +201,16 @@ function Router() {
           <Route path="/administrador/administradores">
             <AdminLayout>
               <Admins />
+            </AdminLayout>
+          </Route>
+          <Route path="/admin/stripe-plans">
+            <AdminLayout>
+              <AdminStripePlans />
+            </AdminLayout>
+          </Route>
+          <Route path="/administrador/stripe-planos">
+            <AdminLayout>
+              <AdminStripePlans />
             </AdminLayout>
           </Route>
         </>
