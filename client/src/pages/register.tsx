@@ -2,15 +2,27 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Link, useLocation } from "wouter";
 import { formatDocument } from "@/lib/validations";
-import { Building2, MapPin, Mail, Lock, User, Phone } from "lucide-react";
+import { Building2, MapPin, Mail, Lock, User, Phone, Check, Star, Zap, Crown } from "lucide-react";
+
+interface Plan {
+  id: number;
+  name: string;
+  freeDays: number;
+  price: string;
+  maxProfessionals: number;
+  isActive: boolean;
+  permissions: Record<string, boolean>;
+}
 
 const registerSchema = z.object({
   fantasyName: z.string().min(2, "Nome fantasia deve ter pelo menos 2 caracteres"),
@@ -25,6 +37,7 @@ const registerSchema = z.object({
   neighborhood: z.string().min(1, "Bairro é obrigatório"),
   city: z.string().min(1, "Cidade é obrigatória"),
   state: z.string().min(1, "Estado é obrigatório"),
+  selectedPlan: z.string().min(1, "Selecione um plano"),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Senhas não coincidem",
   path: ["confirmPassword"],
@@ -36,6 +49,11 @@ export default function Register() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+
+  // Fetch available plans
+  const { data: plans = [], isLoading: plansLoading } = useQuery<Plan[]>({
+    queryKey: ["/api/public-plans"],
+  });
 
   const form = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
@@ -53,6 +71,7 @@ export default function Register() {
       neighborhood: "",
       city: "",
       state: "",
+      selectedPlan: "",
     },
   });
 
