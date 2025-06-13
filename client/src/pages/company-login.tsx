@@ -29,6 +29,7 @@ export default function CompanyLogin() {
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState<string>("");
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [isSubscriptionSuspended, setIsSubscriptionSuspended] = useState(false);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   
@@ -117,6 +118,7 @@ export default function CompanyLogin() {
       if (error.status === 402) {
         errorMessage = "ASSINATURA SUSPENSA, ENTRE EM CONTATO COM O SUPORTE";
         errorTitle = "Acesso Bloqueado";
+        setIsSubscriptionSuspended(true);
       }
       
       setLoginError(errorMessage);
@@ -260,6 +262,24 @@ export default function CompanyLogin() {
                 >
                   {loginMutation.isPending ? "Entrando..." : "Entrar"}
                 </Button>
+
+                {isSubscriptionSuspended && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-center">
+                      <div className="h-px bg-border flex-1"></div>
+                      <span className="px-2 text-xs text-muted-foreground">ou</span>
+                      <div className="h-px bg-border flex-1"></div>
+                    </div>
+                    <Button 
+                      type="button" 
+                      variant="outline"
+                      className="w-full border-orange-500 text-orange-600 hover:bg-orange-50"
+                      onClick={() => setLocation("/empresa/assinatura")}
+                    >
+                      Renovar Assinatura
+                    </Button>
+                  </div>
+                )}
               </form>
             ) : (
               <form onSubmit={forgotPasswordForm.handleSubmit(onForgotPasswordSubmit)} className="space-y-4">

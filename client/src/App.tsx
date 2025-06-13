@@ -42,6 +42,7 @@ import Register from "@/pages/register";
 import Subscription from "@/pages/subscription";
 import SubscriptionTest from "@/pages/subscription-test";
 import StripeTest from "@/pages/stripe-test";
+import CompanySubscription from "@/pages/company-subscription";
 import NotFound from "@/pages/not-found";
 
 function Router() {
