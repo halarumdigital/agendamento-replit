@@ -6988,6 +6988,41 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
   });
 
   const httpServer = createServer(app);
+  // Admin plans management routes
+  app.get("/api/admin/plans", isAuthenticated, async (req, res) => {
+    try {
+      const plans = await storage.getPlans();
+      res.json(plans);
+    } catch (error: any) {
+      console.error("❌ Erro ao buscar planos:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  app.put("/api/admin/plans/:id/stripe", isAuthenticated, async (req, res) => {
+    try {
+      const planId = parseInt(req.params.id);
+      const { stripePriceId } = req.body;
+
+      if (!stripePriceId || !stripePriceId.startsWith('price_')) {
+        return res.status(400).json({ 
+          message: "stripe_price_id é obrigatório e deve começar com 'price_'" 
+        });
+      }
+
+      await db.execute(sql`
+        UPDATE plans 
+        SET stripe_price_id = ${stripePriceId}
+        WHERE id = ${planId}
+      `);
+
+      res.json({ message: "Plano atualizado com sucesso" });
+    } catch (error: any) {
+      console.error("❌ Erro ao atualizar plano:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
   // Admin management routes
   app.get("/api/admins", isAuthenticated, async (req, res) => {
     try {
