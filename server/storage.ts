@@ -1877,7 +1877,7 @@ export class DatabaseStorage implements IStorage {
       });
 
       // Generate review URL - use the current domain
-      const reviewUrl = `https://${process.env.REPL_SLUG || 'localhost:5000'}.replit.app/review/${token}`;
+      const reviewUrl = `http://localhost:5000/review/${token}`;
 
       // Format message
       const message = `Olá ${appointment.clientName}! 👋
