@@ -1703,8 +1703,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const company = await storage.getCompanyByEmail(email);
       console.log('Company found via storage:', company ? 'Yes' : 'No');
+      console.log('Company subscription status:', {
+        isActive: company?.isActive,
+        planStatus: company?.planStatus
+      });
+      
       if (!company) {
         return res.status(401).json({ message: "Credenciais inválidas" });
+      }
+
+      // Verificar status da assinatura ANTES da validação de senha
+      if (!company.isActive || company.planStatus === 'suspended') {
+        console.log('Blocking login due to subscription status');
+        return res.status(402).json({ 
+          message: "Acesso Bloqueado - Assinatura Suspensa",
+          blocked: true,
+          reason: "subscription_suspended",
+          details: "Sua assinatura está suspensa. Entre em contato com o suporte para reativar."
+        });
       }
 
       // Temporary bypass for development - accept any password for damaceno02@hotmail.com
@@ -1777,6 +1793,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const isValidPassword = await bcrypt.compare(password, company.password);
       if (!isValidPassword) {
         return res.status(401).json({ message: "Credenciais inválidas" });
+      }
+
+      // Verificar status da assinatura antes de permitir o login
+      if (!company.isActive || company.planStatus === 'suspended') {
+        return res.status(402).json({ 
+          message: "Acesso Bloqueado - Assinatura Suspensa",
+          blocked: true,
+          reason: "subscription_suspended",
+          details: "Sua assinatura está suspensa. Entre em contato com o suporte para reativar."
+        });
       }
 
       req.session.companyId = company.id;
