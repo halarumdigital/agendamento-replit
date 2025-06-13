@@ -7028,9 +7028,9 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
         customer: asaasCustomerId,
         billingType: 'CREDIT_CARD' as const,
         nextDueDate: nextDueDateStr,
-        value: plan.price,
+        value: parseFloat(plan.price.toString()),
         cycle: 'MONTHLY' as const,
-        description: `Assinatura ${plan.name} - ${company.name}`,
+        description: `Assinatura ${plan.name} - ${company.fantasyName || company.email}`,
         externalReference: `subscription_company_${companyId}_plan_${planId}`,
         creditCard: {
           holderName: creditCard.holderName,
