@@ -145,6 +145,66 @@ interface AsaasPaymentResponse {
   refunds: string;
 }
 
+interface AsaasSubscription {
+  customer: string;
+  billingType: 'BOLETO' | 'CREDIT_CARD' | 'PIX';
+  nextDueDate: string;
+  value: number;
+  cycle: 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY' | 'BIMONTHLY' | 'QUARTERLY' | 'SEMIANNUALLY' | 'YEARLY';
+  description: string;
+  endDate?: string;
+  maxPayments?: number;
+  externalReference?: string;
+  split?: Array<{
+    walletId: string;
+    fixedValue?: number;
+    percentualValue?: number;
+  }>;
+  creditCard?: {
+    holderName: string;
+    number: string;
+    expiryMonth: string;
+    expiryYear: string;
+    ccv: string;
+  };
+  creditCardHolderInfo?: {
+    name: string;
+    email: string;
+    cpfCnpj: string;
+    postalCode: string;
+    addressNumber: string;
+    addressComplement?: string;
+    phone: string;
+    mobilePhone?: string;
+  };
+  creditCardToken?: string;
+}
+
+interface AsaasSubscriptionResponse {
+  object: string;
+  id: string;
+  dateCreated: string;
+  customer: string;
+  paymentLink: string;
+  billingType: string;
+  cycle: string;
+  value: number;
+  nextDueDate: string;
+  description: string;
+  endDate: string;
+  maxPayments: number;
+  status: string;
+  externalReference: string;
+  split: Array<{
+    walletId: string;
+    fixedValue: number;
+    percentualValue: number;
+    status: string;
+    refusalReason: string;
+  }>;
+  deleted: boolean;
+}
+
 class AsaasService {
   private baseUrl: string;
   private token: string;
@@ -206,6 +266,43 @@ class AsaasService {
 
   async getPayment(paymentId: string): Promise<AsaasPaymentResponse> {
     return this.makeRequest<AsaasPaymentResponse>(`/payments/${paymentId}`);
+  }
+
+  async createSubscription(subscriptionData: AsaasSubscription): Promise<AsaasSubscriptionResponse> {
+    console.log('🔄 Criando assinatura no Asaas para cliente:', subscriptionData.customer);
+    console.log('💰 Valor da assinatura: R$', subscriptionData.value);
+    console.log('📅 Primeira cobrança em:', subscriptionData.nextDueDate);
+    
+    return this.makeRequest<AsaasSubscriptionResponse>('/subscriptions', 'POST', subscriptionData);
+  }
+
+  async getSubscription(subscriptionId: string): Promise<AsaasSubscriptionResponse> {
+    return this.makeRequest<AsaasSubscriptionResponse>(`/subscriptions/${subscriptionId}`);
+  }
+
+  async cancelSubscription(subscriptionId: string): Promise<AsaasSubscriptionResponse> {
+    console.log('🔄 Cancelando assinatura no Asaas:', subscriptionId);
+    return this.makeRequest<AsaasSubscriptionResponse>(`/subscriptions/${subscriptionId}`, 'DELETE');
+  }
+
+  async listSubscriptions(params?: {
+    customer?: string;
+    billingType?: string;
+    status?: string;
+    offset?: number;
+    limit?: number;
+  }): Promise<{ object: string; hasMore: boolean; totalCount: number; limit: number; offset: number; data: AsaasSubscriptionResponse[] }> {
+    const queryParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) {
+          queryParams.append(key, String(value));
+        }
+      });
+    }
+    
+    const endpoint = `/subscriptions${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    return this.makeRequest(endpoint);
   }
 
   async listCustomers(params?: {
@@ -275,4 +372,4 @@ class AsaasService {
 }
 
 export const asaasService = new AsaasService();
-export type { AsaasCustomer, AsaasCustomerResponse, AsaasPayment, AsaasPaymentResponse };
+export type { AsaasCustomer, AsaasCustomerResponse, AsaasPayment, AsaasPaymentResponse, AsaasSubscription, AsaasSubscriptionResponse };

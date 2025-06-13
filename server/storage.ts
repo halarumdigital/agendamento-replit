@@ -2361,6 +2361,46 @@ async function ensureFinancialTables() {
   console.log("✅ Financial tables created/verified");
 }
 
+// Add methods to DatabaseStorage class for subscription management
+DatabaseStorage.prototype.updateCompanyAsaasId = async function(companyId: number, asaasCustomerId: string): Promise<void> {
+  await db.execute(sql`
+    UPDATE companies 
+    SET asaas_customer_id = ${asaasCustomerId}
+    WHERE id = ${companyId}
+  `);
+};
+
+DatabaseStorage.prototype.updateCompanySubscription = async function(companyId: number, subscriptionData: {
+  planId: number;
+  asaasSubscriptionId: string;
+  subscriptionStatus: string;
+  nextDueDate: Date;
+  trialEndsAt: Date;
+}): Promise<void> {
+  await db.execute(sql`
+    UPDATE companies 
+    SET 
+      plan_id = ${subscriptionData.planId},
+      asaas_subscription_id = ${subscriptionData.asaasSubscriptionId},
+      subscription_status = ${subscriptionData.subscriptionStatus},
+      subscription_next_due_date = ${subscriptionData.nextDueDate},
+      trial_ends_at = ${subscriptionData.trialEndsAt},
+      is_active = TRUE,
+      updated_at = NOW()
+    WHERE id = ${companyId}
+  `);
+};
+
+DatabaseStorage.prototype.getPlanById = async function(planId: number): Promise<Plan | undefined> {
+  const [plan] = await db.select().from(plans).where(eq(plans.id, planId));
+  return plan;
+};
+
+DatabaseStorage.prototype.getCompanyById = async function(companyId: number): Promise<Company | undefined> {
+  const [company] = await db.select().from(companies).where(eq(companies.id, companyId));
+  return company;
+};
+
 export const storage = new DatabaseStorage();
 
 // Initialize conversation tables on startup

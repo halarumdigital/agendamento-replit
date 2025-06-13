@@ -6966,39 +6966,121 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
     }
   });
 
-  // Test route for Asaas integration
-  app.post("/api/test/asaas-customer", async (req, res) => {
+  // Create subscription with free trial period
+  app.post("/api/create-subscription", async (req, res) => {
     try {
-      console.log('🔄 Testando criação de cliente no Asaas...');
+      const { 
+        companyId, 
+        planId, 
+        creditCard, 
+        holderInfo 
+      } = req.body;
+
+      console.log('🔄 Iniciando criação de assinatura para empresa:', companyId);
+
+      // 1. Get company and plan details
+      const company = await storage.getCompanyById(companyId);
+      if (!company) {
+        return res.status(404).json({ message: 'Empresa não encontrada' });
+      }
+
+      const plan = await storage.getPlanById(planId);
+      if (!plan) {
+        return res.status(404).json({ message: 'Plano não encontrado' });
+      }
+
+      console.log('📋 Plano selecionado:', plan.name, '- Valor: R$', plan.price);
+      console.log('🎁 Dias grátis:', plan.freeDays);
+
+      // 2. Create or get customer in Asaas
+      let asaasCustomerId = company.asaasCustomerId;
+
+      if (!asaasCustomerId) {
+        console.log('👤 Criando cliente no Asaas...');
+        const customerData = {
+          name: company.name,
+          cpfCnpj: company.document || '00000000000',
+          email: company.email || holderInfo.email,
+          phone: company.phone || holderInfo.phone,
+          externalReference: `company_${companyId}`,
+          observations: `Cliente criado para assinatura do plano ${plan.name}`
+        };
+
+        const asaasCustomer = await asaasService.createCustomer(customerData);
+        asaasCustomerId = asaasCustomer.id;
+
+        // Update company with Asaas customer ID
+        await storage.updateCompanyAsaasId(companyId, asaasCustomerId);
+        console.log('✅ Cliente criado no Asaas:', asaasCustomerId);
+      }
+
+      // 3. Calculate next due date (after free trial)
+      const today = new Date();
+      const nextDueDate = new Date(today);
+      nextDueDate.setDate(today.getDate() + (plan.freeDays || 0));
       
-      const customerData = {
-        name: "Salão Beleza Total - Teste",
-        cpfCnpj: "12345678901",
-        email: "contato@salaobelezatotal.com",
-        phone: "11987654321",
-        externalReference: "company_test_001",
-        observations: "Cliente criado via sistema de teste"
+      const nextDueDateStr = nextDueDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+
+      console.log('📅 Primeira cobrança agendada para:', nextDueDateStr);
+
+      // 4. Create subscription in Asaas
+      const subscriptionData = {
+        customer: asaasCustomerId,
+        billingType: 'CREDIT_CARD' as const,
+        nextDueDate: nextDueDateStr,
+        value: plan.price,
+        cycle: 'MONTHLY' as const,
+        description: `Assinatura ${plan.name} - ${company.name}`,
+        externalReference: `subscription_company_${companyId}_plan_${planId}`,
+        creditCard: {
+          holderName: creditCard.holderName,
+          number: creditCard.number,
+          expiryMonth: creditCard.expiryMonth,
+          expiryYear: creditCard.expiryYear,
+          ccv: creditCard.ccv
+        },
+        creditCardHolderInfo: {
+          name: holderInfo.name,
+          email: holderInfo.email,
+          cpfCnpj: holderInfo.cpfCnpj,
+          postalCode: holderInfo.postalCode,
+          addressNumber: holderInfo.addressNumber,
+          phone: holderInfo.phone
+        }
       };
-      
-      const customer = await asaasService.createCustomer(customerData);
-      
+
+      const subscription = await asaasService.createSubscription(subscriptionData);
+      console.log('✅ Assinatura criada no Asaas:', subscription.id);
+
+      // 5. Update company with subscription details
+      await storage.updateCompanySubscription(companyId, {
+        planId: planId,
+        asaasSubscriptionId: subscription.id,
+        subscriptionStatus: subscription.status,
+        nextDueDate: nextDueDate,
+        trialEndsAt: nextDueDate
+      });
+
+      console.log('✅ Empresa atualizada com dados da assinatura');
+
       res.json({
         success: true,
-        message: "Cliente criado com sucesso no Asaas!",
-        customer: {
-          id: customer.id,
-          name: customer.name,
-          email: customer.email,
-          cpfCnpj: customer.cpfCnpj,
-          dateCreated: customer.dateCreated
+        message: 'Assinatura criada com sucesso!',
+        subscription: {
+          id: subscription.id,
+          status: subscription.status,
+          nextDueDate: nextDueDateStr,
+          freeDays: plan.freeDays,
+          value: plan.price,
+          planName: plan.name
         }
       });
-      
+
     } catch (error) {
-      console.error('❌ Erro ao testar Asaas:', error);
+      console.error('❌ Erro ao criar assinatura:', error);
       res.status(500).json({
         success: false,
-        message: error instanceof Error ? error.message : "Erro ao criar cliente no Asaas"
+        message: error instanceof Error ? error.message : 'Erro ao criar assinatura'
       });
     }
   });
