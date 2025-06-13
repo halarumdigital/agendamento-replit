@@ -60,8 +60,7 @@ export default function AdminAlerts() {
   const { data: alerts, isLoading } = useQuery({
     queryKey: ["/api/admin/alerts"],
     queryFn: async () => {
-      const response = await apiRequest("GET", "/api/admin/alerts");
-      return response.json();
+      return await apiRequest("GET", "/api/admin/alerts");
     },
   });
 
@@ -69,16 +68,14 @@ export default function AdminAlerts() {
   const { data: companies } = useQuery({
     queryKey: ["/api/admin/companies"],
     queryFn: async () => {
-      const response = await apiRequest("GET", "/api/admin/companies");
-      return response.json();
+      return await apiRequest("GET", "/api/admin/companies");
     },
   });
 
   // Criar alerta
   const createMutation = useMutation({
     mutationFn: async (data: AlertFormData) => {
-      const response = await apiRequest("POST", "/api/admin/alerts", data);
-      return response.json();
+      return await apiRequest("POST", "/api/admin/alerts", data);
     },
     onSuccess: () => {
       toast({ title: "Alerta criado com sucesso!" });
@@ -98,8 +95,7 @@ export default function AdminAlerts() {
   // Atualizar alerta
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: AlertFormData }) => {
-      const response = await apiRequest("PUT", `/api/admin/alerts/${id}`, data);
-      return response.json();
+      return await apiRequest("PUT", `/api/admin/alerts/${id}`, data);
     },
     onSuccess: () => {
       toast({ title: "Alerta atualizado com sucesso!" });
@@ -120,8 +116,7 @@ export default function AdminAlerts() {
   // Deletar alerta
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await apiRequest("DELETE", `/api/admin/alerts/${id}`);
-      return response.json();
+      return await apiRequest("DELETE", `/api/admin/alerts/${id}`);
     },
     onSuccess: () => {
       toast({ title: "Alerta removido com sucesso!" });
