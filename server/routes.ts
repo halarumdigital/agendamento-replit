@@ -7005,12 +7005,25 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
   });
 
   // API para simular falha de pagamento (apenas para testes)
-  app.post("/api/test/simulate-payment-failure", async (req: any, res) => {
+  app.post("/api/test/simulate-payment-failure", isAuthenticated, async (req: any, res) => {
     try {
-      const companyId = req.session.companyId;
+      // Para administradores, aceitar companyId do body. Para empresas, usar session
+      let companyId = req.body.companyId || req.session.companyId;
+      
       if (!companyId) {
-        return res.status(401).json({ message: "Não autenticado" });
+        return res.status(400).json({ message: "ID da empresa é obrigatório" });
       }
+
+      // Verificar se a empresa existe
+      const [companyResult] = await db.execute(sql`
+        SELECT id, fantasy_name FROM companies WHERE id = ${companyId}
+      `);
+
+      if (!Array.isArray(companyResult) || companyResult.length === 0) {
+        return res.status(404).json({ message: "Empresa não encontrada" });
+      }
+
+      const company = companyResult[0] as any;
 
       // Simula falha de pagamento alterando o status da empresa
       await db.execute(sql`
@@ -7020,8 +7033,9 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
       `);
 
       res.json({ 
-        message: "Falha de pagamento simulada com sucesso",
-        status: "payment_failed"
+        message: `Falha de pagamento simulada para ${company.fantasy_name}`,
+        status: "payment_failed",
+        companyId: companyId
       });
     } catch (error) {
       console.error("Erro ao simular falha de pagamento:", error);
@@ -7030,12 +7044,25 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
   });
 
   // API para simular sucesso de pagamento (apenas para testes)
-  app.post("/api/test/simulate-payment-success", async (req: any, res) => {
+  app.post("/api/test/simulate-payment-success", isAuthenticated, async (req: any, res) => {
     try {
-      const companyId = req.session.companyId;
+      // Para administradores, aceitar companyId do body. Para empresas, usar session
+      let companyId = req.body.companyId || req.session.companyId;
+      
       if (!companyId) {
-        return res.status(401).json({ message: "Não autenticado" });
+        return res.status(400).json({ message: "ID da empresa é obrigatório" });
       }
+
+      // Verificar se a empresa existe
+      const [companyResult] = await db.execute(sql`
+        SELECT id, fantasy_name FROM companies WHERE id = ${companyId}
+      `);
+
+      if (!Array.isArray(companyResult) || companyResult.length === 0) {
+        return res.status(404).json({ message: "Empresa não encontrada" });
+      }
+
+      const company = companyResult[0] as any;
 
       // Simula sucesso de pagamento alterando o status da empresa
       await db.execute(sql`
@@ -7045,8 +7072,9 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
       `);
 
       res.json({ 
-        message: "Sucesso de pagamento simulado com sucesso",
-        status: "payment_success"
+        message: `Sucesso de pagamento simulado para ${company.fantasy_name}`,
+        status: "payment_success",
+        companyId: companyId
       });
     } catch (error) {
       console.error("Erro ao simular sucesso de pagamento:", error);
