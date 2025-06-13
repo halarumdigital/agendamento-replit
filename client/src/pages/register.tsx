@@ -84,17 +84,34 @@ export default function Register() {
   const onSubmit = async (data: RegisterFormData) => {
     setIsLoading(true);
     try {
-      const { confirmPassword, ...registerData } = data;
+      const { confirmPassword, selectedPlan, ...registerData } = data;
       
-      await apiRequest("POST", "/api/public/register", registerData);
+      // Register company
+      const registerResponse = await apiRequest("POST", "/api/public/register", registerData);
       
-      toast({
-        title: "Cadastro realizado com sucesso!",
-        description: "Agora você pode escolher seu plano de assinatura.",
-      });
-      
-      // Redirecionar para a página de planos
-      setLocation("/assinatura");
+      if (registerResponse.ok) {
+        // Auto-login after registration
+        const loginResponse = await apiRequest("POST", "/api/company/login", {
+          email: data.email,
+          password: data.password
+        });
+
+        if (loginResponse.ok) {
+          toast({
+            title: "Cadastro realizado com sucesso!",
+            description: "Redirecionando para finalizar assinatura...",
+          });
+          
+          // Redirect to subscription page
+          setLocation("/assinatura");
+        } else {
+          toast({
+            title: "Cadastro realizado!",
+            description: "Faça login para continuar com a assinatura.",
+          });
+          setLocation("/company/login");
+        }
+      }
     } catch (error: any) {
       toast({
         title: "Erro no cadastro",
@@ -104,6 +121,13 @@ export default function Register() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const getPlanIcon = (planName: string) => {
+    if (planName.toLowerCase().includes('básico')) return Star;
+    if (planName.toLowerCase().includes('profissional')) return Zap;
+    if (planName.toLowerCase().includes('premium')) return Crown;
+    return Star;
   };
 
   return (
