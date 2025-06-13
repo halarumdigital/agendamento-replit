@@ -202,10 +202,26 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
     console.log('🎯 Creating appointment from AI confirmation');
     console.log('🔍 AI Response to analyze:', aiResponse);
     
+    // CRITICAL: Check if AI is asking for confirmation or still collecting data
+    const isAskingForConfirmation = /(?:está tudo correto|responda sim|confirme|confirmar)/i.test(aiResponse);
+    const isCollectingData = /(?:qual seu nome|qual serviço|qual profissional|qual horário|qual dia|telefone)/i.test(aiResponse);
+    
+    if (isAskingForConfirmation || isCollectingData) {
+      console.log('❌ AI is still asking for confirmation or collecting data. Not creating appointment.');
+      return;
+    }
+    
     // Get conversation history to extract appointment data from user messages
     const messages = await storage.getMessagesByConversation(conversationId);
     const userMessages = messages.filter(m => m.role === 'user').map(m => m.content);
     const allConversationText = userMessages.join(' ');
+    
+    // Check if user has explicitly confirmed with SIM/OK
+    const hasExplicitConfirmation = /\b(sim|ok|confirmo|confirma)\b/i.test(allConversationText);
+    if (!hasExplicitConfirmation) {
+      console.log('❌ User has not explicitly confirmed with SIM/OK. Not creating appointment.');
+      return;
+    }
     
     console.log('📚 User conversation text:', allConversationText);
     
@@ -396,15 +412,28 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
       return;
     }
     
-    // Calculate appointment date
+    // Calculate appointment date using the EXACT same logic from system prompt
     const today = new Date();
     const dayMap = { 'domingo': 0, 'segunda': 1, 'terça': 2, 'quarta': 3, 'quinta': 4, 'sexta': 5, 'sábado': 6 };
     const targetDay = dayMap[extractedDay?.toLowerCase() as keyof typeof dayMap];
     
-    let appointmentDate = new Date(today);
+    let appointmentDate = new Date();
     if (targetDay !== undefined) {
-      const daysUntilTarget = targetDay - today.getDay();
-      appointmentDate.setDate(today.getDate() + (daysUntilTarget <= 0 ? daysUntilTarget + 7 : daysUntilTarget));
+      const currentDay = today.getDay();
+      let daysUntilTarget = targetDay - currentDay;
+      
+      // If the day has already passed this week, get next week's occurrence
+      if (daysUntilTarget <= 0) {
+        daysUntilTarget += 7;
+      }
+      
+      // Set the correct date
+      appointmentDate.setDate(today.getDate() + daysUntilTarget);
+      appointmentDate.setHours(0, 0, 0, 0); // Reset time to start of day
+      
+      console.log(`📅 Date calculation: Today is ${today.toLocaleDateString('pt-BR')} (${['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'][currentDay]})`);
+      console.log(`📅 Target day: ${extractedDay} (${targetDay}), Days until target: ${daysUntilTarget}`);
+      console.log(`📅 Calculated appointment date: ${appointmentDate.toLocaleDateString('pt-BR')}`);
     }
     
     // Format time
