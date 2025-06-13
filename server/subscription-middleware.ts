@@ -41,6 +41,15 @@ export const checkSubscriptionStatus: RequestHandler = async (req: any, res, nex
 
     const company = companies[0];
 
+    // Check if company is marked as inactive in database first
+    if (company.status === 0) {
+      return res.status(402).json({
+        message: "Acesso Bloqueado - Assinatura Suspensa",
+        blocked: true,
+        reason: "company_inactive"
+      });
+    }
+
     // If no Stripe subscription, allow access (free trial or manual management)
     if (!company.stripe_subscription_id) {
       return next();

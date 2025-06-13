@@ -1206,7 +1206,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   };
 
   // Company routes
-  app.get('/api/companies', isAuthenticated, async (req, res) => {
+  app.get('/api/companies', isAuthenticated, checkSubscriptionStatus, async (req, res) => {
     try {
       const companies = await storage.getCompanies();
       res.json(companies);
@@ -1734,7 +1734,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Dashboard stats
-  app.get('/api/dashboard/stats', isAuthenticated, async (req, res) => {
+  app.get('/api/dashboard/stats', isAuthenticated, checkSubscriptionStatus, async (req, res) => {
     try {
       const companies = await storage.getCompanies();
       const plans = await storage.getPlans();
