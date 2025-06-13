@@ -7033,7 +7033,7 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
       `);
 
       res.json({ 
-        message: `Falha de pagamento simulada para ${company.fantasy_name}`,
+        message: `Falha de pagamento simulada para ${company.fantasy_name || 'empresa ID ' + companyId}`,
         status: "payment_failed",
         companyId: companyId
       });
@@ -7072,7 +7072,7 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
       `);
 
       res.json({ 
-        message: `Sucesso de pagamento simulado para ${company.fantasy_name}`,
+        message: `Sucesso de pagamento simulado para ${company.fantasy_name || 'empresa ID ' + companyId}`,
         status: "payment_success",
         companyId: companyId
       });
