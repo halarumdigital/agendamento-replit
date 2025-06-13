@@ -247,6 +247,15 @@ function Router() {
               <Login />
             )}
           </Route>
+          <Route path="/administrador/subscriptions">
+            {isAdminAuthenticated ? (
+              <AdminLayout>
+                <AdminSubscriptions />
+              </AdminLayout>
+            ) : (
+              <Login />
+            )}
+          </Route>
         </>
       )}
       <Route component={NotFound} />
