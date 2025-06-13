@@ -29,7 +29,10 @@ export default function AdminSubscriptionTest() {
       const response = await apiRequest("POST", "/api/test/simulate-payment-failure", {
         companyId,
       });
-      return response.json();
+      if (!response.ok) {
+        throw new Error(`Erro ${response.status}: ${response.statusText}`);
+      }
+      return await response.json();
     },
     onSuccess: (data) => {
       toast({
@@ -53,7 +56,10 @@ export default function AdminSubscriptionTest() {
       const response = await apiRequest("POST", "/api/test/simulate-payment-success", {
         companyId,
       });
-      return response.json();
+      if (!response.ok) {
+        throw new Error(`Erro ${response.status}: ${response.statusText}`);
+      }
+      return await response.json();
     },
     onSuccess: (data) => {
       toast({
