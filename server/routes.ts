@@ -1732,25 +1732,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Dashboard stats
-  app.get('/api/dashboard/stats', isCompanyAuthenticated, checkSubscriptionStatus, async (req, res) => {
+  // Admin Dashboard stats
+  app.get('/api/dashboard/stats', isAuthenticated, async (req, res) => {
     try {
-      const companies = await storage.getCompanies();
-      const plans = await storage.getPlans();
-      
-      const totalCompanies = companies.length;
-      const activePlans = plans.filter(plan => plan.isActive).length;
-      const activeCompanies = companies.length; // For now, all companies are considered active
-      
-      // Calculate monthly revenue (simplified calculation)
-      const monthlyRevenue = plans
-        .filter(plan => plan.isActive)
-        .reduce((total, plan) => total + parseFloat(plan.price), 0);
+      // Total de empresas cadastradas
+      const totalCompaniesResult = await db.execute(sql`
+        SELECT COUNT(*) as total FROM companies
+      `);
+      const totalCompanies = (totalCompaniesResult as any)[0][0]?.total || 0;
+
+      // Total de planos disponíveis
+      const totalPlansResult = await db.execute(sql`
+        SELECT COUNT(*) as total FROM plans
+      `);
+      const activePlans = (totalPlansResult as any)[0][0]?.total || 0;
+
+      // Empresas ativas (com planStatus = 'active')
+      const activeCompaniesResult = await db.execute(sql`
+        SELECT COUNT(*) as total FROM companies WHERE planStatus = 'active'
+      `);
+      const activeCompanies = (activeCompaniesResult as any)[0][0]?.total || 0;
+
+      // Receita estimada mensal (soma dos preços dos planos das empresas ativas)
+      const revenueResult = await db.execute(sql`
+        SELECT COALESCE(SUM(p.price), 0) as total 
+        FROM companies c 
+        JOIN plans p ON c.planId = p.id 
+        WHERE c.planStatus = 'active'
+      `);
+      const monthlyRevenue = parseFloat((revenueResult as any)[0][0]?.total || '0');
 
       res.json({
-        totalCompanies,
-        activePlans,
-        activeCompanies,
+        totalCompanies: Number(totalCompanies),
+        activePlans: Number(activePlans),
+        activeCompanies: Number(activeCompanies),
         monthlyRevenue: monthlyRevenue.toFixed(2),
       });
     } catch (error) {
