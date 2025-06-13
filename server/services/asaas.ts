@@ -146,13 +146,16 @@ interface AsaasPaymentResponse {
 }
 
 class AsaasService {
-  private baseUrl = 'https://www.asaas.com/api/v3';
+  private baseUrl: string;
   private token: string;
 
   constructor() {
-    this.token = process.env.ASAAS_TOKEN || '';
+    this.baseUrl = process.env.ASAAS_API_URL || 'https://api-sandbox.asaas.com/v3';
+    this.token = process.env.ASAAS_APIKEY || process.env.ASAAS_TOKEN || '';
     if (!this.token) {
-      console.warn('⚠️ ASAAS_TOKEN não configurado. Funcionalidades de pagamento não estarão disponíveis.');
+      console.warn('⚠️ ASAAS_APIKEY não configurado. Funcionalidades de pagamento não estarão disponíveis.');
+    } else {
+      console.log(`✅ Asaas configurado: ${this.baseUrl}`);
     }
   }
 
