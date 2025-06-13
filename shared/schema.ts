@@ -111,6 +111,29 @@ export const plans = mysqlTable("plans", {
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
 
+// Admin alerts/announcements table
+export const adminAlerts = mysqlTable("admin_alerts", {
+  id: int("id").primaryKey().autoincrement(),
+  title: varchar("title", { length: 255 }).notNull(),
+  message: text("message").notNull(),
+  type: varchar("type", { length: 50 }).notNull().default("info"), // info, warning, success, error
+  isActive: boolean("is_active").notNull().default(true),
+  showToAllCompanies: boolean("show_to_all_companies").notNull().default(true),
+  targetCompanyIds: json("target_company_ids").$type<number[]>().default([]),
+  startDate: timestamp("start_date").defaultNow(),
+  endDate: timestamp("end_date"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+});
+
+// Company alert views table (to track which companies have seen the alert)
+export const companyAlertViews = mysqlTable("company_alert_views", {
+  id: int("id").primaryKey().autoincrement(),
+  companyId: int("company_id").notNull(),
+  alertId: int("alert_id").notNull(),
+  viewedAt: timestamp("viewed_at").defaultNow(),
+});
+
 // Global settings table
 export const globalSettings = mysqlTable("global_settings", {
   id: int("id").primaryKey().autoincrement(),
@@ -730,6 +753,17 @@ export const insertCouponSchema = createInsertSchema(coupons).omit({
   updatedAt: true,
 });
 
+export const insertAdminAlertSchema = createInsertSchema(adminAlerts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertCompanyAlertViewSchema = createInsertSchema(companyAlertViews).omit({
+  id: true,
+  viewedAt: true,
+});
+
 // Type exports
 export type Admin = typeof admins.$inferSelect;
 export type InsertAdmin = z.infer<typeof insertAdminSchema>;
@@ -785,3 +819,7 @@ export type MessageCampaign = typeof messageCampaigns.$inferSelect;
 export type InsertMessageCampaign = z.infer<typeof insertMessageCampaignSchema>;
 export type Coupon = typeof coupons.$inferSelect;
 export type InsertCoupon = z.infer<typeof insertCouponSchema>;
+export type AdminAlert = typeof adminAlerts.$inferSelect;
+export type InsertAdminAlert = z.infer<typeof insertAdminAlertSchema>;
+export type CompanyAlertView = typeof companyAlertViews.$inferSelect;
+export type InsertCompanyAlertView = z.infer<typeof insertCompanyAlertViewSchema>;

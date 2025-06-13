@@ -34,6 +34,7 @@ import AdminStripePlans from "@/pages/admin-stripe-plans";
 import AdminTestSubscription from "@/pages/admin-test-subscription";
 import AdminSubscriptions from "@/pages/admin-subscriptions";
 import AdminSubscriptionTest from "@/pages/admin-subscription-test";
+import AdminAlerts from "@/pages/admin-alerts";
 import SettingsPage from "@/pages/settings";
 import Status from "@/pages/status";
 import PublicReview from "@/pages/public-review";

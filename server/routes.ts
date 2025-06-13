@@ -7735,5 +7735,146 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
     }
   });
 
+  // Admin alerts management routes
+  app.get("/api/admin/alerts", isAuthenticated, async (req, res) => {
+    try {
+      const [alerts] = await db.execute(sql`
+        SELECT * FROM admin_alerts 
+        ORDER BY created_at DESC
+      `);
+      
+      res.json(alerts);
+    } catch (error) {
+      console.error("Error getting admin alerts:", error);
+      res.status(500).json({ message: "Erro ao buscar alertas" });
+    }
+  });
+
+  app.post("/api/admin/alerts", isAuthenticated, async (req, res) => {
+    try {
+      const { title, message, type, showToAllCompanies, targetCompanyIds, startDate, endDate } = req.body;
+      
+      if (!title || !message) {
+        return res.status(400).json({ message: "Título e mensagem são obrigatórios" });
+      }
+
+      const [result] = await db.execute(sql`
+        INSERT INTO admin_alerts (
+          title, message, type, show_to_all_companies, target_company_ids, 
+          start_date, end_date, is_active
+        ) VALUES (
+          ${title}, ${message}, ${type || 'info'}, ${showToAllCompanies}, 
+          ${JSON.stringify(targetCompanyIds || [])}, 
+          ${startDate || new Date()}, ${endDate || null}, 1
+        )
+      `);
+
+      res.status(201).json({ 
+        message: "Alerta criado com sucesso",
+        id: (result as any).insertId
+      });
+    } catch (error) {
+      console.error("Error creating admin alert:", error);
+      res.status(500).json({ message: "Erro ao criar alerta" });
+    }
+  });
+
+  app.put("/api/admin/alerts/:id", isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { title, message, type, showToAllCompanies, targetCompanyIds, startDate, endDate, isActive } = req.body;
+      
+      await db.execute(sql`
+        UPDATE admin_alerts SET
+          title = ${title},
+          message = ${message},
+          type = ${type},
+          show_to_all_companies = ${showToAllCompanies},
+          target_company_ids = ${JSON.stringify(targetCompanyIds || [])},
+          start_date = ${startDate},
+          end_date = ${endDate},
+          is_active = ${isActive},
+          updated_at = NOW()
+        WHERE id = ${id}
+      `);
+
+      res.json({ message: "Alerta atualizado com sucesso" });
+    } catch (error) {
+      console.error("Error updating admin alert:", error);
+      res.status(500).json({ message: "Erro ao atualizar alerta" });
+    }
+  });
+
+  app.delete("/api/admin/alerts/:id", isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      await db.execute(sql`
+        DELETE FROM admin_alerts WHERE id = ${id}
+      `);
+
+      res.json({ message: "Alerta removido com sucesso" });
+    } catch (error) {
+      console.error("Error deleting admin alert:", error);
+      res.status(500).json({ message: "Erro ao remover alerta" });
+    }
+  });
+
+  // Company alerts routes (for displaying alerts to companies)
+  app.get("/api/company/alerts", async (req, res) => {
+    try {
+      const companyId = (req as any).session?.companyId;
+      
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const now = new Date();
+      
+      const [alerts] = await db.execute(sql`
+        SELECT a.* FROM admin_alerts a
+        WHERE a.is_active = 1
+        AND (a.start_date IS NULL OR a.start_date <= ${now})
+        AND (a.end_date IS NULL OR a.end_date >= ${now})
+        AND (
+          a.show_to_all_companies = 1 
+          OR JSON_CONTAINS(a.target_company_ids, ${JSON.stringify(companyId)})
+        )
+        AND NOT EXISTS (
+          SELECT 1 FROM company_alert_views v 
+          WHERE v.company_id = ${companyId} AND v.alert_id = a.id
+        )
+        ORDER BY a.created_at DESC
+      `);
+
+      res.json(alerts);
+    } catch (error) {
+      console.error("Error getting company alerts:", error);
+      res.status(500).json({ message: "Erro ao buscar alertas" });
+    }
+  });
+
+  app.post("/api/company/alerts/:id/view", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const companyId = (req as any).session?.companyId;
+      
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      await db.execute(sql`
+        INSERT INTO company_alert_views (company_id, alert_id)
+        VALUES (${companyId}, ${id})
+        ON DUPLICATE KEY UPDATE viewed_at = NOW()
+      `);
+
+      res.json({ message: "Alerta marcado como visto" });
+    } catch (error) {
+      console.error("Error marking alert as viewed:", error);
+      res.status(500).json({ message: "Erro ao marcar alerta como visto" });
+    }
+  });
+
   return httpServer;
 }
