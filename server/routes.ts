@@ -7054,6 +7054,135 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
     }
   });
 
+  // API para gerenciar assinaturas do Stripe (admin)
+  app.get("/api/admin/stripe/subscriptions", async (req, res) => {
+    try {
+      // Buscar todas as empresas com assinaturas
+      const companies = await db.execute(sql`
+        SELECT id, name, email, stripe_customer_id, stripe_subscription_id, status, created_at
+        FROM companies 
+        WHERE stripe_subscription_id IS NOT NULL 
+        ORDER BY created_at DESC
+      `);
+
+      const subscriptionsData = [];
+
+      for (const company of companies) {
+        try {
+          let subscriptionData: any = {
+            companyId: company.id,
+            companyName: company.name,
+            companyEmail: company.email,
+            companyStatus: company.status,
+            stripeCustomerId: company.stripe_customer_id,
+            stripeSubscriptionId: company.stripe_subscription_id,
+            createdAt: company.created_at
+          };
+
+          // Buscar dados da assinatura no Stripe se existir
+          if (company.stripe_subscription_id) {
+            try {
+              const subscription = await stripeService.subscriptions.retrieve(company.stripe_subscription_id, {
+                expand: ['latest_invoice', 'latest_invoice.payment_intent', 'customer']
+              });
+
+              subscriptionData = {
+                ...subscriptionData,
+                stripeStatus: subscription.status,
+                currentPeriodStart: new Date(subscription.current_period_start * 1000),
+                currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+                cancelAtPeriodEnd: subscription.cancel_at_period_end,
+                canceledAt: subscription.canceled_at ? new Date(subscription.canceled_at * 1000) : null,
+                priceId: subscription.items.data[0]?.price?.id,
+                amount: subscription.items.data[0]?.price?.unit_amount,
+                currency: subscription.items.data[0]?.price?.currency,
+                interval: subscription.items.data[0]?.price?.recurring?.interval,
+                customer: subscription.customer,
+                latestInvoice: subscription.latest_invoice ? {
+                  id: subscription.latest_invoice.id,
+                  status: subscription.latest_invoice.status,
+                  total: subscription.latest_invoice.total,
+                  paid: subscription.latest_invoice.paid,
+                  paymentIntent: subscription.latest_invoice.payment_intent ? {
+                    status: subscription.latest_invoice.payment_intent.status,
+                    clientSecret: subscription.latest_invoice.payment_intent.client_secret
+                  } : null
+                } : null
+              };
+            } catch (stripeError) {
+              console.error(`Erro ao buscar assinatura do Stripe para empresa ${company.id}:`, stripeError);
+              subscriptionData.stripeError = "Erro ao buscar dados no Stripe";
+            }
+          }
+
+          subscriptionsData.push(subscriptionData);
+        } catch (error) {
+          console.error(`Erro ao processar empresa ${company.id}:`, error);
+          subscriptionsData.push({
+            companyId: company.id,
+            companyName: company.name,
+            companyEmail: company.email,
+            companyStatus: company.status,
+            error: "Erro ao processar dados"
+          });
+        }
+      }
+
+      res.json(subscriptionsData);
+    } catch (error) {
+      console.error("Erro ao buscar assinaturas:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  // API para cancelar assinatura (admin)
+  app.post("/api/admin/stripe/subscriptions/:subscriptionId/cancel", async (req, res) => {
+    try {
+      const { subscriptionId } = req.params;
+      const { cancelAtPeriodEnd = true } = req.body;
+
+      const subscription = await stripe.subscriptions.update(subscriptionId, {
+        cancel_at_period_end: cancelAtPeriodEnd
+      });
+
+      res.json({
+        message: cancelAtPeriodEnd ? "Assinatura será cancelada no final do período" : "Assinatura cancelada imediatamente",
+        subscription: {
+          id: subscription.id,
+          status: subscription.status,
+          cancelAtPeriodEnd: subscription.cancel_at_period_end,
+          currentPeriodEnd: new Date(subscription.current_period_end * 1000)
+        }
+      });
+    } catch (error) {
+      console.error("Erro ao cancelar assinatura:", error);
+      res.status(500).json({ message: "Erro ao cancelar assinatura" });
+    }
+  });
+
+  // API para reativar assinatura (admin)
+  app.post("/api/admin/stripe/subscriptions/:subscriptionId/reactivate", async (req, res) => {
+    try {
+      const { subscriptionId } = req.params;
+
+      const subscription = await stripe.subscriptions.update(subscriptionId, {
+        cancel_at_period_end: false
+      });
+
+      res.json({
+        message: "Assinatura reativada com sucesso",
+        subscription: {
+          id: subscription.id,
+          status: subscription.status,
+          cancelAtPeriodEnd: subscription.cancel_at_period_end
+        }
+      });
+    } catch (error) {
+      console.error("Erro ao reativar assinatura:", error);
+      res.status(500).json({ message: "Erro ao reativar assinatura" });
+    }
+  });
+
   // Aplicar middleware de verificação de assinatura para rotas da empresa
   app.use('/api/company', checkSubscriptionStatus);
   app.use('/api/dashboard', checkSubscriptionStatus);
