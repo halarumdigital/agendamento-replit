@@ -8,6 +8,7 @@ import { startCampaignScheduler } from "./campaign-scheduler";
 import { ensureSmtpColumns } from "./ensure-smtp-columns";
 import { ensureResetColumns } from "./ensure-reset-columns";
 import { ensureCustomHtmlColumn } from "./ensure-custom-html-column";
+import { ensureCustomDomainColumn } from "./ensure-custom-domain-column";
 import { ensureAddressColumns } from "./ensure-address-columns";
 import { ensureStripeColumns } from "./ensure-stripe-columns";
 import { db } from "./db";
@@ -65,6 +66,9 @@ app.use((req, res, next) => {
   
   // Ensure custom HTML column exists
   await ensureCustomHtmlColumn();
+  
+  // Ensure custom domain URL column exists
+  await ensureCustomDomainColumn();
   
   // Ensure address columns exist
   await ensureAddressColumns();

@@ -124,4 +124,5 @@ export const settingsSchema = z.object({
   smtpFromName: z.string().optional(),
   smtpSecure: z.string().optional(),
   customHtml: z.string().optional(),
+  customDomainUrl: z.string().optional(),
 });
