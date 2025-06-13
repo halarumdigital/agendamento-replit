@@ -232,9 +232,21 @@ function SidebarContent() {
 
 export default function CompanyLayout({ children }: CompanyLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { company } = useCompanyAuth();
+  const { subscriptionStatus, isLoading: subscriptionLoading, isBlocked } = useSubscriptionStatus();
   
   // Aplica tema global dinamicamente
   useGlobalTheme();
+
+  // Show subscription blocked screen if payment failed
+  if (company && isBlocked && !subscriptionLoading) {
+    return (
+      <SubscriptionBlocked 
+        subscriptionStatus={subscriptionStatus?.subscriptionStatus}
+        paymentStatus={subscriptionStatus?.paymentStatus}
+      />
+    );
+  }
 
   return (
     <>

@@ -31,6 +31,7 @@ import Companies from "@/pages/companies";
 import Plans from "@/pages/plans";
 import Admins from "@/pages/admins";
 import AdminStripePlans from "@/pages/admin-stripe-plans";
+import AdminTestSubscription from "@/pages/admin-test-subscription";
 import SettingsPage from "@/pages/settings";
 import Status from "@/pages/status";
 import PublicReview from "@/pages/public-review";
@@ -222,6 +223,15 @@ function Router() {
             {isAdminAuthenticated ? (
               <AdminLayout>
                 <AdminStripePlans />
+              </AdminLayout>
+            ) : (
+              <Login />
+            )}
+          </Route>
+          <Route path="/administrador/teste-assinatura">
+            {isAdminAuthenticated ? (
+              <AdminLayout>
+                <AdminTestSubscription />
               </AdminLayout>
             ) : (
               <Login />

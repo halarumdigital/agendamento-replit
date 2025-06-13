@@ -7004,6 +7004,56 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
     }
   });
 
+  // API para simular falha de pagamento (apenas para testes)
+  app.post("/api/test/simulate-payment-failure", async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      // Simula falha de pagamento alterando o status da empresa
+      await db.execute(sql`
+        UPDATE companies 
+        SET status = 'suspended'
+        WHERE id = ${companyId}
+      `);
+
+      res.json({ 
+        message: "Falha de pagamento simulada com sucesso",
+        status: "payment_failed"
+      });
+    } catch (error) {
+      console.error("Erro ao simular falha de pagamento:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  // API para simular sucesso de pagamento (apenas para testes)
+  app.post("/api/test/simulate-payment-success", async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      // Simula sucesso de pagamento alterando o status da empresa
+      await db.execute(sql`
+        UPDATE companies 
+        SET status = 'active'
+        WHERE id = ${companyId}
+      `);
+
+      res.json({ 
+        message: "Sucesso de pagamento simulado com sucesso",
+        status: "payment_success"
+      });
+    } catch (error) {
+      console.error("Erro ao simular sucesso de pagamento:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
   // Aplicar middleware de verificação de assinatura para rotas da empresa
   app.use('/api/company', checkSubscriptionStatus);
   app.use('/api/dashboard', checkSubscriptionStatus);
