@@ -1691,22 +1691,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Email e senha são obrigatórios" });
       }
 
-      // Test direct database connection
-      try {
-        console.log('Testing direct MySQL connection...');
-        const [rows] = await pool.execute('SELECT * FROM companies WHERE email = ?', [email]);
-        console.log('Direct MySQL query result:', JSON.stringify(rows, null, 2));
-      } catch (dbError) {
-        console.error('Direct MySQL query error:', dbError);
-        console.error('Error details:', dbError.message);
-      }
-
       const company = await storage.getCompanyByEmail(email);
-      console.log('Company found via storage:', company ? 'Yes' : 'No');
-      console.log('Company subscription status:', {
-        isActive: company?.isActive,
-        planStatus: company?.planStatus
-      });
       
       if (!company) {
         return res.status(401).json({ message: "Credenciais inválidas" });
@@ -1714,7 +1699,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Verificar status da assinatura ANTES da validação de senha
       if (!company.isActive || company.planStatus === 'suspended') {
-        console.log('Blocking login due to subscription status');
         return res.status(402).json({ 
           message: "Acesso Bloqueado - Assinatura Suspensa",
           blocked: true,
