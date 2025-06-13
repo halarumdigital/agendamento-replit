@@ -1794,7 +1794,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/company/auth/profile', async (req: any, res) => {
+  app.get('/api/company/auth/profile', isCompanyAuthenticated, checkSubscriptionStatus, async (req: any, res) => {
     try {
       const companyId = req.session.companyId;
       if (!companyId) {
@@ -1844,7 +1844,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/company/profile', async (req: any, res) => {
+  app.put('/api/company/profile', isCompanyAuthenticated, checkSubscriptionStatus, async (req: any, res) => {
     try {
       const companyId = req.session.companyId;
       if (!companyId) {
@@ -2685,7 +2685,7 @@ INSTRUÇÕES OBRIGATÓRIAS:
   });
 
   // Company Appointments API
-  app.get('/api/company/appointments', async (req: any, res) => {
+  app.get('/api/company/appointments', isCompanyAuthenticated, checkSubscriptionStatus, async (req: any, res) => {
     try {
       const companyId = req.session.companyId;
       if (!companyId) {
