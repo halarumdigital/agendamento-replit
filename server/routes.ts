@@ -215,8 +215,8 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
     console.log('✅ IA confirmando agendamento com detalhes completos');
     
     // Get conversation history to extract appointment data from user messages
-    const messages = await storage.getMessagesByConversation(conversationId);
-    const userMessages = messages.filter(m => m.role === 'user').map(m => m.content);
+    const allMessages = await storage.getMessagesByConversation(conversationId);
+    const userMessages = allMessages.filter(m => m.role === 'user').map(m => m.content);
     const allConversationText = userMessages.join(' ');
     
     // Check if user has explicitly confirmed with SIM/OK
@@ -338,9 +338,43 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
       if (extractedTime) break;
     }
     
-    let extractedDay = aiResponse.match(patterns.day)?.[1] || allConversationText.match(patterns.day)?.[1];
-    let extractedProfessional = aiResponse.match(patterns.professional)?.[1]?.trim() || allConversationText.match(patterns.professional)?.[1]?.trim();
-    let extractedService = aiResponse.match(patterns.service)?.[1]?.trim() || allConversationText.match(patterns.service)?.[1]?.trim();
+    // Get recent user messages for better context
+    const conversationMessages = await storage.getMessagesByConversation(conversationId);
+    const recentUserMessages = conversationMessages
+      .filter(m => m.role === 'user')
+      .slice(-3) // Only last 3 user messages
+      .map(m => m.content)
+      .join(' ');
+    
+    console.log(`🔍 Analisando mensagens recentes: ${recentUserMessages}`);
+    
+    // Priority extraction from AI response first, then recent messages
+    let extractedDay = aiResponse.match(patterns.day)?.[1];
+    let extractedProfessional = aiResponse.match(patterns.professional)?.[1]?.trim();
+    let extractedService = aiResponse.match(patterns.service)?.[1]?.trim();
+    
+    // Check for "hoje" and "amanhã" in recent messages with higher priority
+    const todayPattern = /\bhoje\b/i;
+    const tomorrowPattern = /\bamanhã\b/i;
+    
+    if (todayPattern.test(recentUserMessages)) {
+      extractedDay = "hoje";
+      console.log(`📅 Detectado "hoje" nas mensagens recentes`);
+    } else if (tomorrowPattern.test(recentUserMessages)) {
+      extractedDay = "amanhã";
+      console.log(`📅 Detectado "amanhã" nas mensagens recentes`);
+    } else if (!extractedDay) {
+      // Only fallback to all conversation if nothing found in recent messages
+      extractedDay = recentUserMessages.match(patterns.day)?.[1] || allConversationText.match(patterns.day)?.[1];
+    }
+    
+    // Same for professional and service from recent messages
+    if (!extractedProfessional) {
+      extractedProfessional = recentUserMessages.match(patterns.professional)?.[1]?.trim() || allConversationText.match(patterns.professional)?.[1]?.trim();
+    }
+    if (!extractedService) {
+      extractedService = recentUserMessages.match(patterns.service)?.[1]?.trim() || allConversationText.match(patterns.service)?.[1]?.trim();
+    }
     
     // If no name found, check existing clients by phone
     if (!extractedName) {
@@ -417,25 +451,42 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
     // Calculate appointment date using the EXACT same logic from system prompt
     const today = new Date();
     const dayMap = { 'domingo': 0, 'segunda': 1, 'terça': 2, 'quarta': 3, 'quinta': 4, 'sexta': 5, 'sábado': 6 };
-    const targetDay = dayMap[extractedDay?.toLowerCase() as keyof typeof dayMap];
-    
     let appointmentDate = new Date();
-    if (targetDay !== undefined) {
-      const currentDay = today.getDay();
-      let daysUntilTarget = targetDay - currentDay;
+    
+    // Handle special cases first
+    if (extractedDay?.toLowerCase() === "hoje") {
+      appointmentDate = new Date(today);
+      console.log(`📅 Agendamento para HOJE: ${appointmentDate.toLocaleDateString('pt-BR')}`);
+    } else if (extractedDay?.toLowerCase() === "amanhã") {
+      appointmentDate = new Date(today);
+      appointmentDate.setDate(today.getDate() + 1);
+      console.log(`📅 Agendamento para AMANHÃ: ${appointmentDate.toLocaleDateString('pt-BR')}`);
+    } else {
+      // Handle regular day names
+      const targetDay = dayMap[extractedDay?.toLowerCase() as keyof typeof dayMap];
       
-      // If the day has already passed this week, get next week's occurrence
-      if (daysUntilTarget <= 0) {
-        daysUntilTarget += 7;
+      if (targetDay !== undefined) {
+        const currentDay = today.getDay();
+        let daysUntilTarget = targetDay - currentDay;
+        
+        // If it's the same day but later time, keep today
+        // Otherwise, get next week's occurrence if day has passed
+        if (daysUntilTarget < 0) {
+          daysUntilTarget += 7;
+        } else if (daysUntilTarget === 0) {
+          // Same day - check if it's still possible today or next week
+          // For now, assume same day means today
+          daysUntilTarget = 0;
+        }
+        
+        // Set the correct date
+        appointmentDate.setDate(today.getDate() + daysUntilTarget);
+        appointmentDate.setHours(0, 0, 0, 0); // Reset time to start of day
+        
+        console.log(`📅 Cálculo de data: Hoje é ${today.toLocaleDateString('pt-BR')} (${['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'][currentDay]})`);
+        console.log(`📅 Dia alvo: ${extractedDay} (${targetDay}), Dias até o alvo: ${daysUntilTarget}`);
+        console.log(`📅 Data calculada do agendamento: ${appointmentDate.toLocaleDateString('pt-BR')}`);
       }
-      
-      // Set the correct date
-      appointmentDate.setDate(today.getDate() + daysUntilTarget);
-      appointmentDate.setHours(0, 0, 0, 0); // Reset time to start of day
-      
-      console.log(`📅 Date calculation: Today is ${today.toLocaleDateString('pt-BR')} (${['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'][currentDay]})`);
-      console.log(`📅 Target day: ${extractedDay} (${targetDay}), Days until target: ${daysUntilTarget}`);
-      console.log(`📅 Calculated appointment date: ${appointmentDate.toLocaleDateString('pt-BR')}`);
     }
     
     // Format time
