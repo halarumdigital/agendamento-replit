@@ -6845,15 +6845,28 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
       }
 
       // Get plan details
-      const [planResult] = await db.execute(sql`
-        SELECT * FROM plans WHERE id = ${planId} AND is_active = 1
-      `);
+      let selectedPlan;
+      
+      if (companyId && planId) {
+        const [planResult] = await db.execute(sql`
+          SELECT * FROM plans WHERE id = ${planId} AND is_active = 1
+        `);
 
-      if (!planResult.length) {
-        return res.status(404).json({ message: "Plano não encontrado" });
+        if (!planResult.length) {
+          return res.status(404).json({ message: "Plano não encontrado" });
+        }
+
+        selectedPlan = (planResult as any)[0];
+      } else {
+        // Use test plan data for unauthenticated testing
+        selectedPlan = {
+          id: 1,
+          name: 'Plano Básico',
+          price: '29.90',
+          free_days: 7,
+          description: 'Plano básico para teste'
+        };
       }
-
-      const selectedPlan = (planResult as any)[0];
 
       console.log(`🔄 Criando assinatura - Empresa: ${company.fantasy_name}, Plano: ${selectedPlan.name}`);
 
@@ -6867,19 +6880,21 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
           name: company.fantasy_name || company.email,
           phone: company.phone,
           metadata: {
-            companyId: companyId.toString(),
-            planId: planId.toString()
+            companyId: companyId ? companyId.toString() : 'test',
+            planId: planId || 'basic'
           }
         });
 
         stripeCustomerId = customer.id;
 
-        // Save Stripe customer ID in company record
-        await db.execute(sql`
-          UPDATE companies 
-          SET stripe_customer_id = ${stripeCustomerId}
-          WHERE id = ${companyId}
-        `);
+        // Save Stripe customer ID in company record (only for authenticated users)
+        if (companyId) {
+          await db.execute(sql`
+            UPDATE companies 
+            SET stripe_customer_id = ${stripeCustomerId}
+            WHERE id = ${companyId}
+          `);
+        }
 
         console.log(`✅ Cliente criado no Stripe com ID: ${stripeCustomerId}`);
       }
@@ -6890,7 +6905,7 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
         name: selectedPlan.name,
         description: `Plano ${selectedPlan.name}`,
         metadata: {
-          planId: planId.toString()
+          planId: planId || 'basic'
         }
       });
 
@@ -6909,19 +6924,21 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
         priceId: price.id,
         trialPeriodDays: selectedPlan.free_days || 0,
         metadata: {
-          companyId: companyId.toString(),
-          planId: planId.toString()
+          companyId: companyId ? companyId.toString() : 'test',
+          planId: planId || 'basic'
         }
       });
 
-      // Update company with subscription details
-      await db.execute(sql`
-        UPDATE companies 
-        SET stripe_subscription_id = ${subscription.id},
-            plan_id = ${planId},
-            plan_status = 'active'
-        WHERE id = ${companyId}
-      `);
+      // Update company with subscription details (only for authenticated users)
+      if (companyId) {
+        await db.execute(sql`
+          UPDATE companies 
+          SET stripe_subscription_id = ${subscription.id},
+              plan_id = ${planId},
+              plan_status = 'active'
+          WHERE id = ${companyId}
+        `);
+      }
 
       console.log(`✅ Assinatura criada: ${subscription.id}`);
 
