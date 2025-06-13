@@ -83,11 +83,9 @@ export default function StripeTest() {
     }
 
     try {
-      const response = await apiRequest('POST', '/api/create-subscription', {
+      const data = await apiRequest('POST', '/api/create-subscription', {
         planId: selectedPlan
       });
-
-      const data = await response.json();
 
       if (data.clientSecret) {
         setClientSecret(data.clientSecret);
