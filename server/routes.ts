@@ -7059,9 +7059,8 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
     try {
       // Buscar todas as empresas com assinaturas
       const companies = await db.execute(sql`
-        SELECT id, name, email, stripe_customer_id, stripe_subscription_id, status, created_at
+        SELECT id, fantasy_name, email, stripe_customer_id, stripe_subscription_id, is_active as status, created_at
         FROM companies 
-        WHERE stripe_subscription_id IS NOT NULL 
         ORDER BY created_at DESC
       `);
 
@@ -7082,9 +7081,9 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
           // Buscar dados da assinatura no Stripe se existir
           if (company.stripe_subscription_id) {
             try {
-              const subscription = await stripeService.subscriptions.retrieve(company.stripe_subscription_id, {
-                expand: ['latest_invoice', 'latest_invoice.payment_intent', 'customer']
-              });
+              const subscription = await stripeService.retrieveSubscription(company.stripe_subscription_id, [
+                'latest_invoice', 'latest_invoice.payment_intent', 'customer'
+              ]);
 
               subscriptionData = {
                 ...subscriptionData,
@@ -7141,7 +7140,7 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
       const { subscriptionId } = req.params;
       const { cancelAtPeriodEnd = true } = req.body;
 
-      const subscription = await stripe.subscriptions.update(subscriptionId, {
+      const subscription = await stripeService.subscriptions.update(subscriptionId, {
         cancel_at_period_end: cancelAtPeriodEnd
       });
 
@@ -7165,7 +7164,7 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
     try {
       const { subscriptionId } = req.params;
 
-      const subscription = await stripe.subscriptions.update(subscriptionId, {
+      const subscription = await stripeService.subscriptions.update(subscriptionId, {
         cancel_at_period_end: false
       });
 

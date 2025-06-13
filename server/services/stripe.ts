@@ -168,6 +168,29 @@ export class StripeService {
     return product;
   }
 
+  async retrieveSubscription(subscriptionId: string, expand?: string[]) {
+    console.log('🔄 Buscando assinatura no Stripe:', subscriptionId);
+    
+    const params: Stripe.SubscriptionRetrieveParams = {};
+    if (expand) {
+      params.expand = expand;
+    }
+    
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId, params);
+    return subscription;
+  }
+
+  async updateSubscriptionCancellation(subscriptionId: string, cancelAtPeriodEnd: boolean) {
+    console.log('🔄 Atualizando cancelamento da assinatura:', subscriptionId);
+    
+    const subscription = await stripe.subscriptions.update(subscriptionId, {
+      cancel_at_period_end: cancelAtPeriodEnd
+    });
+    
+    console.log('✅ Cancelamento da assinatura atualizado:', subscriptionId);
+    return subscription;
+  }
+
   async handleWebhook(rawBody: string, signature: string) {
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
     if (!webhookSecret) {
@@ -181,6 +204,11 @@ export class StripeService {
       console.error('❌ Erro ao verificar webhook do Stripe:', error);
       throw error;
     }
+  }
+
+  // Expor a instância do Stripe para operações diretas quando necessário
+  get stripe() {
+    return stripe;
   }
 }
 
