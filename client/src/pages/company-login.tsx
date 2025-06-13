@@ -110,6 +110,13 @@ export default function CompanyLogin() {
       setLocation("/dashboard");
     },
     onError: (error: any) => {
+      console.log('Login error details:', {
+        error,
+        status: error.status,
+        message: error.message,
+        response: error.response
+      });
+      
       let errorMessage = "Email ou senha errada";
       let errorTitle = "Erro no login";
       
@@ -118,6 +125,8 @@ export default function CompanyLogin() {
         errorMessage = "ASSINATURA SUSPENSA, ENTRE EM CONTATO COM O SUPORTE";
         errorTitle = "Acesso Bloqueado";
       }
+      
+      console.log('Final error message:', errorMessage);
       
       setLoginError(errorMessage);
       toast({
