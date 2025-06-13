@@ -7057,22 +7057,23 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
   // API para gerenciar assinaturas do Stripe (admin)
   app.get("/api/admin/stripe/subscriptions", async (req, res) => {
     try {
-      // Buscar todas as empresas com assinaturas
-      const companies = await db.execute(sql`
+      // Buscar todas as empresas
+      const result = await db.execute(sql`
         SELECT id, fantasy_name, email, stripe_customer_id, stripe_subscription_id, is_active as status, created_at
         FROM companies 
         ORDER BY created_at DESC
       `);
 
+      const companies = result[0] as any[];
       const subscriptionsData = [];
 
       for (const company of companies) {
         try {
           let subscriptionData: any = {
             companyId: company.id,
-            companyName: company.name,
+            companyName: company.fantasy_name,
             companyEmail: company.email,
-            companyStatus: company.status,
+            companyStatus: company.status ? 'active' : 'inactive',
             stripeCustomerId: company.stripe_customer_id,
             stripeSubscriptionId: company.stripe_subscription_id,
             createdAt: company.created_at
@@ -7082,7 +7083,7 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
           if (company.stripe_subscription_id) {
             try {
               const subscription = await stripeService.retrieveSubscription(company.stripe_subscription_id, [
-                'latest_invoice', 'latest_invoice.payment_intent', 'customer'
+                'latest_invoice.payment_intent'
               ]);
 
               subscriptionData = {
@@ -7096,15 +7097,13 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
                 amount: subscription.items.data[0]?.price?.unit_amount,
                 currency: subscription.items.data[0]?.price?.currency,
                 interval: subscription.items.data[0]?.price?.recurring?.interval,
-                customer: subscription.customer,
-                latestInvoice: subscription.latest_invoice ? {
+                latestInvoice: subscription.latest_invoice && typeof subscription.latest_invoice === 'object' ? {
                   id: subscription.latest_invoice.id,
                   status: subscription.latest_invoice.status,
                   total: subscription.latest_invoice.total,
                   paid: subscription.latest_invoice.paid,
-                  paymentIntent: subscription.latest_invoice.payment_intent ? {
-                    status: subscription.latest_invoice.payment_intent.status,
-                    clientSecret: subscription.latest_invoice.payment_intent.client_secret
+                  paymentIntent: subscription.latest_invoice.payment_intent && typeof subscription.latest_invoice.payment_intent === 'object' ? {
+                    status: subscription.latest_invoice.payment_intent.status
                   } : null
                 } : null
               };
@@ -7119,9 +7118,9 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
           console.error(`Erro ao processar empresa ${company.id}:`, error);
           subscriptionsData.push({
             companyId: company.id,
-            companyName: company.name,
+            companyName: company.fantasy_name,
             companyEmail: company.email,
-            companyStatus: company.status,
+            companyStatus: company.status ? 'active' : 'inactive',
             error: "Erro ao processar dados"
           });
         }
@@ -7140,9 +7139,7 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
       const { subscriptionId } = req.params;
       const { cancelAtPeriodEnd = true } = req.body;
 
-      const subscription = await stripeService.subscriptions.update(subscriptionId, {
-        cancel_at_period_end: cancelAtPeriodEnd
-      });
+      const subscription = await stripeService.updateSubscriptionCancellation(subscriptionId, cancelAtPeriodEnd);
 
       res.json({
         message: cancelAtPeriodEnd ? "Assinatura será cancelada no final do período" : "Assinatura cancelada imediatamente",
@@ -7164,9 +7161,7 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
     try {
       const { subscriptionId } = req.params;
 
-      const subscription = await stripeService.subscriptions.update(subscriptionId, {
-        cancel_at_period_end: false
-      });
+      const subscription = await stripeService.updateSubscriptionCancellation(subscriptionId, false);
 
       res.json({
         message: "Assinatura reativada com sucesso",
