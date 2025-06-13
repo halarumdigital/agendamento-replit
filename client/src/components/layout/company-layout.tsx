@@ -28,6 +28,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { GlobalSettings } from "@shared/schema";
 import { useSubscriptionStatus } from "@/hooks/useSubscriptionStatus";
 import SubscriptionBlocked from "@/components/subscription-blocked";
+import { CompanyAlerts } from "@/components/alerts/company-alerts";
 
 interface CompanyLayoutProps {
   children: React.ReactNode;
@@ -278,6 +279,9 @@ export default function CompanyLayout({ children }: CompanyLayoutProps) {
         <main className="min-h-screen">
           {children}
         </main>
+        
+        {/* Company Alerts */}
+        {company && <CompanyAlerts />}
       </div>
     </>
   );
