@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./auth";
 import { db, pool } from "./db";
 import { loadCompanyPlan, requirePermission, checkProfessionalsLimit, RequestWithPlan } from "./plan-middleware";
+import { checkSubscriptionStatus, getCompanySubscriptionStatus } from "./subscription-middleware";
 import { insertCompanySchema, insertPlanSchema, insertGlobalSettingsSchema, insertAdminSchema, financialCategories, paymentMethods, financialTransactions, companies } from "@shared/schema";
 import bcrypt from "bcrypt";
 import { z } from "zod";
@@ -6986,6 +6987,38 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
       res.status(400).send(`Webhook Error: ${error.message}`);
     }
   });
+
+  // API para verificar status da assinatura
+  app.get("/api/subscription/status", async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const status = await getCompanySubscriptionStatus(companyId);
+      res.json(status);
+    } catch (error) {
+      console.error("Erro ao verificar status da assinatura:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  // Aplicar middleware de verificação de assinatura para rotas da empresa
+  app.use('/api/company', checkSubscriptionStatus);
+  app.use('/api/dashboard', checkSubscriptionStatus);
+  app.use('/api/appointments', checkSubscriptionStatus);
+  app.use('/api/services', checkSubscriptionStatus);
+  app.use('/api/professionals', checkSubscriptionStatus);
+  app.use('/api/clients', checkSubscriptionStatus);
+  app.use('/api/financial', checkSubscriptionStatus);
+  app.use('/api/loyalty', checkSubscriptionStatus);
+  app.use('/api/messages', checkSubscriptionStatus);
+  app.use('/api/reviews', checkSubscriptionStatus);
+  app.use('/api/coupons', checkSubscriptionStatus);
+  app.use('/api/reports', checkSubscriptionStatus);
+  app.use('/api/tasks', checkSubscriptionStatus);
+  app.use('/api/points', checkSubscriptionStatus);
 
   const httpServer = createServer(app);
   // Admin plans management routes

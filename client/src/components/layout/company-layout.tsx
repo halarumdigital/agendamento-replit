@@ -26,6 +26,8 @@ import { useGlobalTheme } from "@/hooks/use-global-theme";
 import { usePlan, type PlanPermissions } from "@/hooks/use-plan";
 import { useQuery } from "@tanstack/react-query";
 import type { GlobalSettings } from "@shared/schema";
+import { useSubscriptionStatus } from "@/hooks/useSubscriptionStatus";
+import SubscriptionBlocked from "@/components/subscription-blocked";
 
 interface CompanyLayoutProps {
   children: React.ReactNode;
