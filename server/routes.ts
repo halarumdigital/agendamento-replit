@@ -1700,10 +1700,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Verificar status da assinatura ANTES da validação de senha
       if (!company.isActive || company.planStatus === 'suspended') {
         return res.status(402).json({ 
-          message: "Acesso Bloqueado - Assinatura Suspensa",
+          message: "ASSINATURA SUSPENSA, ENTRE EM CONTATO COM O SUPORTE",
           blocked: true,
-          reason: "subscription_suspended",
-          details: "Sua assinatura está suspensa. Entre em contato com o suporte para reativar."
+          reason: "subscription_suspended"
         });
       }
 

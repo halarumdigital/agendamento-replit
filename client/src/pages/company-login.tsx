@@ -115,7 +115,7 @@ export default function CompanyLogin() {
       
       // Verificar se é erro de assinatura suspensa
       if (error.status === 402) {
-        errorMessage = "Sua assinatura está suspensa. Entre em contato com o suporte para reativar o acesso.";
+        errorMessage = "ASSINATURA SUSPENSA, ENTRE EM CONTATO COM O SUPORTE";
         errorTitle = "Acesso Bloqueado";
       }
       
