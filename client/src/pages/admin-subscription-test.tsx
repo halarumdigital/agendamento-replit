@@ -26,23 +26,11 @@ export default function AdminSubscriptionTest() {
 
   const simulateFailureMutation = useMutation({
     mutationFn: async (companyId: number) => {
-      try {
-        const response = await apiRequest("POST", "/api/test/simulate-payment-failure", {
-          companyId,
-        });
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ message: "Erro de conexão" }));
-          throw new Error(errorData.message || `Erro ${response.status}: ${response.statusText}`);
-        }
-        const result = await response.json();
-        return result;
-      } catch (error: any) {
-        console.error("Erro na simulação de falha:", error);
-        throw error;
-      }
+      return await apiRequest("POST", "/api/test/simulate-payment-failure", {
+        companyId,
+      });
     },
     onSuccess: (data) => {
-      console.log("Dados de falha recebidos:", data);
       toast({
         title: "Falha Simulada",
         description: "Assinatura suspensa com sucesso",
@@ -51,7 +39,6 @@ export default function AdminSubscriptionTest() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/companies"] });
     },
     onError: (error: any) => {
-      console.error("Erro na mutação de falha:", error);
       toast({
         title: "Erro",
         description: error.message || "Erro ao simular falha de pagamento",
@@ -62,23 +49,11 @@ export default function AdminSubscriptionTest() {
 
   const simulateSuccessMutation = useMutation({
     mutationFn: async (companyId: number) => {
-      try {
-        const response = await apiRequest("POST", "/api/test/simulate-payment-success", {
-          companyId,
-        });
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ message: "Erro de conexão" }));
-          throw new Error(errorData.message || `Erro ${response.status}: ${response.statusText}`);
-        }
-        const result = await response.json();
-        return result;
-      } catch (error: any) {
-        console.error("Erro na simulação de sucesso:", error);
-        throw error;
-      }
+      return await apiRequest("POST", "/api/test/simulate-payment-success", {
+        companyId,
+      });
     },
     onSuccess: (data) => {
-      console.log("Dados de sucesso recebidos:", data);
       toast({
         title: "Sucesso Simulado",
         description: "Assinatura reativada com sucesso",
@@ -86,7 +61,6 @@ export default function AdminSubscriptionTest() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/companies"] });
     },
     onError: (error: any) => {
-      console.error("Erro na mutação de sucesso:", error);
       toast({
         title: "Erro",
         description: error.message || "Erro ao simular sucesso de pagamento",
