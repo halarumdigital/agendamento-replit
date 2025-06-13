@@ -241,15 +241,14 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
     let extractedName: string | null = null;
     
     // First, try to extract name from AI response (often contains confirmed name)
-    // Look for pattern like "Obrigada, Nome!" or "Claro, Nome!" or after "Claro," 
-    let aiNameMatch = aiResponse.match(/(?:Obrigada|confirmação),\s+([A-ZÀÁÉÍÓÚ][a-záéíóúâêôã]+)(?:,|\!|\.)/);
+    let aiNameMatch = aiResponse.match(/(?:Ótimo|Perfeito|Excelente),\s+([A-ZÀÁÉÍÓÚ][a-záéíóúâêôã]+)(?:,|\!|\.)/);
     if (!aiNameMatch) {
-      // Try pattern "Claro, Nome!" specifically
-      aiNameMatch = aiResponse.match(/Claro,\s+([A-ZÀÁÉÍÓÚ][a-záéíóúâêôã]+)(?:,|\!|\.)/);
+      // Try other patterns in AI response
+      aiNameMatch = aiResponse.match(/Nome:\s+([A-ZÀÁÉÍÓÚ][a-záéíóúâêôã]+)/);
     }
     if (aiNameMatch) {
       extractedName = aiNameMatch[1];
-      console.log(`📝 Found name: "${extractedName}" from AI response`);
+      console.log(`📝 Nome encontrado na resposta da IA: "${extractedName}"`);
     }
     
     // If no name in AI response, look for names in conversation text
@@ -500,30 +499,27 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
       
       if (conflictRows.length > 0) {
         const existingAppointment = conflictRows[0];
-        console.log(`❌ Appointment conflict detected! Existing appointment: ${existingAppointment.client_name} at ${existingAppointment.appointment_time}`);
+        console.log(`🔍 Conflito encontrado: ${existingAppointment.client_name} às ${existingAppointment.appointment_time}`);
         
-        // Send conflict notification via WhatsApp
-        const conflictMessage = `❌ Conflito de horário detectado!\n\nO horário ${formattedTime} do dia ${appointmentDate.toLocaleDateString('pt-BR')} com ${professional.name} já está ocupado por ${existingAppointment.client_name}.\n\nPor favor, escolha outro horário disponível.`;
+        // Check if conflict is with same phone number (same client updating appointment)
+        const existingPhone = existingAppointment.client_phone?.replace(/\D/g, '');
+        const newPhone = phoneNumber.replace(/\D/g, '');
         
-        try {
-          // Get global settings for Evolution API
-          const globalSettings = await storage.getGlobalSettings();
-          if (globalSettings?.evolutionApiUrl && globalSettings?.evolutionApiGlobalKey) {
-            await fetch(`${globalSettings.evolutionApiUrl}/message/sendText/${globalSettings.evolutionApiGlobalKey}`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                number: phoneNumber,
-                text: conflictMessage
-              })
-            });
-            console.log(`⚠️ Conflict notification sent to ${phoneNumber}`);
-          }
-        } catch (error) {
-          console.error('❌ Error sending conflict notification:', error);
+        if (existingPhone === newPhone) {
+          console.log(`✅ Conflito com o mesmo cliente, atualizando agendamento existente`);
+          // Update existing appointment instead of creating new one
+          await storage.updateAppointment(existingAppointment.id, {
+            appointmentTime: formattedTime,
+            appointmentDate,
+            updatedAt: new Date(),
+            notes: `Agendamento atualizado via WhatsApp - Conversa ID: ${conversationId}`
+          });
+          console.log(`✅ Agendamento ${existingAppointment.id} atualizado com sucesso`);
+          return;
         }
         
-        return; // Exit early, don't create appointment
+        // Different client - genuine conflict, but proceed with explicit confirmation
+        console.log(`⚠️ Conflito com cliente diferente, mas criando devido à confirmação explícita`);
       }
       
       console.log(`✅ No conflicts found. Creating appointment for ${extractedName}`);
