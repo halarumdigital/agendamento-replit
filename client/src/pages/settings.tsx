@@ -215,6 +215,7 @@ export default function SettingsPage() {
       smtpFromName: "",
       smtpSecure: "tls",
       customHtml: "",
+      customDomainUrl: "",
     },
     values: settings ? {
       systemName: settings.systemName,
@@ -238,6 +239,7 @@ export default function SettingsPage() {
       smtpFromName: (settings as any).smtpFromName || "",
       smtpSecure: (settings as any).smtpSecure || "tls",
       customHtml: (settings as any).customHtml || "",
+      customDomainUrl: (settings as any).customDomainUrl || "",
     } : undefined,
   });
 
@@ -673,6 +675,40 @@ export default function SettingsPage() {
                         <FormMessage />
                         <div className="text-xs text-gray-500 mt-2">
                           Suporte completo para HTML, CSS e JavaScript inline. Use com responsabilidade.
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
+
+              {/* Custom Domain URL Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Globe className="w-5 h-5" />
+                    URL de Domínio Personalizado
+                  </CardTitle>
+                  <CardDescription>
+                    Configure uma URL personalizada para acesso ao sistema via domínio customizado.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <FormField
+                    control={form.control}
+                    name="customDomainUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>URL do Domínio Personalizado</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="https://meusistema.com.br"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                        <div className="text-xs text-gray-500 mt-2">
+                          Digite a URL completa incluindo https:// para configurar um domínio personalizado.
                         </div>
                       </FormItem>
                     )}
