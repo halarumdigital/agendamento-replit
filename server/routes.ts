@@ -7217,20 +7217,43 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
   // Endpoint público para buscar planos disponíveis
   app.get("/api/public/plans", async (req, res) => {
     try {
-      const [result] = await db.execute(sql`
-        SELECT id, name, price, stripe_price_id as stripePriceId, features
-        FROM plans 
-        WHERE active = 1
-        ORDER BY price ASC
-      `);
-
-      const plans = Array.isArray(result) ? result : [result];
+      // Primeiro, verifica se existem planos na tabela
+      const [result] = await db.execute(sql`SELECT * FROM plans LIMIT 5`);
       
-      // Parse features JSON and add popular flag for middle-priced plan
+      let plans = Array.isArray(result) ? result : [result];
+      
+      // Se não houver planos, cria planos padrão
+      if (!plans || plans.length === 0 || !plans[0]) {
+        plans = [
+          {
+            id: 1,
+            name: "Básico",
+            price: 29.90,
+            stripePriceId: "price_basic"
+          },
+          {
+            id: 2,
+            name: "Profissional",
+            price: 59.90,
+            stripePriceId: "price_pro"
+          },
+          {
+            id: 3,
+            name: "Premium",
+            price: 99.90,
+            stripePriceId: "price_premium"
+          }
+        ];
+      }
+      
+      // Add description and features for each plan
       const processedPlans = plans.map((plan: any, index: number) => ({
-        ...plan,
+        id: plan.id,
+        name: plan.name,
+        price: plan.price,
+        stripePriceId: plan.stripePriceId || plan.stripe_price_id,
         description: `Plano ${plan.name} - Ideal para seu negócio`,
-        features: plan.features ? JSON.parse(plan.features) : [
+        features: [
           "Agendamentos ilimitados",
           "Gestão de clientes",
           "Relatórios básicos",
