@@ -553,34 +553,17 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
 
 async function createAppointmentFromConversation(conversationId: number, companyId: number) {
   try {
-    console.log('📅 Creating appointment from conversation:', conversationId);
+    console.log('📅 Checking conversation for complete appointment confirmation:', conversationId);
     
-    // Check if appointment already exists for this conversation within the last 10 minutes
+    // Check if appointment already exists for this conversation within the last 30 minutes
     const existingAppointments = await storage.getAppointmentsByCompany(companyId);
     const conversationAppointment = existingAppointments.find(apt => 
       apt.notes && apt.notes.includes(`Conversa ID: ${conversationId}`) &&
-      apt.createdAt && new Date(apt.createdAt).getTime() > (Date.now() - 10 * 60 * 1000)
+      apt.createdAt && new Date(apt.createdAt).getTime() > (Date.now() - 30 * 60 * 1000)
     );
     
     if (conversationAppointment) {
-      console.log('ℹ️ Recent appointment already exists for this conversation:', conversationAppointment.id);
-      
-      // Still broadcast the event for notification purposes
-      const service = await storage.getService(conversationAppointment.serviceId);
-      const professional = await storage.getProfessional(conversationAppointment.professionalId);
-      
-      broadcastEvent({
-        type: 'new_appointment',
-        appointment: {
-          id: conversationAppointment.id,
-          clientName: conversationAppointment.clientName,
-          serviceName: service?.name || 'Serviço',
-          professionalName: professional?.name || 'Profissional',
-          appointmentDate: conversationAppointment.appointmentDate,
-          appointmentTime: conversationAppointment.appointmentTime
-        }
-      });
-      
+      console.log('ℹ️ Recent appointment already exists for this conversation, skipping creation');
       return;
     }
     
@@ -594,11 +577,31 @@ async function createAppointmentFromConversation(conversationId: number, company
     const messages = await storage.getMessagesByConversation(conversationId);
     const conversationText = messages.map(m => `${m.role}: ${m.content}`).join('\n');
     
+    // REGRA CRÍTICA: Só criar agendamento se houver confirmação explícita completa
+    const confirmationPhrases = [
+      'confirmo o agendamento',
+      'pode agendar',
+      'confirma o agendamento',
+      'está confirmado',
+      'agendamento confirmado',
+      'pode marcar',
+      'confirmo para'
+    ];
+    
+    const hasExplicitConfirmation = confirmationPhrases.some(phrase => 
+      conversationText.toLowerCase().includes(phrase.toLowerCase())
+    );
+    
+    if (!hasExplicitConfirmation) {
+      console.log('⚠️ No explicit confirmation found in conversation, skipping appointment creation');
+      return;
+    }
+    
     // Get available professionals and services to match
     const professionals = await storage.getProfessionalsByCompany(companyId);
     const services = await storage.getServicesByCompany(companyId);
     
-    console.log('💬 Analyzing conversation for appointment data...');
+    console.log('💬 Analyzing conversation with explicit confirmation for appointment data...');
     
     // Extract appointment data using AI
     const OpenAI = (await import('openai')).default;
@@ -640,7 +643,7 @@ async function createAppointmentFromConversation(conversationId: number, company
       return resultDate.toISOString().split('T')[0];
     }
 
-    const extractionPrompt = `Analise esta conversa de WhatsApp e extraia os dados do agendamento em formato JSON.
+    const extractionPrompt = `Analise esta conversa de WhatsApp e extraia os dados do agendamento APENAS SE HOUVER CONFIRMAÇÃO EXPLÍCITA COMPLETA.
 
 HOJE É: ${today.toLocaleDateString('pt-BR')} (${['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'][today.getDay()]})
 
@@ -662,45 +665,42 @@ ${services.map(s => `- ${s.name} (ID: ${s.id})`).join('\n')}
 CONVERSA:
 ${conversationText}
 
-INSTRUÇÕES CRÍTICAS PARA EXTRAÇÃO DE HORÁRIO:
-- EXTRAIA EXATAMENTE o horário mencionado pelo cliente na conversa
-- Se cliente disse "10:00", use "10:00"
-- Se cliente disse "às 10", use "10:00"
-- Se cliente disse "às 11", use "11:00"
-- Se cliente disse "11 horas", use "11:00"
-- Se cliente disse "meio-dia", use "12:00"
-- Se cliente disse "duas da tarde", use "14:00"
-- Se cliente disse "as 11", use "11:00"
-- NÃO use horários padrão como 09:00 ou 10:00 - SEMPRE extraia o horário EXATO da conversa
-- ATENÇÃO: "às 11" deve ser "11:00", NÃO "10:00"
+REGRAS CRÍTICAS - SÓ EXTRAIA SE TODAS AS CONDIÇÕES FOREM ATENDIDAS:
 
-INSTRUÇÕES PARA DATAS:
-- Se mencionado "sexta-feira" ou "sexta", use: ${getNextWeekdayDate('sexta')}
-- Se mencionado "segunda-feira" ou "segunda", use: ${getNextWeekdayDate('segunda')}
-- Se mencionado "terça-feira" ou "terça", use: ${getNextWeekdayDate('terça')}
-- Se mencionado "quarta-feira" ou "quarta", use: ${getNextWeekdayDate('quarta')}
-- Se mencionado "quinta-feira" ou "quinta", use: ${getNextWeekdayDate('quinta')}
-- Se mencionado "sábado", use: ${getNextWeekdayDate('sábado')}
+1. DEVE haver confirmação explícita com frases como:
+   - "Confirmo o agendamento"
+   - "Pode agendar"
+   - "Confirmo para"
+   - "Está confirmado"
 
-REGRAS CRÍTICAS - SÓ EXTRAIA SE TODOS ESTES DADOS ESTÃO EXPLICITAMENTE CONFIRMADOS NA CONVERSA:
-- Nome COMPLETO do cliente (não apenas primeiro nome)
-- Telefone COMPLETO do cliente com DDD fornecido pelo próprio cliente (exemplo: 11999887766)
-- Profissional ESPECÍFICO escolhido e confirmado (use o ID correto da lista acima)
-- Serviço ESPECÍFICO escolhido e confirmado (use o ID correto da lista acima)  
-- Data E hora EXATAS confirmadas pelo cliente (extraia o horário PRECISO mencionado)
-- Cliente deve ter CONFIRMADO EXPLICITAMENTE todos os dados ("sim, confirmo", "pode agendar", "está correto")
+2. TODOS os dados devem estar presentes na mesma mensagem de confirmação ou mensagens anteriores:
+   - Nome COMPLETO do cliente
+   - Profissional ESPECÍFICO escolhido 
+   - Serviço ESPECÍFICO escolhido
+   - Data ESPECÍFICA (dia da semana)
+   - Horário ESPECÍFICO
+   - Telefone do cliente
 
-ATENÇÃO CRÍTICA: 
-- Se o cliente ainda está fornecendo dados, negociando horários, ou perguntando disponibilidade, responda "DADOS_INCOMPLETOS"
-- Se o cliente apenas sugeriu horário mas NÃO confirmou explicitamente, responda "DADOS_INCOMPLETOS"
-- Se falta qualquer dado ou confirmação explícita final, responda "DADOS_INCOMPLETOS"
+3. INSTRUÇÕES PARA DATAS:
+   - SEMPRE use as datas calculadas acima para os dias da semana
+   - Se mencionado "sábado", use EXATAMENTE: ${getNextWeekdayDate('sábado')}
+   - Se mencionado "segunda", use EXATAMENTE: ${getNextWeekdayDate('segunda')}
+   - Se mencionado "terça", use EXATAMENTE: ${getNextWeekdayDate('terça')}
+   - Se mencionado "quarta", use EXATAMENTE: ${getNextWeekdayDate('quarta')}
+   - Se mencionado "quinta", use EXATAMENTE: ${getNextWeekdayDate('quinta')}
+   - Se mencionado "sexta", use EXATAMENTE: ${getNextWeekdayDate('sexta')}
+   - Se mencionado "domingo", use EXATAMENTE: ${getNextWeekdayDate('domingo')}
 
-Responda APENAS em formato JSON válido ou "DADOS_INCOMPLETOS" se algum dado estiver faltando:
+4. Se QUALQUER dado estiver faltando, ou se não houver confirmação explícita, responda "DADOS_INCOMPLETOS"
+
+5. Se o cliente ainda está perguntando, negociando, ou recebendo informações, responda "DADOS_INCOMPLETOS"
+
+Responda APENAS em formato JSON válido ou "DADOS_INCOMPLETOS":
 {
-  "clientName": "Nome completo",
-  "clientPhone": "Telefone",
-  "professionalId": 123,
-  "serviceId": 456,
+  "clientName": "Nome completo extraído",
+  "clientPhone": "Telefone extraído",
+  "professionalId": ID_correto_da_lista,
+  "serviceId": ID_correto_da_lista,
   "appointmentDate": "YYYY-MM-DD",
   "appointmentTime": "HH:MM"
 }`;
@@ -713,55 +713,30 @@ Responda APENAS em formato JSON válido ou "DADOS_INCOMPLETOS" se algum dado est
     });
 
     const extractedData = extraction.choices[0]?.message?.content?.trim();
-    console.log('🤖 Extracted data:', extractedData);
+    console.log('🤖 AI Extraction result:', extractedData);
     
-    if (!extractedData || extractedData === 'DADOS_INCOMPLETOS') {
-      console.log('⚠️ Incomplete appointment data, skipping creation');
+    if (!extractedData || extractedData === 'DADOS_INCOMPLETOS' || extractedData.includes('DADOS_INCOMPLETOS')) {
+      console.log('⚠️ Incomplete appointment data or missing confirmation, skipping creation');
       return;
     }
 
     try {
       const appointmentData = JSON.parse(extractedData);
       
-      // Se o telefone não foi extraído corretamente da conversa, usar o telefone da conversa
-      if (!appointmentData.clientPhone || appointmentData.clientPhone === 'DADOS_INCOMPLETOS') {
-        appointmentData.clientPhone = conversation.phoneNumber;
-        console.log('🔧 Fixed phone using conversation data:', appointmentData.clientPhone);
-      }
-      
-      console.log('🔍 DETAILED DEBUG - Appointment data extracted:', JSON.stringify(appointmentData, null, 2));
-      
-      // VALIDAÇÃO CRÍTICA: Verificar se todos os campos obrigatórios estão presentes
-      console.log('🔍 Validating required fields:', {
-        clientName: !!appointmentData.clientName,
-        clientPhone: !!appointmentData.clientPhone,
-        professionalId: !!appointmentData.professionalId,
-        serviceId: !!appointmentData.serviceId,
-        appointmentDate: !!appointmentData.appointmentDate,
-        appointmentTime: !!appointmentData.appointmentTime
-      });
-      
+      // Validação final de todos os campos obrigatórios
       if (!appointmentData.clientName || !appointmentData.clientPhone || 
           !appointmentData.professionalId || !appointmentData.serviceId ||
           !appointmentData.appointmentDate || !appointmentData.appointmentTime) {
-        console.log('⚠️ Missing required appointment fields, skipping creation');
+        console.log('⚠️ Missing required appointment fields after extraction, skipping creation');
         return;
       }
 
-      // VALIDAÇÃO ADICIONAL: Verificar se o telefone é válido (mínimo 8 dígitos)
-      const phoneDigits = appointmentData.clientPhone.replace(/\D/g, '');
-      console.log('🔍 Phone validation - Original:', appointmentData.clientPhone, 'Digits only:', phoneDigits, 'Length:', phoneDigits.length);
+      // Se o telefone não foi extraído corretamente, usar o telefone da conversa
+      if (!appointmentData.clientPhone || appointmentData.clientPhone === 'DADOS_INCOMPLETOS') {
+        appointmentData.clientPhone = conversation.phoneNumber;
+      }
       
-      if (phoneDigits.length < 8) {
-        console.log('⚠️ Invalid phone number format, skipping creation');
-        return;
-      }
-
-      // VALIDAÇÃO ADICIONAL: Verificar se o nome tem pelo menos 2 caracteres
-      if (appointmentData.clientName.trim().length < 2) {
-        console.log('⚠️ Client name too short, skipping creation');
-        return;
-      }
+      console.log('✅ Valid appointment data extracted with explicit confirmation:', JSON.stringify(appointmentData, null, 2));
 
       // Find the service to get duration
       const service = services.find(s => s.id === appointmentData.serviceId);
@@ -773,7 +748,6 @@ Responda APENAS em formato JSON válido ou "DADOS_INCOMPLETOS" se algum dado est
       // Create client if doesn't exist
       let client;
       try {
-        // Normalize phone number for comparison (remove all non-digits)
         const normalizePhone = (phone: string) => phone.replace(/\D/g, '');
         const normalizedClientPhone = normalizePhone(appointmentData.clientPhone);
         
@@ -800,8 +774,8 @@ Responda APENAS em formato JSON válido ou "DADOS_INCOMPLETOS" se algum dado est
         return;
       }
 
-      // Create appointment
-      const appointmentDate = new Date(appointmentData.appointmentDate);
+      // Create appointment with correct date
+      const appointmentDate = new Date(appointmentData.appointmentDate + 'T00:00:00.000Z');
       
       const appointmentPayload = {
         companyId,
@@ -814,23 +788,23 @@ Responda APENAS em formato JSON válido ou "DADOS_INCOMPLETOS" se algum dado est
         duration: service.duration || 60,
         status: 'Pendente',
         totalPrice: String(service.price || 0),
-        notes: `Agendamento criado via WhatsApp - Conversa ID: ${conversationId}`,
+        notes: `Agendamento confirmado via WhatsApp - Conversa ID: ${conversationId}`,
         reminderSent: false
       };
 
-      console.log('📋 Appointment payload before creation:', JSON.stringify(appointmentPayload, null, 2));
+      console.log('📋 Creating appointment with correct date:', JSON.stringify(appointmentPayload, null, 2));
       
       let appointment;
       try {
         appointment = await storage.createAppointment(appointmentPayload);
         console.log('✅ Appointment created successfully with ID:', appointment.id);
-        console.log('🎯 SUCCESS: Appointment saved to database');
+        console.log('🎯 SUCCESS: Appointment saved to database with explicit confirmation');
       } catch (createError) {
         console.error('❌ CRITICAL ERROR: Failed to create appointment in database:', createError);
         throw createError;
       }
       
-      console.log(`📅 ${appointmentData.clientName} - ${service.name} - ${appointmentDate.toLocaleString('pt-BR')}`);
+      console.log(`📅 CONFIRMED APPOINTMENT: ${appointmentData.clientName} - ${service.name} - ${appointmentDate.toLocaleDateString('pt-BR')} ${appointmentData.appointmentTime}`);
 
       // Get professional name for notification
       const professional = await storage.getProfessional(appointmentData.professionalId);
