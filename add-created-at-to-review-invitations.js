@@ -1,4 +1,4 @@
-const mysql = require('mysql2/promise');
+import mysql from 'mysql2/promise';
 
 async function addCreatedAtColumn() {
   let connection;
@@ -38,8 +38,4 @@ async function addCreatedAtColumn() {
 }
 
 // Run if called directly
-if (require.main === module) {
-  addCreatedAtColumn().catch(console.error);
-}
-
-module.exports = { addCreatedAtColumn };
+addCreatedAtColumn().catch(console.error);

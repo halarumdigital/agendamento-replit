@@ -314,7 +314,6 @@ export const reviewInvitations = mysqlTable("review_invitations", {
   sentAt: timestamp("sent_at"),
   reviewSubmittedAt: timestamp("review_submitted_at"),
   status: varchar("status", { length: 50 }).default("pending"),
-  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Tasks table
@@ -653,7 +652,6 @@ export const insertProfessionalReviewSchema = createInsertSchema(professionalRev
 
 export const insertReviewInvitationSchema = createInsertSchema(reviewInvitations).omit({
   id: true,
-  createdAt: true,
 });
 
 export const insertClientPointsSchema = createInsertSchema(clientPoints).omit({
