@@ -103,7 +103,7 @@ export const planSchema = z.object({
 });
 
 export const settingsSchema = z.object({
-  systemName: z.string().min(1, "Nome do sistema é obrigatório"),
+  systemName: z.string().optional(),
   logoUrl: z.string().optional(),
   faviconUrl: z.string().optional(),
   primaryColor: z.string().min(4, "Cor primária é obrigatória"),
