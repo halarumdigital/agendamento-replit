@@ -9,6 +9,7 @@ import { ensureSmtpColumns } from "./ensure-smtp-columns";
 import { ensureResetColumns } from "./ensure-reset-columns";
 import { ensureCustomHtmlColumn } from "./ensure-custom-html-column";
 import { ensureAddressColumns } from "./ensure-address-columns";
+import { ensureStripeColumns } from "./ensure-stripe-columns";
 import { db } from "./db";
 import path from "path";
 
