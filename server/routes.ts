@@ -577,23 +577,25 @@ async function createAppointmentFromConversation(conversationId: number, company
     const messages = await storage.getMessagesByConversation(conversationId);
     const conversationText = messages.map(m => `${m.role}: ${m.content}`).join('\n');
     
-    // REGRA CRÍTICA: Só criar agendamento se houver confirmação explícita completa com TODOS os dados
-    const confirmationPhrases = [
-      'confirmo o agendamento',
-      'pode agendar',
-      'confirma o agendamento', 
-      'está confirmado',
-      'agendamento confirmado',
-      'pode marcar',
-      'confirmo para'
+    // REGRA CRÍTICA: Só criar agendamento se houver confirmação explícita final
+    const finalConfirmationPhrases = [
+      'sim, confirmo',
+      'sim, está correto',
+      'sim, pode agendar',
+      'ok, confirmo',
+      'ok, está correto',
+      'ok, pode agendar',
+      'confirmo sim',
+      'está correto sim',
+      'pode agendar sim'
     ];
     
-    const hasExplicitConfirmation = confirmationPhrases.some(phrase => 
+    const hasFinalConfirmation = finalConfirmationPhrases.some(phrase => 
       conversationText.toLowerCase().includes(phrase.toLowerCase())
     );
     
-    if (!hasExplicitConfirmation) {
-      console.log('⚠️ No explicit confirmation found in conversation, skipping appointment creation');
+    if (!hasFinalConfirmation) {
+      console.log('⚠️ No final confirmation (sim/ok) found in conversation, skipping appointment creation');
       return;
     }
 
@@ -611,6 +613,22 @@ async function createAppointmentFromConversation(conversationId: number, company
     if (!hasSpecificDate) {
       console.log('⚠️ No specific date mentioned in conversation, skipping appointment creation');
       return;
+    }
+
+    // VERIFICAÇÃO CRÍTICA: Se a última resposta do AI contém pergunta, dados ainda estão incompletos
+    const lastAIMessage = messages.filter(m => m.role === 'assistant').pop();
+    if (lastAIMessage && lastAIMessage.content) {
+      const hasQuestion = lastAIMessage.content.includes('?') || 
+                         lastAIMessage.content.toLowerCase().includes('qual') ||
+                         lastAIMessage.content.toLowerCase().includes('informe') ||
+                         lastAIMessage.content.toLowerCase().includes('escolha') ||
+                         lastAIMessage.content.toLowerCase().includes('prefere') ||
+                         lastAIMessage.content.toLowerCase().includes('gostaria');
+      
+      if (hasQuestion) {
+        console.log('⚠️ AI is asking questions to client, appointment data incomplete, skipping creation');
+        return;
+      }
     }
     
     // Get available professionals and services to match
@@ -683,22 +701,20 @@ ${conversationText}
 
 REGRAS CRÍTICAS - SÓ EXTRAIA SE TODAS AS CONDIÇÕES FOREM ATENDIDAS:
 
-1. DEVE haver confirmação explícita final com frases como:
-   - "Confirmo o agendamento"
-   - "Pode agendar" 
-   - "Confirmo para"
-   - "Está confirmado"
+1. DEVE haver confirmação final com "SIM" ou "OK" após resumo:
+   - Cliente deve responder "sim, confirmo", "ok, confirmo", "sim, está correto"
+   - NUNCA extraia dados se cliente apenas disse dados mas não confirmou com SIM/OK
 
-2. DEVE haver data específica mencionada explicitamente:
-   - Segunda, terça, quarta, quinta, sexta, sábado, domingo
-   - Ou datas específicas como "amanhã", "hoje"
+2. DEVE ter havido um RESUMO COMPLETO antes da confirmação:
+   - IA deve ter enviado resumo com TODOS os dados do agendamento
+   - Cliente deve ter confirmado o resumo com "sim" ou "ok"
 
-3. TODOS os dados devem estar confirmados na conversa:
-   - Nome COMPLETO do cliente fornecido pelo próprio cliente
-   - Profissional ESPECÍFICO escolhido e confirmado
-   - Serviço ESPECÍFICO escolhido e confirmado  
-   - Data ESPECÍFICA mencionada pelo cliente
-   - Horário ESPECÍFICO fornecido pelo cliente
+3. TODOS os dados devem estar no resumo confirmado:
+   - Nome COMPLETO do cliente
+   - Profissional ESPECÍFICO escolhido
+   - Serviço ESPECÍFICO escolhido  
+   - Data ESPECÍFICA (dia da semana + data)
+   - Horário ESPECÍFICO
    - Telefone do cliente
 
 4. INSTRUÇÕES PARA DATAS:
@@ -2320,7 +2336,12 @@ INSTRUÇÕES OBRIGATÓRIAS:
 - Se horário disponível, confirme a disponibilidade
 - Se horário ocupado, sugira alternativas no mesmo dia
 - Após confirmar disponibilidade, peça o telefone para finalizar
-- Quando tiver TODOS os dados (profissional, serviço, nome, data/hora disponível, telefone), confirme o agendamento
+- REGRA OBRIGATÓRIA DE RESUMO E CONFIRMAÇÃO:
+  * Quando tiver TODOS os dados (profissional, serviço, nome, data/hora disponível, telefone), NÃO confirme imediatamente
+  * PRIMEIRO envie um RESUMO COMPLETO do agendamento: "Perfeito! Vou confirmar seu agendamento:\n\n👤 Nome: [nome]\n🏢 Profissional: [profissional]\n💇 Serviço: [serviço]\n📅 Data: [dia da semana], [data]\n🕐 Horário: [horário]\n📱 Telefone: [telefone]\n\nEstá tudo correto? Responda SIM para confirmar ou me informe se algo precisa ser alterado."
+  * AGUARDE o cliente responder "SIM", "OK" ou confirmação similar
+  * APENAS APÓS a confirmação com "SIM" ou "OK", confirme o agendamento final
+  * Se cliente não confirmar com "SIM/OK", continue coletando correções
 - NÃO invente serviços - use APENAS os serviços listados acima
 - NÃO confirme horários sem verificar disponibilidade real
 - SEMPRE mostre todos os profissionais/serviços disponíveis antes de pedir para escolher
