@@ -7214,6 +7214,77 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
     }
   });
 
+  // Endpoint público para buscar planos disponíveis
+  app.get("/api/public/plans", async (req, res) => {
+    try {
+      const [result] = await db.execute(sql`
+        SELECT id, name, description, price, stripe_price_id as stripePriceId, features
+        FROM plans 
+        WHERE active = 1
+        ORDER BY price ASC
+      `);
+
+      const plans = Array.isArray(result) ? result : [result];
+      
+      // Parse features JSON and add popular flag for middle-priced plan
+      const processedPlans = plans.map((plan: any, index: number) => ({
+        ...plan,
+        features: plan.features ? JSON.parse(plan.features) : [],
+        popular: index === Math.floor(plans.length / 2) // Mark middle plan as popular
+      }));
+
+      res.json(processedPlans);
+    } catch (error) {
+      console.error("Erro ao buscar planos públicos:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  // Endpoint para criar assinatura da empresa
+  app.post("/api/company/create-subscription", async (req, res) => {
+    try {
+      const { planId } = req.body;
+
+      if (!planId) {
+        return res.status(400).json({ message: "ID do plano é obrigatório" });
+      }
+
+      // Buscar informações do plano
+      const [planResult] = await db.execute(sql`
+        SELECT * FROM plans WHERE id = ${planId} AND active = 1
+      `);
+
+      if (!Array.isArray(planResult) || planResult.length === 0) {
+        return res.status(404).json({ message: "Plano não encontrado" });
+      }
+
+      const plan = planResult[0] as any;
+
+      if (!plan.stripe_price_id) {
+        return res.status(400).json({ message: "Plano não configurado com Stripe" });
+      }
+
+      // Criar PaymentIntent para assinatura
+      const paymentIntent = await stripeService.createPaymentIntent({
+        amount: Math.round(plan.price * 100), // Convert to cents
+        currency: 'brl',
+        metadata: {
+          planId: planId.toString(),
+          type: 'subscription'
+        }
+      });
+
+      res.json({ 
+        clientSecret: paymentIntent.client_secret,
+        planName: plan.name,
+        planPrice: plan.price
+      });
+    } catch (error: any) {
+      console.error("Erro ao criar assinatura:", error);
+      res.status(500).json({ message: "Erro ao criar assinatura: " + error.message });
+    }
+  });
+
   // Aplicar middleware de verificação de assinatura para rotas da empresa
   app.use('/api/company', checkSubscriptionStatus);
   app.use('/api/dashboard', checkSubscriptionStatus);
