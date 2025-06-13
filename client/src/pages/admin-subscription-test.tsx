@@ -37,7 +37,7 @@ export default function AdminSubscriptionTest() {
     onSuccess: (data) => {
       toast({
         title: "Falha Simulada",
-        description: data.message,
+        description: "Assinatura suspensa com sucesso",
         variant: "destructive",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/companies"] });
@@ -64,7 +64,7 @@ export default function AdminSubscriptionTest() {
     onSuccess: (data) => {
       toast({
         title: "Sucesso Simulado",
-        description: data.message,
+        description: "Assinatura reativada com sucesso",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/companies"] });
     },
