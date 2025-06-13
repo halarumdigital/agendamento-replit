@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./auth";
+import { setupAuth, isAuthenticated, isCompanyAuthenticated } from "./auth";
 import { db, pool } from "./db";
 import { loadCompanyPlan, requirePermission, checkProfessionalsLimit, RequestWithPlan } from "./plan-middleware";
 import { checkSubscriptionStatus, getCompanySubscriptionStatus } from "./subscription-middleware";
@@ -1734,7 +1734,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Dashboard stats
-  app.get('/api/dashboard/stats', isAuthenticated, checkSubscriptionStatus, async (req, res) => {
+  app.get('/api/dashboard/stats', isCompanyAuthenticated, checkSubscriptionStatus, async (req, res) => {
     try {
       const companies = await storage.getCompanies();
       const plans = await storage.getPlans();

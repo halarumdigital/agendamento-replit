@@ -10,7 +10,9 @@ export function getSession() {
       httpOnly: true,
       secure: false,
       maxAge: 7 * 24 * 60 * 60 * 1000,
+      sameSite: 'lax',
     },
+    name: 'app.session',
   });
 }
 
@@ -27,6 +29,19 @@ export const isAuthenticated: RequestHandler = async (req: any, res, next) => {
     next();
   } catch (error) {
     console.error("Authentication error:", error);
+    res.status(500).json({ message: "Erro interno do servidor" });
+  }
+};
+
+export const isCompanyAuthenticated: RequestHandler = async (req: any, res, next) => {
+  try {
+    const companyId = req.session.companyId;
+    if (!companyId) {
+      return res.status(401).json({ message: "Não autenticado" });
+    }
+    next();
+  } catch (error) {
+    console.error("Company authentication error:", error);
     res.status(500).json({ message: "Erro interno do servidor" });
   }
 };
