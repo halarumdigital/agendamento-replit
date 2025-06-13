@@ -7015,7 +7015,7 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
       // Simula falha de pagamento alterando o status da empresa
       await db.execute(sql`
         UPDATE companies 
-        SET status = 'suspended'
+        SET is_active = 0, plan_status = 'suspended'
         WHERE id = ${companyId}
       `);
 
@@ -7040,7 +7040,7 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
       // Simula sucesso de pagamento alterando o status da empresa
       await db.execute(sql`
         UPDATE companies 
-        SET status = 'active'
+        SET is_active = 1, plan_status = 'active'
         WHERE id = ${companyId}
       `);
 
