@@ -577,11 +577,11 @@ async function createAppointmentFromConversation(conversationId: number, company
     const messages = await storage.getMessagesByConversation(conversationId);
     const conversationText = messages.map(m => `${m.role}: ${m.content}`).join('\n');
     
-    // REGRA CRÍTICA: Só criar agendamento se houver confirmação explícita completa
+    // REGRA CRÍTICA: Só criar agendamento se houver confirmação explícita completa com TODOS os dados
     const confirmationPhrases = [
       'confirmo o agendamento',
       'pode agendar',
-      'confirma o agendamento',
+      'confirma o agendamento', 
       'está confirmado',
       'agendamento confirmado',
       'pode marcar',
@@ -594,6 +594,22 @@ async function createAppointmentFromConversation(conversationId: number, company
     
     if (!hasExplicitConfirmation) {
       console.log('⚠️ No explicit confirmation found in conversation, skipping appointment creation');
+      return;
+    }
+
+    // VERIFICAÇÃO ADICIONAL: Deve ter data específica mencionada na mesma mensagem ou contexto próximo
+    const dateSpecificPhrases = [
+      'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado', 'domingo',
+      'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira',
+      'amanhã', 'hoje', 'depois de amanhã'
+    ];
+    
+    const hasSpecificDate = dateSpecificPhrases.some(phrase => 
+      conversationText.toLowerCase().includes(phrase.toLowerCase())
+    );
+    
+    if (!hasSpecificDate) {
+      console.log('⚠️ No specific date mentioned in conversation, skipping appointment creation');
       return;
     }
     
@@ -667,22 +683,26 @@ ${conversationText}
 
 REGRAS CRÍTICAS - SÓ EXTRAIA SE TODAS AS CONDIÇÕES FOREM ATENDIDAS:
 
-1. DEVE haver confirmação explícita com frases como:
+1. DEVE haver confirmação explícita final com frases como:
    - "Confirmo o agendamento"
-   - "Pode agendar"
+   - "Pode agendar" 
    - "Confirmo para"
    - "Está confirmado"
 
-2. TODOS os dados devem estar presentes na mesma mensagem de confirmação ou mensagens anteriores:
-   - Nome COMPLETO do cliente
-   - Profissional ESPECÍFICO escolhido 
-   - Serviço ESPECÍFICO escolhido
-   - Data ESPECÍFICA (dia da semana)
-   - Horário ESPECÍFICO
+2. DEVE haver data específica mencionada explicitamente:
+   - Segunda, terça, quarta, quinta, sexta, sábado, domingo
+   - Ou datas específicas como "amanhã", "hoje"
+
+3. TODOS os dados devem estar confirmados na conversa:
+   - Nome COMPLETO do cliente fornecido pelo próprio cliente
+   - Profissional ESPECÍFICO escolhido e confirmado
+   - Serviço ESPECÍFICO escolhido e confirmado  
+   - Data ESPECÍFICA mencionada pelo cliente
+   - Horário ESPECÍFICO fornecido pelo cliente
    - Telefone do cliente
 
-3. INSTRUÇÕES PARA DATAS:
-   - SEMPRE use as datas calculadas acima para os dias da semana
+4. INSTRUÇÕES PARA DATAS:
+   - APENAS extraia se o cliente mencionou explicitamente o dia da semana
    - Se mencionado "sábado", use EXATAMENTE: ${getNextWeekdayDate('sábado')}
    - Se mencionado "segunda", use EXATAMENTE: ${getNextWeekdayDate('segunda')}
    - Se mencionado "terça", use EXATAMENTE: ${getNextWeekdayDate('terça')}
@@ -691,9 +711,12 @@ REGRAS CRÍTICAS - SÓ EXTRAIA SE TODAS AS CONDIÇÕES FOREM ATENDIDAS:
    - Se mencionado "sexta", use EXATAMENTE: ${getNextWeekdayDate('sexta')}
    - Se mencionado "domingo", use EXATAMENTE: ${getNextWeekdayDate('domingo')}
 
-4. Se QUALQUER dado estiver faltando, ou se não houver confirmação explícita, responda "DADOS_INCOMPLETOS"
-
-5. Se o cliente ainda está perguntando, negociando, ou recebendo informações, responda "DADOS_INCOMPLETOS"
+5. CASOS QUE DEVEM RETORNAR "DADOS_INCOMPLETOS":
+   - Cliente apenas escolheu profissional/serviço mas não mencionou data específica
+   - Cliente está perguntando sobre disponibilidade
+   - Cliente está recebendo informações mas ainda não confirmou
+   - Falta qualquer dado obrigatório (nome completo, data específica, horário, confirmação)
+   - AI está perguntando algo ao cliente (significa que dados ainda estão incompletos)
 
 Responda APENAS em formato JSON válido ou "DADOS_INCOMPLETOS":
 {
