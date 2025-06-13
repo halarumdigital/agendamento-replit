@@ -13,7 +13,7 @@ import { sql, eq, and, desc, asc, sum, count, gte, lte } from "drizzle-orm";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import { asaasService } from "./services/asaas";
+
 import { 
   getLoyaltyCampaignsByCompany, 
   createLoyaltyCampaign, 

@@ -53,10 +53,13 @@ export const companies = mysqlTable("companies", {
   email: varchar("email", { length: 255 }).notNull().unique(),
   password: varchar("password", { length: 255 }).notNull(),
   planId: int("plan_id"),
+  planStatus: varchar("plan_status", { length: 50 }).default("inactive"),
   isActive: boolean("is_active").notNull().default(true),
   aiAgentPrompt: text("ai_agent_prompt"),
   resetToken: varchar("reset_token", { length: 255 }),
   resetTokenExpires: timestamp("reset_token_expires"),
+  stripeCustomerId: varchar("stripe_customer_id", { length: 255 }),
+  stripeSubscriptionId: varchar("stripe_subscription_id", { length: 255 }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
