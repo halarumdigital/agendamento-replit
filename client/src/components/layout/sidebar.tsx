@@ -12,7 +12,8 @@ import {
   X,
   Menu,
   Circle,
-  Users
+  Users,
+  CreditCard
 } from "lucide-react";
 import { useState } from "react";
 
@@ -33,6 +34,7 @@ export default function Sidebar({ systemName = "AdminPro", logoUrl }: SidebarPro
     { name: "Dashboard", href: "/administrador", icon: BarChart3 },
     { name: "Empresas", href: "/administrador/empresas", icon: Building },
     { name: "Planos", href: "/administrador/planos", icon: Tags },
+    { name: "Stripe Planos", href: "/administrador/stripe-planos", icon: CreditCard },
     { name: "Administradores", href: "/administrador/administradores", icon: Users },
     { name: "Status", href: "/administrador/status", icon: Circle },
     { name: "Configurações", href: "/administrador/configuracoes", icon: Settings },

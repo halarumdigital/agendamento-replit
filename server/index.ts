@@ -69,6 +69,9 @@ app.use((req, res, next) => {
   // Ensure address columns exist
   await ensureAddressColumns();
   
+  // Ensure Stripe columns exist
+  await ensureStripeColumns();
+  
   // Start campaign scheduler
   startCampaignScheduler();
   
