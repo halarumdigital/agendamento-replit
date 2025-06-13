@@ -220,6 +220,16 @@ function Router() {
               <Admins />
             </AdminLayout>
           </Route>
+          <Route path="/admin/alerts">
+            <AdminLayout>
+              <AdminAlerts />
+            </AdminLayout>
+          </Route>
+          <Route path="/administrador/alertas">
+            <AdminLayout>
+              <AdminAlerts />
+            </AdminLayout>
+          </Route>
           <Route path="/admin/stripe-plans">
             <AdminLayout>
               <AdminStripePlans />
