@@ -7064,7 +7064,7 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
         ORDER BY created_at DESC
       `);
 
-      const companies = result[0] as any[];
+      const companies = Array.isArray(result[0]) ? result[0] : result as any[];
       const subscriptionsData = [];
 
       for (const company of companies) {
@@ -7101,7 +7101,7 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
                   id: subscription.latest_invoice.id,
                   status: subscription.latest_invoice.status,
                   total: subscription.latest_invoice.total,
-                  paid: subscription.latest_invoice.paid,
+                  paid: subscription.latest_invoice.paid || false,
                   paymentIntent: subscription.latest_invoice.payment_intent && typeof subscription.latest_invoice.payment_intent === 'object' ? {
                     status: subscription.latest_invoice.payment_intent.status
                   } : null
