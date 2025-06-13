@@ -6918,11 +6918,11 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
         }
       });
 
-      // Create subscription
+      // Create subscription (without trial period for testing)
       const subscription = await stripeService.createSubscription({
         customerId: stripeCustomerId,
         priceId: price.id,
-        trialPeriodDays: selectedPlan.free_days || 0,
+        trialPeriodDays: 0, // Remove trial period so subscription appears as active
         metadata: {
           companyId: companyId ? companyId.toString() : 'test',
           planId: planId || 'basic'
