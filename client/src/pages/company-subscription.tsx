@@ -232,7 +232,7 @@ export default function CompanySubscription() {
                   {plan.name}
                 </CardTitle>
                 <div className="mt-4">
-                  <span className="text-4xl font-bold">R$ {plan.price.toFixed(2)}</span>
+                  <span className="text-4xl font-bold">R$ {parseFloat(plan.price).toFixed(2)}</span>
                   <span className="text-muted-foreground">/mês</span>
                 </div>
                 <p className="text-sm text-muted-foreground mt-2">
