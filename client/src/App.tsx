@@ -37,6 +37,7 @@ import ResetPassword from "@/pages/reset-password";
 import Register from "@/pages/register";
 import Subscription from "@/pages/subscription";
 import SubscriptionTest from "@/pages/subscription-test";
+import StripeTest from "@/pages/stripe-test";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -52,6 +53,7 @@ function Router() {
       <Route path="/reset-password" component={ResetPassword} />
       <Route path="/cadastro" component={Register} />
       <Route path="/subscription-test" component={SubscriptionTest} />
+      <Route path="/stripe-test" component={StripeTest} />
       <Route path="/dashboard">
         <CompanyLayout>
           <CompanyDashboard />

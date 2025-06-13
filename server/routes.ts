@@ -23,6 +23,7 @@ import {
   getLoyaltyRewardsHistory 
 } from "./storage";
 import { formatBrazilianPhone, validateBrazilianPhone, normalizePhone } from "../shared/phone-utils";
+import { stripeService } from "./services/stripe";
 
 // Temporary in-memory storage for WhatsApp instances
 const tempWhatsappInstances: any[] = [];
@@ -6797,20 +6798,27 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
   });
 
   // Subscription payment processing route
-  app.post("/api/subscriptions/process-payment", requireCompanyAuth, async (req, res) => {
+  // Stripe payment intent endpoint
+  app.post("/api/create-payment-intent", async (req, res) => {
     try {
-      const { cardNumber, cardName, expiryMonth, expiryYear, cvv, cpf, planId } = req.body;
+      const { amount } = req.body;
+      const paymentIntent = await stripeService.createPaymentIntent({
+        amount: amount,
+        currency: 'brl'
+      });
+      res.json({ clientSecret: paymentIntent.client_secret });
+    } catch (error: any) {
+      res.status(500).json({ 
+        message: "Erro ao criar intenção de pagamento: " + error.message 
+      });
+    }
+  });
+
+  // Create subscription endpoint
+  app.post("/api/create-subscription", requireCompanyAuth, async (req, res) => {
+    try {
+      const { planId } = req.body;
       const companyId = (req.session as any).companyId;
-
-      // Validate required fields
-      if (!cardNumber || !cardName || !expiryMonth || !expiryYear || !cvv || !cpf || !planId) {
-        return res.status(400).json({ message: "Todos os campos são obrigatórios" });
-      }
-
-      // Validate CPF
-      if (!asaasService.isValidCpf(cpf)) {
-        return res.status(400).json({ message: "CPF inválido" });
-      }
 
       // Get company details
       const [companyResult] = await db.execute(sql`
@@ -6834,254 +6842,126 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
 
       const selectedPlan = (planResult as any)[0];
 
-      console.log(`🔄 Processando pagamento - Empresa: ${company.fantasy_name}, Plano: ${selectedPlan.name}`);
+      console.log(`🔄 Criando assinatura - Empresa: ${company.fantasy_name}, Plano: ${selectedPlan.name}`);
 
-      // Check if company already has an Asaas customer ID
-      let asaasCustomerId = company.asaas_customer_id;
+      // Check if company already has a Stripe customer ID
+      let stripeCustomerId = company.stripe_customer_id;
 
-      if (!asaasCustomerId) {
-        // Create new customer in Asaas
-        const customerData = {
-          name: company.fantasy_name || company.social_reason,
-          cpfCnpj: asaasService.formatCpf(cpf),
+      if (!stripeCustomerId) {
+        // Create new customer in Stripe
+        const customer = await stripeService.createCustomer({
           email: company.email,
-          phone: company.phone || undefined,
-          externalReference: `company_${companyId}`,
-          observations: `Cliente criado via sistema de assinatura - Plano: ${selectedPlan.name}`
-        };
+          name: company.fantasy_name || company.email,
+          phone: company.phone,
+          metadata: {
+            companyId: companyId.toString(),
+            planId: planId.toString()
+          }
+        });
 
-        console.log('📝 Criando cliente no Asaas:', customerData);
+        stripeCustomerId = customer.id;
 
-        const asaasCustomer = await asaasService.createCustomer(customerData);
-        asaasCustomerId = asaasCustomer.id;
-
-        // Save Asaas customer ID in company record
+        // Save Stripe customer ID in company record
         await db.execute(sql`
           UPDATE companies 
-          SET asaas_customer_id = ${asaasCustomerId}
+          SET stripe_customer_id = ${stripeCustomerId}
           WHERE id = ${companyId}
         `);
 
-        console.log(`✅ Cliente criado no Asaas com ID: ${asaasCustomerId}`);
+        console.log(`✅ Cliente criado no Stripe com ID: ${stripeCustomerId}`);
       }
 
-      // Create payment in Asaas
-      const dueDate = new Date();
-      dueDate.setDate(dueDate.getDate() + 1); // Due tomorrow
-
-      const paymentData = {
-        customer: asaasCustomerId,
-        billingType: 'CREDIT_CARD' as const,
-        value: parseFloat(selectedPlan.price),
-        dueDate: dueDate.toISOString().split('T')[0], // YYYY-MM-DD format
-        description: `Assinatura ${selectedPlan.name} - ${company.fantasy_name || company.social_reason}`,
-        externalReference: `subscription_${companyId}_${planId}_${Date.now()}`,
-        creditCard: {
-          holderName: cardName,
-          number: cardNumber.replace(/\s/g, ''),
-          expiryMonth: expiryMonth,
-          expiryYear: expiryYear,
-          ccv: cvv
-        },
-        creditCardHolderInfo: {
-          name: cardName,
-          email: company.email || '',
-          cpfCnpj: asaasService.formatCpf(cpf),
-          postalCode: company.zip_code || '00000000',
-          addressNumber: company.number || 'S/N',
-          addressComplement: company.complement || undefined,
-          phone: company.phone || '0000000000'
+      // Create price for the plan (you would normally do this once and store the price ID)
+      // For now, we'll create it dynamically
+      const product = await stripeService.createProduct({
+        name: selectedPlan.name,
+        description: `Plano ${selectedPlan.name}`,
+        metadata: {
+          planId: planId.toString()
         }
-      };
+      });
 
-      console.log('💳 Processando pagamento no Asaas...');
+      const price = await stripeService.createPrice({
+        productId: product.id,
+        unitAmount: parseFloat(selectedPlan.price),
+        currency: 'brl',
+        recurring: {
+          interval: 'month'
+        }
+      });
 
-      const asaasPayment = await asaasService.createPayment(paymentData);
+      // Create subscription
+      const subscription = await stripeService.createSubscription({
+        customerId: stripeCustomerId,
+        priceId: price.id,
+        trialPeriodDays: selectedPlan.free_days || 0,
+        metadata: {
+          companyId: companyId.toString(),
+          planId: planId.toString()
+        }
+      });
 
-      console.log(`✅ Pagamento criado no Asaas - ID: ${asaasPayment.id}, Status: ${asaasPayment.status}`);
+      // Update company with subscription details
+      await db.execute(sql`
+        UPDATE companies 
+        SET stripe_subscription_id = ${subscription.id},
+            plan_id = ${planId},
+            plan_status = 'active'
+        WHERE id = ${companyId}
+      `);
 
-      // Check payment status
-      if (asaasPayment.status === 'CONFIRMED' || asaasPayment.status === 'RECEIVED') {
-        // Payment successful - update company plan
-        await db.execute(sql`
-          UPDATE companies 
-          SET plan_id = ${planId}, 
-              plan_status = 'active',
-              asaas_payment_id = ${asaasPayment.id},
-              updated_at = NOW()
-          WHERE id = ${companyId}
-        `);
+      console.log(`✅ Assinatura criada: ${subscription.id}`);
 
-        console.log(`🎉 Plano ${selectedPlan.name} ativado para empresa ${companyId}`);
+      res.json({
+        subscriptionId: subscription.id,
+        clientSecret: subscription.latest_invoice?.payment_intent?.client_secret,
+        status: subscription.status
+      });
 
-        res.json({
-          success: true,
-          message: "Pagamento processado com sucesso! Seu plano foi ativado.",
-          payment: {
-            id: asaasPayment.id,
-            status: asaasPayment.status,
-            value: asaasPayment.value,
-            dueDate: asaasPayment.dueDate
-          },
-          plan: {
-            id: selectedPlan.id,
-            name: selectedPlan.name,
-            price: selectedPlan.price
-          }
-        });
-      } else if (asaasPayment.status === 'PENDING') {
-        res.json({
-          success: true,
-          message: "Pagamento está sendo processado. Aguarde a confirmação.",
-          payment: {
-            id: asaasPayment.id,
-            status: asaasPayment.status,
-            value: asaasPayment.value,
-            dueDate: asaasPayment.dueDate
-          }
-        });
-      } else {
-        res.status(400).json({
-          success: false,
-          message: "Pagamento rejeitado. Verifique os dados do cartão e tente novamente.",
-          status: asaasPayment.status
-        });
-      }
-
-    } catch (error) {
-      console.error("❌ Erro ao processar pagamento:", error);
-      
-      // Check if error is from Asaas API
-      if (error instanceof Error) {
-        res.status(500).json({ 
-          success: false,
-          message: error.message.includes('Asaas') ? error.message : "Erro interno do servidor ao processar pagamento"
-        });
-      } else {
-        res.status(500).json({ 
-          success: false,
-          message: "Erro interno do servidor ao processar pagamento" 
-        });
-      }
+    } catch (error: any) {
+      console.error("❌ Erro ao criar assinatura:", error);
+      res.status(500).json({ 
+        message: "Erro ao criar assinatura: " + error.message 
+      });
     }
   });
 
-  // Create subscription with free trial period
-  app.post("/api/create-subscription", async (req, res) => {
+  // Webhook endpoint for Stripe
+  app.post("/api/stripe-webhook", async (req, res) => {
+    const sig = req.headers['stripe-signature'] as string;
+    
     try {
-      const { 
-        companyId, 
-        planId, 
-        creditCard, 
-        holderInfo 
-      } = req.body;
-
-      console.log('🔄 Iniciando criação de assinatura para empresa:', companyId);
-
-      // 1. Get company and plan details
-      const company = await storage.getCompanyById(companyId);
-      if (!company) {
-        return res.status(404).json({ message: 'Empresa não encontrada' });
-      }
-
-      const plan = await storage.getPlanById(planId);
-      if (!plan) {
-        return res.status(404).json({ message: 'Plano não encontrado' });
-      }
-
-      console.log('📋 Plano selecionado:', plan.name, '- Valor: R$', plan.price);
-      console.log('🎁 Dias grátis:', plan.freeDays);
-
-      // 2. Create or get customer in Asaas
-      let asaasCustomerId = (company as any).asaasCustomerId;
-
-      if (!asaasCustomerId) {
-        console.log('👤 Criando cliente no Asaas...');
-        const customerData = {
-          name: company.fantasyName || company.email,
-          cpfCnpj: company.document || '00000000000',
-          email: company.email || holderInfo.email,
-          phone: (company as any).phone || holderInfo.phone,
-          externalReference: `company_${companyId}`,
-          observations: `Cliente criado para assinatura do plano ${plan.name}`
-        };
-
-        const asaasCustomer = await asaasService.createCustomer(customerData);
-        asaasCustomerId = asaasCustomer.id;
-
-        // Update company with Asaas customer ID
-        await storage.updateCompanyAsaasId(companyId, asaasCustomerId);
-        console.log('✅ Cliente criado no Asaas:', asaasCustomerId);
-      }
-
-      // 3. Calculate next due date (after free trial)
-      const today = new Date();
-      const nextDueDate = new Date(today);
-      nextDueDate.setDate(today.getDate() + (plan.freeDays || 0));
+      const event = await stripeService.handleWebhook(req.body, sig);
       
-      const nextDueDateStr = nextDueDate.toISOString().split('T')[0]; // YYYY-MM-DD format
-
-      console.log('📅 Primeira cobrança agendada para:', nextDueDateStr);
-
-      // 4. Create subscription in Asaas
-      const subscriptionData = {
-        customer: asaasCustomerId,
-        billingType: 'CREDIT_CARD' as const,
-        nextDueDate: nextDueDateStr,
-        value: parseFloat(plan.price.toString()),
-        cycle: 'MONTHLY' as const,
-        description: `Assinatura ${plan.name} - ${company.fantasyName || company.email}`,
-        externalReference: `subscription_company_${companyId}_plan_${planId}`,
-        creditCard: {
-          holderName: creditCard.holderName,
-          number: creditCard.number,
-          expiryMonth: creditCard.expiryMonth,
-          expiryYear: creditCard.expiryYear,
-          ccv: creditCard.ccv
-        },
-        creditCardHolderInfo: {
-          name: holderInfo.name,
-          email: holderInfo.email,
-          cpfCnpj: holderInfo.cpfCnpj,
-          postalCode: holderInfo.postalCode,
-          addressNumber: holderInfo.addressNumber,
-          phone: holderInfo.phone
-        }
-      };
-
-      const subscription = await asaasService.createSubscription(subscriptionData);
-      console.log('✅ Assinatura criada no Asaas:', subscription.id);
-
-      // 5. Update company with subscription details
-      await storage.updateCompanySubscription(companyId, {
-        planId: planId,
-        asaasSubscriptionId: subscription.id,
-        subscriptionStatus: subscription.status,
-        nextDueDate: nextDueDate,
-        trialEndsAt: nextDueDate
-      });
-
-      console.log('✅ Empresa atualizada com dados da assinatura');
-
-      res.json({
-        success: true,
-        message: 'Assinatura criada com sucesso!',
-        subscription: {
-          id: subscription.id,
-          status: subscription.status,
-          nextDueDate: nextDueDateStr,
-          freeDays: plan.freeDays,
-          value: plan.price,
-          planName: plan.name
-        }
-      });
-
-    } catch (error) {
-      console.error('❌ Erro ao criar assinatura:', error);
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Erro ao criar assinatura'
-      });
+      switch (event.type) {
+        case 'payment_intent.succeeded':
+          console.log('✅ Pagamento confirmado:', event.data.object.id);
+          break;
+        
+        case 'invoice.payment_succeeded':
+          console.log('✅ Pagamento de fatura confirmado:', event.data.object.id);
+          break;
+        
+        case 'customer.subscription.updated':
+          console.log('🔄 Assinatura atualizada:', event.data.object.id);
+          break;
+        
+        case 'customer.subscription.deleted':
+          console.log('❌ Assinatura cancelada:', event.data.object.id);
+          // Update company status
+          const subscription = event.data.object as any;
+          await db.execute(sql`
+            UPDATE companies 
+            SET plan_status = 'cancelled'
+            WHERE stripe_subscription_id = ${subscription.id}
+          `);
+          break;
+      }
+      
+      res.json({ received: true });
+    } catch (error: any) {
+      console.error('❌ Erro no webhook do Stripe:', error);
+      res.status(400).send(`Webhook Error: ${error.message}`);
     }
   });
 
