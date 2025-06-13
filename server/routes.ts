@@ -1747,9 +1747,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       `);
       const activePlans = (totalPlansResult as any)[0][0]?.total || 0;
 
-      // Empresas ativas (com planStatus = 'active')
+      // Empresas ativas (com plan_status = 'active')
       const activeCompaniesResult = await db.execute(sql`
-        SELECT COUNT(*) as total FROM companies WHERE planStatus = 'active'
+        SELECT COUNT(*) as total FROM companies WHERE plan_status = 'active'
       `);
       const activeCompanies = (activeCompaniesResult as any)[0][0]?.total || 0;
 
@@ -1757,8 +1757,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const revenueResult = await db.execute(sql`
         SELECT COALESCE(SUM(p.price), 0) as total 
         FROM companies c 
-        JOIN plans p ON c.planId = p.id 
-        WHERE c.planStatus = 'active'
+        JOIN plans p ON c.plan_id = p.id 
+        WHERE c.plan_status = 'active'
       `);
       const monthlyRevenue = parseFloat((revenueResult as any)[0][0]?.total || '0');
 

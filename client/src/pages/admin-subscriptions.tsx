@@ -7,6 +7,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -112,6 +115,9 @@ export default function AdminSubscriptions() {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
   const [isReactivateDialogOpen, setIsReactivateDialogOpen] = useState(false);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -214,15 +220,43 @@ export default function AdminSubscriptions() {
     );
   }
 
-  const activeSubscriptions = subscriptions?.filter(sub => sub.stripeStatus === 'active') || [];
-  const pastDueSubscriptions = subscriptions?.filter(sub => sub.stripeStatus === 'past_due') || [];
-  const canceledSubscriptions = subscriptions?.filter(sub => sub.stripeStatus === 'canceled') || [];
-  const totalRevenue = subscriptions?.reduce((total, sub) => {
-    if (sub.stripeStatus === 'active' && sub.amount) {
+  // Função para filtrar assinaturas por data e status
+  const filteredSubscriptions = subscriptions?.filter(sub => {
+    // Filtro por status
+    if (statusFilter !== "all" && sub.stripeStatus !== statusFilter) {
+      return false;
+    }
+
+    // Filtro por data de início
+    if (startDate && sub.currentPeriodStart) {
+      const subDate = new Date(sub.currentPeriodStart);
+      const filterDate = new Date(startDate);
+      if (subDate < filterDate) {
+        return false;
+      }
+    }
+
+    // Filtro por data de fim
+    if (endDate && sub.currentPeriodStart) {
+      const subDate = new Date(sub.currentPeriodStart);
+      const filterDate = new Date(endDate);
+      if (subDate > filterDate) {
+        return false;
+      }
+    }
+
+    return true;
+  }) || [];
+
+  const activeSubscriptions = filteredSubscriptions.filter(sub => sub.stripeStatus === 'active');
+  const pastDueSubscriptions = filteredSubscriptions.filter(sub => sub.stripeStatus === 'past_due');
+  const canceledSubscriptions = filteredSubscriptions.filter(sub => sub.stripeStatus === 'canceled');
+  const totalRevenue = activeSubscriptions.reduce((total, sub) => {
+    if (sub.amount) {
       return total + sub.amount;
     }
     return total;
-  }, 0) || 0;
+  }, 0);
 
   return (
     <div className="container mx-auto px-4 py-8">
