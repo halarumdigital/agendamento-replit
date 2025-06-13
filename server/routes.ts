@@ -7229,6 +7229,27 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
     }
   });
 
+  // Admin companies route for subscription testing
+  app.get("/api/admin/companies", isAuthenticated, async (req, res) => {
+    try {
+      const companies = await storage.getCompanies();
+      // Add subscription fields for testing interface
+      const companiesWithSubscriptionData = companies.map(company => ({
+        id: company.id,
+        name: company.fantasyName,
+        email: company.email,
+        is_active: company.isActive,
+        plan_status: company.isActive ? 'active' : 'suspended',
+        stripe_customer_id: company.stripeCustomerId || null,
+        stripe_subscription_id: company.stripeSubscriptionId || null
+      }));
+      res.json(companiesWithSubscriptionData);
+    } catch (error) {
+      console.error("Error getting companies for admin:", error);
+      res.status(500).json({ message: "Erro ao buscar empresas" });
+    }
+  });
+
   // Admin management routes
   app.get("/api/admins", isAuthenticated, async (req, res) => {
     try {
