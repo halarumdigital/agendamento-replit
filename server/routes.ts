@@ -6795,6 +6795,81 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
     }
   });
 
+  // Subscription payment processing route
+  app.post("/api/subscriptions/process-payment", requireCompanyAuth, async (req, res) => {
+    try {
+      const { cardNumber, cardName, expiryMonth, expiryYear, cvv, cpf, planId } = req.body;
+      const companyId = (req.session as any).companyId;
+
+      // Validate required fields
+      if (!cardNumber || !cardName || !expiryMonth || !expiryYear || !cvv || !cpf || !planId) {
+        return res.status(400).json({ message: "Todos os campos são obrigatórios" });
+      }
+
+      // Get plan details
+      const [plan] = await db.execute(sql`
+        SELECT * FROM plans WHERE id = ${planId} AND is_active = 1
+      `);
+
+      if (!plan.length) {
+        return res.status(404).json({ message: "Plano não encontrado" });
+      }
+
+      const selectedPlan = (plan as any)[0];
+
+      // Here you would integrate with your payment processor
+      // For now, we'll simulate payment processing
+      console.log("Processing payment for plan:", selectedPlan.name);
+      console.log("Card ending in:", cardNumber.slice(-4));
+
+      // Simulate payment processing delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // In a real implementation, you would:
+      // 1. Validate card details
+      // 2. Process payment through payment gateway
+      // 3. Handle payment response
+      
+      // For demo purposes, we'll assume payment is successful
+      const paymentSuccessful = true;
+
+      if (paymentSuccessful) {
+        // Update company plan
+        await db.execute(sql`
+          UPDATE companies 
+          SET plan_id = ${planId}, plan_status = 'active', updated_at = NOW()
+          WHERE id = ${companyId}
+        `);
+
+        // Log payment transaction (optional)
+        const transactionId = `TXN_${Date.now()}_${companyId}`;
+        
+        res.json({
+          success: true,
+          message: "Pagamento processado com sucesso! Seu plano foi ativado.",
+          transactionId,
+          plan: {
+            id: selectedPlan.id,
+            name: selectedPlan.name,
+            price: selectedPlan.price
+          }
+        });
+      } else {
+        res.status(400).json({
+          success: false,
+          message: "Pagamento rejeitado. Verifique os dados do cartão e tente novamente."
+        });
+      }
+
+    } catch (error) {
+      console.error("Error processing payment:", error);
+      res.status(500).json({ 
+        success: false,
+        message: "Erro interno do servidor ao processar pagamento" 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   // Admin management routes
   app.get("/api/admins", isAuthenticated, async (req, res) => {
