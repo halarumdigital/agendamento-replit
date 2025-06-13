@@ -7503,15 +7503,15 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
       const companyId = (req.session as any).companyId;
       
       const query = `
-        SELECT a.id, a.title, a.message, a.active, a.created_at as createdAt
+        SELECT DISTINCT a.id, a.title, a.message, a.is_active, a.created_at as createdAt
         FROM admin_alerts a
         LEFT JOIN alert_companies ac ON a.id = ac.alert_id
-        WHERE a.active = 1 
-        AND (ac.company_id = ? OR ac.company_id IS NULL)
+        WHERE a.is_active = true 
+        AND (ac.company_id = ${companyId} OR ac.company_id IS NULL)
         ORDER BY a.created_at DESC
       `;
       
-      const [alerts] = await db.execute(query, [companyId]);
+      const [alerts] = await db.execute(query);
       res.json(alerts);
     } catch (error: any) {
       console.error("Error fetching company alerts:", error);
