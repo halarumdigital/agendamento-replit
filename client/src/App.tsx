@@ -148,10 +148,20 @@ function Router() {
       
       {/* Admin Login Routes */}
       <Route path="/login" component={Login} />
-      <Route path="/administrador" component={isAdminAuthenticated ? () => <AdminLayout><Dashboard /></AdminLayout> : Login} />
+      <Route path="/administrador">
+        {isAdminLoading ? (
+          <div className="min-h-screen flex items-center justify-center">
+            <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+          </div>
+        ) : isAdminAuthenticated ? (
+          <AdminLayout><Dashboard /></AdminLayout>
+        ) : (
+          <Login />
+        )}
+      </Route>
       
       {/* Protected Admin Routes */}
-      {isAdminAuthenticated && (
+      {!isAdminLoading && (
         <>
           <Route path="/admin/companies">
             <AdminLayout>
@@ -209,9 +219,13 @@ function Router() {
             </AdminLayout>
           </Route>
           <Route path="/administrador/stripe-planos">
-            <AdminLayout>
-              <AdminStripePlans />
-            </AdminLayout>
+            {isAdminAuthenticated ? (
+              <AdminLayout>
+                <AdminStripePlans />
+              </AdminLayout>
+            ) : (
+              <Login />
+            )}
           </Route>
         </>
       )}
