@@ -202,14 +202,17 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
     console.log('🎯 Creating appointment from AI confirmation');
     console.log('🔍 AI Response to analyze:', aiResponse);
     
-    // CRITICAL: Check if AI is asking for confirmation or still collecting data
-    const isAskingForConfirmation = /(?:está tudo correto|responda sim|confirme|confirmar)/i.test(aiResponse);
-    const isCollectingData = /(?:qual seu nome|qual serviço|qual profissional|qual horário|qual dia|telefone)/i.test(aiResponse);
+    // Check if AI is confirming an appointment (has completed details)
+    const hasAppointmentConfirmation = /(?:agendamento foi confirmado|agendamento está confirmado|confirmado com sucesso)/i.test(aiResponse);
+    const hasCompleteDetails = /(?:profissional|data|horário).*(?:profissional|data|horário).*(?:profissional|data|horário)/i.test(aiResponse);
     
-    if (isAskingForConfirmation || isCollectingData) {
-      console.log('❌ AI is still asking for confirmation or collecting data. Not creating appointment.');
+    // Only proceed if AI is confirming appointment with complete details
+    if (!hasAppointmentConfirmation && !hasCompleteDetails) {
+      console.log('❌ IA não está confirmando agendamento com detalhes completos. Não criando agendamento.');
       return;
     }
+    
+    console.log('✅ IA confirmando agendamento com detalhes completos');
     
     // Get conversation history to extract appointment data from user messages
     const messages = await storage.getMessagesByConversation(conversationId);
