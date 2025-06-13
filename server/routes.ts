@@ -2383,7 +2383,7 @@ INSTRUÇÕES OBRIGATÓRIAS:
                 });
                 console.log('✅ AI response saved to conversation history');
                 
-                // Check for appointment confirmation in AI response OR if user message has confirmation intent
+                // Check for appointment confirmation in AI response
                 const confirmationKeywords = [
                   'agendamento está confirmado',
                   'confirmado para',
@@ -2394,44 +2394,19 @@ INSTRUÇÕES OBRIGATÓRIAS:
                   'confirmado'
                 ];
                 
-                const userConfirmationKeywords = [
-                  'confirmo o agendamento',
-                  'confirmo agendamento',
-                  'quero agendar',
-                  'agendar para',
-                  'marcar para'
-                ];
-                
                 const hasConfirmation = confirmationKeywords.some(keyword => 
                   aiResponse.toLowerCase().includes(keyword.toLowerCase())
-                ) || userConfirmationKeywords.some(keyword =>
-                  messageText.toLowerCase().includes(keyword.toLowerCase())
                 );
-                
-                // Check if message has complete appointment data
-                const hasAppointmentData = messageText.toLowerCase().includes('magnus') && 
-                                         messageText.toLowerCase().includes('escova') &&
-                                         messageText.toLowerCase().includes('sábado') &&
-                                         messageText.toLowerCase().includes('10:00') &&
-                                         messageText.toLowerCase().includes('gilliard');
                 
                 console.log('🔍 AI Response analysis:', {
                   hasConfirmation,
-                  hasAppointmentData,
+                  hasAppointmentData: false,
                   aiResponse: aiResponse.substring(0, 100) + '...'
                 });
                 
-                if (hasConfirmation || hasAppointmentData) {
-                  console.log('🎯 Creating appointment from confirmation...');
-                  try {
-                    await createAppointmentFromAIConfirmation(conversation.id, company.id, aiResponse, phoneNumber);
-                  } catch (error) {
-                    console.error('❌ Error creating appointment:', error);
-                  }
-                } else {
-                  console.log('🔍 Checking conversation for appointment data...');
-                  await createAppointmentFromConversation(conversation.id, company.id);
-                }
+                // Always check conversation for appointment data after AI response
+                console.log('🔍 Checking conversation for appointment data...');
+                await createAppointmentFromConversation(conversation.id, company.id);
                 
               } else {
                 const errorText = await evolutionResponse.text();
