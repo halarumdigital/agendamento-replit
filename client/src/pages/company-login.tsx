@@ -110,10 +110,18 @@ export default function CompanyLogin() {
       setLocation("/dashboard");
     },
     onError: (error: any) => {
-      const errorMessage = "Email ou senha errada";
+      let errorMessage = "Email ou senha errada";
+      let errorTitle = "Erro no login";
+      
+      // Verificar se é erro de assinatura suspensa
+      if (error.status === 402) {
+        errorMessage = "Sua assinatura está suspensa. Entre em contato com o suporte para reativar o acesso.";
+        errorTitle = "Acesso Bloqueado";
+      }
+      
       setLoginError(errorMessage);
       toast({
-        title: "Erro no login",
+        title: errorTitle,
         description: errorMessage,
         variant: "destructive",
       });
