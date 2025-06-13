@@ -77,6 +77,9 @@ app.use((req, res, next) => {
   // Ensure Stripe columns exist
   await ensureStripeColumns();
   
+  // Ensure admin alerts tables exist
+  await ensureAdminAlertsTables();
+  
   // Start campaign scheduler
   startCampaignScheduler();
   
