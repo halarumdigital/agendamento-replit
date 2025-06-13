@@ -13,6 +13,7 @@ import { sql, eq, and, desc, asc, sum, count, gte, lte } from "drizzle-orm";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { asaasService } from "./services/asaas";
 import { 
   getLoyaltyCampaignsByCompany, 
   createLoyaltyCampaign, 
@@ -6806,67 +6807,162 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
         return res.status(400).json({ message: "Todos os campos são obrigatórios" });
       }
 
+      // Validate CPF
+      if (!asaasService.isValidCpf(cpf)) {
+        return res.status(400).json({ message: "CPF inválido" });
+      }
+
+      // Get company details
+      const [companyResult] = await db.execute(sql`
+        SELECT * FROM companies WHERE id = ${companyId}
+      `);
+
+      if (!companyResult.length) {
+        return res.status(404).json({ message: "Empresa não encontrada" });
+      }
+
+      const company = (companyResult as any)[0];
+
       // Get plan details
-      const [plan] = await db.execute(sql`
+      const [planResult] = await db.execute(sql`
         SELECT * FROM plans WHERE id = ${planId} AND is_active = 1
       `);
 
-      if (!plan.length) {
+      if (!planResult.length) {
         return res.status(404).json({ message: "Plano não encontrado" });
       }
 
-      const selectedPlan = (plan as any)[0];
+      const selectedPlan = (planResult as any)[0];
 
-      // Here you would integrate with your payment processor
-      // For now, we'll simulate payment processing
-      console.log("Processing payment for plan:", selectedPlan.name);
-      console.log("Card ending in:", cardNumber.slice(-4));
+      console.log(`🔄 Processando pagamento - Empresa: ${company.fantasy_name}, Plano: ${selectedPlan.name}`);
 
-      // Simulate payment processing delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Check if company already has an Asaas customer ID
+      let asaasCustomerId = company.asaas_customer_id;
 
-      // In a real implementation, you would:
-      // 1. Validate card details
-      // 2. Process payment through payment gateway
-      // 3. Handle payment response
-      
-      // For demo purposes, we'll assume payment is successful
-      const paymentSuccessful = true;
+      if (!asaasCustomerId) {
+        // Create new customer in Asaas
+        const customerData = {
+          name: company.fantasy_name || company.social_reason,
+          cpfCnpj: asaasService.formatCpf(cpf),
+          email: company.email,
+          phone: company.phone || undefined,
+          externalReference: `company_${companyId}`,
+          observations: `Cliente criado via sistema de assinatura - Plano: ${selectedPlan.name}`
+        };
 
-      if (paymentSuccessful) {
-        // Update company plan
+        console.log('📝 Criando cliente no Asaas:', customerData);
+
+        const asaasCustomer = await asaasService.createCustomer(customerData);
+        asaasCustomerId = asaasCustomer.id;
+
+        // Save Asaas customer ID in company record
         await db.execute(sql`
           UPDATE companies 
-          SET plan_id = ${planId}, plan_status = 'active', updated_at = NOW()
+          SET asaas_customer_id = ${asaasCustomerId}
           WHERE id = ${companyId}
         `);
 
-        // Log payment transaction (optional)
-        const transactionId = `TXN_${Date.now()}_${companyId}`;
-        
+        console.log(`✅ Cliente criado no Asaas com ID: ${asaasCustomerId}`);
+      }
+
+      // Create payment in Asaas
+      const dueDate = new Date();
+      dueDate.setDate(dueDate.getDate() + 1); // Due tomorrow
+
+      const paymentData = {
+        customer: asaasCustomerId,
+        billingType: 'CREDIT_CARD' as const,
+        value: parseFloat(selectedPlan.price),
+        dueDate: dueDate.toISOString().split('T')[0], // YYYY-MM-DD format
+        description: `Assinatura ${selectedPlan.name} - ${company.fantasy_name || company.social_reason}`,
+        externalReference: `subscription_${companyId}_${planId}_${Date.now()}`,
+        creditCard: {
+          holderName: cardName,
+          number: cardNumber.replace(/\s/g, ''),
+          expiryMonth: expiryMonth,
+          expiryYear: expiryYear,
+          ccv: cvv
+        },
+        creditCardHolderInfo: {
+          name: cardName,
+          email: company.email || '',
+          cpfCnpj: asaasService.formatCpf(cpf),
+          postalCode: company.zip_code || '00000000',
+          addressNumber: company.number || 'S/N',
+          addressComplement: company.complement || undefined,
+          phone: company.phone || '0000000000'
+        }
+      };
+
+      console.log('💳 Processando pagamento no Asaas...');
+
+      const asaasPayment = await asaasService.createPayment(paymentData);
+
+      console.log(`✅ Pagamento criado no Asaas - ID: ${asaasPayment.id}, Status: ${asaasPayment.status}`);
+
+      // Check payment status
+      if (asaasPayment.status === 'CONFIRMED' || asaasPayment.status === 'RECEIVED') {
+        // Payment successful - update company plan
+        await db.execute(sql`
+          UPDATE companies 
+          SET plan_id = ${planId}, 
+              plan_status = 'active',
+              asaas_payment_id = ${asaasPayment.id},
+              updated_at = NOW()
+          WHERE id = ${companyId}
+        `);
+
+        console.log(`🎉 Plano ${selectedPlan.name} ativado para empresa ${companyId}`);
+
         res.json({
           success: true,
           message: "Pagamento processado com sucesso! Seu plano foi ativado.",
-          transactionId,
+          payment: {
+            id: asaasPayment.id,
+            status: asaasPayment.status,
+            value: asaasPayment.value,
+            dueDate: asaasPayment.dueDate
+          },
           plan: {
             id: selectedPlan.id,
             name: selectedPlan.name,
             price: selectedPlan.price
           }
         });
+      } else if (asaasPayment.status === 'PENDING') {
+        res.json({
+          success: true,
+          message: "Pagamento está sendo processado. Aguarde a confirmação.",
+          payment: {
+            id: asaasPayment.id,
+            status: asaasPayment.status,
+            value: asaasPayment.value,
+            dueDate: asaasPayment.dueDate
+          }
+        });
       } else {
         res.status(400).json({
           success: false,
-          message: "Pagamento rejeitado. Verifique os dados do cartão e tente novamente."
+          message: "Pagamento rejeitado. Verifique os dados do cartão e tente novamente.",
+          status: asaasPayment.status
         });
       }
 
     } catch (error) {
-      console.error("Error processing payment:", error);
-      res.status(500).json({ 
-        success: false,
-        message: "Erro interno do servidor ao processar pagamento" 
-      });
+      console.error("❌ Erro ao processar pagamento:", error);
+      
+      // Check if error is from Asaas API
+      if (error instanceof Error) {
+        res.status(500).json({ 
+          success: false,
+          message: error.message.includes('Asaas') ? error.message : "Erro interno do servidor ao processar pagamento"
+        });
+      } else {
+        res.status(500).json({ 
+          success: false,
+          message: "Erro interno do servidor ao processar pagamento" 
+        });
+      }
     }
   });
 
