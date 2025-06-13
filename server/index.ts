@@ -11,6 +11,7 @@ import { ensureCustomHtmlColumn } from "./ensure-custom-html-column";
 import { ensureCustomDomainColumn } from "./ensure-custom-domain-column";
 import { ensureAddressColumns } from "./ensure-address-columns";
 import { ensureStripeColumns } from "./ensure-stripe-columns";
+import { ensureAdminAlertsTables } from "./ensure-admin-alerts-tables";
 import { db } from "./db";
 import path from "path";
 

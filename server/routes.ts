@@ -7738,11 +7738,11 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
   // Admin alerts management routes
   app.get("/api/admin/alerts", isAuthenticated, async (req, res) => {
     try {
-      const result = await pool.query(`
+      const [rows] = await pool.execute(`
         SELECT * FROM admin_alerts 
         ORDER BY created_at DESC
       `);
-      res.json(result.rows);
+      res.json(rows);
     } catch (error) {
       console.error("Error getting admin alerts:", error);
       res.status(500).json({ message: "Erro ao buscar alertas" });
@@ -7757,12 +7757,11 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
         return res.status(400).json({ message: "Título e mensagem são obrigatórios" });
       }
 
-      const result = await pool.query(`
+      const [result] = await pool.execute(`
         INSERT INTO admin_alerts (
           title, message, type, show_to_all_companies, target_company_ids, 
           start_date, end_date, is_active
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-        RETURNING *
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `, [
         title,
         message,
@@ -7776,7 +7775,7 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
 
       res.status(201).json({ 
         message: "Alerta criado com sucesso",
-        alert: result.rows[0]
+        id: (result as any).insertId
       });
     } catch (error) {
       console.error("Error creating admin alert:", error);
@@ -7789,18 +7788,18 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
       const { id } = req.params;
       const { title, message, type, showToAllCompanies, targetCompanyIds, startDate, endDate, isActive } = req.body;
       
-      await pool.query(`
+      await pool.execute(`
         UPDATE admin_alerts SET
-          title = $1,
-          message = $2,
-          type = $3,
-          show_to_all_companies = $4,
-          target_company_ids = $5,
-          start_date = $6,
-          end_date = $7,
-          is_active = $8,
+          title = ?,
+          message = ?,
+          type = ?,
+          show_to_all_companies = ?,
+          target_company_ids = ?,
+          start_date = ?,
+          end_date = ?,
+          is_active = ?,
           updated_at = CURRENT_TIMESTAMP
-        WHERE id = $9
+        WHERE id = ?
       `, [
         title,
         message,
@@ -7824,7 +7823,7 @@ Importante: Você está representando a empresa "${company.fantasyName}". Manten
     try {
       const { id } = req.params;
       
-      await pool.query(`DELETE FROM admin_alerts WHERE id = $1`, [id]);
+      await pool.execute(`DELETE FROM admin_alerts WHERE id = ?`, [id]);
 
       res.json({ message: "Alerta removido com sucesso" });
     } catch (error) {
