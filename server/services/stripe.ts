@@ -1,23 +1,26 @@
 import Stripe from 'stripe';
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('STRIPE_SECRET_KEY must be set');
-}
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2023-10-16',
-});
+const stripe = process.env.STRIPE_SECRET_KEY 
+  ? new Stripe(process.env.STRIPE_SECRET_KEY)
+  : null;
 
 export class StripeService {
+  private checkStripeAvailable() {
+    if (!stripe) {
+      throw new Error('Stripe não está configurado. Configure STRIPE_SECRET_KEY para usar funcionalidades de pagamento.');
+    }
+  }
+
   async createCustomer(data: {
     email: string;
     name: string;
     phone?: string;
     metadata?: Record<string, string>;
   }) {
+    this.checkStripeAvailable();
     console.log('🔄 Criando cliente no Stripe:', data.name);
     
-    const customer = await stripe.customers.create({
+    const customer = await stripe!.customers.create({
       email: data.email,
       name: data.name,
       phone: data.phone,
@@ -35,6 +38,7 @@ export class StripeService {
     paymentMethodId?: string;
     metadata?: Record<string, string>;
   }) {
+    this.checkStripeAvailable();
     console.log('🔄 Criando assinatura no Stripe para cliente:', data.customerId);
 
     const subscriptionData: Stripe.SubscriptionCreateParams = {
@@ -54,7 +58,7 @@ export class StripeService {
       subscriptionData.default_payment_method = data.paymentMethodId;
     }
 
-    const subscription = await stripe.subscriptions.create(subscriptionData);
+    const subscription = await stripe!.subscriptions.create(subscriptionData);
 
     console.log('✅ Assinatura criada no Stripe:', subscription.id);
     return subscription;
