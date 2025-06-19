@@ -164,9 +164,18 @@ export default function CompanySubscription() {
             Voltar aos Planos
           </Button>
           
-          <Elements stripe={stripePromise} options={{ clientSecret }}>
-            <CheckoutForm selectedPlan={selectedPlan} />
-          </Elements>
+          {stripePromise ? (
+            <Elements stripe={stripePromise} options={{ clientSecret }}>
+              <CheckoutForm selectedPlan={selectedPlan} />
+            </Elements>
+          ) : (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Stripe não está configurado. Configure VITE_STRIPE_PUBLIC_KEY para processar pagamentos.
+              </AlertDescription>
+            </Alert>
+          )}
         </div>
       </div>
     );

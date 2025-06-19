@@ -75,9 +75,14 @@ export default function CompanyLogin() {
       root.style.setProperty('--ring', `hsl(${primaryHsl})`);
       
       // Criar versão clara para accent
-      const [h, s] = primaryHsl.split(',');
-      root.style.setProperty('--accent', `hsl(${h}, ${s}, 96%)`);
-      root.style.setProperty('--accent-foreground', `hsl(${primaryHsl})`);
+      if (primaryHsl) {
+        const parts = primaryHsl.split(',');
+        if (parts.length >= 2) {
+          const [h, s] = parts;
+          root.style.setProperty('--accent', `hsl(${h}, ${s}, 96%)`);
+          root.style.setProperty('--accent-foreground', `hsl(${primaryHsl})`);
+        }
+      }
     }
   }, [settings]);
   

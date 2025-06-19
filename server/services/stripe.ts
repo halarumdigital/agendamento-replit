@@ -70,9 +70,10 @@ export class StripeService {
     customerId?: string;
     metadata?: Record<string, string>;
   }) {
+    this.checkStripeAvailable();
     console.log('🔄 Criando PaymentIntent no Stripe:', data.amount);
 
-    const paymentIntent = await stripe.paymentIntents.create({
+    const paymentIntent = await stripe!.paymentIntents.create({
       amount: Math.round(data.amount * 100), // Convert to cents
       currency: data.currency || 'brl',
       customer: data.customerId,
@@ -87,15 +88,17 @@ export class StripeService {
   }
 
   async getSubscription(subscriptionId: string) {
-    return await stripe.subscriptions.retrieve(subscriptionId, {
+    this.checkStripeAvailable();
+    return await stripe!.subscriptions.retrieve(subscriptionId, {
       expand: ['latest_invoice.payment_intent'],
     });
   }
 
   async cancelSubscription(subscriptionId: string) {
+    this.checkStripeAvailable();
     console.log('🔄 Cancelando assinatura no Stripe:', subscriptionId);
     
-    const subscription = await stripe.subscriptions.cancel(subscriptionId);
+    const subscription = await stripe!.subscriptions.cancel(subscriptionId);
     
     console.log('✅ Assinatura cancelada no Stripe:', subscriptionId);
     return subscription;
@@ -105,6 +108,7 @@ export class StripeService {
     priceId?: string;
     metadata?: Record<string, string>;
   }) {
+    this.checkStripeAvailable();
     console.log('🔄 Atualizando assinatura no Stripe:', subscriptionId);
 
     const updateData: Stripe.SubscriptionUpdateParams = {
@@ -112,14 +116,14 @@ export class StripeService {
     };
 
     if (data.priceId) {
-      const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+      const subscription = await stripe!.subscriptions.retrieve(subscriptionId);
       updateData.items = [{
         id: subscription.items.data[0].id,
         price: data.priceId,
       }];
     }
 
-    const subscription = await stripe.subscriptions.update(subscriptionId, updateData);
+    const subscription = await stripe!.subscriptions.update(subscriptionId, updateData);
     
     console.log('✅ Assinatura atualizada no Stripe:', subscriptionId);
     return subscription;
@@ -134,6 +138,7 @@ export class StripeService {
       intervalCount?: number;
     };
   }) {
+    this.checkStripeAvailable();
     console.log('🔄 Criando preço no Stripe para produto:', data.productId);
 
     const priceData: Stripe.PriceCreateParams = {
@@ -149,7 +154,7 @@ export class StripeService {
       };
     }
 
-    const price = await stripe.prices.create(priceData);
+    const price = await stripe!.prices.create(priceData);
     
     console.log('✅ Preço criado no Stripe:', price.id);
     return price;
@@ -160,9 +165,10 @@ export class StripeService {
     description?: string;
     metadata?: Record<string, string>;
   }) {
+    this.checkStripeAvailable();
     console.log('🔄 Criando produto no Stripe:', data.name);
 
-    const product = await stripe.products.create({
+    const product = await stripe!.products.create({
       name: data.name,
       description: data.description,
       metadata: data.metadata || {},
@@ -173,6 +179,7 @@ export class StripeService {
   }
 
   async retrieveSubscription(subscriptionId: string, expand?: string[]) {
+    this.checkStripeAvailable();
     console.log('🔄 Buscando assinatura no Stripe:', subscriptionId);
     
     const params: Stripe.SubscriptionRetrieveParams = {};
@@ -180,14 +187,15 @@ export class StripeService {
       params.expand = expand;
     }
     
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId, params);
+    const subscription = await stripe!.subscriptions.retrieve(subscriptionId, params);
     return subscription;
   }
 
   async updateSubscriptionCancellation(subscriptionId: string, cancelAtPeriodEnd: boolean) {
+    this.checkStripeAvailable();
     console.log('🔄 Atualizando cancelamento da assinatura:', subscriptionId);
     
-    const subscription = await stripe.subscriptions.update(subscriptionId, {
+    const subscription = await stripe!.subscriptions.update(subscriptionId, {
       cancel_at_period_end: cancelAtPeriodEnd
     });
     
@@ -196,13 +204,14 @@ export class StripeService {
   }
 
   async handleWebhook(rawBody: string, signature: string) {
+    this.checkStripeAvailable();
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
     if (!webhookSecret) {
       throw new Error('STRIPE_WEBHOOK_SECRET must be set');
     }
 
     try {
-      const event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
+      const event = stripe!.webhooks.constructEvent(rawBody, signature, webhookSecret);
       return event;
     } catch (error) {
       console.error('❌ Erro ao verificar webhook do Stripe:', error);
@@ -212,7 +221,8 @@ export class StripeService {
 
   // Expor a instância do Stripe para operações diretas quando necessário
   get stripe() {
-    return stripe;
+    this.checkStripeAvailable();
+    return stripe!;
   }
 }
 
