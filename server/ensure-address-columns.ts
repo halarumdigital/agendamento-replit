@@ -2,9 +2,9 @@ import { pool } from "./db";
 
 export async function ensureAddressColumns() {
   try {
-    const dbName = process.env.PGDATABASE;
+    const dbName = process.env.MYSQL_DATABASE || process.env.DB_NAME || process.env.DATABASE || process.env.PGDATABASE;
     if (!dbName) {
-      throw new Error("A variável de ambiente PGDATABASE não está definida.");
+      throw new Error("Nenhuma variável de ambiente de nome de banco de dados está definida. Defina MYSQL_DATABASE, DB_NAME, DATABASE ou PGDATABASE no seu .env.");
     }
     console.log('✅ Checking address columns in companies table...');
     
