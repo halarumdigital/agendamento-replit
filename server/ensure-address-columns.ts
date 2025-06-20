@@ -2,6 +2,10 @@ import { pool } from "./db";
 
 export async function ensureAddressColumns() {
   try {
+    const dbName = process.env.PGDATABASE;
+    if (!dbName) {
+      throw new Error("A variável de ambiente PGDATABASE não está definida.");
+    }
     console.log('✅ Checking address columns in companies table...');
     
     const columnsToAdd = ['phone', 'zip_code', 'number', 'neighborhood', 'city', 'state'];
@@ -21,7 +25,7 @@ export async function ensureAddressColumns() {
           FROM INFORMATION_SCHEMA.COLUMNS 
           WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'companies' 
           AND COLUMN_NAME = ?
-        `, [process.env.PGDATABASE, columnName]);
+        `, [dbName, columnName]);
 
         if ((columns as any[]).length === 0) {
           console.log(`Adding ${columnName} column to companies table...`);
