@@ -323,6 +323,29 @@ export default function AdminSupport() {
     setIsTypeDialogOpen(true);
   };
 
+  const handleStatusSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingStatus) {
+      updateStatusMutation.mutate({
+        id: editingStatus.id,
+        data: ticketStatusForm
+      });
+    } else {
+      createStatusMutation.mutate(ticketStatusForm);
+    }
+  };
+
+  const openStatusDialog = (status?: SupportTicketStatus) => {
+    if (status) {
+      setEditingStatus(status);
+      setTicketStatusForm(status);
+    } else {
+      setEditingStatus(null);
+      setTicketStatusForm({ isActive: true, sortOrder: 0, color: '#6b7280' });
+    }
+    setIsStatusDialogOpen(true);
+  };
+
   return (
     <div className="container mx-auto p-6">
       <div className="flex items-center gap-2 mb-6">
@@ -331,7 +354,7 @@ export default function AdminSupport() {
       </div>
 
       <Tabs defaultValue="tickets" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="tickets" className="flex items-center gap-2">
             <Ticket className="h-4 w-4" />
             Tickets de Atendimento
@@ -339,6 +362,10 @@ export default function AdminSupport() {
           <TabsTrigger value="types" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
             Tipos de Tickets
+          </TabsTrigger>
+          <TabsTrigger value="statuses" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Status dos Tickets
           </TabsTrigger>
         </TabsList>
 
@@ -466,6 +493,90 @@ export default function AdminSupport() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="statuses" className="space-y-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Status dos Tickets</CardTitle>
+              <Button onClick={() => openStatusDialog()} className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Novo Status
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {statusesLoading ? (
+                <div className="text-center py-4">Carregando status...</div>
+              ) : (
+                <div className="space-y-2">
+                  {(ticketStatuses as SupportTicketStatus[]).map((status: SupportTicketStatus) => (
+                    <div key={status.id} className="flex items-center justify-between p-3 border rounded">
+                      <div className="flex items-center gap-3">
+                        <div 
+                          className="w-4 h-4 rounded-full border" 
+                          style={{ backgroundColor: status.color }}
+                        />
+                        <div>
+                          <div className="font-medium">{status.name}</div>
+                          {status.description && (
+                            <div className="text-sm text-gray-600">{status.description}</div>
+                          )}
+                          <div className="text-xs text-gray-500">
+                            Ordem: {status.sortOrder} | {status.isActive ? 'Ativo' : 'Inativo'}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openStatusDialog(status)}
+                          className="flex items-center gap-1"
+                        >
+                          <Edit2 className="h-3 w-3" />
+                          Editar
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex items-center gap-1 text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                              Excluir
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Tem certeza que deseja excluir o status "{status.name}"? Esta ação não pode ser desfeita.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => deleteStatusMutation.mutate(status.id)}
+                                className="bg-red-600 hover:bg-red-700"
+                              >
+                                Excluir
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </div>
+                  ))}
+                  {ticketStatuses.length === 0 && (
+                    <p className="text-center text-gray-500 py-8">
+                      Nenhum status cadastrado
+                    </p>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       {/* Ticket Management Dialog */}
@@ -574,6 +685,78 @@ export default function AdminSupport() {
                 disabled={createTypeMutation.isPending || updateTypeMutation.isPending}
               >
                 {editingType ? 'Atualizar' : 'Criar'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Ticket Status Form Dialog */}
+      <Dialog open={isStatusDialogOpen} onOpenChange={setIsStatusDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editingStatus ? 'Editar Status de Ticket' : 'Novo Status de Ticket'}
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleStatusSubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="name">Nome *</Label>
+              <Input
+                id="name"
+                value={ticketStatusForm.name || ''}
+                onChange={(e) => setTicketStatusForm(prev => ({ ...prev, name: e.target.value }))}
+                required
+                placeholder="Nome do status"
+              />
+            </div>
+            <div>
+              <Label htmlFor="description">Descrição</Label>
+              <Textarea
+                id="description"
+                value={ticketStatusForm.description || ''}
+                onChange={(e) => setTicketStatusForm(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Descrição do status"
+              />
+            </div>
+            <div>
+              <Label htmlFor="color">Cor *</Label>
+              <Input
+                id="color"
+                type="color"
+                value={ticketStatusForm.color || '#6b7280'}
+                onChange={(e) => setTicketStatusForm(prev => ({ ...prev, color: e.target.value }))}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="sortOrder">Ordem de Exibição *</Label>
+              <Input
+                id="sortOrder"
+                type="number"
+                value={ticketStatusForm.sortOrder || 0}
+                onChange={(e) => setTicketStatusForm(prev => ({ ...prev, sortOrder: parseInt(e.target.value) }))}
+                required
+                min="0"
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="isActive"
+                checked={ticketStatusForm.isActive || false}
+                onCheckedChange={(checked) => setTicketStatusForm(prev => ({ ...prev, isActive: checked }))}
+              />
+              <Label htmlFor="isActive">Ativo</Label>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setIsStatusDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={createStatusMutation.isPending || updateStatusMutation.isPending}
+              >
+                {editingStatus ? 'Atualizar' : 'Criar'}
               </Button>
             </div>
           </form>
