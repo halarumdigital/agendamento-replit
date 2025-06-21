@@ -4956,6 +4956,44 @@ const broadcastEvent = (eventData: any) => {
     }
   });
 
+  // Route to add additional information to existing ticket
+  app.post('/api/company/support-tickets/:ticketId/add-info', isCompanyAuthenticated, async (req: any, res) => {
+    try {
+      const ticketId = parseInt(req.params.ticketId);
+      const companyId = req.session.companyId;
+      const { additionalInfo } = req.body;
+
+      if (!additionalInfo || !additionalInfo.trim()) {
+        return res.status(400).json({ message: "Informação adicional é obrigatória" });
+      }
+
+      // Verify ticket belongs to company
+      const [ticket] = await pool.execute(
+        'SELECT id, description FROM support_tickets WHERE id = ? AND company_id = ?',
+        [ticketId, companyId]
+      ) as any;
+
+      if (!ticket.length) {
+        return res.status(404).json({ message: "Ticket não encontrado" });
+      }
+
+      const currentDescription = ticket[0].description || '';
+      const separator = currentDescription.trim() ? '\n\n--- Informação Adicional ---\n' : '';
+      const updatedDescription = currentDescription + separator + additionalInfo.trim();
+
+      // Update ticket with additional information
+      await pool.execute(
+        'UPDATE support_tickets SET description = ?, updated_at = NOW() WHERE id = ?',
+        [updatedDescription, ticketId]
+      );
+
+      res.json({ message: "Informação adicional adicionada com sucesso" });
+    } catch (error) {
+      console.error("Error adding additional info to ticket:", error);
+      res.status(500).json({ message: "Erro ao adicionar informação adicional" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

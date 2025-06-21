@@ -66,10 +66,32 @@ export default function CompanySupport() {
     queryKey: ['/api/company/support-ticket-types'],
   });
 
-  // Fetch comments for selected ticket
-  const { data: ticketComments = [], refetch: refetchComments } = useQuery({
-    queryKey: ['/api/company/support-tickets', selectedTicket?.id, 'comments'],
-    enabled: !!selectedTicket?.id,
+  // Mutation for adding additional info to ticket
+  const addInfoMutation = useMutation({
+    mutationFn: async (data: { ticketId: number; additionalInfo: string }) => {
+      const response = await fetch(`/api/company/support-tickets/${data.ticketId}/add-info`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ additionalInfo: data.additionalInfo }),
+      });
+      if (!response.ok) throw new Error('Erro ao adicionar informação');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/company/support-tickets'] });
+      toast({
+        title: "Informação adicionada",
+        description: "Suas informações adicionais foram salvas com sucesso.",
+      });
+      setAdditionalInfo('');
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Não foi possível adicionar as informações.",
+        variant: "destructive",
+      });
+    },
   });
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -440,19 +462,18 @@ export default function CompanySupport() {
                   <div className="flex justify-end">
                     <Button
                       onClick={() => {
-                        if (additionalInfo.trim()) {
-                          toast({
-                            title: "Informação adicionada",
-                            description: "Suas informações adicionais foram registradas.",
+                        if (selectedTicket && additionalInfo.trim()) {
+                          addInfoMutation.mutate({
+                            ticketId: selectedTicket.id,
+                            additionalInfo: additionalInfo
                           });
-                          setAdditionalInfo('');
                         }
                       }}
-                      disabled={!additionalInfo.trim()}
+                      disabled={!additionalInfo.trim() || addInfoMutation.isPending}
                       className="flex items-center gap-2"
                     >
                       <Send className="h-4 w-4" />
-                      Enviar Informação
+                      {addInfoMutation.isPending ? "Enviando..." : "Enviar Informação"}
                     </Button>
                   </div>
                 </div>
