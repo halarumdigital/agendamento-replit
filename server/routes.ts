@@ -4621,7 +4621,7 @@ const broadcastEvent = (eventData: any) => {
   });
 
   // Company route to fetch support ticket types
-  app.get('/api/company/support-ticket-types', loadCompanyPlan, requirePermission('support'), async (req: RequestWithPlan, res) => {
+  app.get('/api/company/support-ticket-types', async (req: any, res) => {
     try {
       const ticketTypes = await db.select().from(supportTicketTypes)
         .where(eq(supportTicketTypes.isActive, true))
