@@ -5,7 +5,7 @@ import { setupAuth, isAuthenticated, isCompanyAuthenticated } from "./auth";
 import { db, pool } from "./db";
 import { loadCompanyPlan, requirePermission, checkProfessionalsLimit, RequestWithPlan } from "./plan-middleware";
 import { checkSubscriptionStatus, getCompanySubscriptionStatus } from "./subscription-middleware";
-import { insertCompanySchema, insertPlanSchema, insertGlobalSettingsSchema, insertAdminSchema, financialCategories, paymentMethods, financialTransactions, companies, adminAlerts, companyAlertViews, insertCouponSchema } from "@shared/schema";
+import { insertCompanySchema, insertPlanSchema, insertGlobalSettingsSchema, insertAdminSchema, financialCategories, paymentMethods, financialTransactions, companies, adminAlerts, companyAlertViews, insertCouponSchema, supportTickets } from "@shared/schema";
 import bcrypt from "bcrypt";
 import { z } from "zod";
 import QRCode from "qrcode";
@@ -4550,7 +4550,7 @@ const broadcastEvent = (eventData: any) => {
   });
 
   // Support tickets routes
-  app.get('/api/company/support-tickets', companyAuthRequired, async (req: RequestWithPlan, res) => {
+  app.get('/api/company/support-tickets', loadCompanyPlan, requirePermission('support'), async (req: RequestWithPlan, res) => {
     try {
       const companyId = req.session.companyId;
       const tickets = await db.select().from(supportTickets).where(eq(supportTickets.companyId, companyId)).orderBy(desc(supportTickets.createdAt));
@@ -4561,7 +4561,7 @@ const broadcastEvent = (eventData: any) => {
     }
   });
 
-  app.post('/api/company/support-tickets', companyAuthRequired, async (req: RequestWithPlan, res) => {
+  app.post('/api/company/support-tickets', loadCompanyPlan, requirePermission('support'), async (req: RequestWithPlan, res) => {
     try {
       const companyId = req.session.companyId;
       const { title, description, priority, category } = req.body;
@@ -4582,7 +4582,7 @@ const broadcastEvent = (eventData: any) => {
     }
   });
 
-  app.put('/api/company/support-tickets/:id', companyAuthRequired, async (req: RequestWithPlan, res) => {
+  app.put('/api/company/support-tickets/:id', loadCompanyPlan, requirePermission('support'), async (req: RequestWithPlan, res) => {
     try {
       const ticketId = parseInt(req.params.id);
       const companyId = req.session.companyId;
@@ -4605,7 +4605,7 @@ const broadcastEvent = (eventData: any) => {
     }
   });
 
-  app.delete('/api/company/support-tickets/:id', companyAuthRequired, async (req: RequestWithPlan, res) => {
+  app.delete('/api/company/support-tickets/:id', loadCompanyPlan, requirePermission('support'), async (req: RequestWithPlan, res) => {
     try {
       const ticketId = parseInt(req.params.id);
       const companyId = req.session.companyId;
@@ -4620,33 +4620,33 @@ const broadcastEvent = (eventData: any) => {
     }
   });
 
-  // Admin routes for support tickets
-  app.get('/api/admin/support-tickets', adminAuthRequired, async (req, res) => {
-    try {
-      const tickets = await db.select({
-        id: supportTickets.id,
-        companyId: supportTickets.companyId,
-        title: supportTickets.title,
-        description: supportTickets.description,
-        status: supportTickets.status,
-        priority: supportTickets.priority,
-        category: supportTickets.category,
-        adminResponse: supportTickets.adminResponse,
-        createdAt: supportTickets.createdAt,
-        updatedAt: supportTickets.updatedAt,
-        resolvedAt: supportTickets.resolvedAt,
-        companyName: companies.fantasyName
-      })
-      .from(supportTickets)
-      .leftJoin(companies, eq(supportTickets.companyId, companies.id))
-      .orderBy(desc(supportTickets.createdAt));
-      
-      res.json(tickets);
-    } catch (error) {
-      console.error("Error fetching admin support tickets:", error);
-      res.status(500).json({ message: "Erro ao buscar tickets de suporte" });
-    }
-  });
+  // Admin routes for support tickets - commented out for now
+  // app.get('/api/admin/support-tickets', isAuthenticated, async (req, res) => {
+  //   try {
+  //     const tickets = await db.select({
+  //       id: supportTickets.id,
+  //       companyId: supportTickets.companyId,
+  //       title: supportTickets.title,
+  //       description: supportTickets.description,
+  //       status: supportTickets.status,
+  //       priority: supportTickets.priority,
+  //       category: supportTickets.category,
+  //       adminResponse: supportTickets.adminResponse,
+  //       createdAt: supportTickets.createdAt,
+  //       updatedAt: supportTickets.updatedAt,
+  //       resolvedAt: supportTickets.resolvedAt,
+  //       companyName: companies.fantasyName
+  //     })
+  //     .from(supportTickets)
+  //     .leftJoin(companies, eq(supportTickets.companyId, companies.id))
+  //     .orderBy(desc(supportTickets.createdAt));
+  //     
+  //     res.json(tickets);
+  //   } catch (error) {
+  //     console.error("Error fetching admin support tickets:", error);
+  //     res.status(500).json({ message: "Erro ao buscar tickets de suporte" });
+  //   }
+  // });
 
   app.put('/api/admin/support-tickets/:id', adminAuthRequired, async (req, res) => {
     try {
