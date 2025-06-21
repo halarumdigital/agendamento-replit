@@ -4394,13 +4394,13 @@ const broadcastEvent = (eventData: any) => {
         code: req.body.code,
         description: req.body.description || null,
         discountType: req.body.discountType || 'percentage',
-        discountValue: (parseFloat(req.body.discountValue) || 0).toString(),
+        discountValue: req.body.discountValue.toString(),
         minOrderValue: req.body.minOrderValue ? parseFloat(req.body.minOrderValue).toString() : null,
         maxDiscount: req.body.maxDiscount ? parseFloat(req.body.maxDiscount).toString() : null,
         usageLimit: req.body.maxUses ? parseInt(req.body.maxUses) : null,
         usedCount: 0,
         validUntil: req.body.expiresAt || req.body.validUntil,
-        isActive: req.body.isActive === true ? 1 : 0
+        isActive: req.body.isActive === true
       };
 
       const coupon = await storage.createCoupon(couponData);

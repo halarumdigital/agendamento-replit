@@ -453,13 +453,13 @@ export const coupons = mysqlTable("coupons", {
   code: varchar("code", { length: 50 }).notNull(),
   description: text("description"),
   discountType: varchar("discount_type", { length: 20 }).notNull(), // 'percentage' or 'fixed'
-  discountValue: decimal("discount_value", { precision: 10, scale: 2 }).notNull(),
+  discountValue: varchar("discount_value", { length: 20 }).notNull(),
   minOrderValue: decimal("min_order_value", { precision: 10, scale: 2 }),
   maxDiscount: decimal("max_discount", { precision: 10, scale: 2 }),
   usageLimit: int("usage_limit"),
   usedCount: int("used_count").notNull().default(0),
   validUntil: date("valid_until").notNull(),
-  isActive: int("is_active").notNull().default(1),
+  isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
@@ -752,10 +752,7 @@ export const insertFinancialTransactionSchema = createInsertSchema(financialTran
   updatedAt: true,
 });
 
-export const insertCouponSchema = createInsertSchema(coupons, {
-  discountValue: z.number(),
-  companyId: z.number(),
-}).omit({
+export const insertCouponSchema = createInsertSchema(coupons).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
