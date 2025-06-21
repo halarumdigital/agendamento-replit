@@ -388,10 +388,28 @@ export default function AdminSupport() {
                           </p>
                           <p className="text-gray-700 mb-2">{ticket.description}</p>
                           <div className="flex gap-2 mb-2">
-                            {getStatusBadge(ticket.status)}
+                            {getStatusBadge(ticket)}
                             {getPriorityBadge(ticket.priority)}
                             <Badge variant="outline">{ticket.category}</Badge>
                           </div>
+                          {ticket.attachments && (
+                            <div className="mb-2">
+                              <p className="text-sm font-medium text-gray-700 mb-1">Anexos:</p>
+                              <div className="flex flex-wrap gap-2">
+                                {ticket.attachments.split(',').map((filename, index) => (
+                                  <a
+                                    key={index}
+                                    href={`/uploads/support-tickets/${filename.trim()}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-sm text-blue-600 hover:text-blue-800 underline"
+                                  >
+                                    📎 {filename.trim()}
+                                  </a>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                           <p className="text-xs text-gray-500">
                             Criado em: {format(new Date(ticket.createdAt), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
                           </p>
