@@ -93,6 +93,7 @@ export const plans = mysqlTable("plans", {
     financial: boolean;
     reports: boolean;
     settings: boolean;
+    support: boolean;
   }>().default({
     dashboard: true,
     appointments: true,
@@ -109,6 +110,7 @@ export const plans = mysqlTable("plans", {
     financial: false,
     reports: false,
     settings: true,
+    support: true,
   }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
@@ -829,3 +831,22 @@ export type AdminAlert = typeof adminAlerts.$inferSelect;
 export type InsertAdminAlert = z.infer<typeof insertAdminAlertSchema>;
 export type CompanyAlertView = typeof companyAlertViews.$inferSelect;
 export type InsertCompanyAlertView = z.infer<typeof insertCompanyAlertViewSchema>;
+
+// Support tickets table
+export const supportTickets = mysqlTable("support_tickets", {
+  id: serial("id").primaryKey(),
+  companyId: int("company_id").notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description").notNull(),
+  status: varchar("status", { length: 50 }).notNull().default("open"), // open, in_progress, resolved, closed
+  priority: varchar("priority", { length: 20 }).notNull().default("medium"), // low, medium, high, urgent
+  category: varchar("category", { length: 100 }).notNull().default("general"), // general, technical, billing, feature_request
+  adminResponse: text("admin_response"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  resolvedAt: timestamp("resolved_at"),
+});
+
+export const insertSupportTicketSchema = createInsertSchema(supportTickets).omit({ id: true, createdAt: true, updatedAt: true });
+export type SupportTicket = typeof supportTickets.$inferSelect;
+export type InsertSupportTicket = z.infer<typeof insertSupportTicketSchema>;

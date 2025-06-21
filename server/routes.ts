@@ -4549,6 +4549,131 @@ const broadcastEvent = (eventData: any) => {
     }
   });
 
+  // Support tickets routes
+  app.get('/api/company/support-tickets', companyAuthRequired, async (req: RequestWithPlan, res) => {
+    try {
+      const companyId = req.session.companyId;
+      const tickets = await db.select().from(supportTickets).where(eq(supportTickets.companyId, companyId)).orderBy(desc(supportTickets.createdAt));
+      res.json(tickets);
+    } catch (error) {
+      console.error("Error fetching support tickets:", error);
+      res.status(500).json({ message: "Erro ao buscar tickets de suporte" });
+    }
+  });
+
+  app.post('/api/company/support-tickets', companyAuthRequired, async (req: RequestWithPlan, res) => {
+    try {
+      const companyId = req.session.companyId;
+      const { title, description, priority, category } = req.body;
+
+      const newTicket = await db.insert(supportTickets).values({
+        companyId,
+        title,
+        description,
+        priority: priority || 'medium',
+        category: category || 'general',
+        status: 'open'
+      });
+
+      res.json({ message: "Ticket criado com sucesso", id: newTicket.insertId });
+    } catch (error) {
+      console.error("Error creating support ticket:", error);
+      res.status(500).json({ message: "Erro ao criar ticket de suporte" });
+    }
+  });
+
+  app.put('/api/company/support-tickets/:id', companyAuthRequired, async (req: RequestWithPlan, res) => {
+    try {
+      const ticketId = parseInt(req.params.id);
+      const companyId = req.session.companyId;
+      const { title, description, priority, category } = req.body;
+
+      await db.update(supportTickets)
+        .set({
+          title,
+          description,
+          priority,
+          category,
+          updatedAt: new Date()
+        })
+        .where(and(eq(supportTickets.id, ticketId), eq(supportTickets.companyId, companyId)));
+
+      res.json({ message: "Ticket atualizado com sucesso" });
+    } catch (error) {
+      console.error("Error updating support ticket:", error);
+      res.status(500).json({ message: "Erro ao atualizar ticket de suporte" });
+    }
+  });
+
+  app.delete('/api/company/support-tickets/:id', companyAuthRequired, async (req: RequestWithPlan, res) => {
+    try {
+      const ticketId = parseInt(req.params.id);
+      const companyId = req.session.companyId;
+
+      await db.delete(supportTickets)
+        .where(and(eq(supportTickets.id, ticketId), eq(supportTickets.companyId, companyId)));
+
+      res.json({ message: "Ticket excluído com sucesso" });
+    } catch (error) {
+      console.error("Error deleting support ticket:", error);
+      res.status(500).json({ message: "Erro ao excluir ticket de suporte" });
+    }
+  });
+
+  // Admin routes for support tickets
+  app.get('/api/admin/support-tickets', adminAuthRequired, async (req, res) => {
+    try {
+      const tickets = await db.select({
+        id: supportTickets.id,
+        companyId: supportTickets.companyId,
+        title: supportTickets.title,
+        description: supportTickets.description,
+        status: supportTickets.status,
+        priority: supportTickets.priority,
+        category: supportTickets.category,
+        adminResponse: supportTickets.adminResponse,
+        createdAt: supportTickets.createdAt,
+        updatedAt: supportTickets.updatedAt,
+        resolvedAt: supportTickets.resolvedAt,
+        companyName: companies.fantasyName
+      })
+      .from(supportTickets)
+      .leftJoin(companies, eq(supportTickets.companyId, companies.id))
+      .orderBy(desc(supportTickets.createdAt));
+      
+      res.json(tickets);
+    } catch (error) {
+      console.error("Error fetching admin support tickets:", error);
+      res.status(500).json({ message: "Erro ao buscar tickets de suporte" });
+    }
+  });
+
+  app.put('/api/admin/support-tickets/:id', adminAuthRequired, async (req, res) => {
+    try {
+      const ticketId = parseInt(req.params.id);
+      const { status, adminResponse } = req.body;
+
+      const updateData: any = {
+        status,
+        adminResponse,
+        updatedAt: new Date()
+      };
+
+      if (status === 'resolved' || status === 'closed') {
+        updateData.resolvedAt = new Date();
+      }
+
+      await db.update(supportTickets)
+        .set(updateData)
+        .where(eq(supportTickets.id, ticketId));
+
+      res.json({ message: "Ticket atualizado com sucesso" });
+    } catch (error) {
+      console.error("Error updating admin support ticket:", error);
+      res.status(500).json({ message: "Erro ao atualizar ticket de suporte" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

@@ -19,7 +19,8 @@ import {
   Ticket,
   DollarSign,
   BarChart3,
-  CreditCard
+  CreditCard,
+  HelpCircle
 } from "lucide-react";
 import { useCompanyAuth } from "@/hooks/useCompanyAuth";
 import { useGlobalTheme } from "@/hooks/use-global-theme";
@@ -124,6 +125,12 @@ const menuItems = [
     href: "/company/settings",
     icon: Settings,
     permission: "settings" as keyof PlanPermissions | null,
+  },
+  {
+    title: "Suporte",
+    href: "/company/suporte",
+    icon: HelpCircle,
+    permission: "support" as keyof PlanPermissions | null,
   },
 
 ];
