@@ -6,6 +6,7 @@ import {
   blob,
   index,
 } from "drizzle-orm/sqlite-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -15,7 +16,7 @@ export const sessions = sqliteTable(
   "sessions",
   {
     sid: text("sid", { length: 255 }).primaryKey(),
-    sess: json("sess").notNull(),
+    sess: text("sess").notNull(),
     expire: text("expire").notNull(),
   },
   (table) => [index("IDX_session_expire").on(table.expire)],
