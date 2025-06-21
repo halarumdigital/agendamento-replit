@@ -49,6 +49,7 @@ export default function Plans() {
         ...data,
         price: parseFloat(data.price).toFixed(2),
         annualPrice: data.annualPrice ? parseFloat(data.annualPrice).toFixed(2) : null,
+        isActive: data.isActive ? 1 : 0,
       });
     },
     onSuccess: () => {
@@ -77,6 +78,9 @@ export default function Plans() {
       }
       if (payload.annualPrice) {
         payload.annualPrice = parseFloat(payload.annualPrice).toFixed(2);
+      }
+      if (payload.isActive !== undefined) {
+        (payload as any).isActive = payload.isActive ? 1 : 0;
       }
       await apiRequest("PUT", `/api/plans/${id}`, payload);
     },
