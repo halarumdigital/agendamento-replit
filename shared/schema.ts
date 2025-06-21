@@ -1,22 +1,22 @@
 import {
-  mysqlTable,
+  pgTable,
   text,
   varchar,
   timestamp,
   json,
   index,
-  int,
+  integer,
   decimal,
   boolean,
   date,
   serial,
-} from "drizzle-orm/mysql-core";
+} from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
 
 // Session storage table for express-session
-export const sessions = mysqlTable(
+export const sessions = pgTable(
   "sessions",
   {
     sid: varchar("sid", { length: 255 }).primaryKey(),
@@ -27,8 +27,8 @@ export const sessions = mysqlTable(
 );
 
 // Admin users table
-export const admins = mysqlTable("admins", {
-  id: int("id").primaryKey().autoincrement(),
+export const admins = pgTable("admins", {
+  id: serial("id").primaryKey(),
   username: varchar("username", { length: 100 }).notNull().unique(),
   email: varchar("email", { length: 255 }).notNull().unique(),
   password: varchar("password", { length: 255 }).notNull(),
@@ -36,12 +36,12 @@ export const admins = mysqlTable("admins", {
   lastName: varchar("last_name", { length: 100 }),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Companies table
-export const companies = mysqlTable("companies", {
-  id: int("id").primaryKey().autoincrement(),
+export const companies = pgTable("companies", {
+  id: serial("id").primaryKey(),
   fantasyName: varchar("fantasy_name", { length: 255 }).notNull(),
   document: varchar("document", { length: 20 }).notNull().unique(),
   address: text("address").notNull(),
@@ -53,7 +53,7 @@ export const companies = mysqlTable("companies", {
   state: varchar("state", { length: 2 }),
   email: varchar("email", { length: 255 }).notNull().unique(),
   password: varchar("password", { length: 255 }).notNull(),
-  planId: int("plan_id"),
+  planId: integer("plan_id"),
   planStatus: varchar("plan_status", { length: 50 }).default("inactive"),
   isActive: boolean("is_active").notNull().default(true),
   aiAgentPrompt: text("ai_agent_prompt"),
@@ -62,16 +62,16 @@ export const companies = mysqlTable("companies", {
   stripeCustomerId: varchar("stripe_customer_id", { length: 255 }),
   stripeSubscriptionId: varchar("stripe_subscription_id", { length: 255 }),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Subscription plans table
-export const plans = mysqlTable("plans", {
-  id: int("id").primaryKey().autoincrement(),
+export const plans = pgTable("plans", {
+  id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
-  freeDays: int("free_days").notNull().default(0),
+  freeDays: integer("free_days").notNull().default(0),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
-  maxProfessionals: int("max_professionals").notNull().default(1),
+  maxProfessionals: integer("max_professionals").notNull().default(1),
   isActive: boolean("is_active").notNull().default(true),
   stripeProductId: varchar("stripe_product_id", { length: 255 }),
   stripePriceId: varchar("stripe_price_id", { length: 255 }),
@@ -109,12 +109,12 @@ export const plans = mysqlTable("plans", {
     settings: true,
   }),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Admin alerts/announcements table
-export const adminAlerts = mysqlTable("admin_alerts", {
-  id: int("id").primaryKey().autoincrement(),
+export const adminAlerts = pgTable("admin_alerts", {
+  id: serial("id").primaryKey(),
   title: varchar("title", { length: 255 }).notNull(),
   message: text("message").notNull(),
   type: varchar("type", { length: 50 }).notNull().default("info"), // info, warning, success, error
@@ -124,20 +124,20 @@ export const adminAlerts = mysqlTable("admin_alerts", {
   startDate: timestamp("start_date").defaultNow(),
   endDate: timestamp("end_date"),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Company alert views table (to track which companies have seen the alert)
-export const companyAlertViews = mysqlTable("company_alert_views", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
-  alertId: int("alert_id").notNull(),
+export const companyAlertViews = pgTable("company_alert_views", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
+  alertId: integer("alert_id").notNull(),
   viewedAt: timestamp("viewed_at").defaultNow(),
 });
 
 // Global settings table
-export const globalSettings = mysqlTable("global_settings", {
-  id: int("id").primaryKey().autoincrement(),
+export const globalSettings = pgTable("global_settings", {
+  id: serial("id").primaryKey(),
   systemName: varchar("system_name", { length: 255 }).default("AdminPro"),
   logoUrl: varchar("logo_url", { length: 500 }),
   faviconUrl: varchar("favicon_url", { length: 500 }),
@@ -161,13 +161,13 @@ export const globalSettings = mysqlTable("global_settings", {
   smtpSecure: varchar("smtp_secure", { length: 10 }).default("tls"),
   customHtml: text("custom_html"),
   customDomainUrl: varchar("custom_domain_url", { length: 500 }),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // WhatsApp instances table
-export const whatsappInstances = mysqlTable("whatsapp_instances", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
+export const whatsappInstances = pgTable("whatsapp_instances", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
   instanceName: varchar("instance_name", { length: 255 }).notNull(),
   status: varchar("status", { length: 50 }),
   qrCode: text("qr_code"),
@@ -175,25 +175,25 @@ export const whatsappInstances = mysqlTable("whatsapp_instances", {
   apiUrl: varchar("api_url", { length: 500 }),
   apiKey: varchar("api_key", { length: 500 }),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Conversations table
-export const conversations = mysqlTable("conversations", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
-  whatsappInstanceId: int("whatsapp_instance_id").notNull(),
+export const conversations = pgTable("conversations", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
+  whatsappInstanceId: integer("whatsapp_instance_id").notNull(),
   phoneNumber: varchar("phone_number", { length: 50 }).notNull(),
   contactName: varchar("contact_name", { length: 255 }),
   lastMessageAt: timestamp("last_message_at").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Messages table
-export const messages = mysqlTable("messages", {
-  id: int("id").primaryKey().autoincrement(),
-  conversationId: int("conversation_id").notNull(),
+export const messages = pgTable("messages", {
+  id: serial("id").primaryKey(),
+  conversationId: integer("conversation_id").notNull(),
   role: varchar("role", { length: 20 }).notNull(),
   content: text("content").notNull(),
   messageId: varchar("message_id", { length: 255 }),
@@ -204,24 +204,24 @@ export const messages = mysqlTable("messages", {
 });
 
 // Services table
-export const services = mysqlTable("services", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
+export const services = pgTable("services", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
-  duration: int("duration").notNull(),
+  duration: integer("duration").notNull(),
   color: varchar("color", { length: 7 }).default("#3B82F6"),
   isActive: boolean("is_active").notNull().default(true),
-  points: int("points").default(0),
+  points: integer("points").default(0),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Professionals table
-export const professionals = mysqlTable("professionals", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
+export const professionals = pgTable("professionals", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }),
   phone: varchar("phone", { length: 50 }),
@@ -231,114 +231,114 @@ export const professionals = mysqlTable("professionals", {
   workEndTime: varchar("work_end_time", { length: 10 }),
   active: boolean("active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Appointments table
-export const appointments = mysqlTable("appointments", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
-  professionalId: int("professional_id").notNull(),
-  serviceId: int("service_id").notNull(),
+export const appointments = pgTable("appointments", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
+  professionalId: integer("professional_id").notNull(),
+  serviceId: integer("service_id").notNull(),
   clientName: varchar("client_name", { length: 255 }).notNull(),
   clientPhone: varchar("client_phone", { length: 50 }),
   clientEmail: varchar("client_email", { length: 255 }),
   appointmentDate: date("appointment_date").notNull(),
   appointmentTime: varchar("appointment_time", { length: 10 }).notNull(),
-  duration: int("duration").default(30),
+  duration: integer("duration").default(30),
   totalPrice: decimal("total_price", { precision: 10, scale: 2 }).default("0.00"),
   status: varchar("status", { length: 50 }).notNull().default("agendado"),
   notes: text("notes"),
   reminderSent: boolean("reminder_sent").default(false),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Status table
-export const status = mysqlTable("status", {
-  id: int("id").primaryKey().autoincrement(),
+export const status = pgTable("status", {
+  id: serial("id").primaryKey(),
   name: varchar("name", { length: 100 }).notNull(),
   color: varchar("color", { length: 7 }).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Clients table
-export const clients = mysqlTable("clients", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
+export const clients = pgTable("clients", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }),
   phone: varchar("phone", { length: 50 }),
   birthDate: date("birth_date"),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Birthday messages table
-export const birthdayMessages = mysqlTable("birthday_messages", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
+export const birthdayMessages = pgTable("birthday_messages", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
   message: text("message").notNull(),
   messageTemplate: text("message_template"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Birthday message history table
-export const birthdayMessageHistory = mysqlTable("birthday_message_history", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
-  clientId: int("client_id").notNull(),
+export const birthdayMessageHistory = pgTable("birthday_message_history", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
+  clientId: integer("client_id").notNull(),
   message: text("message").notNull(),
   sentAt: timestamp("sent_at").defaultNow(),
 });
 
 // Reminder settings table
-export const reminderSettings = mysqlTable("reminder_settings", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
+export const reminderSettings = pgTable("reminder_settings", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
   reminderType: varchar("reminder_type", { length: 50 }).notNull(),
   isActive: boolean("is_active").default(true),
   messageTemplate: text("message_template").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Reminder history table
-export const reminderHistory = mysqlTable("reminder_history", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
-  appointmentId: int("appointment_id").notNull(),
+export const reminderHistory = pgTable("reminder_history", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
+  appointmentId: integer("appointment_id").notNull(),
   reminderType: varchar("reminder_type", { length: 50 }).notNull(),
   clientPhone: varchar("client_phone", { length: 20 }).notNull(),
   message: text("message").notNull(),
   sentAt: timestamp("sent_at").defaultNow(),
   status: varchar("status", { length: 20 }).default("sent"),
-  whatsappInstanceId: int("whatsapp_instance_id"),
+  whatsappInstanceId: integer("whatsapp_instance_id"),
 });
 
 // Professional reviews table
-export const professionalReviews = mysqlTable("professional_reviews", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
-  professionalId: int("professional_id").notNull(),
-  appointmentId: int("appointment_id").notNull(),
+export const professionalReviews = pgTable("professional_reviews", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
+  professionalId: integer("professional_id").notNull(),
+  appointmentId: integer("appointment_id").notNull(),
   clientPhone: varchar("client_phone", { length: 50 }).notNull(),
   clientName: varchar("client_name", { length: 255 }).notNull(),
-  rating: int("rating").notNull(),
+  rating: integer("rating").notNull(),
   comment: text("comment"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Review invitations table
-export const reviewInvitations = mysqlTable("review_invitations", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
-  whatsappInstanceId: int("whatsapp_instance_id"),
-  professionalId: int("professional_id").notNull(),
-  appointmentId: int("appointment_id").notNull(),
+export const reviewInvitations = pgTable("review_invitations", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
+  whatsappInstanceId: integer("whatsapp_instance_id"),
+  professionalId: integer("professional_id").notNull(),
+  appointmentId: integer("appointment_id").notNull(),
   clientPhone: varchar("client_phone", { length: 50 }).notNull(),
   invitationToken: varchar("invitation_token", { length: 255 }).notNull().unique(),
   sentAt: timestamp("sent_at"),
@@ -347,9 +347,9 @@ export const reviewInvitations = mysqlTable("review_invitations", {
 });
 
 // Tasks table
-export const tasks = mysqlTable("tasks", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
+export const tasks = pgTable("tasks", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   dueDate: date("due_date").notNull(),
@@ -357,71 +357,71 @@ export const tasks = mysqlTable("tasks", {
   whatsappNumber: varchar("whatsapp_number", { length: 50 }),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Task reminders table
-export const taskReminders = mysqlTable("task_reminders", {
-  id: int("id").primaryKey().autoincrement(),
-  taskId: int("task_id").notNull(),
+export const taskReminders = pgTable("task_reminders", {
+  id: serial("id").primaryKey(),
+  taskId: integer("task_id").notNull(),
   whatsappNumber: varchar("whatsapp_number", { length: 50 }).notNull(),
   message: text("message").notNull(),
   sentAt: timestamp("sent_at").defaultNow(),
 });
 
 // Client points table
-export const clientPoints = mysqlTable("client_points", {
-  id: int("id").primaryKey().autoincrement(),
-  clientId: int("client_id").notNull(),
-  companyId: int("company_id").notNull(),
-  totalPoints: int("total_points").default(0),
+export const clientPoints = pgTable("client_points", {
+  id: serial("id").primaryKey(),
+  clientId: integer("client_id").notNull(),
+  companyId: integer("company_id").notNull(),
+  totalPoints: integer("total_points").default(0),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Points campaigns table
-export const pointsCampaigns = mysqlTable("points_campaigns", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
+export const pointsCampaigns = pgTable("points_campaigns", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
-  requiredPoints: int("required_points").notNull(),
-  rewardServiceId: int("reward_service_id").notNull(),
+  requiredPoints: integer("required_points").notNull(),
+  rewardServiceId: integer("reward_service_id").notNull(),
   active: boolean("active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Points history table
-export const pointsHistory = mysqlTable("points_history", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
-  clientId: int("client_id").notNull(),
-  pointsChange: int("points_change").notNull(),
+export const pointsHistory = pgTable("points_history", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
+  clientId: integer("client_id").notNull(),
+  pointsChange: integer("points_change").notNull(),
   description: text("description").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Loyalty campaigns table
-export const loyaltyCampaigns = mysqlTable("loyalty_campaigns", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
+export const loyaltyCampaigns = pgTable("loyalty_campaigns", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   conditionType: varchar("condition_type", { length: 50 }).notNull(), // 'services' or 'amount'
-  conditionValue: int("condition_value").notNull(), // X services or X amount
+  conditionValue: integer("condition_value").notNull(), // X services or X amount
   rewardType: varchar("reward_type", { length: 50 }).notNull(), // 'service' or 'discount'
-  rewardValue: int("reward_value").notNull(), // service ID or discount percentage
-  rewardServiceId: int("reward_service_id"), // ID of the service to give as reward
+  rewardValue: integer("reward_value").notNull(), // service ID or discount percentage
+  rewardServiceId: integer("reward_service_id"), // ID of the service to give as reward
   active: boolean("active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Loyalty rewards history table
-export const loyaltyRewardsHistory = mysqlTable("loyalty_rewards_history", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
-  clientId: int("client_id").notNull(),
-  campaignId: int("campaign_id").notNull(),
+export const loyaltyRewardsHistory = pgTable("loyalty_rewards_history", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
+  clientId: integer("client_id").notNull(),
+  campaignId: integer("campaign_id").notNull(),
   rewardType: varchar("reward_type", { length: 50 }).notNull(),
   rewardValue: varchar("reward_value", { length: 255 }).notNull(),
   usedAt: timestamp("used_at"),
@@ -429,90 +429,90 @@ export const loyaltyRewardsHistory = mysqlTable("loyalty_rewards_history", {
 });
 
 // Products table
-export const products = mysqlTable("products", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
+export const products = pgTable("products", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   photo: varchar("photo", { length: 500 }),
   description: text("description"),
   purchasePrice: decimal("purchase_price", { precision: 10, scale: 2 }).notNull(),
   supplierName: varchar("supplier_name", { length: 255 }),
-  stockQuantity: int("stock_quantity").notNull().default(0),
+  stockQuantity: integer("stock_quantity").notNull().default(0),
   alertStock: boolean("alert_stock").default(false),
-  minStockLevel: int("min_stock_level").default(0),
+  minStockLevel: integer("min_stock_level").default(0),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Coupons table
-export const coupons = mysqlTable("coupons", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
+export const coupons = pgTable("coupons", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   code: varchar("code", { length: 50 }).notNull().unique(),
   discountType: varchar("discount_type", { length: 20 }).notNull(), // 'percentage' or 'fixed'
   discountValue: decimal("discount_value", { precision: 10, scale: 2 }).notNull(),
   expiresAt: timestamp("expires_at"),
-  maxUses: int("max_uses").notNull().default(1),
-  usesCount: int("uses_count").notNull().default(0),
+  maxUses: integer("max_uses").notNull().default(1),
+  usesCount: integer("uses_count").notNull().default(0),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Message campaigns table
-export const messageCampaigns = mysqlTable("message_campaigns", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
+export const messageCampaigns = pgTable("message_campaigns", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   message: text("message").notNull(),
   scheduledDate: timestamp("scheduled_date").notNull(),
   status: varchar("status", { length: 50 }).notNull().default("pending"), // pending, sending, completed, failed
   targetType: varchar("target_type", { length: 20 }).notNull(), // all, specific
   selectedClients: json("selected_clients"), // array of client IDs for specific targeting
-  sentCount: int("sent_count").default(0),
-  totalTargets: int("total_targets").default(0),
+  sentCount: integer("sent_count").default(0),
+  totalTargets: integer("total_targets").default(0),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Financial categories table
-export const financialCategories = mysqlTable("financial_categories", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
+export const financialCategories = pgTable("financial_categories", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   type: varchar("type", { length: 20 }).notNull(), // income, expense
   color: varchar("color", { length: 7 }).notNull().default("#3B82F6"),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Payment methods table
-export const paymentMethods = mysqlTable("payment_methods", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
+export const paymentMethods = pgTable("payment_methods", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   type: varchar("type", { length: 20 }).notNull(), // cash, card, pix, transfer, other
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Financial transactions table
-export const financialTransactions = mysqlTable("financial_transactions", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
+export const financialTransactions = pgTable("financial_transactions", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
   description: varchar("description", { length: 500 }).notNull(),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   type: varchar("type", { length: 20 }).notNull(), // income, expense
-  categoryId: int("category_id").notNull(),
-  paymentMethodId: int("payment_method_id").notNull(),
+  categoryId: integer("category_id").notNull(),
+  paymentMethodId: integer("payment_method_id").notNull(),
   date: date("date").notNull(),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Relations
