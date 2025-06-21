@@ -5239,42 +5239,61 @@ const broadcastEvent = (eventData: any) => {
       // Create instance in Evolution API first
       const correctedApiUrl = ensureEvolutionApiEndpoint(globalSettings.evolutionApiUrl);
       
-      // Try multiple possible endpoint patterns sequentially
+      // First, let's try to discover available endpoints
+      console.log(`🔍 Discovering Evolution API endpoints...`);
+      
+      // Try to get API documentation or available routes
+      const discoveryEndpoints = [
+        `${correctedApiUrl}/`,
+        `${correctedApiUrl}/docs`,
+        `${correctedApiUrl}/swagger`,
+        `${correctedApiUrl}/instance`,
+        `${correctedApiUrl}/manager`,
+        `${correctedApiUrl}/manager/findInstances`
+      ];
+
+      // Check what endpoints are available
+      for (const discoveryUrl of discoveryEndpoints) {
+        try {
+          const discoveryResponse = await fetch(discoveryUrl, {
+            method: 'GET',
+            headers: {
+              'apikey': globalSettings.evolutionApiGlobalKey
+            }
+          });
+          
+          console.log(`🔍 Discovery ${discoveryUrl}: ${discoveryResponse.status}`);
+          if (discoveryResponse.ok) {
+            const discoveryText = await discoveryResponse.text();
+            console.log(`📋 Available endpoint found: ${discoveryUrl} - ${discoveryText.substring(0, 100)}`);
+          }
+        } catch (err) {
+          // Continue discovery
+        }
+      }
+
+      // Evolution API v2.3.0 uses direct endpoints without /api prefix
+      const baseUrl = globalSettings.evolutionApiUrl.replace(/\/+$/, ''); // Remove trailing slashes
       const possibleEndpoints = [
-        { url: `${correctedApiUrl}/instance/create`, method: 'POST' },
-        { url: `${correctedApiUrl}/manager/instance/create`, method: 'POST' },
-        { url: `${correctedApiUrl}/instances/create`, method: 'POST' },
-        { url: `${correctedApiUrl}/instance`, method: 'POST' },
-        { url: `${correctedApiUrl}/create-instance`, method: 'POST' },
-        { url: `${correctedApiUrl}/instance/connect`, method: 'POST' }
+        { url: `${baseUrl}/instance/create`, method: 'POST' },
+        { url: `${baseUrl}/instance`, method: 'POST' }
       ];
 
       const webhookUrl = generateWebhookUrl(req, instanceName);
       
+      // Evolution API v2.3.0 payload format
       const evolutionPayload = {
         instanceName: instanceName,
+        integration: "BAILEYS",
         qrcode: true,
-        integration: "WHATSAPP-BAILEYS",
         webhook: webhookUrl,
-        webhook_by_events: true,
+        webhookByEvents: true,
         events: [
           "APPLICATION_STARTUP",
           "QRCODE_UPDATED", 
           "CONNECTION_UPDATE",
           "MESSAGES_UPSERT",
-          "MESSAGES_UPDATE",
-          "MESSAGES_DELETE",
-          "SEND_MESSAGE",
-          "CONTACTS_UPDATE",
-          "CONTACTS_UPSERT",
-          "PRESENCE_UPDATE",
-          "CHATS_UPDATE",
-          "CHATS_UPSERT",
-          "CHATS_DELETE",
-          "GROUPS_UPSERT",
-          "GROUP_UPDATE",
-          "GROUP_PARTICIPANTS_UPDATE",
-          "NEW_JWT_TOKEN"
+          "SEND_MESSAGE"
         ]
       };
 
