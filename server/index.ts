@@ -9,6 +9,7 @@ import { ensureSmtpColumns } from "./ensure-smtp-columns";
 import { ensureResetColumns } from "./ensure-reset-columns";
 import { ensureCustomHtmlColumn } from "./ensure-custom-html-column";
 import { ensureCustomDomainColumn } from "./ensure-custom-domain-column";
+import { ensureSystemUrlColumn } from "./ensure-system-url-column";
 import { ensureAddressColumns } from "./ensure-address-columns";
 import { ensureStripeColumns } from "./ensure-stripe-columns";
 import { ensureAdminAlertsTables } from "./ensure-admin-alerts-tables";
