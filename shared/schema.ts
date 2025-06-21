@@ -70,9 +70,9 @@ export const companies = mysqlTable("companies", {
 export const plans = mysqlTable("plans", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
-  freeDays: int("free_days").notNull().default(0),
+  freeDays: int("free_days").notNull().default(false),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
-  maxProfessionals: int("max_professionals").notNull().default(1),
+  maxProfessionals: int("max_professionals").notNull().default(true),
   isActive: boolean("is_active").notNull().default(true),
   stripeProductId: varchar("stripe_product_id", { length: 255 }),
   stripePriceId: varchar("stripe_price_id", { length: 255 }),
@@ -214,7 +214,7 @@ export const services = mysqlTable("services", {
   duration: int("duration").notNull(),
   color: varchar("color", { length: 7 }).default("#3B82F6"),
   isActive: boolean("is_active").notNull().default(true),
-  points: int("points").default(0),
+  points: int("points").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
@@ -375,7 +375,7 @@ export const clientPoints = mysqlTable("client_points", {
   id: serial("id").primaryKey(),
   clientId: int("client_id").notNull(),
   companyId: int("company_id").notNull(),
-  totalPoints: int("total_points").default(0),
+  totalPoints: int("total_points").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
@@ -438,9 +438,9 @@ export const products = mysqlTable("products", {
   description: text("description"),
   purchasePrice: decimal("purchase_price", { precision: 10, scale: 2 }).notNull(),
   supplierName: varchar("supplier_name", { length: 255 }),
-  stockQuantity: int("stock_quantity").notNull().default(0),
+  stockQuantity: int("stock_quantity").notNull().default(false),
   alertStock: int("alert_stock").default(false),
-  minStockLevel: int("min_stock_level").default(0),
+  minStockLevel: int("min_stock_level").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
@@ -454,8 +454,8 @@ export const coupons = mysqlTable("coupons", {
   discountType: varchar("discount_type", { length: 20 }).notNull(), // 'percentage' or 'fixed'
   discountValue: decimal("discount_value", { precision: 10, scale: 2 }).notNull(),
   expiresAt: timestamp("expires_at"),
-  maxUses: int("max_uses").notNull().default(1),
-  usesCount: int("uses_count").notNull().default(0),
+  maxUses: int("max_uses").notNull().default(true),
+  usesCount: int("uses_count").notNull().default(false),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
@@ -471,8 +471,8 @@ export const messageCampaigns = mysqlTable("message_campaigns", {
   status: varchar("status", { length: 50 }).notNull().default("pending"), // pending, sending, completed, failed
   targetType: varchar("target_type", { length: 20 }).notNull(), // all, specific
   selectedClients: json("selected_clients"), // array of client IDs for specific targeting
-  sentCount: int("sent_count").default(0),
-  totalTargets: int("total_targets").default(0),
+  sentCount: int("sent_count").default(false),
+  totalTargets: int("total_targets").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });

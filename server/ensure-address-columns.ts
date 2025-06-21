@@ -2,42 +2,48 @@ import { pool } from "./db";
 
 export async function ensureAddressColumns() {
   try {
-    const dbName = process.env.MYSQL_DATABASE || process.env.DB_NAME || process.env.DATABASE || 'admin_system';
-    console.log('✅ Checking address columns in companies table...');
+    console.log('✅ Checking and ensuring MySQL database tables...');
     
-    const columnsToAdd = ['phone', 'zip_code', 'number', 'neighborhood', 'city', 'state'];
-    const columnDefinitions = {
-      phone: 'VARCHAR(20) NULL',
-      zip_code: 'VARCHAR(10) NULL',
-      number: 'VARCHAR(10) NULL',
-      neighborhood: 'VARCHAR(100) NULL',
-      city: 'VARCHAR(100) NULL',
-      state: 'VARCHAR(2) NULL'
-    };
-
-    for (const columnName of columnsToAdd) {
-      try {
-        const [columns] = await pool.execute(`
-          SELECT COLUMN_NAME 
-          FROM INFORMATION_SCHEMA.COLUMNS 
-          WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'companies' 
-          AND COLUMN_NAME = ?
-        `, [dbName, columnName]);
-
-        if ((columns as any[]).length === 0) {
-          console.log(`Adding ${columnName} column to companies table...`);
-          await pool.execute(`ALTER TABLE companies ADD COLUMN ${columnName} ${columnDefinitions[columnName as keyof typeof columnDefinitions]}`);
-          console.log(`✅ ${columnName} column added successfully`);
-        }
-      } catch (error: any) {
-        if (error.code !== 'ER_DUP_FIELDNAME') {
-          console.error(`Error adding ${columnName} column:`, error);
-        }
-      }
-    }
+    // First ensure the companies table exists
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS companies (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        fantasy_name VARCHAR(255) NOT NULL,
+        document VARCHAR(20) NOT NULL UNIQUE,
+        address TEXT NOT NULL,
+        phone VARCHAR(20),
+        zip_code VARCHAR(10),
+        number VARCHAR(20),
+        neighborhood VARCHAR(255),
+        city VARCHAR(255),
+        state VARCHAR(2),
+        email VARCHAR(255) NOT NULL UNIQUE,
+        password VARCHAR(255) NOT NULL,
+        cnpj VARCHAR(18),
+        plan_id INT,
+        is_active BOOLEAN NOT NULL DEFAULT 1,
+        trial_end_date DATE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
     
-    console.log('✅ Address columns verification completed');
-  } catch (error) {
-    console.error('Error ensuring address columns:', error);
+    console.log('✅ Companies table ensured');
+    
+    // Ensure other essential tables exist
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS sessions (
+        sid VARCHAR(255) PRIMARY KEY,
+        sess TEXT NOT NULL,
+        expire VARCHAR(255) NOT NULL
+      )
+    `);
+    
+    console.log('✅ Sessions table ensured');
+    
+    return true;
+  } catch (error: any) {
+    console.error('Error ensuring database tables:', error);
+    return false;
   }
 }
