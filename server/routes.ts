@@ -4550,7 +4550,7 @@ const broadcastEvent = (eventData: any) => {
   });
 
   // Support tickets routes
-  app.get('/api/company/support-tickets', loadCompanyPlan, async (req: RequestWithPlan, res) => {
+  app.get('/api/company/support-tickets', loadCompanyPlan, requirePermission('support'), async (req: RequestWithPlan, res) => {
     try {
       const companyId = req.session.companyId;
       const tickets = await db.select().from(supportTickets).where(eq(supportTickets.companyId, companyId)).orderBy(desc(supportTickets.createdAt));
@@ -4561,7 +4561,7 @@ const broadcastEvent = (eventData: any) => {
     }
   });
 
-  app.post('/api/company/support-tickets', loadCompanyPlan, async (req: RequestWithPlan, res) => {
+  app.post('/api/company/support-tickets', loadCompanyPlan, requirePermission('support'), async (req: RequestWithPlan, res) => {
     try {
       const companyId = req.session.companyId;
       const { title, description, priority, category } = req.body;
