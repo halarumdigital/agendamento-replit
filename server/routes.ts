@@ -3397,34 +3397,6 @@ INSTRUÇÕES OBRIGATÓRIAS:
     }
   });
 
-import type { Express } from "express";
-import { createServer, type Server } from "http";
-import { storage } from "./storage";
-import { setupAuth, isAuthenticated, isCompanyAuthenticated } from "./auth";
-import { db, pool } from "./db";
-import { loadCompanyPlan, requirePermission, checkProfessionalsLimit, RequestWithPlan } from "./plan-middleware";
-import { checkSubscriptionStatus, getCompanySubscriptionStatus } from "./subscription-middleware";
-import { insertCompanySchema, insertPlanSchema, insertGlobalSettingsSchema, insertAdminSchema, financialCategories, paymentMethods, financialTransactions, companies, adminAlerts, companyAlertViews } from "@shared/schema";
-import bcrypt from "bcrypt";
-import { z } from "zod";
-import QRCode from "qrcode";
-import { reminderScheduler, rescheduleRemindersForAppointment } from "./reminder-scheduler";
-import { sql, eq, and, desc, asc, sum, count, gte, lte } from "drizzle-orm";
-import multer from "multer";
-import path from "path";
-import fs from "fs";
-
-import { 
-  getLoyaltyCampaignsByCompany, 
-  createLoyaltyCampaign, 
-  updateLoyaltyCampaign, 
-  toggleLoyaltyCampaign, 
-  deleteLoyaltyCampaign, 
-  getLoyaltyRewardsHistory 
-} from "./storage";
-import { formatBrazilianPhone, validateBrazilianPhone, normalizePhone } from "../shared/phone-utils";
-import { stripeService } from "./services/stripe";
-
 // Temporary in-memory storage for WhatsApp instances
 const tempWhatsappInstances: any[] = [];
 
