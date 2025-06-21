@@ -2021,6 +2021,17 @@ Obrigado pela preferência! 🙏`;
       console.log('Base URL:', baseUrl);
       console.log('Full WhatsApp URL:', whatsappApiUrl);
 
+      console.log('📡 Sending WhatsApp message...');
+      console.log('URL:', whatsappApiUrl);
+      console.log('Headers:', {
+        'Content-Type': 'application/json',
+        'apikey': apiKey ? 'configured' : 'missing'
+      });
+      console.log('Payload:', {
+        number: formattedPhone,
+        text: message.substring(0, 100) + '...'
+      });
+
       const response = await fetch(whatsappApiUrl, {
         method: 'POST',
         headers: {
