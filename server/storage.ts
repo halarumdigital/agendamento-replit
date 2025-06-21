@@ -2001,11 +2001,15 @@ Obrigado pela preferência! 🙏`;
         return { success: false, message: "Configuração da API do WhatsApp não encontrada nas configurações globais" };
       }
 
-      console.log('=== SENDING REVIEW INVITATION ===');
+      console.log('=== SENDING REVIEW INVITATION DEBUG ===');
       console.log('Evolution API URL:', evolutionApiUrl);
       console.log('Instance Name:', whatsappInstance.instanceName);
       console.log('Formatted Phone:', formattedPhone);
       console.log('API Key configured:', !!apiKey);
+      console.log('Global settings evolutionApiUrl:', settings?.evolutionApiUrl);
+      console.log('Global settings apiKey:', !!settings?.evolutionApiGlobalKey);
+      console.log('WhatsApp instance apiUrl:', whatsappInstance.apiUrl);
+      console.log('WhatsApp instance apiKey:', !!whatsappInstance.apiKey);
 
       // Apply Evolution API URL correction - ensure proper API endpoint format
       let correctedApiUrl = evolutionApiUrl;
