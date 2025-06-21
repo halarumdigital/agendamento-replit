@@ -46,12 +46,28 @@ interface SupportTicketType {
   updatedAt: string;
 }
 
+interface SupportTicketStatus {
+  id: number;
+  name: string;
+  description?: string;
+  color: string;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export default function AdminSupport() {
   const { toast } = useToast();
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
   const [ticketTypeForm, setTicketTypeForm] = useState<Partial<SupportTicketType>>({});
   const [editingType, setEditingType] = useState<SupportTicketType | null>(null);
   const [isTypeDialogOpen, setIsTypeDialogOpen] = useState(false);
+  
+  // Status-related states
+  const [ticketStatusForm, setTicketStatusForm] = useState<Partial<SupportTicketStatus>>({});
+  const [editingStatus, setEditingStatus] = useState<SupportTicketStatus | null>(null);
+  const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
 
   // Fetch support tickets
   const { data: tickets = [], isLoading: ticketsLoading } = useQuery({
@@ -61,6 +77,11 @@ export default function AdminSupport() {
   // Fetch support ticket types
   const { data: ticketTypes = [], isLoading: typesLoading } = useQuery({
     queryKey: ['/api/admin/support-ticket-types'],
+  });
+
+  // Fetch support ticket statuses
+  const { data: ticketStatuses = [], isLoading: statusesLoading } = useQuery({
+    queryKey: ['/api/admin/support-ticket-statuses'],
   });
 
   // Update ticket mutation

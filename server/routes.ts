@@ -5,7 +5,7 @@ import { setupAuth, isAuthenticated, isCompanyAuthenticated } from "./auth";
 import { db, pool } from "./db";
 import { loadCompanyPlan, requirePermission, checkProfessionalsLimit, RequestWithPlan } from "./plan-middleware";
 import { checkSubscriptionStatus, getCompanySubscriptionStatus } from "./subscription-middleware";
-import { insertCompanySchema, insertPlanSchema, insertGlobalSettingsSchema, insertAdminSchema, financialCategories, paymentMethods, financialTransactions, companies, adminAlerts, companyAlertViews, insertCouponSchema, supportTickets, supportTicketTypes } from "@shared/schema";
+import { insertCompanySchema, insertPlanSchema, insertGlobalSettingsSchema, insertAdminSchema, financialCategories, paymentMethods, financialTransactions, companies, adminAlerts, companyAlertViews, insertCouponSchema, supportTickets, supportTicketTypes, supportTicketStatuses } from "@shared/schema";
 import bcrypt from "bcrypt";
 import { z } from "zod";
 import QRCode from "qrcode";
@@ -4682,31 +4682,81 @@ const broadcastEvent = (eventData: any) => {
     }
   });
 
+  // Admin routes for support ticket statuses
+  app.get('/api/admin/support-ticket-statuses', isAuthenticated, async (req, res) => {
+    try {
+      const statuses = await db.select().from(supportTicketStatuses).orderBy(asc(supportTicketStatuses.sortOrder));
+      res.json(statuses);
+    } catch (error) {
+      console.error("Error fetching support ticket statuses:", error);
+      res.status(500).json({ message: "Erro ao buscar status de tickets" });
+    }
+  });
+
+  app.post('/api/admin/support-ticket-statuses', isAuthenticated, async (req, res) => {
+    try {
+      const { name, description, color, isActive, sortOrder } = req.body;
+
+      await db.insert(supportTicketStatuses).values({
+        name,
+        description,
+        color: color || '#6b7280',
+        isActive: isActive !== undefined ? isActive : true,
+        sortOrder: sortOrder || 0
+      });
+
+      res.status(201).json({ message: "Status de ticket criado com sucesso" });
+    } catch (error) {
+      console.error("Error creating support ticket status:", error);
+      res.status(500).json({ message: "Erro ao criar status de ticket" });
+    }
+  });
+
+  app.put('/api/admin/support-ticket-statuses/:id', isAuthenticated, async (req, res) => {
+    try {
+      const statusId = parseInt(req.params.id);
+      const { name, description, color, isActive, sortOrder } = req.body;
+
+      await db.update(supportTicketStatuses)
+        .set({
+          name,
+          description,
+          color,
+          isActive,
+          sortOrder,
+          updatedAt: new Date()
+        })
+        .where(eq(supportTicketStatuses.id, statusId));
+
+      res.json({ message: "Status de ticket atualizado com sucesso" });
+    } catch (error) {
+      console.error("Error updating support ticket status:", error);
+      res.status(500).json({ message: "Erro ao atualizar status de ticket" });
+    }
+  });
+
+  app.delete('/api/admin/support-ticket-statuses/:id', isAuthenticated, async (req, res) => {
+    try {
+      const statusId = parseInt(req.params.id);
+
+      await db.delete(supportTicketStatuses).where(eq(supportTicketStatuses.id, statusId));
+
+      res.json({ message: "Status de ticket excluído com sucesso" });
+    } catch (error) {
+      console.error("Error deleting support ticket status:", error);
+      res.status(500).json({ message: "Erro ao excluir status de ticket" });
+    }
+  });
+
   // Admin routes for support tickets
   app.get('/api/admin/support-tickets', isAuthenticated, async (req, res) => {
     try {
-      const tickets = await db.select({
-        id: supportTickets.id,
-        companyId: supportTickets.companyId,
-        typeId: supportTickets.typeId,
-        title: supportTickets.title,
-        description: supportTickets.description,
-        status: supportTickets.status,
-        priority: supportTickets.priority,
-        category: supportTickets.category,
-        adminResponse: supportTickets.adminResponse,
-        createdAt: supportTickets.createdAt,
-        updatedAt: supportTickets.updatedAt,
-        resolvedAt: supportTickets.resolvedAt,
-        company: {
-          id: companies.id,
-          fantasyName: companies.fantasyName,
-          email: companies.email
-        }
-      })
-      .from(supportTickets)
-      .leftJoin(companies, eq(supportTickets.companyId, companies.id))
-      .orderBy(desc(supportTickets.createdAt));
+      const tickets = await db.select()
+        .from(supportTickets)
+        .leftJoin(companies, eq(supportTickets.companyId, companies.id))
+        .leftJoin(supportTicketTypes, eq(supportTickets.typeId, supportTicketTypes.id))
+        .leftJoin(supportTicketStatuses, eq(supportTickets.statusId, supportTicketStatuses.id))
+        .orderBy(desc(supportTickets.createdAt));
 
       res.json(tickets);
     } catch (error) {
