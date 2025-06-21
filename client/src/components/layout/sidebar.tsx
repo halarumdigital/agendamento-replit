@@ -16,7 +16,8 @@ import {
   CreditCard,
   TestTube,
   Bell,
-  Ticket
+  Ticket,
+  MessageSquare
 } from "lucide-react";
 import { useState } from "react";
 
@@ -43,6 +44,7 @@ export default function Sidebar({ systemName = "AdminPro", logoUrl }: SidebarPro
     { name: "Teste Assinaturas", href: "/administrador/subscriptions", icon: TestTube },
     { name: "Administradores", href: "/administrador/administradores", icon: Users },
     { name: "Alertas", href: "/administrador/alertas", icon: Bell },
+    { name: "Suporte", href: "/administrador/suporte", icon: MessageSquare },
     { name: "Status", href: "/administrador/status", icon: Circle },
     { name: "Configurações", href: "/administrador/configuracoes", icon: Settings },
   ];
