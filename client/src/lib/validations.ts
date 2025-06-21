@@ -53,6 +53,8 @@ export const companyProfileSchema = z.object({
   neighborhood: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),
+  planId: z.number().nullable().optional(),
+  isActive: z.boolean().optional(),
 });
 
 export const companyPasswordSchema = z.object({

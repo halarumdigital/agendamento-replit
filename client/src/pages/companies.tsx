@@ -97,7 +97,11 @@ export default function Companies() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<CompanyEditFormData> }) => {
-      await apiRequest("PUT", `/api/companies/${id}`, data);
+      const payload = { ...data };
+      if (payload.isActive !== undefined) {
+        (payload as any).isActive = payload.isActive ? 1 : 0;
+      }
+      await apiRequest("PUT", `/api/companies/${id}`, payload);
     },
     onSuccess: () => {
       toast({
