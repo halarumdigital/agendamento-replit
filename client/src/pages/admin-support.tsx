@@ -606,7 +606,7 @@ export default function AdminSupport() {
             <div className="space-y-4">
               <div>
                 <Label>Empresa</Label>
-                <p className="text-sm">{selectedTicket.company.fantasyName} - {selectedTicket.company.email}</p>
+                <p className="text-sm">{selectedTicket.companyName} - {selectedTicket.companyEmail}</p>
               </div>
               <div>
                 <Label>Descrição</Label>
@@ -615,7 +615,7 @@ export default function AdminSupport() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Status Atual</Label>
-                  <div className="mt-1">{getStatusBadge(selectedTicket.status)}</div>
+                  <div className="mt-1">{getStatusBadge(selectedTicket)}</div>
                 </div>
                 <div>
                   <Label>Prioridade</Label>
