@@ -216,6 +216,7 @@ export default function SettingsPage() {
       smtpSecure: "tls",
       customHtml: "",
       customDomainUrl: "",
+      systemUrl: "",
     },
     values: settings ? {
       systemName: settings.systemName,
@@ -240,6 +241,7 @@ export default function SettingsPage() {
       smtpSecure: (settings as any).smtpSecure || "tls",
       customHtml: (settings as any).customHtml || "",
       customDomainUrl: (settings as any).customDomainUrl || "",
+      systemUrl: (settings as any).systemUrl || "",
     } : undefined,
   });
 

@@ -1934,14 +1934,12 @@ export class DatabaseStorage implements IStorage {
         companyId: appointment.companyId
       });
 
-      // Generate review URL - use the configured custom domain or default
-      const globalSettings = await this.getGlobalSettings();
+      // Generate review URL - use the configured system URL or default
+      const settings = await this.getGlobalSettings();
       let reviewUrl = `http://localhost:5000/review/${token}`;
       
-      if (company.customDomainUrl) {
-        reviewUrl = `${company.customDomainUrl}/review/${token}`;
-      } else if (globalSettings?.systemUrl) {
-        reviewUrl = `${globalSettings.systemUrl}/review/${token}`;
+      if (settings?.systemUrl) {
+        reviewUrl = `${settings.systemUrl}/review/${token}`;
       }
 
       // Format message
@@ -1956,6 +1954,10 @@ Sua opinião é muito importante para nós! Por favor, avalie nosso serviço cli
 Obrigado pela preferência! 🙏`;
 
       // Format phone number - ensure we have a valid phone number
+      if (!appointment.clientPhone) {
+        return { success: false, message: "Número de telefone do cliente não informado" };
+      }
+      
       const cleanPhone = appointment.clientPhone.replace(/\D/g, '');
       let formattedPhone = cleanPhone;
       
@@ -1970,8 +1972,8 @@ Obrigado pela preferência! 🙏`;
       }
 
       // Get Evolution API settings from existing global settings
-      const evolutionApiUrl = globalSettings?.evolutionApiUrl || whatsappInstance.apiUrl;
-      const apiKey = globalSettings?.evolutionApiGlobalKey || whatsappInstance.apiKey;
+      const evolutionApiUrl = settings?.evolutionApiUrl || whatsappInstance.apiUrl;
+      const apiKey = settings?.evolutionApiGlobalKey || whatsappInstance.apiKey;
 
       if (!evolutionApiUrl || !apiKey) {
         return { success: false, message: "Configuração da API do WhatsApp não encontrada nas configurações globais" };
@@ -1990,7 +1992,7 @@ Obrigado pela preferência! 🙏`;
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'apikey': apiKey
+          'apikey': apiKey || ''
         },
         body: JSON.stringify({
           number: formattedPhone,
