@@ -25,7 +25,6 @@ import {
   getLoyaltyRewardsHistory 
 } from "./storage";
 import { formatBrazilianPhone, validateBrazilianPhone, normalizePhone } from "../shared/phone-utils";
-import { stripeService } from "./services/stripe";
 
 // Configure multer for file uploads
 const storage_config = multer.diskStorage({
@@ -1456,13 +1455,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
         const permissionsJson = JSON.stringify(defaultPermissions);
 
-        // Insere planos padrão no banco de dados
+        // Insere planos padrão no banco de dados com preços anuais
         await db.execute(sql`
-          INSERT INTO plans (name, price, free_days, permissions, max_professionals, is_active)
+          INSERT INTO plans (name, price, annual_price, free_days, permissions, max_professionals, is_active)
           VALUES 
-            ('Básico', 29.90, 7, ${permissionsJson}, 1, true),
-            ('Profissional', 59.90, 15, ${permissionsJson}, 5, true),
-            ('Premium', 99.90, 30, ${permissionsJson}, 15, true)
+            ('Básico', 49.90, 479.00, 7, ${permissionsJson}, 1, true),
+            ('Profissional', 89.90, 862.00, 15, ${permissionsJson}, 5, true),
+            ('Premium', 149.90, 1439.00, 30, ${permissionsJson}, 15, true)
         `);
         
         // Busca os planos recém-criados
@@ -1489,6 +1488,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: plan.id,
           name: plan.name,
           price: plan.price,
+          annualPrice: plan.annual_price,
           stripePriceId: plan.stripe_price_id || `price_${plan.name.toLowerCase()}`,
           freeDays: plan.free_days,
           description: `Plano ${plan.name} - Ideal para seu negócio`,
