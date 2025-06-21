@@ -142,6 +142,8 @@ This is a comprehensive business management system built with Express.js and MyS
 ## Changelog
 ```
 Changelog:
+- June 21, 2025. Implemented complete WhatsApp instance management system - added full CRUD operations for WhatsApp instances with proper Evolution API integration using /instance/create endpoint, webhook configuration, and comprehensive error handling
+- June 21, 2025. Applied Evolution API URL correction across entire codebase - fixed all WhatsApp messaging, campaign scheduling, and instance management to use proper /api/ endpoints instead of web interface URLs
 - June 21, 2025. Resolved Evolution API URL configuration issues - implemented automatic endpoint detection and correction for proper API communication instead of web interface access
 - June 21, 2025. Fixed admin settings FormDescription import error - admin configuration page now loads correctly
 - June 21, 2025. Enhanced Evolution API connection diagnostics - added detailed URL correction logging and improved error messages for HTML responses

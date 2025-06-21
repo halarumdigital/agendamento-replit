@@ -5198,6 +5198,208 @@ const broadcastEvent = (eventData: any) => {
     }
   });
 
+  // WhatsApp Instances Management API
+  app.get('/api/company/whatsapp/instances', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const instances = await storage.getWhatsappInstancesByCompany(companyId);
+      res.json(instances);
+    } catch (error) {
+      console.error("Error fetching WhatsApp instances:", error);
+      res.status(500).json({ message: "Erro ao buscar instâncias do WhatsApp" });
+    }
+  });
+
+  app.post('/api/company/whatsapp/instances', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const { instanceName, phoneNumber } = req.body;
+
+      if (!instanceName || !phoneNumber) {
+        return res.status(400).json({ message: "Nome da instância e telefone são obrigatórios" });
+      }
+
+      console.log(`📱 Creating WhatsApp instance: ${instanceName} for company ${companyId}`);
+
+      // Get global Evolution API settings
+      const globalSettings = await storage.getGlobalSettings();
+      if (!globalSettings?.evolutionApiUrl || !globalSettings?.evolutionApiGlobalKey) {
+        console.error("❌ Evolution API not configured");
+        return res.status(400).json({ message: "Evolution API não configurada" });
+      }
+
+      // Create instance in Evolution API first
+      const correctedApiUrl = ensureEvolutionApiEndpoint(globalSettings.evolutionApiUrl);
+      const createInstanceUrl = `${correctedApiUrl}/instance/create`;
+      
+      console.log(`🔗 Creating instance in Evolution API: ${createInstanceUrl}`);
+
+      const webhookUrl = generateWebhookUrl(req, instanceName);
+      
+      const evolutionPayload = {
+        instanceName: instanceName,
+        token: globalSettings.evolutionApiGlobalKey,
+        qrcode: true,
+        webhook: webhookUrl,
+        webhook_by_events: true,
+        events: [
+          "APPLICATION_STARTUP",
+          "QRCODE_UPDATED", 
+          "CONNECTION_UPDATE",
+          "MESSAGES_UPSERT",
+          "MESSAGES_UPDATE",
+          "MESSAGES_DELETE",
+          "SEND_MESSAGE",
+          "CONTACTS_UPDATE",
+          "CONTACTS_UPSERT",
+          "PRESENCE_UPDATE",
+          "CHATS_UPDATE",
+          "CHATS_UPSERT",
+          "CHATS_DELETE",
+          "GROUPS_UPSERT",
+          "GROUP_UPDATE",
+          "GROUP_PARTICIPANTS_UPDATE",
+          "NEW_JWT_TOKEN"
+        ]
+      };
+
+      console.log(`📤 Sending payload to Evolution API:`, JSON.stringify(evolutionPayload, null, 2));
+
+      const evolutionResponse = await fetch(createInstanceUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': globalSettings.evolutionApiGlobalKey
+        },
+        body: JSON.stringify(evolutionPayload)
+      });
+
+      console.log(`📡 Evolution API response status: ${evolutionResponse.status}`);
+      const responseText = await evolutionResponse.text();
+      console.log(`📋 Evolution API response: ${responseText.substring(0, 500)}`);
+
+      if (!evolutionResponse.ok) {
+        console.error(`❌ Evolution API error: ${evolutionResponse.status} - ${responseText}`);
+        
+        // Check if response is HTML (indicates URL correction needed)
+        if (responseText.includes('<!DOCTYPE') || responseText.includes('<html>')) {
+          return res.status(500).json({ 
+            message: "Erro na configuração da Evolution API - URL incorreta",
+            details: "A URL da Evolution API parece estar apontando para interface web ao invés da API"
+          });
+        }
+        
+        return res.status(500).json({ 
+          message: "Erro ao criar instância na Evolution API",
+          details: responseText.substring(0, 200)
+        });
+      }
+
+      let evolutionData;
+      try {
+        evolutionData = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error("❌ Failed to parse Evolution API response:", parseError);
+        return res.status(500).json({ 
+          message: "Resposta inválida da Evolution API",
+          details: responseText.substring(0, 200)
+        });
+      }
+
+      console.log(`✅ Evolution API instance created successfully:`, evolutionData);
+
+      // Create instance in database
+      const instanceData = {
+        companyId,
+        instanceName,
+        phoneNumber,
+        status: 'connecting',
+        apiKey: globalSettings.evolutionApiGlobalKey,
+        webhookUrl: webhookUrl,
+        qrCode: null
+      };
+
+      const dbInstance = await storage.createWhatsappInstance(instanceData);
+      console.log(`✅ Database instance created with ID: ${dbInstance.id}`);
+
+      res.status(201).json({
+        message: "Instância do WhatsApp criada com sucesso",
+        instance: dbInstance,
+        evolutionResponse: evolutionData
+      });
+
+    } catch (error: any) {
+      console.error("Error creating WhatsApp instance:", error);
+      res.status(500).json({ 
+        message: "Erro ao criar instância do WhatsApp",
+        details: error.message
+      });
+    }
+  });
+
+  app.delete('/api/company/whatsapp/instances/:id', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const instanceId = parseInt(req.params.id);
+      const instance = await storage.getWhatsappInstance(instanceId);
+      
+      if (!instance || instance.companyId !== companyId) {
+        return res.status(404).json({ message: "Instância não encontrada" });
+      }
+
+      console.log(`🗑️ Deleting WhatsApp instance: ${instance.instanceName}`);
+
+      // Delete from Evolution API first
+      const globalSettings = await storage.getGlobalSettings();
+      if (globalSettings?.evolutionApiUrl && globalSettings?.evolutionApiGlobalKey) {
+        try {
+          const correctedApiUrl = ensureEvolutionApiEndpoint(globalSettings.evolutionApiUrl);
+          const deleteUrl = `${correctedApiUrl}/instance/delete/${instance.instanceName}`;
+          
+          const evolutionResponse = await fetch(deleteUrl, {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': globalSettings.evolutionApiGlobalKey
+            }
+          });
+
+          console.log(`📡 Evolution API delete response: ${evolutionResponse.status}`);
+          
+          if (!evolutionResponse.ok) {
+            console.error(`⚠️ Failed to delete from Evolution API: ${evolutionResponse.status}`);
+          } else {
+            console.log(`✅ Instance deleted from Evolution API`);
+          }
+        } catch (evolutionError) {
+          console.error("⚠️ Error deleting from Evolution API:", evolutionError);
+          // Continue with database deletion even if Evolution API fails
+        }
+      }
+
+      // Delete from database
+      await storage.deleteWhatsappInstance(instanceId);
+      console.log(`✅ Instance deleted from database`);
+
+      res.json({ message: "Instância do WhatsApp excluída com sucesso" });
+    } catch (error) {
+      console.error("Error deleting WhatsApp instance:", error);
+      res.status(500).json({ message: "Erro ao excluir instância do WhatsApp" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
