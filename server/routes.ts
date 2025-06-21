@@ -5553,7 +5553,7 @@ const broadcastEvent = (eventData: any) => {
           enabled: true,
           url: webhookUrl,
           webhookByEvents: true,
-          webhookBase64: false,
+          webhookBase64: true,
           events: [
             "QRCODE_UPDATED",
             "MESSAGES_UPSERT"
