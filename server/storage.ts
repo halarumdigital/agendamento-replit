@@ -253,6 +253,13 @@ export interface IStorage {
   // Points management operations
   getClientPointsByCompany(companyId: number): Promise<any[]>;
   getClientPointsById(clientId: number, companyId: number): Promise<any>;
+
+  // Coupon operations
+  getCoupons(): Promise<Coupon[]>;
+  getCoupon(id: number): Promise<Coupon | undefined>;
+  createCoupon(coupon: InsertCoupon): Promise<Coupon>;
+  updateCoupon(id: number, coupon: Partial<InsertCoupon>): Promise<Coupon>;
+  deleteCoupon(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2304,49 +2311,32 @@ Obrigado pela preferência! 🙏`;
   }
 
   // Coupon methods
-  async getCoupons(companyId: number): Promise<Coupon[]> {
-    return await db.select().from(coupons)
-      .where(eq(coupons.companyId, companyId))
-      .orderBy(desc(coupons.createdAt));
+  async getCoupons(): Promise<Coupon[]> {
+    return await db.select().from(coupons);
+  }
+
+  async getCoupon(id: number): Promise<Coupon | undefined> {
+    const [coupon] = await db.select().from(coupons).where(eq(coupons.id, id));
+    return coupon;
   }
 
   async createCoupon(couponData: InsertCoupon): Promise<Coupon> {
     await db.insert(coupons).values(couponData);
-    
-    const [coupon] = await db.select().from(coupons)
-      .where(eq(coupons.companyId, couponData.companyId))
-      .orderBy(desc(coupons.id))
-      .limit(1);
-    
-    if (!coupon) {
-      throw new Error("Failed to create coupon");
+    const [newCoupon] = await db.select().from(coupons).where(eq(coupons.code, couponData.code));
+    if (!newCoupon) {
+      throw new Error("Could not create coupon");
     }
-    
-    return coupon;
+    return newCoupon;
   }
 
   async updateCoupon(id: number, couponData: Partial<InsertCoupon>): Promise<Coupon> {
-    await db.update(coupons)
-      .set({ ...couponData, updatedAt: new Date() })
-      .where(eq(coupons.id, id));
-
-    const [coupon] = await db.select().from(coupons)
-      .where(eq(coupons.id, id))
-      .limit(1);
-      
-    if (!coupon) {
-      throw new Error("Coupon not found after update");
-    }
-    
-    return coupon;
+    await db.update(coupons).set(couponData).where(eq(coupons.id, id));
+    const [updatedCoupon] = await db.select().from(coupons).where(eq(coupons.id, id));
+    return updatedCoupon;
   }
 
-  async deleteCoupon(id: number, companyId: number): Promise<void> {
-    await db.delete(coupons)
-      .where(and(
-        eq(coupons.id, id),
-        eq(coupons.companyId, companyId)
-      ));
+  async deleteCoupon(id: number): Promise<void> {
+    await db.delete(coupons).where(eq(coupons.id, id));
   }
 
   async getCouponByCode(code: string, companyId: number): Promise<Coupon | undefined> {
@@ -2904,5 +2894,41 @@ export async function getLoyaltyRewardsHistory(companyId: number) {
     console.log('✅ Coupons table created/verified');
   } catch (error) {
     console.error('Error creating coupons table:', error);
+  }
+})();
+
+// Ensure company_id column exists in coupons table
+(async () => {
+  try {
+    // This is a bit of a hack for MySQL/PlanetScale to check if a column exists.
+    // It will throw an error if the column doesn't exist, which we catch.
+    await db.execute(sql`SELECT company_id FROM coupons LIMIT 1`);
+    console.log("✅ company_id column already exists in coupons table.");
+  } catch (error) {
+    // If the error indicates the column is unknown, we add it.
+    if (error.message.includes("Unknown column 'company_id'")) {
+      console.log("company_id column not found in coupons table, adding it...");
+      try {
+        await db.execute(sql`
+          ALTER TABLE coupons
+          ADD COLUMN company_id INT NOT NULL AFTER id
+        `);
+        console.log("✅ company_id column added to coupons table.");
+        
+        // Add foreign key constraint
+        await db.execute(sql`
+          ALTER TABLE coupons
+          ADD CONSTRAINT fk_coupon_company
+          FOREIGN KEY (company_id) REFERENCES companies(id)
+          ON DELETE CASCADE
+        `);
+        console.log("✅ Foreign key constraint added to coupons table.");
+      } catch (migrationError) {
+        console.error("❌ Error adding company_id column to coupons table:", migrationError);
+      }
+    } else {
+      // For other errors, we just log them. The table might not exist yet.
+      console.warn("Could not check for company_id column in coupons table. This might be okay if the table doesn't exist yet.", error.message);
+    }
   }
 })();

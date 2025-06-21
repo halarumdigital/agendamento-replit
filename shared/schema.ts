@@ -9,6 +9,7 @@ import {
   decimal,
   boolean,
   date,
+  serial,
 } from "drizzle-orm/mysql-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -448,15 +449,15 @@ export const coupons = mysqlTable("coupons", {
   id: int("id").primaryKey().autoincrement(),
   companyId: int("company_id").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
-  code: varchar("code", { length: 50 }).notNull(),
-  discountType: varchar("discount_type", { length: 20 }).notNull(), // 'fixed' or 'percentage'
+  code: varchar("code", { length: 50 }).notNull().unique(),
+  discountType: varchar("discount_type", { length: 20 }).notNull(), // 'percentage' or 'fixed'
   discountValue: decimal("discount_value", { precision: 10, scale: 2 }).notNull(),
-  validUntil: date("valid_until").notNull(),
-  isActive: boolean("is_active").default(true),
-  usageLimit: int("usage_limit"), // null = unlimited
-  usedCount: int("used_count").default(0),
+  expiresAt: timestamp("expires_at"),
+  maxUses: int("max_uses").notNull().default(1),
+  usesCount: int("uses_count").notNull().default(0),
+  isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Message campaigns table
@@ -747,10 +748,10 @@ export const insertFinancialTransactionSchema = createInsertSchema(financialTran
   updatedAt: true,
 });
 
-export const insertCouponSchema = createInsertSchema(coupons).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertCouponSchema = createInsertSchema(coupons, {
+  discountValue: z.number(),
+  usageLimit: z.number().optional(),
+  companyId: z.number(),
 });
 
 export const insertAdminAlertSchema = createInsertSchema(adminAlerts).omit({

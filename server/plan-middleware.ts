@@ -1,34 +1,17 @@
 import { Request, Response, NextFunction } from 'express';
 import { storage } from './storage';
+import type { Plan } from "@shared/schema";
+import type { Session, SessionData } from "express-session";
 
-interface CompanySession {
+// Define a type for company session data
+interface CompanySession extends Session {
   companyId: number;
-  user?: any;
 }
 
+// Define a type for the request object with company plan
 export interface RequestWithPlan extends Request {
-  companyPlan?: {
-    id: number;
-    name: string;
-    maxProfessionals: number;
-    permissions: {
-      dashboard: boolean;
-      appointments: boolean;
-      services: boolean;
-      professionals: boolean;
-      clients: boolean;
-      reviews: boolean;
-      tasks: boolean;
-      pointsProgram: boolean;
-      loyalty: boolean;
-      inventory: boolean;
-      messages: boolean;
-      coupons: boolean;
-      financial: boolean;
-      reports: boolean;
-      settings: boolean;
-    };
-  };
+  companyPlan?: Plan;
+  session: CompanySession;
 }
 
 // Middleware para carregar informações do plano da empresa
@@ -56,6 +39,13 @@ export const loadCompanyPlan = async (req: RequestWithPlan, res: Response, next:
     req.companyPlan = {
       id: plan.id,
       name: plan.name,
+      price: plan.price,
+      freeDays: plan.freeDays,
+      stripePriceId: plan.stripePriceId,
+      stripeProductId: plan.stripeProductId,
+      isActive: plan.isActive,
+      createdAt: plan.createdAt,
+      updatedAt: plan.updatedAt,
       maxProfessionals: plan.maxProfessionals || 1,
       permissions: plan.permissions || {
         dashboard: true,
@@ -63,15 +53,15 @@ export const loadCompanyPlan = async (req: RequestWithPlan, res: Response, next:
         services: true,
         professionals: true,
         clients: true,
-        reviews: false,
-        tasks: false,
-        pointsProgram: false,
-        loyalty: false,
-        inventory: false,
-        messages: false,
-        coupons: false,
-        financial: false,
-        reports: false,
+        reviews: true,
+        tasks: true,
+        pointsProgram: true,
+        loyalty: true,
+        inventory: true,
+        messages: true,
+        coupons: true,
+        financial: true,
+        reports: true,
         settings: true,
       }
     };
@@ -83,32 +73,47 @@ export const loadCompanyPlan = async (req: RequestWithPlan, res: Response, next:
   }
 };
 
-// Middleware para verificar permissão específica
-export const requirePermission = (permission: keyof RequestWithPlan['companyPlan']['permissions']) => {
+// Middleware para verificar permissão do plano
+export const requirePermission = (permission: keyof Plan['permissions']) => {
   return (req: RequestWithPlan, res: Response, next: NextFunction) => {
-    if (!req.companyPlan) {
-      return res.status(403).json({ message: 'Acesso negado - plano não encontrado' });
+    
+    const session = req.session as CompanySession;
+
+    // Se não for sessão de empresa, permitir acesso (ex: admin)
+    if (!session.companyId) {
+      return next();
     }
 
-    if (!req.companyPlan.permissions[permission]) {
-      return res.status(403).json({ 
-        message: `Acesso negado - seu plano não inclui acesso a ${getPermissionName(permission)}`,
-        missingPermission: permission
+    if (!req.companyPlan) {
+      return res.status(403).json({ message: "Plano da empresa não carregado" });
+    }
+
+    const permissions = req.companyPlan.permissions || {};
+    
+    if (permissions[permission]) {
+      next(); // Tem permissão, continua
+    } else {
+      res.status(403).json({ 
+        message: `Acesso negado. Seu plano "${req.companyPlan.name}" não inclui a funcionalidade de "${permission}".`,
+        requiredPermission: permission
       });
     }
-
-    next();
   };
 };
 
 // Middleware para verificar limite de profissionais
 export const checkProfessionalsLimit = async (req: RequestWithPlan, res: Response, next: NextFunction) => {
   try {
+    const session = req.session as CompanySession;
+
+    if (!session.companyId) {
+      return next(); // Não é uma sessão de empresa
+    }
+
     if (!req.companyPlan) {
       return res.status(403).json({ message: 'Acesso negado - plano não encontrado' });
     }
 
-    const session = req.session as CompanySession;
     const currentCount = await storage.getProfessionalsCount(session.companyId);
     
     if (currentCount >= req.companyPlan.maxProfessionals) {

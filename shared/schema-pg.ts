@@ -316,6 +316,21 @@ export const pointsHistory = pgTable("points_history", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Coupons table
+export const coupons = pgTable("coupons", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  code: varchar("code", { length: 255 }).notNull().unique(),
+  discountType: varchar("discount_type", { length: 50 }).notNull(), // 'percentage' or 'fixed'
+  discountValue: decimal("discount_value", { precision: 10, scale: 2 }).notNull(),
+  expiresAt: timestamp("expires_at"),
+  maxUses: integer("max_uses").notNull().default(1),
+  usesCount: integer("uses_count").notNull().default(0),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Relations
 export const companiesRelations = relations(companies, ({ many }) => ({
   professionals: many(professionals),
@@ -634,3 +649,9 @@ export type PointsHistory = typeof pointsHistory.$inferSelect;
 export type InsertPointsHistory = z.infer<typeof insertPointsHistorySchema>;
 export type Task = typeof tasks.$inferSelect;
 export type InsertTask = z.infer<typeof insertTaskSchema>;
+export type TaskReminder = typeof taskReminders.$inferSelect;
+export type InsertTaskReminder = typeof taskReminders.$inferInsert;
+
+export const insertCouponSchema = createInsertSchema(coupons);
+export type Coupon = typeof coupons.$inferSelect;
+export type InsertCoupon = z.infer<typeof insertCouponSchema>;
