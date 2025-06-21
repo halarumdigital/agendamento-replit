@@ -5456,6 +5456,68 @@ const broadcastEvent = (eventData: any) => {
     }
   });
 
+  // Refresh instance status from Evolution API
+  app.get('/api/company/whatsapp/instances/:instanceName/refresh-status', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const instanceName = req.params.instanceName;
+      
+      // Verify instance belongs to company
+      const instance = await storage.getWhatsappInstanceByName(instanceName, companyId);
+      if (!instance) {
+        return res.status(404).json({ message: "Instância não encontrada" });
+      }
+
+      console.log(`🔄 Refreshing status for instance: ${instanceName}`);
+
+      const globalSettings = await storage.getGlobalSettings();
+      if (!globalSettings?.evolutionApiUrl || !globalSettings?.evolutionApiGlobalKey) {
+        return res.status(500).json({ message: "Configurações da Evolution API não encontradas" });
+      }
+
+      // For connection status endpoint, use base URL without /api/ prefix
+      const baseUrl = globalSettings.evolutionApiUrl.replace(/\/$/, '');
+      const statusUrl = `${baseUrl}/instance/connectionState/${instanceName}`;
+      
+      const evolutionResponse = await fetch(statusUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': globalSettings.evolutionApiGlobalKey
+        }
+      });
+
+      if (!evolutionResponse.ok) {
+        console.error(`❌ Evolution API status error: ${evolutionResponse.status}`);
+        return res.status(evolutionResponse.status).json({ 
+          message: "Erro ao buscar status da Evolution API" 
+        });
+      }
+
+      const statusData = await evolutionResponse.json();
+      console.log(`✅ Status retrieved for instance: ${instanceName}`, statusData);
+
+      // Update status in database
+      await storage.updateWhatsappInstance(instance.id, { status: statusData.instance?.state || 'unknown' });
+
+      res.json({
+        status: statusData.instance?.state || 'unknown',
+        connectionState: statusData
+      });
+
+    } catch (error: any) {
+      console.error("Error refreshing instance status:", error);
+      res.status(500).json({ 
+        message: "Erro ao atualizar status",
+        details: error.message
+      });
+    }
+  });
+
   app.delete('/api/company/whatsapp/instances/:id', async (req: any, res) => {
     try {
       const companyId = req.session.companyId;
