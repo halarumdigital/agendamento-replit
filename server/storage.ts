@@ -2019,7 +2019,6 @@ Obrigado pela preferência! 🙏`;
       console.log('=== EVOLUTION API URL DETAILS ===');
       console.log('Original URL:', evolutionApiUrl);
       console.log('Base URL:', baseUrl);
-      console.log('Corrected URL:', correctedApiUrl);
       console.log('Full WhatsApp URL:', whatsappApiUrl);
 
       const response = await fetch(whatsappApiUrl, {
