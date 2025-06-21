@@ -5552,7 +5552,7 @@ const broadcastEvent = (eventData: any) => {
         webhook: {
           enabled: true,
           url: webhookUrl,
-          webhookByEvents: false,
+          webhookByEvents: true,
           webhookBase64: false,
           events: [
             "APPLICATION_STARTUP",
