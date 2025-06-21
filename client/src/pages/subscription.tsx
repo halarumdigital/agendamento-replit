@@ -19,6 +19,7 @@ interface Plan {
   name: string;
   freeDays: number;
   price: string;
+  annualPrice: string | null;
   maxProfessionals: number;
   isActive: boolean;
   permissions: {
@@ -99,6 +100,7 @@ export default function Subscription() {
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [step, setStep] = useState<'plans' | 'payment'>('plans');
   const [clientSecret, setClientSecret] = useState<string>('');
+  const [isAnnual, setIsAnnual] = useState(false);
   const { company } = useCompanyAuth();
 
   const { data: plans = [], isLoading: plansLoading } = useQuery<Plan[]>({
@@ -110,8 +112,8 @@ export default function Subscription() {
   });
 
   const createSubscriptionMutation = useMutation({
-    mutationFn: async (planId: number) => {
-      return await apiRequest("POST", "/api/create-subscription", { planId });
+    mutationFn: async ({ planId, isAnnual }: { planId: number; isAnnual: boolean }) => {
+      return await apiRequest("POST", "/api/create-subscription", { planId, isAnnual });
     },
     onSuccess: (data) => {
       if (data.clientSecret) {
@@ -136,7 +138,7 @@ export default function Subscription() {
 
   const handleSelectPlan = (plan: Plan) => {
     setSelectedPlan(plan);
-    createSubscriptionMutation.mutate(plan.id);
+    createSubscriptionMutation.mutate({ planId: plan.id, isAnnual });
   };
 
   const handlePaymentSuccess = () => {
@@ -194,10 +196,36 @@ export default function Subscription() {
       </div>
 
       {step === 'plans' && (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-          {plans.map((plan) => {
-            const IconComponent = getPlanIcon(plan.name);
-            const isPopular = plan.name.toLowerCase().includes('profissional');
+        <>
+          {/* Toggle para plano mensal/anual */}
+          <div className="flex justify-center mb-8">
+            <div className="bg-muted p-1 rounded-lg">
+              <Button
+                variant={!isAnnual ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setIsAnnual(false)}
+                className="px-4"
+              >
+                Mensal
+              </Button>
+              <Button
+                variant={isAnnual ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setIsAnnual(true)}
+                className="px-4"
+              >
+                Anual
+                <Badge variant="secondary" className="ml-2 text-xs">
+                  -20%
+                </Badge>
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+            {plans.map((plan) => {
+              const IconComponent = getPlanIcon(plan.name);
+              const isPopular = plan.name.toLowerCase().includes('profissional');
             
             return (
               <Card key={plan.id} className={`relative ${isPopular ? 'ring-2 ring-primary' : ''}`}>
@@ -212,8 +240,20 @@ export default function Subscription() {
                   </div>
                   <CardTitle className="text-2xl">{plan.name}</CardTitle>
                   <div className="text-3xl font-bold">
-                    R$ {parseFloat(plan.price).toFixed(2)}
-                    <span className="text-sm font-normal text-muted-foreground">/mês</span>
+                    {isAnnual && plan.annualPrice ? (
+                      <>
+                        R$ {(parseFloat(plan.annualPrice) / 12).toFixed(2)}
+                        <span className="text-sm font-normal text-muted-foreground">/mês</span>
+                        <div className="text-sm text-green-600 font-normal">
+                          Cobrado anualmente: R$ {parseFloat(plan.annualPrice).toFixed(2)}
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        R$ {parseFloat(plan.price).toFixed(2)}
+                        <span className="text-sm font-normal text-muted-foreground">/mês</span>
+                      </>
+                    )}
                   </div>
                   {plan.freeDays > 0 && (
                     <CardDescription>
@@ -279,7 +319,8 @@ export default function Subscription() {
               </Card>
             );
           })}
-        </div>
+          </div>
+        </>
       )}
 
       {step === 'payment' && clientSecret && selectedPlan && (
