@@ -150,6 +150,7 @@ Changelog:
 - June 21, 2025. Optimized webhook events configuration - reduced to essential events (QRCODE_UPDATED, MESSAGES_UPSERT) for better performance and Evolution API compatibility
 - June 21, 2025. Fixed webhook payload structure for Evolution API - restored webhook object structure as required by Evolution API validation
 - June 21, 2025. Corrected webhookBase64 parameter to true - Evolution API now properly accepts webhook configuration with base64 encoding enabled
+- June 21, 2025. ONGOING: Evolution API webhook configuration challenge - webhookByEvents and webhookBase64 parameters consistently return false despite being sent as true in payload, investigating proper payload structure for Evolution API v2.3.0
 - June 21, 2025. Implemented complete WhatsApp instance management system - added full CRUD operations for WhatsApp instances with proper Evolution API integration using /instance/create endpoint, webhook configuration, and comprehensive error handling
 - June 21, 2025. Applied Evolution API URL correction across entire codebase - fixed all WhatsApp messaging, campaign scheduling, and instance management to use proper /api/ endpoints instead of web interface URLs
 - June 21, 2025. Resolved Evolution API URL configuration issues - implemented automatic endpoint detection and correction for proper API communication instead of web interface access
