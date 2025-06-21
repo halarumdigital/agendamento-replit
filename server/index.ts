@@ -73,6 +73,9 @@ app.use((req, res, next) => {
   // Ensure custom domain URL column exists
   await ensureCustomDomainColumn();
   
+  // Ensure system URL column exists
+  await ensureSystemUrlColumn();
+  
   // Ensure address columns exist
   await ensureAddressColumns();
   

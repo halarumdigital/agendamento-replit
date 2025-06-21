@@ -399,6 +399,26 @@ export default function SettingsPage() {
 
                   <FormField
                     control={form.control}
+                    name="systemUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>URL do Sistema</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="https://agenday.gilliard.dev" 
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          URL base do sistema usado nos links de avaliação e comunicações externas.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
                     name="logoUrl"
                     render={({ field }) => (
                       <FormItem>
