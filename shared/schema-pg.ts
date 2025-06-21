@@ -48,6 +48,7 @@ export const companies = pgTable("companies", {
   email: varchar("email", { length: 255 }).notNull().unique(),
   password: varchar("password", { length: 255 }).notNull(),
   aiAgentPrompt: text("ai_agent_prompt"),
+  trialDays: integer("trial_days"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -466,10 +467,14 @@ export const insertAdminSchema = createInsertSchema(admins).omit({
   updatedAt: true,
 });
 
-export const insertCompanySchema = createInsertSchema(companies).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertCompanySchema = createInsertSchema(companies, {
+  email: z.string().email({ message: "E-mail inválido" }),
+  password: z.string().min(6, { message: "Senha deve ter pelo menos 6 caracteres" }),
+  fantasyName: z.string().min(2, { message: "Nome fantasia deve ter pelo menos 2 caracteres" }),
+  document: z.string().min(11, { message: "CNPJ/CPF é obrigatório" }),
+  address: z.string().min(5, { message: "Endereço é obrigatório" }),
+}).extend({
+  trialDays: z.number().int().optional(),
 });
 
 export const insertPlanSchema = createInsertSchema(plans).omit({

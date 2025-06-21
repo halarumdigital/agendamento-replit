@@ -1,0 +1,1 @@
+ALTER TABLE companies ADD COLUMN trial_days INTEGER; 

@@ -51,6 +51,7 @@ export default function Companies() {
       state: "",
       email: "",
       password: "",
+      trialDays: undefined,
     },
   });
 
@@ -583,6 +584,24 @@ export default function Companies() {
                     </p>
                   )}
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="trialDays">Dias Grátis (Opcional)</Label>
+                <Input
+                  id="trialDays"
+                  type="number"
+                  {...form.register("trialDays")}
+                  placeholder="Ex: 7"
+                />
+                <p className="text-xs text-slate-500">
+                  Sobrescreve os dias grátis do plano selecionado.
+                </p>
+                {form.formState.errors.trialDays && (
+                  <p className="text-sm text-red-600">
+                    {form.formState.errors.trialDays.message}
+                  </p>
+                )}
               </div>
 
               <div className="flex justify-end space-x-4">
