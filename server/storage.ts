@@ -2007,23 +2007,25 @@ Obrigado pela preferência! 🙏`;
       console.log('Formatted Phone:', formattedPhone);
       console.log('API Key configured:', !!apiKey);
 
-      // Apply Evolution API URL correction
+      // Apply Evolution API URL correction - ensure proper API endpoint format
       let correctedApiUrl = evolutionApiUrl;
       
-      // Check if URL needs correction (contains web interface patterns)
-      if (evolutionApiUrl?.includes('.halarum.com.br') && !evolutionApiUrl.includes('/api/')) {
-        console.log('🔧 Correcting Evolution API URL from web interface to API endpoint');
-        const baseUrl = evolutionApiUrl.replace(/\/+$/, ''); // Remove trailing slashes
+      // Remove trailing slashes first
+      const baseUrl = evolutionApiUrl.replace(/\/+$/, '');
+      
+      // Check if URL needs correction (ensure it ends with /api for Evolution API v2.3.0)
+      if (!baseUrl.endsWith('/api')) {
         correctedApiUrl = `${baseUrl}/api`;
-      } else if (!evolutionApiUrl?.includes('/api/')) {
-        correctedApiUrl = `${evolutionApiUrl?.replace(/\/$/, '')}/api`;
+        console.log('🔧 Corrected Evolution API URL to include /api endpoint');
       }
       
       const whatsappApiUrl = `${correctedApiUrl}/message/sendText/${whatsappInstance.instanceName}`;
       
-      console.log('Original Evolution API URL:', evolutionApiUrl);
-      console.log('Corrected API URL:', correctedApiUrl);
-      console.log('Full API URL:', whatsappApiUrl);
+      console.log('=== EVOLUTION API URL DETAILS ===');
+      console.log('Original URL:', evolutionApiUrl);
+      console.log('Base URL:', baseUrl);
+      console.log('Corrected URL:', correctedApiUrl);
+      console.log('Full WhatsApp URL:', whatsappApiUrl);
 
       const response = await fetch(whatsappApiUrl, {
         method: 'POST',
