@@ -12,6 +12,7 @@ import { ensureCustomDomainColumn } from "./ensure-custom-domain-column";
 import { ensureAddressColumns } from "./ensure-address-columns";
 import { ensureStripeColumns } from "./ensure-stripe-columns";
 import { ensureAdminAlertsTables } from "./ensure-admin-alerts-tables";
+import { ensureSupportTables } from "./ensure-support-tables";
 import { db } from "./db";
 import path from "path";
 
@@ -79,6 +80,9 @@ app.use((req, res, next) => {
   
   // Ensure admin alerts tables exist
   await ensureAdminAlertsTables();
+  
+  // Ensure support tables exist
+  await ensureSupportTables();
   
   // Start campaign scheduler
   startCampaignScheduler();
