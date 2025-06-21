@@ -3407,6 +3407,98 @@ INSTRUÇÕES OBRIGATÓRIAS:
     }
   });
 
+  // Company Plan Info API
+  app.get('/api/company/plan-info', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      // Buscar empresa e seu plano
+      const company = await storage.getCompany(companyId);
+      if (!company || !company.planId) {
+        return res.status(404).json({ message: "Empresa ou plano não encontrado" });
+      }
+
+      // Buscar detalhes do plano
+      const plan = await storage.getPlan(company.planId);
+      if (!plan) {
+        return res.status(404).json({ message: "Plano não encontrado" });
+      }
+
+      // Buscar contagem de profissionais
+      const professionalsCount = await storage.getProfessionalsCount(companyId);
+
+      // Parse das permissões
+      let permissions = {};
+      try {
+        if (typeof plan.permissions === 'string') {
+          permissions = JSON.parse(plan.permissions);
+        } else if (typeof plan.permissions === 'object' && plan.permissions !== null) {
+          permissions = plan.permissions;
+        } else {
+          // Permissões padrão se não estiverem definidas
+          permissions = {
+            dashboard: true,
+            appointments: true,
+            services: true,
+            professionals: true,
+            clients: true,
+            reviews: true,
+            tasks: true,
+            pointsProgram: true,
+            loyalty: true,
+            inventory: true,
+            messages: true,
+            coupons: true,
+            financial: true,
+            reports: true,
+            settings: true,
+          };
+        }
+      } catch (e) {
+        console.error(`Erro ao fazer parse das permissões do plano ${plan.id}:`, e);
+        // Fallback para permissões padrão
+        permissions = {
+          dashboard: true,
+          appointments: true,
+          services: true,
+          professionals: true,
+          clients: true,
+          reviews: true,
+          tasks: true,
+          pointsProgram: true,
+          loyalty: true,
+          inventory: true,
+          messages: true,
+          coupons: true,
+          financial: true,
+          reports: true,
+          settings: true,
+        };
+      }
+
+      const response = {
+        plan: {
+          id: plan.id,
+          name: plan.name,
+          maxProfessionals: plan.maxProfessionals || 1,
+          permissions: permissions
+        },
+        usage: {
+          professionalsCount: professionalsCount,
+          professionalsLimit: plan.maxProfessionals || 1
+        }
+      };
+
+      res.json(response);
+    } catch (error) {
+      console.error("Error fetching company plan info:", error);
+      res.status(500).json({ message: "Erro ao buscar informações do plano" });
+    }
+  });
+
 // Temporary in-memory storage for WhatsApp instances
 const tempWhatsappInstances: any[] = [];
 
