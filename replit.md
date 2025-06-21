@@ -142,6 +142,7 @@ This is a comprehensive business management system built with Express.js and MyS
 ## Changelog
 ```
 Changelog:
+- June 21, 2025. Fixed support ticket image attachments - added proper static file serving and debug logging for image display
 - June 21, 2025. Made support menu universally accessible - removed all permission requirements for company support functionality
 - June 21, 2025. Moved copyright/version info from sidebar to fixed footer on all screens
 - June 21, 2025. Created missing /api/company/plan-info endpoint to fix empty company sidebar menus
