@@ -290,17 +290,80 @@ export default function AdminSupport() {
     );
   };
 
-  const handleUpdateTicket = (statusId: string, adminResponse?: string) => {
+  const handleUpdateTicket = async (statusId: string, adminResponse?: string) => {
     if (!selectedTicket) return;
     
-    const updateData: any = {};
-    if (statusId) updateData.statusId = parseInt(statusId);
-    if (adminResponse !== undefined) updateData.adminResponse = adminResponse;
+    const textarea = document.getElementById('adminResponse') as HTMLTextAreaElement;
+    const fileInput = document.getElementById('adminAttachment') as HTMLInputElement;
+    const response = adminResponse || textarea?.value;
+    const file = fileInput?.files?.[0];
     
-    updateTicketMutation.mutate({
-      id: selectedTicket.id,
-      data: updateData
-    });
+    if (!response && !file && !statusId) {
+      toast({
+        title: "Erro",
+        description: "Adicione uma resposta, arquivo ou altere o status",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      if (file) {
+        // Upload file first
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('ticketId', selectedTicket.id.toString());
+        formData.append('type', 'admin-response');
+
+        const uploadResponse = await fetch('/api/admin/support-tickets/upload', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error('Erro no upload do arquivo');
+        }
+
+        const uploadResult = await uploadResponse.json();
+        
+        // Update ticket with response and file attachment
+        const updateData: any = {};
+        if (statusId) updateData.statusId = parseInt(statusId);
+        if (response) updateData.adminResponse = response;
+        if (uploadResult.filename) {
+          // Append new attachment to existing ones
+          const existingAttachments = selectedTicket.attachments ? selectedTicket.attachments.split(',') : [];
+          existingAttachments.push(uploadResult.filename);
+          updateData.attachments = existingAttachments.join(',');
+        }
+        
+        updateTicketMutation.mutate({
+          id: selectedTicket.id,
+          data: updateData
+        });
+      } else {
+        // Update without file
+        const updateData: any = {};
+        if (statusId) updateData.statusId = parseInt(statusId);
+        if (response) updateData.adminResponse = response;
+        
+        updateTicketMutation.mutate({
+          id: selectedTicket.id,
+          data: updateData
+        });
+      }
+      
+      // Clear form
+      if (textarea) textarea.value = '';
+      if (fileInput) fileInput.value = '';
+      
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao processar a resposta",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleTypeSubmit = (e: React.FormEvent) => {
@@ -641,22 +704,45 @@ export default function AdminSupport() {
                 />
               </div>
               <div>
-                <Label>Alterar Status</Label>
-                <Select onValueChange={(value) => {
-                  const textarea = document.getElementById('adminResponse') as HTMLTextAreaElement;
-                  handleUpdateTicket(value, textarea?.value);
-                }}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Selecione o novo status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Array.isArray(ticketStatuses) && ticketStatuses.map((status: SupportTicketStatus) => (
-                      <SelectItem key={status.id} value={status.id.toString()}>
-                        {status.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="adminAttachment">Anexar Arquivo</Label>
+                <Input
+                  id="adminAttachment"
+                  type="file"
+                  accept="image/*,.pdf,.doc,.docx,.txt"
+                  className="mt-1"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Formatos aceitos: imagens, PDF, DOC, DOCX, TXT (máx. 5MB)
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <Label>Alterar Status</Label>
+                  <Select onValueChange={(value) => {
+                    const textarea = document.getElementById('adminResponse') as HTMLTextAreaElement;
+                    handleUpdateTicket(value, textarea?.value);
+                  }}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Selecione o novo status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.isArray(ticketStatuses) && ticketStatuses.map((status: SupportTicketStatus) => (
+                        <SelectItem key={status.id} value={status.id.toString()}>
+                          {status.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-end">
+                  <Button
+                    onClick={() => handleUpdateTicket('', '')}
+                    className="mt-1"
+                    variant="outline"
+                  >
+                    Enviar Resposta
+                  </Button>
+                </div>
               </div>
             </div>
           </DialogContent>

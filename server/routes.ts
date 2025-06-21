@@ -4882,14 +4882,12 @@ const broadcastEvent = (eventData: any) => {
   app.put('/api/admin/support-tickets/:id', isAuthenticated, async (req, res) => {
     try {
       const ticketId = parseInt(req.params.id);
-      const { status, adminResponse } = req.body;
+      const { statusId, adminResponse, attachments } = req.body;
 
       const updateData: any = {};
-      if (status) updateData.status = status;
+      if (statusId) updateData.statusId = statusId;
       if (adminResponse !== undefined) updateData.adminResponse = adminResponse;
-      if (status === 'resolved' || status === 'closed') {
-        updateData.resolvedAt = new Date();
-      }
+      if (attachments !== undefined) updateData.attachments = attachments;
       updateData.updatedAt = new Date();
 
       await db.update(supportTickets)
@@ -4900,6 +4898,31 @@ const broadcastEvent = (eventData: any) => {
     } catch (error) {
       console.error("Error updating admin support ticket:", error);
       res.status(500).json({ message: "Erro ao atualizar ticket" });
+    }
+  });
+
+  // Admin route for uploading files to support tickets
+  app.post('/api/admin/support-tickets/upload', isAuthenticated, supportTicketUpload.single('file'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "Nenhum arquivo enviado" });
+      }
+
+      const { ticketId, type } = req.body;
+      
+      console.log(`Admin file upload: ${req.file.filename} for ticket ${ticketId}`);
+
+      res.json({
+        message: "Arquivo enviado com sucesso",
+        filename: req.file.filename,
+        originalName: req.file.originalname,
+        size: req.file.size,
+        ticketId: ticketId,
+        type: type
+      });
+    } catch (error) {
+      console.error("Error uploading admin file:", error);
+      res.status(500).json({ message: "Erro ao fazer upload do arquivo" });
     }
   });
 
