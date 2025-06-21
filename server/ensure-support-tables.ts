@@ -78,6 +78,21 @@ export async function ensureSupportTables() {
           await pool.execute(`ALTER TABLE support_tickets DROP COLUMN status`);
         }
         
+        // Add attachments column if it doesn't exist
+        try {
+          await pool.execute(`
+            ALTER TABLE support_tickets 
+            ADD COLUMN attachments TEXT
+          `);
+          console.log('✅ Attachments column added to support_tickets');
+        } catch (error: any) {
+          if (error.code === 'ER_DUP_FIELDNAME') {
+            console.log('✅ Attachments column already exists');
+          } else {
+            console.log('❌ Error adding attachments column:', error.message);
+          }
+        }
+        
         // Add foreign key constraint
         await pool.execute(`
           ALTER TABLE support_tickets 
@@ -97,6 +112,7 @@ export async function ensureSupportTables() {
           priority VARCHAR(50) DEFAULT 'medium',
           category VARCHAR(100),
           admin_response TEXT,
+          attachments TEXT,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
           resolved_at TIMESTAMP NULL,
