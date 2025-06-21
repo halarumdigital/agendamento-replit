@@ -16,9 +16,11 @@ interface SupportTicket {
   id: number;
   companyId: number;
   typeId?: number;
+  statusId?: number;
   title: string;
   description: string;
   status: string;
+  statusColor?: string;
   priority: string;
   category: string;
   adminResponse?: string;

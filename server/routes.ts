@@ -4588,11 +4588,26 @@ const broadcastEvent = (eventData: any) => {
       const companyId = req.session.companyId;
       console.log('Fetching tickets for company:', companyId);
       
-      const tickets = await db.select().from(supportTickets).where(eq(supportTickets.companyId, companyId)).orderBy(desc(supportTickets.createdAt));
-      console.log('Found tickets:', tickets.length);
+      const query = `
+        SELECT 
+          st.id, st.company_id as companyId, st.type_id as typeId, st.status_id as statusId,
+          st.title, st.description, st.priority, st.admin_response as adminResponse,
+          st.attachments, st.created_at as createdAt, st.updated_at as updatedAt, 
+          st.resolved_at as resolvedAt,
+          stt.name as category,
+          sts.name as status, sts.color as statusColor
+        FROM support_tickets st
+        LEFT JOIN support_ticket_types stt ON st.type_id = stt.id
+        LEFT JOIN support_ticket_statuses sts ON st.status_id = sts.id
+        WHERE st.company_id = ?
+        ORDER BY st.created_at DESC
+      `;
+
+      const [tickets] = await pool.execute(query, [companyId]);
+      console.log('Found tickets:', Array.isArray(tickets) ? tickets.length : 0);
       
-      if (tickets.length > 0) {
-        console.log('First ticket attachments:', tickets[0].attachments);
+      if (Array.isArray(tickets) && tickets.length > 0) {
+        console.log('First ticket attachments:', (tickets[0] as any).attachments);
       }
       
       res.json(tickets);
