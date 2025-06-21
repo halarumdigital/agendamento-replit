@@ -1,31 +1,21 @@
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Plus, Clock, CheckCircle, AlertCircle, XCircle } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-
-const ticketSchema = z.object({
-  title: z.string().min(1, "Título é obrigatório"),
-  description: z.string().min(10, "Descrição deve ter pelo menos 10 caracteres"),
-  priority: z.enum(["low", "medium", "high", "urgent"]),
-  category: z.enum(["general", "technical", "billing", "feature_request"]),
-});
-
-type TicketFormData = z.infer<typeof ticketSchema>;
+import { useState } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
+import { queryClient } from '@/lib/queryClient';
+import { MessageSquare, Plus, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 
 interface SupportTicket {
   id: number;
+  companyId: number;
+  typeId?: number;
   title: string;
   description: string;
   status: string;
@@ -37,278 +27,308 @@ interface SupportTicket {
   resolvedAt?: string;
 }
 
-const priorityLabels = {
-  low: "Baixa",
-  medium: "Média", 
-  high: "Alta",
-  urgent: "Urgente"
-};
-
-const categoryLabels = {
-  general: "Geral",
-  technical: "Técnico",
-  billing: "Financeiro",
-  feature_request: "Nova Funcionalidade"
-};
-
-const statusLabels = {
-  open: "Aberto",
-  in_progress: "Em Andamento",
-  resolved: "Resolvido",
-  closed: "Fechado"
-};
-
-const statusIcons = {
-  open: <Clock className="h-4 w-4" />,
-  in_progress: <AlertCircle className="h-4 w-4" />,
-  resolved: <CheckCircle className="h-4 w-4" />,
-  closed: <XCircle className="h-4 w-4" />
-};
-
-const statusColors = {
-  open: "bg-blue-500",
-  in_progress: "bg-yellow-500", 
-  resolved: "bg-green-500",
-  closed: "bg-gray-500"
-};
-
-const priorityColors = {
-  low: "bg-gray-500",
-  medium: "bg-blue-500",
-  high: "bg-orange-500",
-  urgent: "bg-red-500"
-};
+interface SupportTicketType {
+  id: number;
+  name: string;
+  description?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export default function CompanySupport() {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  const form = useForm<TicketFormData>({
-    resolver: zodResolver(ticketSchema),
-    defaultValues: {
-      title: "",
-      description: "",
-      priority: "medium",
-      category: "general",
-    },
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
+  const [ticketForm, setTicketForm] = useState({
+    title: '',
+    description: '',
+    priority: '',
+    category: '',
+    typeId: ''
   });
 
-  const { data: tickets, isLoading } = useQuery<SupportTicket[]>({
-    queryKey: ["/api/company/support-tickets"],
+  // Fetch company support tickets
+  const { data: tickets = [], isLoading: ticketsLoading } = useQuery({
+    queryKey: ['/api/company/support-tickets'],
   });
 
+  // Fetch support ticket types
+  const { data: ticketTypes = [], isLoading: typesLoading } = useQuery({
+    queryKey: ['/api/company/support-ticket-types'],
+  });
+
+  // Create ticket mutation
   const createTicketMutation = useMutation({
-    mutationFn: async (data: TicketFormData) => {
-      return await apiRequest("/api/company/support-tickets", "POST", data);
-    },
+    mutationFn: (data: any) =>
+      fetch('/api/company/support-tickets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      }).then(res => res.json()),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/company/support-tickets"] });
-      setIsDialogOpen(false);
-      form.reset();
+      queryClient.invalidateQueries({ queryKey: ['/api/company/support-tickets'] });
+      setIsCreateDialogOpen(false);
+      setTicketForm({
+        title: '',
+        description: '',
+        priority: '',
+        category: '',
+        typeId: ''
+      });
       toast({
         title: "Sucesso",
-        description: "Ticket criado com sucesso",
+        description: "Ticket criado com sucesso!",
       });
     },
-    onError: (error: any) => {
+    onError: () => {
       toast({
         title: "Erro",
-        description: error.message || "Erro ao criar ticket",
+        description: "Erro ao criar ticket.",
         variant: "destructive",
       });
     },
   });
 
-  const onSubmit = (data: TicketFormData) => {
-    createTicketMutation.mutate(data);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    createTicketMutation.mutate(ticketForm);
   };
 
-  if (isLoading) {
+  const getStatusBadge = (status: string) => {
+    const statusConfig = {
+      open: { color: 'bg-blue-100 text-blue-800', icon: Clock, label: 'Aberto' },
+      in_progress: { color: 'bg-yellow-100 text-yellow-800', icon: AlertCircle, label: 'Em Progresso' },
+      resolved: { color: 'bg-green-100 text-green-800', icon: CheckCircle, label: 'Resolvido' },
+      closed: { color: 'bg-gray-100 text-gray-800', icon: XCircle, label: 'Fechado' },
+    };
+    
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.open;
+    const Icon = config.icon;
+    
     return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center h-32">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </div>
-      </div>
+      <Badge className={`${config.color} flex items-center gap-1`}>
+        <Icon className="h-3 w-3" />
+        {config.label}
+      </Badge>
     );
-  }
+  };
+
+  const getPriorityBadge = (priority: string) => {
+    const priorityConfig = {
+      low: { color: 'bg-green-100 text-green-800', label: 'Baixa' },
+      medium: { color: 'bg-yellow-100 text-yellow-800', label: 'Média' },
+      high: { color: 'bg-red-100 text-red-800', label: 'Alta' },
+      urgent: { color: 'bg-red-200 text-red-900', label: 'Urgente' },
+    };
+    
+    const config = priorityConfig[priority as keyof typeof priorityConfig] || priorityConfig.medium;
+    
+    return (
+      <Badge className={config.color}>
+        {config.label}
+      </Badge>
+    );
+  };
 
   return (
-    <div className="container mx-auto p-6 pb-20">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Suporte</h1>
-          <p className="text-muted-foreground">
-            Gerencie seus tickets de suporte
-          </p>
+    <div className="container mx-auto p-6">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-2">
+          <MessageSquare className="h-6 w-6" />
+          <h1 className="text-2xl font-bold">Suporte</h1>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Adicionar Ticket
+            <Button className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Novo Ticket
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Novo Ticket de Suporte</DialogTitle>
-              <DialogDescription>
-                Descreva sua solicitação ou problema
-              </DialogDescription>
+              <DialogTitle>Criar Ticket</DialogTitle>
             </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="title"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Título</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Título do ticket" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="title">Assunto *</Label>
+                  <Input
+                    id="title"
+                    value={ticketForm.title}
+                    onChange={(e) => setTicketForm(prev => ({ ...prev, title: e.target.value }))}
+                    required
+                    placeholder="Assunto do ticket"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="category">Categoria *</Label>
+                  <Select onValueChange={(value) => setTicketForm(prev => ({ ...prev, category: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a categoria" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="technical">Técnico</SelectItem>
+                      <SelectItem value="billing">Faturamento</SelectItem>
+                      <SelectItem value="feature_request">Solicitação de Funcionalidade</SelectItem>
+                      <SelectItem value="bug_report">Relatório de Bug</SelectItem>
+                      <SelectItem value="general">Geral</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="priority">Prioridade *</Label>
+                  <Select onValueChange={(value) => setTicketForm(prev => ({ ...prev, priority: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a prioridade" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">Baixa</SelectItem>
+                      <SelectItem value="medium">Média</SelectItem>
+                      <SelectItem value="high">Alta</SelectItem>
+                      <SelectItem value="urgent">Urgente</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="typeId">Tipo de Ticket</Label>
+                  <Select onValueChange={(value) => setTicketForm(prev => ({ ...prev, typeId: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(ticketTypes as SupportTicketType[]).map((type: SupportTicketType) => (
+                        <SelectItem key={type.id} value={type.id.toString()}>
+                          {type.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="description">Descrição *</Label>
+                <Textarea
+                  id="description"
+                  value={ticketForm.description}
+                  onChange={(e) => setTicketForm(prev => ({ ...prev, description: e.target.value }))}
+                  required
+                  placeholder="Descreva detalhadamente o problema ou solicitação"
+                  rows={6}
                 />
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Descrição</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Descreva detalhadamente sua solicitação ou problema"
-                          rows={4}
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="priority"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Prioridade</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione a prioridade" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {Object.entries(priorityLabels).map(([value, label]) => (
-                            <SelectItem key={value} value={value}>
-                              {label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="category"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Categoria</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione a categoria" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {Object.entries(categoryLabels).map(([value, label]) => (
-                            <SelectItem key={value} value={value}>
-                              {label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <DialogFooter>
-                  <Button type="submit" disabled={createTicketMutation.isPending}>
-                    {createTicketMutation.isPending ? "Criando..." : "Criar Ticket"}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </Form>
+              </div>
+              
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={createTicketMutation.isPending}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  Criar Ticket
+                </Button>
+              </div>
+            </form>
           </DialogContent>
         </Dialog>
       </div>
 
-      <div className="grid gap-4">
-        {tickets && tickets.length > 0 ? (
-          tickets.map((ticket) => (
-            <Card key={ticket.id}>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <CardTitle className="text-lg">{ticket.title}</CardTitle>
-                    <CardDescription>
-                      Criado em {new Date(ticket.createdAt).toLocaleDateString('pt-BR')}
-                    </CardDescription>
+      <Card>
+        <CardHeader>
+          <CardTitle>Meus Tickets</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {ticketsLoading ? (
+            <div className="text-center py-8">Carregando tickets...</div>
+          ) : (
+            <div className="space-y-4">
+              {(tickets as SupportTicket[]).map((ticket: SupportTicket) => (
+                <div
+                  key={ticket.id}
+                  className="border rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                  onClick={() => setSelectedTicket(ticket)}
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <h3 className="font-semibold text-lg">{ticket.title}</h3>
+                    <div className="flex items-center gap-2">
+                      {getPriorityBadge(ticket.priority)}
+                      {getStatusBadge(ticket.status)}
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Badge className={`${statusColors[ticket.status as keyof typeof statusColors]} text-white`}>
-                      {statusIcons[ticket.status as keyof typeof statusIcons]}
-                      <span className="ml-1">{statusLabels[ticket.status as keyof typeof statusLabels]}</span>
-                    </Badge>
-                    <Badge className={`${priorityColors[ticket.priority as keyof typeof priorityColors]} text-white`}>
-                      {priorityLabels[ticket.priority as keyof typeof priorityLabels]}
-                    </Badge>
+                  <p className="text-gray-600 text-sm mb-2 line-clamp-2">{ticket.description}</p>
+                  <div className="flex items-center justify-between text-xs text-gray-500">
+                    <span>Categoria: {ticket.category}</span>
+                    <span>Criado em: {new Date(ticket.createdAt).toLocaleDateString('pt-BR')}</span>
                   </div>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-2">Descrição:</p>
-                    <p className="text-sm">{ticket.description}</p>
-                  </div>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <span>Categoria: {categoryLabels[ticket.category as keyof typeof categoryLabels]}</span>
-                    <span>ID: #{ticket.id}</span>
-                  </div>
-                  {ticket.adminResponse && (
-                    <div className="bg-muted p-3 rounded-md">
-                      <p className="text-sm font-medium mb-1">Resposta do Suporte:</p>
-                      <p className="text-sm">{ticket.adminResponse}</p>
-                    </div>
-                  )}
-                  {ticket.resolvedAt && (
-                    <div className="text-sm text-muted-foreground">
-                      Resolvido em {new Date(ticket.resolvedAt).toLocaleDateString('pt-BR')}
-                    </div>
-                  )}
+              ))}
+              
+              {tickets.length === 0 && (
+                <div className="text-center py-8">
+                  <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-600 mb-2">Nenhum ticket encontrado</h3>
+                  <p className="text-gray-500">Crie seu primeiro ticket de suporte clicando no botão "Novo Ticket"</p>
                 </div>
-              </CardContent>
-            </Card>
-          ))
-        ) : (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-16">
-              <div className="text-center space-y-2">
-                <h3 className="text-lg font-semibold">Nenhum ticket encontrado</h3>
-                <p className="text-muted-foreground">
-                  Você ainda não possui tickets de suporte. Clique em "Adicionar Ticket" para criar seu primeiro ticket.
-                </p>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Ticket Detail Modal */}
+      {selectedTicket && (
+        <Dialog open={!!selectedTicket} onOpenChange={() => setSelectedTicket(null)}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Ticket #{selectedTicket.id} - {selectedTicket.title}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                {getPriorityBadge(selectedTicket.priority)}
+                {getStatusBadge(selectedTicket.status)}
+                <span className="text-sm text-gray-500">
+                  Criado em: {new Date(selectedTicket.createdAt).toLocaleDateString('pt-BR')}
+                </span>
               </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+              
+              <div>
+                <Label className="text-sm font-semibold">Categoria</Label>
+                <p className="text-sm mt-1">{selectedTicket.category}</p>
+              </div>
+              
+              <div>
+                <Label className="text-sm font-semibold">Descrição</Label>
+                <div className="mt-1 p-3 bg-gray-50 rounded border">
+                  <p className="text-sm whitespace-pre-wrap">{selectedTicket.description}</p>
+                </div>
+              </div>
+              
+              {selectedTicket.adminResponse && (
+                <div>
+                  <Label className="text-sm font-semibold">Resposta do Suporte</Label>
+                  <div className="mt-1 p-3 bg-blue-50 rounded border">
+                    <p className="text-sm whitespace-pre-wrap">{selectedTicket.adminResponse}</p>
+                  </div>
+                </div>
+              )}
+              
+              {selectedTicket.resolvedAt && (
+                <div>
+                  <Label className="text-sm font-semibold">Resolvido em</Label>
+                  <p className="text-sm mt-1">{new Date(selectedTicket.resolvedAt).toLocaleDateString('pt-BR')}</p>
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

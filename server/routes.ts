@@ -4620,6 +4620,19 @@ const broadcastEvent = (eventData: any) => {
     }
   });
 
+  // Company route to fetch support ticket types
+  app.get('/api/company/support-ticket-types', loadCompanyPlan, requirePermission('support'), async (req: RequestWithPlan, res) => {
+    try {
+      const ticketTypes = await db.select().from(supportTicketTypes)
+        .where(eq(supportTicketTypes.isActive, true))
+        .orderBy(supportTicketTypes.name);
+      res.json(ticketTypes);
+    } catch (error) {
+      console.error("Error fetching support ticket types:", error);
+      res.status(500).json({ message: "Erro ao buscar tipos de tickets" });
+    }
+  });
+
   // Admin routes for support ticket types
   app.get('/api/admin/support-ticket-types', isAuthenticated, async (req, res) => {
     try {
