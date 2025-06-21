@@ -84,18 +84,38 @@ export default function AdminCoupons() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: CouponFormData) =>
-      fetch("/api/coupons", {
+    mutationFn: async (data: CouponFormData) => {
+      const response = await fetch("/api/coupons", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      }).then((res) => {
-        if (!res.ok) throw new Error("Falha ao criar cupom");
-        return res.json();
-      }),
+      });
+      
+      const responseText = await response.text();
+      console.log('Response text:', responseText);
+      
+      if (!response.ok) {
+        let errorMessage = "Falha ao criar cupom";
+        try {
+          const errorData = JSON.parse(responseText);
+          errorMessage = errorData.message || errorMessage;
+        } catch (e) {
+          console.error('Error parsing error response:', e);
+        }
+        throw new Error(errorMessage);
+      }
+      
+      try {
+        return JSON.parse(responseText);
+      } catch (e) {
+        console.error('Error parsing success response:', e);
+        throw new Error("Resposta inválida do servidor");
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/coupons"] });
       setIsDialogOpen(false);
+      form.reset();
       toast({ title: "Sucesso", description: "Cupom criado com sucesso" });
     },
     onError: (error: Error) => {

@@ -4373,6 +4373,80 @@ const broadcastEvent = (eventData: any) => {
 };
 
 
+  // Coupons API routes
+  app.get('/api/coupons', async (req: any, res) => {
+    try {
+      const coupons = await storage.getCoupons();
+      res.json(coupons);
+    } catch (error) {
+      console.error("Error fetching coupons:", error);
+      res.status(500).json({ message: "Erro ao buscar cupons" });
+    }
+  });
+
+  app.post('/api/coupons', async (req: any, res) => {
+    try {
+      console.log('Creating coupon with data:', req.body);
+      
+      const couponData = {
+        companyId: req.body.companyId || 1, // Default company ID for admin coupons
+        name: req.body.name,
+        code: req.body.code,
+        description: req.body.description || '',
+        discountType: req.body.discountType,
+        discountValue: parseFloat(req.body.discountValue),
+        minOrderValue: req.body.minOrderValue ? parseFloat(req.body.minOrderValue) : 0,
+        maxDiscount: req.body.maxDiscount ? parseFloat(req.body.maxDiscount) : null,
+        usageLimit: req.body.usageLimit ? parseInt(req.body.usageLimit) : null,
+        usedCount: 0,
+        validUntil: req.body.validUntil || req.body.expiresAt,
+        isActive: req.body.isActive !== false
+      };
+
+      const coupon = await storage.createCoupon(couponData);
+      console.log('Coupon created successfully:', coupon);
+      res.status(201).json(coupon);
+    } catch (error) {
+      console.error("Error creating coupon:", error);
+      res.status(500).json({ 
+        message: "Erro ao criar cupom", 
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  app.put('/api/coupons/:id', async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updateData = {
+        name: req.body.name,
+        code: req.body.code,
+        discountType: req.body.discountType,
+        discountValue: parseFloat(req.body.discountValue),
+        expiresAt: req.body.expiresAt ? new Date(req.body.expiresAt) : null,
+        maxUses: parseInt(req.body.maxUses) || 1,
+        isActive: req.body.isActive
+      };
+
+      const coupon = await storage.updateCoupon(id, updateData);
+      res.json(coupon);
+    } catch (error) {
+      console.error("Error updating coupon:", error);
+      res.status(500).json({ message: "Erro ao atualizar cupom" });
+    }
+  });
+
+  app.delete('/api/coupons/:id', async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteCoupon(id);
+      res.json({ message: "Cupom excluído com sucesso" });
+    } catch (error) {
+      console.error("Error deleting coupon:", error);
+      res.status(500).json({ message: "Erro ao excluir cupom" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
