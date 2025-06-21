@@ -5518,6 +5518,137 @@ const broadcastEvent = (eventData: any) => {
     }
   });
 
+  // Configure webhook for WhatsApp instance
+  app.post('/api/company/whatsapp/instances/:id/configure-webhook', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const instanceId = parseInt(req.params.id);
+      const instance = await storage.getWhatsappInstance(instanceId);
+      
+      if (!instance || instance.companyId !== companyId) {
+        return res.status(404).json({ message: "Instância não encontrada" });
+      }
+
+      console.log(`🔧 Configuring webhook for instance: ${instance.instanceName}`);
+
+      const globalSettings = await storage.getGlobalSettings();
+      if (!globalSettings?.evolutionApiUrl || !globalSettings?.evolutionApiGlobalKey) {
+        return res.status(500).json({ message: "Configurações da Evolution API não encontradas" });
+      }
+
+      // Generate webhook URL
+      const webhookUrl = generateWebhookUrl(req, instance.instanceName);
+      console.log(`📡 Webhook URL: ${webhookUrl}`);
+
+      // For webhook configuration, use /api/ prefix
+      const apiUrl = globalSettings.evolutionApiUrl.replace(/\/$/, '');
+      const webhookSetUrl = `${apiUrl}/api/webhook/set/${instance.instanceName}`;
+      
+      const webhookPayload = {
+        webhook: {
+          enabled: true,
+          url: webhookUrl,
+          headers: {
+            authorization: "Bearer TOKEN",
+            "Content-Type": "application/json"
+          }
+        },
+        byEvents: false,
+        base64: false,
+        events: [
+          "APPLICATION_STARTUP",
+          "QRCODE_UPDATED",
+          "MESSAGES_SET",
+          "MESSAGES_UPSERT",
+          "MESSAGES_UPDATE",
+          "MESSAGES_DELETE",
+          "SEND_MESSAGE",
+          "CONTACTS_SET",
+          "CONTACTS_UPSERT",
+          "CONTACTS_UPDATE",
+          "PRESENCE_UPDATE",
+          "CHATS_SET",
+          "CHATS_UPSERT",
+          "CHATS_UPDATE",
+          "CHATS_DELETE",
+          "GROUPS_UPSERT",
+          "GROUP_UPDATE",
+          "GROUP_PARTICIPANTS_UPDATE",
+          "CONNECTION_UPDATE",
+          "LABELS_EDIT",
+          "LABELS_ASSOCIATION",
+          "CALL",
+          "TYPEBOT_START",
+          "TYPEBOT_CHANGE_STATUS"
+        ]
+      };
+
+      console.log(`🔗 Sending webhook configuration to: ${webhookSetUrl}`);
+      console.log(`📋 Webhook payload:`, JSON.stringify(webhookPayload, null, 2));
+
+      const evolutionResponse = await fetch(webhookSetUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': globalSettings.evolutionApiGlobalKey
+        },
+        body: JSON.stringify(webhookPayload)
+      });
+
+      const responseText = await evolutionResponse.text();
+      console.log(`📡 Evolution API webhook response: ${evolutionResponse.status}`);
+      console.log(`📄 Response text:`, responseText);
+
+      if (!evolutionResponse.ok) {
+        // Check if response is HTML (indicates URL correction needed)
+        if (responseText && (responseText.includes('<!DOCTYPE') || responseText.includes('<html>'))) {
+          return res.status(500).json({ 
+            message: "Erro na configuração da Evolution API - URL incorreta",
+            details: "A URL da Evolution API parece estar apontando para interface web ao invés da API"
+          });
+        }
+        
+        return res.status(evolutionResponse.status).json({ 
+          message: "Erro ao configurar webhook na Evolution API",
+          details: responseText.substring(0, 200)
+        });
+      }
+
+      let webhookData;
+      try {
+        webhookData = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error("❌ Failed to parse Evolution API webhook response:", parseError);
+        return res.status(500).json({ 
+          message: "Resposta inválida da Evolution API",
+          details: responseText.substring(0, 200)
+        });
+      }
+
+      console.log(`✅ Webhook configured successfully for instance: ${instance.instanceName}`);
+
+      // Update instance with webhook URL
+      await storage.updateWhatsappInstance(instanceId, { webhookUrl });
+
+      res.json({
+        message: "Webhook configurado com sucesso",
+        webhookUrl,
+        evolutionResponse: webhookData
+      });
+
+    } catch (error: any) {
+      console.error("Error configuring webhook:", error);
+      res.status(500).json({ 
+        message: "Erro ao configurar webhook",
+        details: error.message
+      });
+    }
+  });
+
   app.delete('/api/company/whatsapp/instances/:id', async (req: any, res) => {
     try {
       const companyId = req.session.companyId;
