@@ -2456,8 +2456,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   const fallbackResponse = "Desculpe, não consegui entender o áudio que você enviou. Pode escrever sua mensagem por texto, por favor? 📝";
                   
                   try {
-                    // Send fallback response using Evolution API
-                    const fallbackEvolutionResponse = await fetch(`${globalSettings.evolutionApiUrl}/message/sendText/${instanceName}`, {
+                    // Send fallback response using Evolution API with corrected URL
+                    const correctedApiUrl = ensureEvolutionApiEndpoint(globalSettings.evolutionApiUrl);
+                    const fallbackEvolutionResponse = await fetch(`${correctedApiUrl}/message/sendText/${instanceName}`, {
                       method: 'POST',
                       headers: {
                         'Content-Type': 'application/json',
@@ -2768,7 +2769,8 @@ INSTRUÇÕES OBRIGATÓRIAS:
               console.log('🚀 Sending AI response via Evolution API...');
               console.log('🤖 AI Generated Response:', aiResponse);
               
-              const evolutionResponse = await fetch(`${globalSettings.evolutionApiUrl}/message/sendText/${instanceName}`, {
+              const correctedApiUrl = ensureEvolutionApiEndpoint(globalSettings.evolutionApiUrl);
+              const evolutionResponse = await fetch(`${correctedApiUrl}/message/sendText/${instanceName}`, {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',

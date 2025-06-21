@@ -1426,7 +1426,11 @@ export class DatabaseStorage implements IStorage {
           return;
         }
 
-        const response = await fetch(`${evolutionApiUrl}/message/sendText/${whatsappInstance.instanceName}`, {
+        // Ensure Evolution API URL uses proper API endpoint
+        const correctedApiUrl = evolutionApiUrl?.includes('/api/') ? 
+          evolutionApiUrl : 
+          `${evolutionApiUrl?.replace(/\/$/, '')}/api`;
+        const response = await fetch(`${correctedApiUrl}/message/sendText/${whatsappInstance.instanceName}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

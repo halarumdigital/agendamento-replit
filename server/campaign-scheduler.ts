@@ -182,8 +182,11 @@ async function processCampaign(campaign: any) {
           formattedPhone = '55' + formattedPhone;
         }
 
-        // Send WhatsApp message
-        const response = await fetch(`${settings.evolutionApiUrl}/message/sendText/${whatsappInstance.instance_name}`, {
+        // Send WhatsApp message using corrected API URL
+        const correctedApiUrl = settings.evolutionApiUrl?.includes('/api/') ? 
+          settings.evolutionApiUrl : 
+          `${settings.evolutionApiUrl?.replace(/\/$/, '')}/api`;
+        const response = await fetch(`${correctedApiUrl}/message/sendText/${whatsappInstance.instance_name}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
