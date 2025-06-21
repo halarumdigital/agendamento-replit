@@ -4550,7 +4550,7 @@ const broadcastEvent = (eventData: any) => {
   });
 
   // Support tickets routes
-  app.get('/api/company/support-tickets', loadCompanyPlan, requirePermission('support'), async (req: RequestWithPlan, res) => {
+  app.get('/api/company/support-tickets', async (req: any, res) => {
     try {
       const companyId = req.session.companyId;
       const tickets = await db.select().from(supportTickets).where(eq(supportTickets.companyId, companyId)).orderBy(desc(supportTickets.createdAt));
@@ -4561,7 +4561,7 @@ const broadcastEvent = (eventData: any) => {
     }
   });
 
-  app.post('/api/company/support-tickets', loadCompanyPlan, requirePermission('support'), async (req: RequestWithPlan, res) => {
+  app.post('/api/company/support-tickets', async (req: any, res) => {
     try {
       const companyId = req.session.companyId;
       const { title, description, priority, category } = req.body;
@@ -4582,7 +4582,7 @@ const broadcastEvent = (eventData: any) => {
     }
   });
 
-  app.put('/api/company/support-tickets/:id', loadCompanyPlan, requirePermission('support'), async (req: RequestWithPlan, res) => {
+  app.put('/api/company/support-tickets/:id', async (req: any, res) => {
     try {
       const ticketId = parseInt(req.params.id);
       const companyId = req.session.companyId;
@@ -4605,7 +4605,7 @@ const broadcastEvent = (eventData: any) => {
     }
   });
 
-  app.delete('/api/company/support-tickets/:id', loadCompanyPlan, requirePermission('support'), async (req: RequestWithPlan, res) => {
+  app.delete('/api/company/support-tickets/:id', async (req: any, res) => {
     try {
       const ticketId = parseInt(req.params.id);
       const companyId = req.session.companyId;

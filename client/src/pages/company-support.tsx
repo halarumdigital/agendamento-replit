@@ -43,8 +43,6 @@ export default function CompanySupport() {
   const [ticketForm, setTicketForm] = useState({
     title: '',
     description: '',
-    priority: '',
-    category: '',
     typeId: ''
   });
 
@@ -72,8 +70,6 @@ export default function CompanySupport() {
       setTicketForm({
         title: '',
         description: '',
-        priority: '',
-        category: '',
         typeId: ''
       });
       toast({
@@ -161,38 +157,6 @@ export default function CompanySupport() {
                     required
                     placeholder="Assunto do ticket"
                   />
-                </div>
-                <div>
-                  <Label htmlFor="category">Categoria *</Label>
-                  <Select onValueChange={(value) => setTicketForm(prev => ({ ...prev, category: value }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione a categoria" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="technical">Técnico</SelectItem>
-                      <SelectItem value="billing">Faturamento</SelectItem>
-                      <SelectItem value="feature_request">Solicitação de Funcionalidade</SelectItem>
-                      <SelectItem value="bug_report">Relatório de Bug</SelectItem>
-                      <SelectItem value="general">Geral</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="priority">Prioridade *</Label>
-                  <Select onValueChange={(value) => setTicketForm(prev => ({ ...prev, priority: value }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione a prioridade" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="low">Baixa</SelectItem>
-                      <SelectItem value="medium">Média</SelectItem>
-                      <SelectItem value="high">Alta</SelectItem>
-                      <SelectItem value="urgent">Urgente</SelectItem>
-                    </SelectContent>
-                  </Select>
                 </div>
                 <div>
                   <Label htmlFor="typeId">Tipo de Ticket</Label>
