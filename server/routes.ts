@@ -4582,7 +4582,7 @@ const broadcastEvent = (eventData: any) => {
     }
   });
 
-  app.put('/api/company/support-tickets/:id', loadCompanyPlan, async (req: RequestWithPlan, res) => {
+  app.put('/api/company/support-tickets/:id', loadCompanyPlan, requirePermission('support'), async (req: RequestWithPlan, res) => {
     try {
       const ticketId = parseInt(req.params.id);
       const companyId = req.session.companyId;
@@ -4605,7 +4605,7 @@ const broadcastEvent = (eventData: any) => {
     }
   });
 
-  app.delete('/api/company/support-tickets/:id', loadCompanyPlan, async (req: RequestWithPlan, res) => {
+  app.delete('/api/company/support-tickets/:id', loadCompanyPlan, requirePermission('support'), async (req: RequestWithPlan, res) => {
     try {
       const ticketId = parseInt(req.params.id);
       const companyId = req.session.companyId;
@@ -4621,7 +4621,7 @@ const broadcastEvent = (eventData: any) => {
   });
 
   // Company route to fetch support ticket types
-  app.get('/api/company/support-ticket-types', loadCompanyPlan, async (req: RequestWithPlan, res) => {
+  app.get('/api/company/support-ticket-types', loadCompanyPlan, requirePermission('support'), async (req: RequestWithPlan, res) => {
     try {
       const ticketTypes = await db.select().from(supportTicketTypes)
         .where(eq(supportTicketTypes.isActive, true))
