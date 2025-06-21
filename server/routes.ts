@@ -5544,9 +5544,9 @@ const broadcastEvent = (eventData: any) => {
       const webhookUrl = generateWebhookUrl(req, instance.instanceName);
       console.log(`📡 Webhook URL: ${webhookUrl}`);
 
-      // For webhook configuration, use /api/ prefix
-      const apiUrl = globalSettings.evolutionApiUrl.replace(/\/$/, '');
-      const webhookSetUrl = `${apiUrl}/api/webhook/set/${instance.instanceName}`;
+      // For webhook configuration, use correct Evolution API endpoint
+      const baseUrl = globalSettings.evolutionApiUrl.replace(/\/$/, '');
+      const webhookSetUrl = `${baseUrl}/webhook/set/${instance.instanceName}`;
       
       const webhookPayload = {
         webhook: {
@@ -5632,7 +5632,7 @@ const broadcastEvent = (eventData: any) => {
       console.log(`✅ Webhook configured successfully for instance: ${instance.instanceName}`);
 
       // Update instance with webhook URL
-      await storage.updateWhatsappInstance(instanceId, { webhookUrl });
+      await storage.updateWhatsappInstance(instanceId, { webhook: webhookUrl });
 
       res.json({
         message: "Webhook configurado com sucesso",

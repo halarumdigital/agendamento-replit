@@ -145,6 +145,7 @@ Changelog:
 - June 21, 2025. COMPLETED Evolution API v2.3.0 integration with QR code functionality - fixed WhatsApp instance creation and added working QR code generation using /instance/connect endpoint with proper payload structure
 - June 21, 2025. Updated WhatsApp instance deletion to use correct Evolution API endpoint - fixed DELETE /instance/delete/{instanceName} to use base URL without /api/ prefix
 - June 21, 2025. Implemented WhatsApp instance status refresh using Evolution API - added GET /instance/connectionState/{instanceName} endpoint for real-time status updates
+- June 21, 2025. Fixed WhatsApp webhook configuration endpoint - corrected Evolution API URL to use /webhook/set/{instanceName} instead of /api/webhook/set/{instanceName}
 - June 21, 2025. Implemented complete WhatsApp instance management system - added full CRUD operations for WhatsApp instances with proper Evolution API integration using /instance/create endpoint, webhook configuration, and comprehensive error handling
 - June 21, 2025. Applied Evolution API URL correction across entire codebase - fixed all WhatsApp messaging, campaign scheduling, and instance management to use proper /api/ endpoints instead of web interface URLs
 - June 21, 2025. Resolved Evolution API URL configuration issues - implemented automatic endpoint detection and correction for proper API communication instead of web interface access
