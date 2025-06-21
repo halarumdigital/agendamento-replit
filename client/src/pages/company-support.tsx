@@ -100,10 +100,7 @@ export default function CompanySupport() {
 
   const createTicketMutation = useMutation({
     mutationFn: async (data: TicketFormData) => {
-      return await apiRequest("/api/company/support-tickets", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      return await apiRequest("/api/company/support-tickets", "POST", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/company/support-tickets"] });

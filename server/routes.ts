@@ -4648,31 +4648,32 @@ const broadcastEvent = (eventData: any) => {
   //   }
   // });
 
-  app.put('/api/admin/support-tickets/:id', adminAuthRequired, async (req, res) => {
-    try {
-      const ticketId = parseInt(req.params.id);
-      const { status, adminResponse } = req.body;
+  // Commented out admin route for now
+  // app.put('/api/admin/support-tickets/:id', isAuthenticated, async (req, res) => {
+  //   try {
+  //     const ticketId = parseInt(req.params.id);
+  //     const { status, adminResponse } = req.body;
 
-      const updateData: any = {
-        status,
-        adminResponse,
-        updatedAt: new Date()
-      };
+  //     const updateData: any = {
+  //       status,
+  //       adminResponse,
+  //       updatedAt: new Date()
+  //     };
 
-      if (status === 'resolved' || status === 'closed') {
-        updateData.resolvedAt = new Date();
-      }
+  //     if (status === 'resolved' || status === 'closed') {
+  //       updateData.resolvedAt = new Date();
+  //     }
 
-      await db.update(supportTickets)
-        .set(updateData)
-        .where(eq(supportTickets.id, ticketId));
+  //     await db.update(supportTickets)
+  //       .set(updateData)
+  //       .where(eq(supportTickets.id, ticketId));
 
-      res.json({ message: "Ticket atualizado com sucesso" });
-    } catch (error) {
-      console.error("Error updating admin support ticket:", error);
-      res.status(500).json({ message: "Erro ao atualizar ticket de suporte" });
-    }
-  });
+  //     res.json({ message: "Ticket atualizado com sucesso" });
+  //   } catch (error) {
+  //     console.error("Error updating admin support ticket:", error);
+  //     res.status(500).json({ message: "Erro ao atualizar ticket de suporte" });
+  //   }
+  // });
 
   const httpServer = createServer(app);
   return httpServer;
