@@ -5238,16 +5238,23 @@ const broadcastEvent = (eventData: any) => {
 
       // Create instance in Evolution API first
       const correctedApiUrl = ensureEvolutionApiEndpoint(globalSettings.evolutionApiUrl);
-      const createInstanceUrl = `${correctedApiUrl}/instance/create`;
       
-      console.log(`🔗 Creating instance in Evolution API: ${createInstanceUrl}`);
+      // Try multiple possible endpoint patterns sequentially
+      const possibleEndpoints = [
+        { url: `${correctedApiUrl}/instance/create`, method: 'POST' },
+        { url: `${correctedApiUrl}/manager/instance/create`, method: 'POST' },
+        { url: `${correctedApiUrl}/instances/create`, method: 'POST' },
+        { url: `${correctedApiUrl}/instance`, method: 'POST' },
+        { url: `${correctedApiUrl}/create-instance`, method: 'POST' },
+        { url: `${correctedApiUrl}/instance/connect`, method: 'POST' }
+      ];
 
       const webhookUrl = generateWebhookUrl(req, instanceName);
       
       const evolutionPayload = {
         instanceName: instanceName,
-        token: globalSettings.evolutionApiGlobalKey,
         qrcode: true,
+        integration: "WHATSAPP-BAILEYS",
         webhook: webhookUrl,
         webhook_by_events: true,
         events: [
@@ -5271,26 +5278,58 @@ const broadcastEvent = (eventData: any) => {
         ]
       };
 
-      console.log(`📤 Sending payload to Evolution API:`, JSON.stringify(evolutionPayload, null, 2));
+      console.log(`📤 Trying endpoints for Evolution API instance creation...`);
 
-      const evolutionResponse = await fetch(createInstanceUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': globalSettings.evolutionApiGlobalKey
-        },
-        body: JSON.stringify(evolutionPayload)
-      });
+      let evolutionResponse;
+      let responseText;
+      let createInstanceUrl = '';
+      let lastError = '';
 
-      console.log(`📡 Evolution API response status: ${evolutionResponse.status}`);
-      const responseText = await evolutionResponse.text();
-      console.log(`📋 Evolution API response: ${responseText.substring(0, 500)}`);
+      // Try each endpoint until one works
+      for (const endpoint of possibleEndpoints) {
+        createInstanceUrl = endpoint.url;
+        console.log(`🔗 Trying: ${createInstanceUrl}`);
 
-      if (!evolutionResponse.ok) {
-        console.error(`❌ Evolution API error: ${evolutionResponse.status} - ${responseText}`);
+        try {
+          evolutionResponse = await fetch(createInstanceUrl, {
+            method: endpoint.method,
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': globalSettings.evolutionApiGlobalKey
+            },
+            body: JSON.stringify(evolutionPayload)
+          });
+
+          responseText = await evolutionResponse.text();
+          console.log(`📡 Response status: ${evolutionResponse.status} for ${createInstanceUrl}`);
+
+          // If we get a successful response, break out of the loop
+          if (evolutionResponse.ok) {
+            console.log(`✅ Found working endpoint: ${createInstanceUrl}`);
+            break;
+          }
+
+          // If it's not a 404, this might be the right endpoint with a different issue
+          if (evolutionResponse.status !== 404) {
+            lastError = `${evolutionResponse.status}: ${responseText}`;
+            console.log(`⚠️ Non-404 error on ${createInstanceUrl}: ${lastError.substring(0, 200)}`);
+            break;
+          }
+
+          lastError = `${evolutionResponse.status}: ${responseText}`;
+        } catch (fetchError: any) {
+          console.error(`❌ Network error trying ${createInstanceUrl}:`, fetchError.message);
+          lastError = `Network error: ${fetchError.message}`;
+          continue;
+        }
+      }
+
+      // Check final response
+      if (!evolutionResponse || !evolutionResponse.ok) {
+        console.error(`❌ All Evolution API endpoints failed. Last error: ${lastError}`);
         
         // Check if response is HTML (indicates URL correction needed)
-        if (responseText.includes('<!DOCTYPE') || responseText.includes('<html>')) {
+        if (responseText && (responseText.includes('<!DOCTYPE') || responseText.includes('<html>'))) {
           return res.status(500).json({ 
             message: "Erro na configuração da Evolution API - URL incorreta",
             details: "A URL da Evolution API parece estar apontando para interface web ao invés da API"
@@ -5299,7 +5338,7 @@ const broadcastEvent = (eventData: any) => {
         
         return res.status(500).json({ 
           message: "Erro ao criar instância na Evolution API",
-          details: responseText.substring(0, 200)
+          details: `Tentativas falharam. Último erro: ${lastError.substring(0, 200)}`
         });
       }
 
