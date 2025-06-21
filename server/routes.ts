@@ -5476,8 +5476,9 @@ const broadcastEvent = (eventData: any) => {
       const globalSettings = await storage.getGlobalSettings();
       if (globalSettings?.evolutionApiUrl && globalSettings?.evolutionApiGlobalKey) {
         try {
-          const correctedApiUrl = ensureEvolutionApiEndpoint(globalSettings.evolutionApiUrl);
-          const deleteUrl = `${correctedApiUrl}/instance/delete/${instance.instanceName}`;
+          // For delete endpoint, use base URL without /api/ prefix
+          const baseUrl = globalSettings.evolutionApiUrl.replace(/\/$/, '');
+          const deleteUrl = `${baseUrl}/instance/delete/${instance.instanceName}`;
           
           const evolutionResponse = await fetch(deleteUrl, {
             method: 'DELETE',
