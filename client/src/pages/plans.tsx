@@ -36,6 +36,7 @@ export default function Plans() {
       name: "",
       freeDays: 0,
       price: "",
+      annualPrice: "",
       maxProfessionals: 1,
       isActive: true,
       permissions: {},
@@ -47,6 +48,7 @@ export default function Plans() {
       await apiRequest("POST", "/api/plans", {
         ...data,
         price: parseFloat(data.price).toFixed(2),
+        annualPrice: data.annualPrice ? parseFloat(data.annualPrice).toFixed(2) : null,
       });
     },
     onSuccess: () => {
@@ -72,6 +74,9 @@ export default function Plans() {
       const payload = { ...data };
       if (payload.price) {
         payload.price = parseFloat(payload.price).toFixed(2);
+      }
+      if (payload.annualPrice) {
+        payload.annualPrice = parseFloat(payload.annualPrice).toFixed(2);
       }
       await apiRequest("PUT", `/api/plans/${id}`, payload);
     },
@@ -128,8 +133,9 @@ export default function Plans() {
       name: plan.name,
       freeDays: plan.freeDays,
       price: plan.price.toString(),
+      annualPrice: plan.annualPrice ? plan.annualPrice.toString() : "",
       maxProfessionals: plan.maxProfessionals || 1,
-      isActive: plan.isActive,
+      isActive: Boolean(plan.isActive),
       permissions: plan.permissions || {},
     });
     setIsModalOpen(true);
@@ -141,6 +147,7 @@ export default function Plans() {
       name: "",
       freeDays: 0,
       price: "",
+      annualPrice: "",
       isActive: true,
       permissions: {
         dashboard: true,
@@ -231,7 +238,7 @@ export default function Plans() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="price">Valor (R$)</Label>
+                <Label htmlFor="price">Valor Mensal (R$)</Label>
                 <Input
                   id="price"
                   type="number"
@@ -247,6 +254,25 @@ export default function Plans() {
                 )}
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="annualPrice">Valor Anual (R$) - Opcional</Label>
+                <Input
+                  id="annualPrice"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  {...form.register("annualPrice")}
+                  placeholder="499.90"
+                />
+                {form.formState.errors.annualPrice && (
+                  <p className="text-sm text-red-600">
+                    {form.formState.errors.annualPrice.message}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="maxProfessionals">Máximo de Profissionais</Label>
                 <Input
