@@ -4392,11 +4392,14 @@ const broadcastEvent = (eventData: any) => {
         companyId: req.body.companyId || 1,
         name: req.body.name,
         code: req.body.code,
+        description: req.body.description || null,
         discountType: req.body.discountType || 'percentage',
-        discountValue: parseFloat(req.body.discountValue) || 0,
-        expiresAt: req.body.expiresAt ? new Date(req.body.expiresAt) : null,
-        maxUses: parseInt(req.body.maxUses) || 1,
-        usesCount: 0,
+        discountValue: (parseFloat(req.body.discountValue) || 0).toString(),
+        minOrderValue: req.body.minOrderValue ? parseFloat(req.body.minOrderValue).toString() : null,
+        maxDiscount: req.body.maxDiscount ? parseFloat(req.body.maxDiscount).toString() : null,
+        usageLimit: req.body.maxUses ? parseInt(req.body.maxUses) : null,
+        usedCount: 0,
+        validUntil: req.body.expiresAt || req.body.validUntil,
         isActive: req.body.isActive === true ? 1 : 0
       };
 
