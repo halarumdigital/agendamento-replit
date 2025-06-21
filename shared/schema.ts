@@ -72,6 +72,7 @@ export const plans = mysqlTable("plans", {
   name: varchar("name", { length: 255 }).notNull(),
   freeDays: int("free_days").notNull().default(0),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  annualPrice: decimal("annual_price", { precision: 10, scale: 2 }),
   maxProfessionals: int("max_professionals").notNull().default(1),
   isActive: int("is_active").notNull().default(1),
   stripeProductId: varchar("stripe_product_id", { length: 255 }),

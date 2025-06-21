@@ -2571,6 +2571,23 @@ export const storage = new DatabaseStorage();
   }
 })();
 
+// Ensure annual price column exists in plans table
+(async () => {
+  try {
+    await db.execute(sql`
+      ALTER TABLE plans 
+      ADD COLUMN IF NOT EXISTS annual_price DECIMAL(10,2) NULL AFTER price
+    `);
+    
+    console.log("✅ Annual price column ensured in plans");
+  } catch (error: any) {
+    // Column might already exist, which is fine
+    if (!error.message?.includes('Duplicate column name')) {
+      console.error("❌ Error adding annual_price column:", error);
+    }
+  }
+})();
+
 // Ensure Stripe columns exist in plans table
 (async () => {
   try {
