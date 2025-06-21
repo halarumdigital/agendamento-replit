@@ -97,7 +97,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 pb-16">
       <div className="w-full max-w-md">
         <Card>
           <CardHeader className="pb-4">
@@ -157,6 +157,13 @@ export default function Login() {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Footer */}
+      <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-2 z-40">
+        <div className="text-xs text-gray-500 text-center">
+          Agenday ©2025 - Versão 1.0 - Powered by Halarum
+        </div>
+      </footer>
     </div>
   );
 }

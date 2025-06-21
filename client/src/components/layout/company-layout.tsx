@@ -205,15 +205,7 @@ function SidebarContent() {
         })}
       </nav>
       
-      {/* Custom HTML Display */}
-      {publicSettings?.customHtml && (
-        <div className="p-4 border-t border-gray-200">
-          <div 
-            className="text-sm text-gray-700"
-            dangerouslySetInnerHTML={{ __html: publicSettings.customHtml }}
-          />
-        </div>
-      )}
+
       
       <div className="border-t p-4">
         <Button
@@ -276,12 +268,19 @@ export default function CompanyLayout({ children }: CompanyLayoutProps) {
 
       {/* Main Content */}
       <div className="min-h-screen bg-gray-50 lg:ml-64">
-        <main className="min-h-screen">
+        <main className="min-h-screen pb-16">
           {children}
         </main>
         
         {/* Company Alerts */}
         {company && <CompanyAlerts />}
+        
+        {/* Footer */}
+        <footer className="fixed bottom-0 left-0 right-0 lg:left-64 bg-white border-t border-gray-200 px-4 py-2 z-40">
+          <div className="text-xs text-gray-500 text-center">
+            Agenday ©2025 - Versão 1.0 - Powered by Halarum
+          </div>
+        </footer>
       </div>
     </>
   );
