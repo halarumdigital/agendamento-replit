@@ -179,21 +179,16 @@ export default function CompanySupport() {
     createTicketMutation.mutate(ticketForm);
   };
 
-  const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      open: { color: 'bg-blue-100 text-blue-800', icon: Clock, label: 'Aberto' },
-      in_progress: { color: 'bg-yellow-100 text-yellow-800', icon: AlertCircle, label: 'Em Progresso' },
-      resolved: { color: 'bg-green-100 text-green-800', icon: CheckCircle, label: 'Resolvido' },
-      closed: { color: 'bg-gray-100 text-gray-800', icon: XCircle, label: 'Fechado' },
-    };
-    
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.open;
-    const Icon = config.icon;
+  const getStatusBadge = (status: string, statusColor?: string) => {
+    // Use the dynamic color from the database if available
+    const colorStyle = statusColor ? { backgroundColor: statusColor, color: '#fff' } : {};
     
     return (
-      <Badge className={`${config.color} flex items-center gap-1`}>
-        <Icon className="h-3 w-3" />
-        {config.label}
+      <Badge 
+        className={statusColor ? 'text-white' : 'bg-blue-100 text-blue-800'}
+        style={colorStyle}
+      >
+        {status || 'Aberto'}
       </Badge>
     );
   };
@@ -361,8 +356,7 @@ export default function CompanySupport() {
                   <div className="flex items-start justify-between mb-2">
                     <h3 className="font-semibold text-lg">{ticket.title}</h3>
                     <div className="flex items-center gap-2">
-                      {getPriorityBadge(ticket.priority)}
-                      {getStatusBadge(ticket.status)}
+                      {getStatusBadge(ticket.status, ticket.statusColor)}
                     </div>
                   </div>
                   <p className="text-gray-600 text-sm mb-2 line-clamp-2">{ticket.description}</p>
@@ -394,8 +388,7 @@ export default function CompanySupport() {
             </DialogHeader>
             <div className="space-y-6">
               <div className="flex items-center gap-4">
-                {getPriorityBadge(selectedTicket.priority)}
-                {getStatusBadge(selectedTicket.status)}
+                {getStatusBadge(selectedTicket.status, selectedTicket.statusColor)}
                 <span className="text-sm text-gray-500">
                   Criado em: {new Date(selectedTicket.createdAt).toLocaleDateString('pt-BR')}
                 </span>
