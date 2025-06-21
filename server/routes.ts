@@ -4607,18 +4607,25 @@ const broadcastEvent = (eventData: any) => {
         size: file.size
       })) : [];
 
-      const newTicket = await db.insert(supportTickets).values({
-        companyId,
-        title,
-        description,
-        typeId: typeId ? parseInt(typeId) : null,
-        statusId: 1, // Default to 'open' status
-        attachments: JSON.stringify(attachments)
-      });
+      // Get the first available status ID (usually 'Aberto')
+      const [statusRows] = await pool.execute(
+        'SELECT id FROM support_ticket_statuses ORDER BY sort_order LIMIT 1'
+      ) as any;
+      
+      const defaultStatusId = statusRows.length > 0 ? statusRows[0].id : null;
+
+      if (!defaultStatusId) {
+        return res.status(500).json({ message: "Nenhum status de ticket disponível. Contate o administrador." });
+      }
+
+      const [result] = await pool.execute(
+        'INSERT INTO support_tickets (company_id, type_id, status_id, title, description, attachments) VALUES (?, ?, ?, ?, ?, ?)',
+        [companyId, typeId ? parseInt(typeId) : null, defaultStatusId, title, description, JSON.stringify(attachments)]
+      ) as any;
 
       res.json({ 
         message: "Ticket criado com sucesso", 
-        id: newTicket.insertId,
+        id: result.insertId,
         attachments: attachments.length 
       });
     } catch (error) {
