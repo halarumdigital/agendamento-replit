@@ -4389,18 +4389,15 @@ const broadcastEvent = (eventData: any) => {
       console.log('Creating coupon with data:', req.body);
       
       const couponData = {
-        companyId: req.body.companyId || 1, // Default company ID for admin coupons
+        companyId: req.body.companyId || 1,
         name: req.body.name,
         code: req.body.code,
-        description: req.body.description || '',
-        discountType: req.body.discountType,
-        discountValue: parseFloat(req.body.discountValue),
-        minOrderValue: req.body.minOrderValue ? parseFloat(req.body.minOrderValue) : 0,
-        maxDiscount: req.body.maxDiscount ? parseFloat(req.body.maxDiscount) : null,
-        usageLimit: req.body.usageLimit ? parseInt(req.body.usageLimit) : null,
-        usedCount: 0,
-        validUntil: req.body.validUntil || req.body.expiresAt,
-        isActive: req.body.isActive !== false
+        discountType: req.body.discountType || 'percentage',
+        discountValue: parseFloat(req.body.discountValue) || 0,
+        expiresAt: req.body.expiresAt ? new Date(req.body.expiresAt) : null,
+        maxUses: parseInt(req.body.maxUses) || 1,
+        usesCount: 0,
+        isActive: req.body.isActive === true ? 1 : 0
       };
 
       const coupon = await storage.createCoupon(couponData);

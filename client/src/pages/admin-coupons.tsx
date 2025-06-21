@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
@@ -39,14 +40,13 @@ import { format } from "date-fns";
 const getCurrentCompanyId = () => 1;
 
 const couponSchema = z.object({
-  companyId: z.number(),
   name: z.string().min(1, "Nome é obrigatório"),
   code: z.string().min(1, "Código é obrigatório"),
   discountType: z.enum(["percentage", "fixed"]),
   discountValue: z.coerce.number().min(0, "Valor do desconto deve ser positivo"),
   expiresAt: z.string().optional(),
-  maxUses: z.coerce.number().int().min(0, "Número de usos deve ser positivo"),
-  isActive: z.boolean(),
+  maxUses: z.coerce.number().int().min(1, "Número de usos deve ser positivo"),
+  isActive: z.boolean().default(true),
 });
 
 type CouponFormData = z.infer<typeof couponSchema>;
