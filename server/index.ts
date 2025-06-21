@@ -14,6 +14,7 @@ import { ensureAddressColumns } from "./ensure-address-columns";
 import { ensureStripeColumns } from "./ensure-stripe-columns";
 import { ensureAdminAlertsTables } from "./ensure-admin-alerts-tables";
 import { ensureSupportTables } from "./ensure-support-tables";
+import { ensureTourTables } from "./ensure-tour-tables";
 import { db } from "./db";
 import path from "path";
 
@@ -87,6 +88,9 @@ app.use((req, res, next) => {
   
   // Ensure support tables exist
   await ensureSupportTables();
+  
+  // Ensure tour tables exist
+  await ensureTourTables();
   
   // Start campaign scheduler
   startCampaignScheduler();

@@ -882,3 +882,34 @@ export type SupportTicketStatus = typeof supportTicketStatuses.$inferSelect;
 export type InsertSupportTicketStatus = z.infer<typeof insertSupportTicketStatusSchema>;
 export type SupportTicket = typeof supportTickets.$inferSelect;
 export type InsertSupportTicket = z.infer<typeof insertSupportTicketSchema>;
+
+// Tour guiado system
+export const tourSteps = mysqlTable("tour_steps", {
+  id: int("id").primaryKey().autoincrement(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description").notNull(),
+  targetElement: varchar("target_element", { length: 255 }).notNull(), // CSS selector
+  placement: varchar("placement", { length: 20 }).default("bottom"), // top, bottom, left, right
+  stepOrder: int("step_order").notNull(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow()
+});
+
+export const companyTourProgress = mysqlTable("company_tour_progress", {
+  id: int("id").primaryKey().autoincrement(),
+  companyId: int("company_id").notNull(),
+  hasCompletedTour: boolean("has_completed_tour").default(false),
+  currentStep: int("current_step").default(1),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow()
+});
+
+export const insertTourStepSchema = createInsertSchema(tourSteps).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertCompanyTourProgressSchema = createInsertSchema(companyTourProgress).omit({ id: true, createdAt: true, updatedAt: true });
+
+export type TourStep = typeof tourSteps.$inferSelect;
+export type InsertTourStep = z.infer<typeof insertTourStepSchema>;
+export type CompanyTourProgress = typeof companyTourProgress.$inferSelect;
+export type InsertCompanyTourProgress = z.infer<typeof insertCompanyTourProgressSchema>;
