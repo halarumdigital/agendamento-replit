@@ -832,10 +832,21 @@ export type InsertAdminAlert = z.infer<typeof insertAdminAlertSchema>;
 export type CompanyAlertView = typeof companyAlertViews.$inferSelect;
 export type InsertCompanyAlertView = z.infer<typeof insertCompanyAlertViewSchema>;
 
+// Support ticket types table
+export const supportTicketTypes = mysqlTable("support_ticket_types", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+});
+
 // Support tickets table
 export const supportTickets = mysqlTable("support_tickets", {
   id: serial("id").primaryKey(),
   companyId: int("company_id").notNull(),
+  typeId: int("type_id"),
   title: varchar("title", { length: 255 }).notNull(),
   description: text("description").notNull(),
   status: varchar("status", { length: 50 }).notNull().default("open"), // open, in_progress, resolved, closed
@@ -847,6 +858,10 @@ export const supportTickets = mysqlTable("support_tickets", {
   resolvedAt: timestamp("resolved_at"),
 });
 
+export const insertSupportTicketTypeSchema = createInsertSchema(supportTicketTypes).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertSupportTicketSchema = createInsertSchema(supportTickets).omit({ id: true, createdAt: true, updatedAt: true });
+
+export type SupportTicketType = typeof supportTicketTypes.$inferSelect;
+export type InsertSupportTicketType = z.infer<typeof insertSupportTicketTypeSchema>;
 export type SupportTicket = typeof supportTickets.$inferSelect;
 export type InsertSupportTicket = z.infer<typeof insertSupportTicketSchema>;

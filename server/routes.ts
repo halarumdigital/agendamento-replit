@@ -4620,60 +4620,124 @@ const broadcastEvent = (eventData: any) => {
     }
   });
 
-  // Admin routes for support tickets - commented out for now
-  // app.get('/api/admin/support-tickets', isAuthenticated, async (req, res) => {
-  //   try {
-  //     const tickets = await db.select({
-  //       id: supportTickets.id,
-  //       companyId: supportTickets.companyId,
-  //       title: supportTickets.title,
-  //       description: supportTickets.description,
-  //       status: supportTickets.status,
-  //       priority: supportTickets.priority,
-  //       category: supportTickets.category,
-  //       adminResponse: supportTickets.adminResponse,
-  //       createdAt: supportTickets.createdAt,
-  //       updatedAt: supportTickets.updatedAt,
-  //       resolvedAt: supportTickets.resolvedAt,
-  //       companyName: companies.fantasyName
-  //     })
-  //     .from(supportTickets)
-  //     .leftJoin(companies, eq(supportTickets.companyId, companies.id))
-  //     .orderBy(desc(supportTickets.createdAt));
-  //     
-  //     res.json(tickets);
-  //   } catch (error) {
-  //     console.error("Error fetching admin support tickets:", error);
-  //     res.status(500).json({ message: "Erro ao buscar tickets de suporte" });
-  //   }
-  // });
+  // Admin routes for support ticket types
+  app.get('/api/admin/support-ticket-types', isAuthenticated, async (req, res) => {
+    try {
+      const ticketTypes = await db.select().from(supportTicketTypes).orderBy(supportTicketTypes.name);
+      res.json(ticketTypes);
+    } catch (error) {
+      console.error("Error fetching support ticket types:", error);
+      res.status(500).json({ message: "Erro ao buscar tipos de tickets" });
+    }
+  });
 
-  // Commented out admin route for now
-  // app.put('/api/admin/support-tickets/:id', isAuthenticated, async (req, res) => {
-  //   try {
-  //     const ticketId = parseInt(req.params.id);
-  //     const { status, adminResponse } = req.body;
+  app.post('/api/admin/support-ticket-types', isAuthenticated, async (req, res) => {
+    try {
+      const { name, description, isActive } = req.body;
 
-  //     const updateData: any = {
-  //       status,
-  //       adminResponse,
-  //       updatedAt: new Date()
-  //     };
+      const newType = await db.insert(supportTicketTypes).values({
+        name,
+        description,
+        isActive: isActive !== undefined ? isActive : true
+      });
 
-  //     if (status === 'resolved' || status === 'closed') {
-  //       updateData.resolvedAt = new Date();
-  //     }
+      res.json({ message: "Tipo de ticket criado com sucesso", id: newType.insertId });
+    } catch (error) {
+      console.error("Error creating support ticket type:", error);
+      res.status(500).json({ message: "Erro ao criar tipo de ticket" });
+    }
+  });
 
-  //     await db.update(supportTickets)
-  //       .set(updateData)
-  //       .where(eq(supportTickets.id, ticketId));
+  app.put('/api/admin/support-ticket-types/:id', isAuthenticated, async (req, res) => {
+    try {
+      const typeId = parseInt(req.params.id);
+      const { name, description, isActive } = req.body;
 
-  //     res.json({ message: "Ticket atualizado com sucesso" });
-  //   } catch (error) {
-  //     console.error("Error updating admin support ticket:", error);
-  //     res.status(500).json({ message: "Erro ao atualizar ticket de suporte" });
-  //   }
-  // });
+      await db.update(supportTicketTypes)
+        .set({
+          name,
+          description,
+          isActive,
+          updatedAt: new Date()
+        })
+        .where(eq(supportTicketTypes.id, typeId));
+
+      res.json({ message: "Tipo de ticket atualizado com sucesso" });
+    } catch (error) {
+      console.error("Error updating support ticket type:", error);
+      res.status(500).json({ message: "Erro ao atualizar tipo de ticket" });
+    }
+  });
+
+  app.delete('/api/admin/support-ticket-types/:id', isAuthenticated, async (req, res) => {
+    try {
+      const typeId = parseInt(req.params.id);
+
+      await db.delete(supportTicketTypes).where(eq(supportTicketTypes.id, typeId));
+
+      res.json({ message: "Tipo de ticket excluído com sucesso" });
+    } catch (error) {
+      console.error("Error deleting support ticket type:", error);
+      res.status(500).json({ message: "Erro ao excluir tipo de ticket" });
+    }
+  });
+
+  // Admin routes for support tickets
+  app.get('/api/admin/support-tickets', isAuthenticated, async (req, res) => {
+    try {
+      const tickets = await db.select({
+        id: supportTickets.id,
+        companyId: supportTickets.companyId,
+        typeId: supportTickets.typeId,
+        title: supportTickets.title,
+        description: supportTickets.description,
+        status: supportTickets.status,
+        priority: supportTickets.priority,
+        category: supportTickets.category,
+        adminResponse: supportTickets.adminResponse,
+        createdAt: supportTickets.createdAt,
+        updatedAt: supportTickets.updatedAt,
+        resolvedAt: supportTickets.resolvedAt,
+        company: {
+          id: companies.id,
+          fantasyName: companies.fantasyName,
+          email: companies.email
+        }
+      })
+      .from(supportTickets)
+      .leftJoin(companies, eq(supportTickets.companyId, companies.id))
+      .orderBy(desc(supportTickets.createdAt));
+
+      res.json(tickets);
+    } catch (error) {
+      console.error("Error fetching admin support tickets:", error);
+      res.status(500).json({ message: "Erro ao buscar tickets de suporte" });
+    }
+  });
+
+  app.put('/api/admin/support-tickets/:id', isAuthenticated, async (req, res) => {
+    try {
+      const ticketId = parseInt(req.params.id);
+      const { status, adminResponse } = req.body;
+
+      const updateData: any = {};
+      if (status) updateData.status = status;
+      if (adminResponse !== undefined) updateData.adminResponse = adminResponse;
+      if (status === 'resolved' || status === 'closed') {
+        updateData.resolvedAt = new Date();
+      }
+      updateData.updatedAt = new Date();
+
+      await db.update(supportTickets)
+        .set(updateData)
+        .where(eq(supportTickets.id, ticketId));
+
+      res.json({ message: "Ticket atualizado com sucesso" });
+    } catch (error) {
+      console.error("Error updating admin support ticket:", error);
+      res.status(500).json({ message: "Erro ao atualizar ticket" });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
