@@ -5284,7 +5284,7 @@ const broadcastEvent = (eventData: any) => {
       // Evolution API v2.3.0 payload format
       const evolutionPayload = {
         instanceName: instanceName,
-        integration: "BAILEYS",
+        integration: "WHATSAPP-BAILEYS",
         qrcode: true,
         webhook: webhookUrl,
         webhookByEvents: true,
