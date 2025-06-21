@@ -2011,7 +2011,17 @@ Obrigado pela preferência! 🙏`;
       } catch (parseError) {
         console.error('❌ Failed to parse response as JSON. Response text:', responseText.substring(0, 500));
         console.error('Parse error:', parseError);
-        return { success: false, message: "Erro na configuração da Evolution API. Verifique a URL e chave da API nas configurações globais." };
+        
+        // More specific error messages based on response
+        if (responseText.includes('<!DOCTYPE') || responseText.includes('<html>')) {
+          return { success: false, message: "Evolution API retornou página HTML - verifique URL da API nas configurações globais" };
+        } else if (response.status === 401) {
+          return { success: false, message: "Chave da API inválida - verifique a chave global da Evolution API" };
+        } else if (response.status === 404) {
+          return { success: false, message: "Instância do WhatsApp não encontrada - verifique o nome da instância" };
+        } else {
+          return { success: false, message: `Erro de comunicação com Evolution API (Status: ${response.status})` };
+        }
       }
 
       if (response.ok && responseData.key) {

@@ -4864,6 +4864,74 @@ const broadcastEvent = (eventData: any) => {
     }
   });
 
+  // Evolution API diagnostic endpoint
+  app.get('/api/admin/evolution-api/test', isAuthenticated, async (req, res) => {
+    try {
+      const settings = await storage.getGlobalSettings();
+      
+      if (!settings?.evolutionApiUrl || !settings?.evolutionApiGlobalKey) {
+        return res.json({
+          success: false,
+          message: "Configurações da Evolution API não encontradas",
+          details: {
+            hasUrl: !!settings?.evolutionApiUrl,
+            hasKey: !!settings?.evolutionApiGlobalKey
+          }
+        });
+      }
+
+      // Test API connection
+      const testUrl = `${settings.evolutionApiUrl}/manager/findInstances`;
+      console.log('Testing Evolution API:', testUrl);
+      
+      const response = await fetch(testUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': settings.evolutionApiGlobalKey
+        }
+      });
+
+      console.log('Test response status:', response.status);
+      const responseText = await response.text();
+      console.log('Test response body:', responseText.substring(0, 200));
+
+      let responseData;
+      try {
+        responseData = JSON.parse(responseText);
+      } catch (parseError) {
+        return res.json({
+          success: false,
+          message: "Evolution API retornou resposta inválida",
+          details: {
+            status: response.status,
+            responseType: responseText.includes('<!DOCTYPE') ? 'HTML' : 'Text',
+            preview: responseText.substring(0, 200)
+          }
+        });
+      }
+
+      res.json({
+        success: true,
+        message: "Conexão com Evolution API estabelecida",
+        details: {
+          status: response.status,
+          instances: Array.isArray(responseData) ? responseData.length : 'N/A'
+        }
+      });
+
+    } catch (error: any) {
+      console.error("Error testing Evolution API:", error);
+      res.json({
+        success: false,
+        message: "Erro ao testar Evolution API",
+        details: {
+          error: error.message
+        }
+      });
+    }
+  });
+
   // Admin routes for support ticket statuses
   app.get('/api/admin/support-ticket-statuses', isAuthenticated, async (req, res) => {
     try {

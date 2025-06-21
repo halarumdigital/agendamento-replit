@@ -142,6 +142,8 @@ This is a comprehensive business management system built with Express.js and MyS
 ## Changelog
 ```
 Changelog:
+- June 21, 2025. Fixed WhatsApp review invitation error - enhanced Evolution API error handling with specific diagnostics and added admin test connection tool
+- June 21, 2025. Added system URL configuration field to admin settings - review invitation links now use configured domain instead of localhost
 - June 21, 2025. Implemented dynamic ticket categories - companies now see categories based on admin-configured ticket types instead of hardcoded values
 - June 21, 2025. Added admin file upload capability for support ticket responses with support for images, PDF, DOC, DOCX, and TXT files (5MB limit)
 - June 21, 2025. Fixed admin support panel to use dynamic status selection from database instead of hardcoded values

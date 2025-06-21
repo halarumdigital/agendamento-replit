@@ -791,6 +791,42 @@ export default function SettingsPage() {
                       <li>• Essas configurações são necessárias para integração com WhatsApp</li>
                     </ul>
                   </div>
+
+                  <div className="mt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={async () => {
+                        try {
+                          const response = await fetch('/api/admin/evolution-api/test', {
+                            credentials: 'include'
+                          });
+                          const result = await response.json();
+                          
+                          if (result.success) {
+                            toast({
+                              title: "Conexão bem-sucedida!",
+                              description: result.message,
+                            });
+                          } else {
+                            toast({
+                              title: "Erro na conexão",
+                              description: result.message,
+                              variant: "destructive"
+                            });
+                          }
+                        } catch (error) {
+                          toast({
+                            title: "Erro ao testar conexão",
+                            description: "Erro interno do servidor",
+                            variant: "destructive"
+                          });
+                        }
+                      }}
+                    >
+                      Testar Conexão
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
