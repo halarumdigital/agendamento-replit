@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { usePlan } from "@/hooks/use-plan";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Lock } from "lucide-react";
+import { ProfessionalServiceHistory } from "@/components/professional-service-history";
 
 interface Professional {
   id: number;
@@ -566,9 +567,13 @@ export default function CompanyProfessionals() {
                 </TabsContent>
                 
                 <TabsContent value="servicos" className="space-y-4">
-                  <div className="text-center py-8 text-gray-500">
-                    <p>Histórico de serviços em desenvolvimento</p>
-                  </div>
+                  {editingProfessional ? (
+                    <ProfessionalServiceHistory professionalId={editingProfessional.id} />
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <p>Salve o profissional primeiro para ver o histórico de serviços</p>
+                    </div>
+                  )}
                 </TabsContent>
               </Tabs>
             </DialogContent>

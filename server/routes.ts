@@ -2762,6 +2762,27 @@ INSTRUÇÕES OBRIGATÓRIAS:
     }
   });
 
+  // Get appointments by professional
+  app.get('/api/company/appointments/professional/:professionalId', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const professionalId = parseInt(req.params.professionalId);
+      if (isNaN(professionalId)) {
+        return res.status(400).json({ message: "ID do profissional inválido" });
+      }
+
+      const appointments = await storage.getAppointmentsByProfessional(professionalId, companyId);
+      res.json(appointments);
+    } catch (error) {
+      console.error("Error fetching professional appointments:", error);
+      res.status(500).json({ message: "Erro ao buscar histórico do profissional" });
+    }
+  });
+
   // Get single appointment by ID (must be after specific routes)
   app.get('/api/company/appointments/:id', async (req: any, res) => {
     try {

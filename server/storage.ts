@@ -219,6 +219,7 @@ export interface IStorage {
   // Appointments operations
   getAppointmentsByCompany(companyId: number, month?: string): Promise<Appointment[]>;
   getAppointmentsByClient(clientId: number, companyId: number): Promise<any[]>;
+  getAppointmentsByProfessional(professionalId: number, companyId: number): Promise<any[]>;
   getAppointment(id: number): Promise<Appointment | undefined>;
   createAppointment(appointment: InsertAppointment): Promise<Appointment>;
   updateAppointment(id: number, appointment: Partial<InsertAppointment>): Promise<Appointment>;
@@ -995,6 +996,56 @@ export class DatabaseStorage implements IStorage {
       }));
     } catch (error: any) {
       console.error("Error getting appointments by client:", error);
+      return [];
+    }
+  }
+
+  async getAppointmentsByProfessional(professionalId: number, companyId: number): Promise<any[]> {
+    try {
+      console.log(`Looking for appointments for professional: ${professionalId}`);
+      
+      // Get appointments using Drizzle ORM with proper joins
+      const results = await db.select({
+        id: appointments.id,
+        appointmentDate: appointments.appointmentDate,
+        appointmentTime: appointments.appointmentTime,
+        price: appointments.totalPrice,
+        notes: appointments.notes,
+        clientName: appointments.clientName,
+        clientPhone: appointments.clientPhone,
+        serviceName: services.name,
+        professionalName: professionals.name,
+        statusName: status.name,
+        statusColor: status.color
+      })
+      .from(appointments)
+      .leftJoin(services, eq(appointments.serviceId, services.id))
+      .leftJoin(professionals, eq(appointments.professionalId, professionals.id))
+      .leftJoin(status, eq(appointments.status, status.id))
+      .where(and(
+        eq(appointments.professionalId, professionalId),
+        eq(appointments.companyId, companyId)
+      ))
+      .orderBy(desc(appointments.appointmentDate), desc(appointments.appointmentTime));
+      
+      console.log(`Found ${results.length} appointments for professional ${professionalId}`);
+      
+      // Format results properly
+      return results.map(result => ({
+        id: result.id,
+        appointmentDate: result.appointmentDate,
+        appointmentTime: result.appointmentTime,
+        price: parseFloat(result.price?.toString() || '0'),
+        notes: result.notes,
+        clientName: result.clientName,
+        clientPhone: result.clientPhone,
+        serviceName: result.serviceName || 'Serviço não encontrado',
+        professionalName: result.professionalName || 'Profissional não encontrado',
+        statusName: result.statusName || 'Pendente',
+        statusColor: result.statusColor || '#A0A0A0'
+      }));
+    } catch (error: any) {
+      console.error("Error getting appointments by professional:", error);
       return [];
     }
   }
