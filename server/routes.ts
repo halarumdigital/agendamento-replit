@@ -4599,13 +4599,8 @@ const broadcastEvent = (eventData: any) => {
       const companyId = req.session.companyId;
       const { title, description, typeId } = req.body;
 
-      // Handle file attachments
-      const attachments = req.files ? req.files.map((file: any) => ({
-        filename: file.filename,
-        originalName: file.originalname,
-        path: file.path,
-        size: file.size
-      })) : [];
+      // Handle file attachments - save as comma-separated filenames
+      const attachmentFilenames = req.files ? req.files.map((file: any) => file.filename).join(',') : '';
 
       // Get the first available status ID (usually 'Aberto')
       const [statusRows] = await pool.execute(
@@ -4626,7 +4621,7 @@ const broadcastEvent = (eventData: any) => {
       if (hasAttachments) {
         [result] = await pool.execute(
           'INSERT INTO support_tickets (company_id, type_id, status_id, title, description, attachments) VALUES (?, ?, ?, ?, ?, ?)',
-          [companyId, typeId ? parseInt(typeId) : null, defaultStatusId, title, description, JSON.stringify(attachments)]
+          [companyId, typeId ? parseInt(typeId) : null, defaultStatusId, title, description, attachmentFilenames]
         ) as any;
       } else {
         // Add attachments column if it doesn't exist
@@ -4642,14 +4637,14 @@ const broadcastEvent = (eventData: any) => {
         // Insert with attachments column
         [result] = await pool.execute(
           'INSERT INTO support_tickets (company_id, type_id, status_id, title, description, attachments) VALUES (?, ?, ?, ?, ?, ?)',
-          [companyId, typeId ? parseInt(typeId) : null, defaultStatusId, title, description, JSON.stringify(attachments)]
+          [companyId, typeId ? parseInt(typeId) : null, defaultStatusId, title, description, attachmentFilenames]
         ) as any;
       }
 
       res.json({ 
         message: "Ticket criado com sucesso", 
         id: result.insertId,
-        attachments: attachments.length 
+        attachments: req.files ? req.files.length : 0
       });
     } catch (error) {
       console.error("Error creating support ticket:", error);
