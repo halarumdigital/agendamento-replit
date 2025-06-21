@@ -290,12 +290,16 @@ export default function AdminSupport() {
     );
   };
 
-  const handleUpdateTicket = (status: string, adminResponse?: string) => {
+  const handleUpdateTicket = (statusId: string, adminResponse?: string) => {
     if (!selectedTicket) return;
+    
+    const updateData: any = {};
+    if (statusId) updateData.statusId = parseInt(statusId);
+    if (adminResponse !== undefined) updateData.adminResponse = adminResponse;
     
     updateTicketMutation.mutate({
       id: selectedTicket.id,
-      data: { status, adminResponse }
+      data: updateData
     });
   };
 
@@ -646,9 +650,11 @@ export default function AdminSupport() {
                     <SelectValue placeholder="Selecione o novo status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="in_progress">Em Progresso</SelectItem>
-                    <SelectItem value="resolved">Resolvido</SelectItem>
-                    <SelectItem value="closed">Fechado</SelectItem>
+                    {Array.isArray(ticketStatuses) && ticketStatuses.map((status: SupportTicketStatus) => (
+                      <SelectItem key={status.id} value={status.id.toString()}>
+                        {status.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
