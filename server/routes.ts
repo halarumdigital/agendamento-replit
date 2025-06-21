@@ -3476,19 +3476,6 @@ async function transcribeAudio(audioBase64: string, openaiApiKey: string): Promi
   }
 }
 
-const upload = multer({
-  storage: storage_multer,
-  limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
-  },
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) {
-      cb(null, true);
-    } else {
-      cb(new Error('Apenas imagens são permitidas'));
-    }
-  }
-});
 
 // Helper function to generate public webhook URLs
 function generateWebhookUrl(req: any, instanceName: string): string {
