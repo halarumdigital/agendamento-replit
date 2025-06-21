@@ -4,6 +4,21 @@ export async function ensureSupportTables() {
   try {
     console.log("✅ Checking and ensuring support tables...");
     
+    // First check if support_tickets table exists and its structure
+    try {
+      const [columns] = await pool.execute('SHOW COLUMNS FROM support_tickets') as any;
+      console.log('Current support_tickets columns:', columns.map((col: any) => col.Field).join(', '));
+      
+      const hasAttachments = columns.some((col: any) => col.Field === 'attachments');
+      if (!hasAttachments) {
+        console.log('⚠️ Attachments column missing, will add it...');
+      } else {
+        console.log('✅ Attachments column already exists');
+      }
+    } catch (error) {
+      console.log('Support_tickets table does not exist yet, will be created');
+    }
+    
     // Create support_ticket_types table
     await pool.execute(`
       CREATE TABLE IF NOT EXISTS support_ticket_types (
@@ -79,18 +94,21 @@ export async function ensureSupportTables() {
         }
         
         // Add attachments column if it doesn't exist
-        try {
-          await pool.execute(`
-            ALTER TABLE support_tickets 
-            ADD COLUMN attachments TEXT
-          `);
-          console.log('✅ Attachments column added to support_tickets');
-        } catch (error: any) {
-          if (error.code === 'ER_DUP_FIELDNAME') {
-            console.log('✅ Attachments column already exists');
-          } else {
+        const [columns] = await pool.execute('SHOW COLUMNS FROM support_tickets') as any;
+        const hasAttachments = columns.some((col: any) => col.Field === 'attachments');
+        
+        if (!hasAttachments) {
+          try {
+            await pool.execute(`
+              ALTER TABLE support_tickets 
+              ADD COLUMN attachments TEXT
+            `);
+            console.log('✅ Attachments column added to support_tickets');
+          } catch (error: any) {
             console.log('❌ Error adding attachments column:', error.message);
           }
+        } else {
+          console.log('✅ Attachments column already exists');
         }
         
         // Add foreign key constraint

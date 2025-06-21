@@ -4618,10 +4618,33 @@ const broadcastEvent = (eventData: any) => {
         return res.status(500).json({ message: "Nenhum status de ticket disponível. Contate o administrador." });
       }
 
-      const [result] = await pool.execute(
-        'INSERT INTO support_tickets (company_id, type_id, status_id, title, description, attachments) VALUES (?, ?, ?, ?, ?, ?)',
-        [companyId, typeId ? parseInt(typeId) : null, defaultStatusId, title, description, JSON.stringify(attachments)]
-      ) as any;
+      // Check if attachments column exists first
+      const [columns] = await pool.execute('SHOW COLUMNS FROM support_tickets') as any;
+      const hasAttachments = columns.some((col: any) => col.Field === 'attachments');
+      
+      let result;
+      if (hasAttachments) {
+        [result] = await pool.execute(
+          'INSERT INTO support_tickets (company_id, type_id, status_id, title, description, attachments) VALUES (?, ?, ?, ?, ?, ?)',
+          [companyId, typeId ? parseInt(typeId) : null, defaultStatusId, title, description, JSON.stringify(attachments)]
+        ) as any;
+      } else {
+        // Add attachments column if it doesn't exist
+        try {
+          await pool.execute('ALTER TABLE support_tickets ADD COLUMN attachments TEXT');
+          console.log('✅ Attachments column added during ticket creation');
+        } catch (error: any) {
+          if (error.code !== 'ER_DUP_FIELDNAME') {
+            console.log('Error adding attachments column:', error.message);
+          }
+        }
+        
+        // Insert with attachments column
+        [result] = await pool.execute(
+          'INSERT INTO support_tickets (company_id, type_id, status_id, title, description, attachments) VALUES (?, ?, ?, ?, ?, ?)',
+          [companyId, typeId ? parseInt(typeId) : null, defaultStatusId, title, description, JSON.stringify(attachments)]
+        ) as any;
+      }
 
       res.json({ 
         message: "Ticket criado com sucesso", 
