@@ -5280,22 +5280,15 @@ const broadcastEvent = (eventData: any) => {
       ];
 
       const webhookUrl = generateWebhookUrl(req, instanceName);
+      console.log(`🔗 Generated webhook URL: ${webhookUrl}`);
       
-      // Evolution API v2.3.0 payload format
+      // Evolution API v2.3.0 minimal payload format
       const evolutionPayload = {
         instanceName: instanceName,
-        integration: "WHATSAPP-BAILEYS",
-        qrcode: true,
-        webhook: webhookUrl,
-        webhookByEvents: true,
-        events: [
-          "APPLICATION_STARTUP",
-          "QRCODE_UPDATED", 
-          "CONNECTION_UPDATE",
-          "MESSAGES_UPSERT",
-          "SEND_MESSAGE"
-        ]
+        integration: "WHATSAPP-BAILEYS"
       };
+      
+      console.log(`📤 Evolution API payload:`, JSON.stringify(evolutionPayload, null, 2));
 
       console.log(`📤 Trying endpoints for Evolution API instance creation...`);
 
