@@ -1,22 +1,34 @@
-import mysql from 'mysql2/promise';
-import { drizzle } from 'drizzle-orm/mysql2';
+import Database from 'better-sqlite3';
+import { drizzle } from 'drizzle-orm/better-sqlite3';
 import * as schema from "@shared/schema";
 
-// Use environment variables for MySQL connection
-const pool = mysql.createPool({
-  host: process.env.MYSQL_HOST || 'localhost',
-  port: parseInt(process.env.MYSQL_PORT || '3306'),
-  user: process.env.MYSQL_USER || 'root',
-  password: process.env.MYSQL_PASSWORD || '',
-  database: process.env.MYSQL_DATABASE || 'admin_system',
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
-});
+// Use SQLite for Replit compatibility
+const sqlite = new Database('./database.db');
+const db = drizzle(sqlite, { schema });
 
-export const db = drizzle(pool, { 
-  schema, 
-  mode: 'default' as const
-});
-export { pool };
+// Create a pool-like interface for compatibility
+const pool = {
+  execute: async (query: string, params: any[] = []) => {
+    try {
+      const stmt = sqlite.prepare(query);
+      const result = stmt.all(...params);
+      return [result, []];
+    } catch (error) {
+      console.error('Database query error:', error);
+      throw error;
+    }
+  },
+  query: async (query: string, params: any[] = []) => {
+    try {
+      const stmt = sqlite.prepare(query);
+      const result = stmt.all(...params);
+      return { rows: result };
+    } catch (error) {
+      console.error('Database query error:', error);
+      throw error;
+    }
+  }
+};
+
+export { db, pool };
 

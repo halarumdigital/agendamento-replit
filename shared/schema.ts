@@ -1,80 +1,75 @@
 import {
-  mysqlTable,
+  sqliteTable,
   text,
-  varchar,
-  timestamp,
-  json,
+  integer,
+  real,
+  blob,
   index,
-  int,
-  decimal,
-  boolean,
-  date,
-  serial,
-} from "drizzle-orm/mysql-core";
+} from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
 
 // Session storage table for express-session
-export const sessions = mysqlTable(
+export const sessions = sqliteTable(
   "sessions",
   {
-    sid: varchar("sid", { length: 255 }).primaryKey(),
+    sid: text("sid", { length: 255 }).primaryKey(),
     sess: json("sess").notNull(),
-    expire: timestamp("expire").notNull(),
+    expire: text("expire").notNull(),
   },
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
 // Admin users table
-export const admins = mysqlTable("admins", {
-  id: int("id").primaryKey().autoincrement(),
-  username: varchar("username", { length: 100 }).notNull().unique(),
-  email: varchar("email", { length: 255 }).notNull().unique(),
-  password: varchar("password", { length: 255 }).notNull(),
-  firstName: varchar("first_name", { length: 100 }),
-  lastName: varchar("last_name", { length: 100 }),
-  isActive: boolean("is_active").notNull().default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+export const admins = sqliteTable("admins", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  username: text("username", { length: 100 }).notNull().unique(),
+  email: text("email", { length: 255 }).notNull().unique(),
+  password: text("password", { length: 255 }).notNull(),
+  firstName: text("first_name", { length: 100 }),
+  lastName: text("last_name", { length: 100 }),
+  isActive: integer("is_active").notNull().default(true),
+  createdAt: text("created_at").defaultNow(),
+  updatedAt: text("updated_at").defaultNow().onUpdateNow(),
 });
 
 // Companies table
-export const companies = mysqlTable("companies", {
-  id: int("id").primaryKey().autoincrement(),
-  fantasyName: varchar("fantasy_name", { length: 255 }).notNull(),
-  document: varchar("document", { length: 20 }).notNull().unique(),
+export const companies = sqliteTable("companies", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  fantasyName: text("fantasy_name", { length: 255 }).notNull(),
+  document: text("document", { length: 20 }).notNull().unique(),
   address: text("address").notNull(),
-  phone: varchar("phone", { length: 20 }),
-  zipCode: varchar("zip_code", { length: 10 }),
-  number: varchar("number", { length: 20 }),
-  neighborhood: varchar("neighborhood", { length: 255 }),
-  city: varchar("city", { length: 255 }),
-  state: varchar("state", { length: 2 }),
-  email: varchar("email", { length: 255 }).notNull().unique(),
-  password: varchar("password", { length: 255 }).notNull(),
-  planId: int("plan_id"),
-  planStatus: varchar("plan_status", { length: 50 }).default("inactive"),
-  isActive: boolean("is_active").notNull().default(true),
+  phone: text("phone", { length: 20 }),
+  zipCode: text("zip_code", { length: 10 }),
+  number: text("number", { length: 20 }),
+  neighborhood: text("neighborhood", { length: 255 }),
+  city: text("city", { length: 255 }),
+  state: text("state", { length: 2 }),
+  email: text("email", { length: 255 }).notNull().unique(),
+  password: text("password", { length: 255 }).notNull(),
+  planId: integer("plan_id"),
+  planStatus: text("plan_status", { length: 50 }).default("inactive"),
+  isActive: integer("is_active").notNull().default(true),
   aiAgentPrompt: text("ai_agent_prompt"),
-  resetToken: varchar("reset_token", { length: 255 }),
-  resetTokenExpires: timestamp("reset_token_expires"),
-  stripeCustomerId: varchar("stripe_customer_id", { length: 255 }),
-  stripeSubscriptionId: varchar("stripe_subscription_id", { length: 255 }),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  resetToken: text("reset_token", { length: 255 }),
+  resetTokenExpires: text("reset_token_expires"),
+  stripeCustomerId: text("stripe_customer_id", { length: 255 }),
+  stripeSubscriptionId: text("stripe_subscription_id", { length: 255 }),
+  createdAt: text("created_at").defaultNow(),
+  updatedAt: text("updated_at").defaultNow().onUpdateNow(),
 });
 
 // Subscription plans table
-export const plans = mysqlTable("plans", {
-  id: int("id").primaryKey().autoincrement(),
-  name: varchar("name", { length: 255 }).notNull(),
-  freeDays: int("free_days").notNull().default(0),
-  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
-  maxProfessionals: int("max_professionals").notNull().default(1),
-  isActive: boolean("is_active").notNull().default(true),
-  stripeProductId: varchar("stripe_product_id", { length: 255 }),
-  stripePriceId: varchar("stripe_price_id", { length: 255 }),
+export const plans = sqliteTable("plans", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name", { length: 255 }).notNull(),
+  freeDays: integer("free_days").notNull().default(0),
+  price: real("price", { precision: 10, scale: 2 }).notNull(),
+  maxProfessionals: integer("max_professionals").notNull().default(1),
+  isActive: integer("is_active").notNull().default(true),
+  stripeProductId: text("stripe_product_id", { length: 255 }),
+  stripePriceId: text("stripe_price_id", { length: 255 }),
   permissions: json("permissions").$type<{
     dashboard: boolean;
     appointments: boolean;
@@ -108,411 +103,411 @@ export const plans = mysqlTable("plans", {
     reports: false,
     settings: true,
   }),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  createdAt: text("created_at").defaultNow(),
+  updatedAt: text("updated_at").defaultNow().onUpdateNow(),
 });
 
 // Admin alerts/announcements table
-export const adminAlerts = mysqlTable("admin_alerts", {
-  id: int("id").primaryKey().autoincrement(),
-  title: varchar("title", { length: 255 }).notNull(),
+export const adminAlerts = sqliteTable("admin_alerts", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  title: text("title", { length: 255 }).notNull(),
   message: text("message").notNull(),
-  type: varchar("type", { length: 50 }).notNull().default("info"), // info, warning, success, error
-  isActive: boolean("is_active").notNull().default(true),
-  showToAllCompanies: boolean("show_to_all_companies").notNull().default(true),
+  type: text("type", { length: 50 }).notNull().default("info"), // info, warning, success, error
+  isActive: integer("is_active").notNull().default(true),
+  showToAllCompanies: integer("show_to_all_companies").notNull().default(true),
   targetCompanyIds: json("target_company_ids").$type<number[]>().default([]),
-  startDate: timestamp("start_date").defaultNow(),
-  endDate: timestamp("end_date"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  startDate: text("start_date").defaultNow(),
+  endDate: text("end_date"),
+  createdAt: text("created_at").defaultNow(),
+  updatedAt: text("updated_at").defaultNow().onUpdateNow(),
 });
 
 // Company alert views table (to track which companies have seen the alert)
-export const companyAlertViews = mysqlTable("company_alert_views", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
-  alertId: int("alert_id").notNull(),
-  viewedAt: timestamp("viewed_at").defaultNow(),
+export const companyAlertViews = sqliteTable("company_alert_views", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  companyId: integer("company_id").notNull(),
+  alertId: integer("alert_id").notNull(),
+  viewedAt: text("viewed_at").defaultNow(),
 });
 
 // Global settings table
-export const globalSettings = mysqlTable("global_settings", {
-  id: int("id").primaryKey().autoincrement(),
-  systemName: varchar("system_name", { length: 255 }).default("AdminPro"),
-  logoUrl: varchar("logo_url", { length: 500 }),
-  faviconUrl: varchar("favicon_url", { length: 500 }),
-  primaryColor: varchar("primary_color", { length: 7 }).notNull().default("#2563eb"),
-  secondaryColor: varchar("secondary_color", { length: 7 }).notNull().default("#64748b"),
-  backgroundColor: varchar("background_color", { length: 7 }).notNull().default("#f8fafc"),
-  textColor: varchar("text_color", { length: 7 }).notNull().default("#1e293b"),
-  evolutionApiUrl: varchar("evolution_api_url", { length: 500 }),
-  evolutionApiGlobalKey: varchar("evolution_api_global_key", { length: 500 }),
-  openaiApiKey: varchar("openai_api_key", { length: 500 }),
-  openaiModel: varchar("openai_model", { length: 100 }).notNull().default("gpt-4o"),
-  openaiTemperature: varchar("openai_temperature", { length: 10 }).notNull().default("0.70"),
-  openaiMaxTokens: varchar("openai_max_tokens", { length: 10 }).notNull().default("4000"),
+export const globalSettings = sqliteTable("global_settings", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  systemName: text("system_name", { length: 255 }).default("AdminPro"),
+  logoUrl: text("logo_url", { length: 500 }),
+  faviconUrl: text("favicon_url", { length: 500 }),
+  primaryColor: text("primary_color", { length: 7 }).notNull().default("#2563eb"),
+  secondaryColor: text("secondary_color", { length: 7 }).notNull().default("#64748b"),
+  backgroundColor: text("background_color", { length: 7 }).notNull().default("#f8fafc"),
+  textColor: text("text_color", { length: 7 }).notNull().default("#1e293b"),
+  evolutionApiUrl: text("evolution_api_url", { length: 500 }),
+  evolutionApiGlobalKey: text("evolution_api_global_key", { length: 500 }),
+  openaiApiKey: text("openai_api_key", { length: 500 }),
+  openaiModel: text("openai_model", { length: 100 }).notNull().default("gpt-4o"),
+  openaiTemperature: text("openai_temperature", { length: 10 }).notNull().default("0.70"),
+  openaiMaxTokens: text("openai_max_tokens", { length: 10 }).notNull().default("4000"),
   // SMTP Configuration
-  smtpHost: varchar("smtp_host", { length: 255 }),
-  smtpPort: varchar("smtp_port", { length: 10 }),
-  smtpUser: varchar("smtp_user", { length: 255 }),
-  smtpPassword: varchar("smtp_password", { length: 255 }),
-  smtpFromEmail: varchar("smtp_from_email", { length: 255 }),
-  smtpFromName: varchar("smtp_from_name", { length: 255 }),
-  smtpSecure: varchar("smtp_secure", { length: 10 }).default("tls"),
+  smtpHost: text("smtp_host", { length: 255 }),
+  smtpPort: text("smtp_port", { length: 10 }),
+  smtpUser: text("smtp_user", { length: 255 }),
+  smtpPassword: text("smtp_password", { length: 255 }),
+  smtpFromEmail: text("smtp_from_email", { length: 255 }),
+  smtpFromName: text("smtp_from_name", { length: 255 }),
+  smtpSecure: text("smtp_secure", { length: 10 }).default("tls"),
   customHtml: text("custom_html"),
-  customDomainUrl: varchar("custom_domain_url", { length: 500 }),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  customDomainUrl: text("custom_domain_url", { length: 500 }),
+  updatedAt: text("updated_at").defaultNow().onUpdateNow(),
 });
 
 // WhatsApp instances table
-export const whatsappInstances = mysqlTable("whatsapp_instances", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
-  instanceName: varchar("instance_name", { length: 255 }).notNull(),
-  status: varchar("status", { length: 50 }),
+export const whatsappInstances = sqliteTable("whatsapp_instances", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  companyId: integer("company_id").notNull(),
+  instanceName: text("instance_name", { length: 255 }).notNull(),
+  status: text("status", { length: 50 }),
   qrCode: text("qr_code"),
-  webhook: varchar("webhook", { length: 500 }),
-  apiUrl: varchar("api_url", { length: 500 }),
-  apiKey: varchar("api_key", { length: 500 }),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  webhook: text("webhook", { length: 500 }),
+  apiUrl: text("api_url", { length: 500 }),
+  apiKey: text("api_key", { length: 500 }),
+  createdAt: text("created_at").defaultNow(),
+  updatedAt: text("updated_at").defaultNow().onUpdateNow(),
 });
 
 // Conversations table
-export const conversations = mysqlTable("conversations", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
-  whatsappInstanceId: int("whatsapp_instance_id").notNull(),
-  phoneNumber: varchar("phone_number", { length: 50 }).notNull(),
-  contactName: varchar("contact_name", { length: 255 }),
-  lastMessageAt: timestamp("last_message_at").defaultNow(),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+export const conversations = sqliteTable("conversations", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  companyId: integer("company_id").notNull(),
+  whatsappInstanceId: integer("whatsapp_instance_id").notNull(),
+  phoneNumber: text("phone_number", { length: 50 }).notNull(),
+  contactName: text("contact_name", { length: 255 }),
+  lastMessageAt: text("last_message_at").defaultNow(),
+  createdAt: text("created_at").defaultNow(),
+  updatedAt: text("updated_at").defaultNow().onUpdateNow(),
 });
 
 // Messages table
-export const messages = mysqlTable("messages", {
-  id: int("id").primaryKey().autoincrement(),
-  conversationId: int("conversation_id").notNull(),
-  role: varchar("role", { length: 20 }).notNull(),
+export const messages = sqliteTable("messages", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  conversationId: integer("conversation_id").notNull(),
+  role: text("role", { length: 20 }).notNull(),
   content: text("content").notNull(),
-  messageId: varchar("message_id", { length: 255 }),
-  messageType: varchar("message_type", { length: 50 }),
-  delivered: boolean("delivered").default(false),
-  timestamp: timestamp("timestamp").defaultNow(),
-  createdAt: timestamp("created_at").defaultNow(),
+  messageId: text("message_id", { length: 255 }),
+  messageType: text("message_type", { length: 50 }),
+  delivered: integer("delivered").default(false),
+  timestamp: text("timestamp").defaultNow(),
+  createdAt: text("created_at").defaultNow(),
 });
 
 // Services table
-export const services = mysqlTable("services", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
-  name: varchar("name", { length: 255 }).notNull(),
+export const services = sqliteTable("services", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  companyId: integer("company_id").notNull(),
+  name: text("name", { length: 255 }).notNull(),
   description: text("description"),
-  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
-  duration: int("duration").notNull(),
-  color: varchar("color", { length: 7 }).default("#3B82F6"),
-  isActive: boolean("is_active").notNull().default(true),
-  points: int("points").default(0),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  price: real("price", { precision: 10, scale: 2 }).notNull(),
+  duration: integer("duration").notNull(),
+  color: text("color", { length: 7 }).default("#3B82F6"),
+  isActive: integer("is_active").notNull().default(true),
+  points: integer("points").default(0),
+  createdAt: text("created_at").defaultNow(),
+  updatedAt: text("updated_at").defaultNow().onUpdateNow(),
 });
 
 // Professionals table
-export const professionals = mysqlTable("professionals", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
-  name: varchar("name", { length: 255 }).notNull(),
-  email: varchar("email", { length: 255 }),
-  phone: varchar("phone", { length: 50 }),
+export const professionals = sqliteTable("professionals", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  companyId: integer("company_id").notNull(),
+  name: text("name", { length: 255 }).notNull(),
+  email: text("email", { length: 255 }),
+  phone: text("phone", { length: 50 }),
   specialties: json("specialties").$type<string[]>(),
   workDays: json("work_days"),
-  workStartTime: varchar("work_start_time", { length: 10 }),
-  workEndTime: varchar("work_end_time", { length: 10 }),
-  active: boolean("active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  workStartTime: text("work_start_time", { length: 10 }),
+  workEndTime: text("work_end_time", { length: 10 }),
+  active: integer("active").default(true),
+  createdAt: text("created_at").defaultNow(),
+  updatedAt: text("updated_at").defaultNow().onUpdateNow(),
 });
 
 // Appointments table
-export const appointments = mysqlTable("appointments", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
-  professionalId: int("professional_id").notNull(),
-  serviceId: int("service_id").notNull(),
-  clientName: varchar("client_name", { length: 255 }).notNull(),
-  clientPhone: varchar("client_phone", { length: 50 }),
-  clientEmail: varchar("client_email", { length: 255 }),
-  appointmentDate: date("appointment_date").notNull(),
-  appointmentTime: varchar("appointment_time", { length: 10 }).notNull(),
-  duration: int("duration").default(30),
-  totalPrice: decimal("total_price", { precision: 10, scale: 2 }).default("0.00"),
-  status: varchar("status", { length: 50 }).notNull().default("agendado"),
+export const appointments = sqliteTable("appointments", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  companyId: integer("company_id").notNull(),
+  professionalId: integer("professional_id").notNull(),
+  serviceId: integer("service_id").notNull(),
+  clientName: text("client_name", { length: 255 }).notNull(),
+  clientPhone: text("client_phone", { length: 50 }),
+  clientEmail: text("client_email", { length: 255 }),
+  appointmentDate: text("appointment_date").notNull(),
+  appointmentTime: text("appointment_time", { length: 10 }).notNull(),
+  duration: integer("duration").default(30),
+  totalPrice: real("total_price", { precision: 10, scale: 2 }).default("0.00"),
+  status: text("status", { length: 50 }).notNull().default("agendado"),
   notes: text("notes"),
-  reminderSent: boolean("reminder_sent").default(false),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  reminderSent: integer("reminder_sent").default(false),
+  createdAt: text("created_at").defaultNow(),
+  updatedAt: text("updated_at").defaultNow().onUpdateNow(),
 });
 
 // Status table
-export const status = mysqlTable("status", {
-  id: int("id").primaryKey().autoincrement(),
-  name: varchar("name", { length: 100 }).notNull(),
-  color: varchar("color", { length: 7 }).notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
+export const status = sqliteTable("status", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name", { length: 100 }).notNull(),
+  color: text("color", { length: 7 }).notNull(),
+  createdAt: text("created_at").defaultNow(),
 });
 
 // Clients table
-export const clients = mysqlTable("clients", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
-  name: varchar("name", { length: 255 }).notNull(),
-  email: varchar("email", { length: 255 }),
-  phone: varchar("phone", { length: 50 }),
-  birthDate: date("birth_date"),
+export const clients = sqliteTable("clients", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  companyId: integer("company_id").notNull(),
+  name: text("name", { length: 255 }).notNull(),
+  email: text("email", { length: 255 }),
+  phone: text("phone", { length: 50 }),
+  birthDate: text("birth_date"),
   notes: text("notes"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  createdAt: text("created_at").defaultNow(),
+  updatedAt: text("updated_at").defaultNow().onUpdateNow(),
 });
 
 // Birthday messages table
-export const birthdayMessages = mysqlTable("birthday_messages", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
+export const birthdayMessages = sqliteTable("birthday_messages", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  companyId: integer("company_id").notNull(),
   message: text("message").notNull(),
   messageTemplate: text("message_template"),
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  isActive: integer("is_active").default(true),
+  createdAt: text("created_at").defaultNow(),
+  updatedAt: text("updated_at").defaultNow().onUpdateNow(),
 });
 
 // Birthday message history table
-export const birthdayMessageHistory = mysqlTable("birthday_message_history", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
-  clientId: int("client_id").notNull(),
+export const birthdayMessageHistory = sqliteTable("birthday_message_history", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  companyId: integer("company_id").notNull(),
+  clientId: integer("client_id").notNull(),
   message: text("message").notNull(),
-  sentAt: timestamp("sent_at").defaultNow(),
+  sentAt: text("sent_at").defaultNow(),
 });
 
 // Reminder settings table
-export const reminderSettings = mysqlTable("reminder_settings", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
-  reminderType: varchar("reminder_type", { length: 50 }).notNull(),
-  isActive: boolean("is_active").default(true),
+export const reminderSettings = sqliteTable("reminder_settings", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  companyId: integer("company_id").notNull(),
+  reminderType: text("reminder_type", { length: 50 }).notNull(),
+  isActive: integer("is_active").default(true),
   messageTemplate: text("message_template").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  createdAt: text("created_at").defaultNow(),
+  updatedAt: text("updated_at").defaultNow().onUpdateNow(),
 });
 
 // Reminder history table
-export const reminderHistory = mysqlTable("reminder_history", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
-  appointmentId: int("appointment_id").notNull(),
-  reminderType: varchar("reminder_type", { length: 50 }).notNull(),
-  clientPhone: varchar("client_phone", { length: 20 }).notNull(),
+export const reminderHistory = sqliteTable("reminder_history", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  companyId: integer("company_id").notNull(),
+  appointmentId: integer("appointment_id").notNull(),
+  reminderType: text("reminder_type", { length: 50 }).notNull(),
+  clientPhone: text("client_phone", { length: 20 }).notNull(),
   message: text("message").notNull(),
-  sentAt: timestamp("sent_at").defaultNow(),
-  status: varchar("status", { length: 20 }).default("sent"),
-  whatsappInstanceId: int("whatsapp_instance_id"),
+  sentAt: text("sent_at").defaultNow(),
+  status: text("status", { length: 20 }).default("sent"),
+  whatsappInstanceId: integer("whatsapp_instance_id"),
 });
 
 // Professional reviews table
-export const professionalReviews = mysqlTable("professional_reviews", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
-  professionalId: int("professional_id").notNull(),
-  appointmentId: int("appointment_id").notNull(),
-  clientPhone: varchar("client_phone", { length: 50 }).notNull(),
-  clientName: varchar("client_name", { length: 255 }).notNull(),
-  rating: int("rating").notNull(),
+export const professionalReviews = sqliteTable("professional_reviews", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  companyId: integer("company_id").notNull(),
+  professionalId: integer("professional_id").notNull(),
+  appointmentId: integer("appointment_id").notNull(),
+  clientPhone: text("client_phone", { length: 50 }).notNull(),
+  clientName: text("client_name", { length: 255 }).notNull(),
+  rating: integer("rating").notNull(),
   comment: text("comment"),
-  createdAt: timestamp("created_at").defaultNow(),
+  createdAt: text("created_at").defaultNow(),
 });
 
 // Review invitations table
-export const reviewInvitations = mysqlTable("review_invitations", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
-  whatsappInstanceId: int("whatsapp_instance_id"),
-  professionalId: int("professional_id").notNull(),
-  appointmentId: int("appointment_id").notNull(),
-  clientPhone: varchar("client_phone", { length: 50 }).notNull(),
-  invitationToken: varchar("invitation_token", { length: 255 }).notNull().unique(),
-  sentAt: timestamp("sent_at"),
-  reviewSubmittedAt: timestamp("review_submitted_at"),
-  status: varchar("status", { length: 50 }).default("pending"),
+export const reviewInvitations = sqliteTable("review_invitations", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  companyId: integer("company_id").notNull(),
+  whatsappInstanceId: integer("whatsapp_instance_id"),
+  professionalId: integer("professional_id").notNull(),
+  appointmentId: integer("appointment_id").notNull(),
+  clientPhone: text("client_phone", { length: 50 }).notNull(),
+  invitationToken: text("invitation_token", { length: 255 }).notNull().unique(),
+  sentAt: text("sent_at"),
+  reviewSubmittedAt: text("review_submitted_at"),
+  status: text("status", { length: 50 }).default("pending"),
 });
 
 // Tasks table
-export const tasks = mysqlTable("tasks", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
-  name: varchar("name", { length: 255 }).notNull(),
+export const tasks = sqliteTable("tasks", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  companyId: integer("company_id").notNull(),
+  name: text("name", { length: 255 }).notNull(),
   description: text("description"),
-  dueDate: date("due_date").notNull(),
-  recurrence: varchar("recurrence", { length: 50 }).default("none"),
-  whatsappNumber: varchar("whatsapp_number", { length: 50 }),
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  dueDate: text("due_date").notNull(),
+  recurrence: text("recurrence", { length: 50 }).default("none"),
+  whatsappNumber: text("whatsapp_number", { length: 50 }),
+  isActive: integer("is_active").default(true),
+  createdAt: text("created_at").defaultNow(),
+  updatedAt: text("updated_at").defaultNow().onUpdateNow(),
 });
 
 // Task reminders table
-export const taskReminders = mysqlTable("task_reminders", {
-  id: int("id").primaryKey().autoincrement(),
-  taskId: int("task_id").notNull(),
-  whatsappNumber: varchar("whatsapp_number", { length: 50 }).notNull(),
+export const taskReminders = sqliteTable("task_reminders", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  taskId: integer("task_id").notNull(),
+  whatsappNumber: text("whatsapp_number", { length: 50 }).notNull(),
   message: text("message").notNull(),
-  sentAt: timestamp("sent_at").defaultNow(),
+  sentAt: text("sent_at").defaultNow(),
 });
 
 // Client points table
-export const clientPoints = mysqlTable("client_points", {
-  id: int("id").primaryKey().autoincrement(),
-  clientId: int("client_id").notNull(),
-  companyId: int("company_id").notNull(),
-  totalPoints: int("total_points").default(0),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+export const clientPoints = sqliteTable("client_points", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  clientId: integer("client_id").notNull(),
+  companyId: integer("company_id").notNull(),
+  totalPoints: integer("total_points").default(0),
+  createdAt: text("created_at").defaultNow(),
+  updatedAt: text("updated_at").defaultNow().onUpdateNow(),
 });
 
 // Points campaigns table
-export const pointsCampaigns = mysqlTable("points_campaigns", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
-  name: varchar("name", { length: 255 }).notNull(),
-  requiredPoints: int("required_points").notNull(),
-  rewardServiceId: int("reward_service_id").notNull(),
-  active: boolean("active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+export const pointsCampaigns = sqliteTable("points_campaigns", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  companyId: integer("company_id").notNull(),
+  name: text("name", { length: 255 }).notNull(),
+  requiredPoints: integer("required_points").notNull(),
+  rewardServiceId: integer("reward_service_id").notNull(),
+  active: integer("active").default(true),
+  createdAt: text("created_at").defaultNow(),
+  updatedAt: text("updated_at").defaultNow().onUpdateNow(),
 });
 
 // Points history table
-export const pointsHistory = mysqlTable("points_history", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
-  clientId: int("client_id").notNull(),
-  pointsChange: int("points_change").notNull(),
+export const pointsHistory = sqliteTable("points_history", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  companyId: integer("company_id").notNull(),
+  clientId: integer("client_id").notNull(),
+  pointsChange: integer("points_change").notNull(),
   description: text("description").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
+  createdAt: text("created_at").defaultNow(),
 });
 
 // Loyalty campaigns table
-export const loyaltyCampaigns = mysqlTable("loyalty_campaigns", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
-  name: varchar("name", { length: 255 }).notNull(),
-  conditionType: varchar("condition_type", { length: 50 }).notNull(), // 'services' or 'amount'
-  conditionValue: int("condition_value").notNull(), // X services or X amount
-  rewardType: varchar("reward_type", { length: 50 }).notNull(), // 'service' or 'discount'
-  rewardValue: int("reward_value").notNull(), // service ID or discount percentage
-  rewardServiceId: int("reward_service_id"), // ID of the service to give as reward
-  active: boolean("active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+export const loyaltyCampaigns = sqliteTable("loyalty_campaigns", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  companyId: integer("company_id").notNull(),
+  name: text("name", { length: 255 }).notNull(),
+  conditionType: text("condition_type", { length: 50 }).notNull(), // 'services' or 'amount'
+  conditionValue: integer("condition_value").notNull(), // X services or X amount
+  rewardType: text("reward_type", { length: 50 }).notNull(), // 'service' or 'discount'
+  rewardValue: integer("reward_value").notNull(), // service ID or discount percentage
+  rewardServiceId: integer("reward_service_id"), // ID of the service to give as reward
+  active: integer("active").default(true),
+  createdAt: text("created_at").defaultNow(),
+  updatedAt: text("updated_at").defaultNow().onUpdateNow(),
 });
 
 // Loyalty rewards history table
-export const loyaltyRewardsHistory = mysqlTable("loyalty_rewards_history", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
-  clientId: int("client_id").notNull(),
-  campaignId: int("campaign_id").notNull(),
-  rewardType: varchar("reward_type", { length: 50 }).notNull(),
-  rewardValue: varchar("reward_value", { length: 255 }).notNull(),
-  usedAt: timestamp("used_at"),
-  createdAt: timestamp("created_at").defaultNow(),
+export const loyaltyRewardsHistory = sqliteTable("loyalty_rewards_history", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  companyId: integer("company_id").notNull(),
+  clientId: integer("client_id").notNull(),
+  campaignId: integer("campaign_id").notNull(),
+  rewardType: text("reward_type", { length: 50 }).notNull(),
+  rewardValue: text("reward_value", { length: 255 }).notNull(),
+  usedAt: text("used_at"),
+  createdAt: text("created_at").defaultNow(),
 });
 
 // Products table
-export const products = mysqlTable("products", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
-  name: varchar("name", { length: 255 }).notNull(),
-  photo: varchar("photo", { length: 500 }),
+export const products = sqliteTable("products", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  companyId: integer("company_id").notNull(),
+  name: text("name", { length: 255 }).notNull(),
+  photo: text("photo", { length: 500 }),
   description: text("description"),
-  purchasePrice: decimal("purchase_price", { precision: 10, scale: 2 }).notNull(),
-  supplierName: varchar("supplier_name", { length: 255 }),
-  stockQuantity: int("stock_quantity").notNull().default(0),
-  alertStock: boolean("alert_stock").default(false),
-  minStockLevel: int("min_stock_level").default(0),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  purchasePrice: real("purchase_price", { precision: 10, scale: 2 }).notNull(),
+  supplierName: text("supplier_name", { length: 255 }),
+  stockQuantity: integer("stock_quantity").notNull().default(0),
+  alertStock: integer("alert_stock").default(false),
+  minStockLevel: integer("min_stock_level").default(0),
+  createdAt: text("created_at").defaultNow(),
+  updatedAt: text("updated_at").defaultNow().onUpdateNow(),
 });
 
 // Coupons table
-export const coupons = mysqlTable("coupons", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
-  name: varchar("name", { length: 255 }).notNull(),
-  code: varchar("code", { length: 50 }).notNull().unique(),
-  discountType: varchar("discount_type", { length: 20 }).notNull(), // 'percentage' or 'fixed'
-  discountValue: decimal("discount_value", { precision: 10, scale: 2 }).notNull(),
-  expiresAt: timestamp("expires_at"),
-  maxUses: int("max_uses").notNull().default(1),
-  usesCount: int("uses_count").notNull().default(0),
-  isActive: boolean("is_active").notNull().default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+export const coupons = sqliteTable("coupons", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  companyId: integer("company_id").notNull(),
+  name: text("name", { length: 255 }).notNull(),
+  code: text("code", { length: 50 }).notNull().unique(),
+  discountType: text("discount_type", { length: 20 }).notNull(), // 'percentage' or 'fixed'
+  discountValue: real("discount_value", { precision: 10, scale: 2 }).notNull(),
+  expiresAt: text("expires_at"),
+  maxUses: integer("max_uses").notNull().default(1),
+  usesCount: integer("uses_count").notNull().default(0),
+  isActive: integer("is_active").notNull().default(true),
+  createdAt: text("created_at").defaultNow(),
+  updatedAt: text("updated_at").defaultNow().onUpdateNow(),
 });
 
 // Message campaigns table
-export const messageCampaigns = mysqlTable("message_campaigns", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
-  name: varchar("name", { length: 255 }).notNull(),
+export const messageCampaigns = sqliteTable("message_campaigns", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  companyId: integer("company_id").notNull(),
+  name: text("name", { length: 255 }).notNull(),
   message: text("message").notNull(),
-  scheduledDate: timestamp("scheduled_date").notNull(),
-  status: varchar("status", { length: 50 }).notNull().default("pending"), // pending, sending, completed, failed
-  targetType: varchar("target_type", { length: 20 }).notNull(), // all, specific
+  scheduledDate: text("scheduled_date").notNull(),
+  status: text("status", { length: 50 }).notNull().default("pending"), // pending, sending, completed, failed
+  targetType: text("target_type", { length: 20 }).notNull(), // all, specific
   selectedClients: json("selected_clients"), // array of client IDs for specific targeting
-  sentCount: int("sent_count").default(0),
-  totalTargets: int("total_targets").default(0),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  sentCount: integer("sent_count").default(0),
+  totalTargets: integer("total_targets").default(0),
+  createdAt: text("created_at").defaultNow(),
+  updatedAt: text("updated_at").defaultNow().onUpdateNow(),
 });
 
 // Financial categories table
-export const financialCategories = mysqlTable("financial_categories", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
-  name: varchar("name", { length: 255 }).notNull(),
+export const financialCategories = sqliteTable("financial_categories", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  companyId: integer("company_id").notNull(),
+  name: text("name", { length: 255 }).notNull(),
   description: text("description"),
-  type: varchar("type", { length: 20 }).notNull(), // income, expense
-  color: varchar("color", { length: 7 }).notNull().default("#3B82F6"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  type: text("type", { length: 20 }).notNull(), // income, expense
+  color: text("color", { length: 7 }).notNull().default("#3B82F6"),
+  createdAt: text("created_at").defaultNow(),
+  updatedAt: text("updated_at").defaultNow().onUpdateNow(),
 });
 
 // Payment methods table
-export const paymentMethods = mysqlTable("payment_methods", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
-  name: varchar("name", { length: 255 }).notNull(),
+export const paymentMethods = sqliteTable("payment_methods", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  companyId: integer("company_id").notNull(),
+  name: text("name", { length: 255 }).notNull(),
   description: text("description"),
-  type: varchar("type", { length: 20 }).notNull(), // cash, card, pix, transfer, other
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  type: text("type", { length: 20 }).notNull(), // cash, card, pix, transfer, other
+  isActive: integer("is_active").default(true),
+  createdAt: text("created_at").defaultNow(),
+  updatedAt: text("updated_at").defaultNow().onUpdateNow(),
 });
 
 // Financial transactions table
-export const financialTransactions = mysqlTable("financial_transactions", {
-  id: int("id").primaryKey().autoincrement(),
-  companyId: int("company_id").notNull(),
-  description: varchar("description", { length: 500 }).notNull(),
-  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
-  type: varchar("type", { length: 20 }).notNull(), // income, expense
-  categoryId: int("category_id").notNull(),
-  paymentMethodId: int("payment_method_id").notNull(),
-  date: date("date").notNull(),
+export const financialTransactions = sqliteTable("financial_transactions", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  companyId: integer("company_id").notNull(),
+  description: text("description", { length: 500 }).notNull(),
+  amount: real("amount", { precision: 10, scale: 2 }).notNull(),
+  type: text("type", { length: 20 }).notNull(), // income, expense
+  categoryId: integer("category_id").notNull(),
+  paymentMethodId: integer("payment_method_id").notNull(),
+  date: text("date").notNull(),
   notes: text("notes"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  createdAt: text("created_at").defaultNow(),
+  updatedAt: text("updated_at").defaultNow().onUpdateNow(),
 });
 
 // Relations
