@@ -51,7 +51,7 @@ export default function Companies() {
       state: "",
       email: "",
       password: "",
-      trialDays: undefined,
+
     },
   });
 
@@ -147,8 +147,13 @@ export default function Companies() {
   };
 
   const onEditSubmit = (data: CompanyEditFormData) => {
+    console.log('Form submitted with data:', data);
+    console.log('Form errors:', editForm.formState.errors);
     if (editingCompany) {
+      console.log('Updating company:', editingCompany.id);
       updateMutation.mutate({ id: editingCompany.id, data });
+    } else {
+      console.log('No editing company found');
     }
   };
 
@@ -166,7 +171,7 @@ export default function Companies() {
       state: company.state || "",
       email: company.email,
       planId: company.planId || null,
-      isActive: company.isActive ?? true,
+      isActive: Boolean(company.isActive),
     });
     setIsModalOpen(true);
   };
@@ -590,23 +595,7 @@ export default function Companies() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="trialDays">Dias Grátis (Opcional)</Label>
-                <Input
-                  id="trialDays"
-                  type="number"
-                  {...form.register("trialDays")}
-                  placeholder="Ex: 7"
-                />
-                <p className="text-xs text-slate-500">
-                  Sobrescreve os dias grátis do plano selecionado.
-                </p>
-                {form.formState.errors.trialDays && (
-                  <p className="text-sm text-red-600">
-                    {form.formState.errors.trialDays.message}
-                  </p>
-                )}
-              </div>
+
 
               <div className="flex justify-end space-x-4">
                 <Button type="button" variant="outline" onClick={handleCancelEdit}>
