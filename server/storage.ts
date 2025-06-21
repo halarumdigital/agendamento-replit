@@ -1934,8 +1934,15 @@ export class DatabaseStorage implements IStorage {
         companyId: appointment.companyId
       });
 
-      // Generate review URL - use the current domain
-      const reviewUrl = `http://localhost:5000/review/${token}`;
+      // Generate review URL - use the configured custom domain or default
+      const globalSettings = await this.getGlobalSettings();
+      let reviewUrl = `http://localhost:5000/review/${token}`;
+      
+      if (company.customDomainUrl) {
+        reviewUrl = `${company.customDomainUrl}/review/${token}`;
+      } else if (globalSettings?.systemUrl) {
+        reviewUrl = `${globalSettings.systemUrl}/review/${token}`;
+      }
 
       // Format message
       const message = `Olá ${appointment.clientName}! 👋
@@ -1962,8 +1969,7 @@ Obrigado pela preferência! 🙏`;
         return { success: false, message: "Número de telefone inválido ou não informado" };
       }
 
-      // Get global settings for Evolution API
-      const globalSettings = await this.getGlobalSettings();
+      // Get Evolution API settings from existing global settings
       const evolutionApiUrl = globalSettings?.evolutionApiUrl || whatsappInstance.apiUrl;
       const apiKey = globalSettings?.evolutionApiGlobalKey || whatsappInstance.apiKey;
 
