@@ -4751,12 +4751,28 @@ const broadcastEvent = (eventData: any) => {
   // Admin routes for support tickets
   app.get('/api/admin/support-tickets', isAuthenticated, async (req, res) => {
     try {
-      const tickets = await db.select()
-        .from(supportTickets)
-        .leftJoin(companies, eq(supportTickets.companyId, companies.id))
-        .leftJoin(supportTicketTypes, eq(supportTickets.typeId, supportTicketTypes.id))
-        .leftJoin(supportTicketStatuses, eq(supportTickets.statusId, supportTicketStatuses.id))
-        .orderBy(desc(supportTickets.createdAt));
+      const tickets = await db.select({
+        id: supportTickets.id,
+        companyId: supportTickets.companyId,
+        typeId: supportTickets.typeId,
+        title: supportTickets.title,
+        description: supportTickets.description,
+        status: supportTickets.status,
+        priority: supportTickets.priority,
+        category: supportTickets.category,
+        adminResponse: supportTickets.adminResponse,
+        createdAt: supportTickets.createdAt,
+        updatedAt: supportTickets.updatedAt,
+        resolvedAt: supportTickets.resolvedAt,
+        company: {
+          id: companies.id,
+          fantasyName: companies.fantasyName,
+          email: companies.email
+        }
+      })
+      .from(supportTickets)
+      .leftJoin(companies, eq(supportTickets.companyId, companies.id))
+      .orderBy(desc(supportTickets.createdAt));
 
       res.json(tickets);
     } catch (error) {

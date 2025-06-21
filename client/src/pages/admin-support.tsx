@@ -184,6 +184,81 @@ export default function AdminSupport() {
     },
   });
 
+  // Create ticket status mutation
+  const createStatusMutation = useMutation({
+    mutationFn: (data: any) =>
+      fetch('/api/admin/support-ticket-statuses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      }).then(res => res.json()),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/support-ticket-statuses'] });
+      toast({
+        title: "Sucesso",
+        description: "Status de ticket criado com sucesso!",
+      });
+      setTicketStatusForm({});
+      setIsStatusDialogOpen(false);
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Erro ao criar status de ticket",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Update ticket status mutation
+  const updateStatusMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: any }) =>
+      fetch(`/api/admin/support-ticket-statuses/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      }).then(res => res.json()),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/support-ticket-statuses'] });
+      toast({
+        title: "Sucesso",
+        description: "Status de ticket atualizado com sucesso!",
+      });
+      setTicketStatusForm({});
+      setEditingStatus(null);
+      setIsStatusDialogOpen(false);
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar status de ticket",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete ticket status mutation
+  const deleteStatusMutation = useMutation({
+    mutationFn: (id: number) =>
+      fetch(`/api/admin/support-ticket-statuses/${id}`, {
+        method: 'DELETE',
+      }).then(res => res.json()),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/support-ticket-statuses'] });
+      toast({
+        title: "Sucesso",
+        description: "Status de ticket excluído com sucesso!",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Erro ao excluir status de ticket",
+        variant: "destructive",
+      });
+    },
+  });
+
   const getStatusBadge = (status: string) => {
     const statusColors = {
       open: "bg-blue-500",
