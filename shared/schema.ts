@@ -842,14 +842,26 @@ export const supportTicketTypes = mysqlTable("support_ticket_types", {
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
 
+// Support ticket statuses table
+export const supportTicketStatuses = mysqlTable("support_ticket_statuses", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 100 }).notNull(),
+  description: text("description"),
+  color: varchar("color", { length: 7 }).notNull().default("#6b7280"), // hex color
+  isActive: boolean("is_active").notNull().default(true),
+  sortOrder: int("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+});
+
 // Support tickets table
 export const supportTickets = mysqlTable("support_tickets", {
   id: serial("id").primaryKey(),
   companyId: int("company_id").notNull(),
   typeId: int("type_id"),
+  statusId: int("status_id"),
   title: varchar("title", { length: 255 }).notNull(),
   description: text("description").notNull(),
-  status: varchar("status", { length: 50 }).notNull().default("open"), // open, in_progress, resolved, closed
   priority: varchar("priority", { length: 20 }).notNull().default("medium"), // low, medium, high, urgent
   category: varchar("category", { length: 100 }).notNull().default("general"), // general, technical, billing, feature_request
   adminResponse: text("admin_response"),
@@ -859,9 +871,12 @@ export const supportTickets = mysqlTable("support_tickets", {
 });
 
 export const insertSupportTicketTypeSchema = createInsertSchema(supportTicketTypes).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertSupportTicketStatusSchema = createInsertSchema(supportTicketStatuses).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertSupportTicketSchema = createInsertSchema(supportTickets).omit({ id: true, createdAt: true, updatedAt: true });
 
 export type SupportTicketType = typeof supportTicketTypes.$inferSelect;
 export type InsertSupportTicketType = z.infer<typeof insertSupportTicketTypeSchema>;
+export type SupportTicketStatus = typeof supportTicketStatuses.$inferSelect;
+export type InsertSupportTicketStatus = z.infer<typeof insertSupportTicketStatusSchema>;
 export type SupportTicket = typeof supportTickets.$inferSelect;
 export type InsertSupportTicket = z.infer<typeof insertSupportTicketSchema>;
