@@ -865,6 +865,7 @@ export const supportTickets = mysqlTable("support_tickets", {
   priority: varchar("priority", { length: 20 }).notNull().default("medium"), // low, medium, high, urgent
   category: varchar("category", { length: 100 }).notNull().default("general"), // general, technical, billing, feature_request
   adminResponse: text("admin_response"),
+  attachments: text("attachments"), // Comma-separated filenames
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
   resolvedAt: timestamp("resolved_at"),
