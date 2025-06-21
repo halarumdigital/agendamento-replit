@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
-import { MessageSquare, Plus, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { MessageSquare, Plus, Clock, CheckCircle, XCircle, AlertCircle, Upload, X } from 'lucide-react';
 
 interface SupportTicket {
   id: number;
@@ -43,8 +43,10 @@ export default function CompanySupport() {
   const [ticketForm, setTicketForm] = useState({
     title: '',
     description: '',
-    typeId: ''
+    typeId: '',
+    attachments: []
   });
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
 
   // Fetch company support tickets
   const { data: tickets = [], isLoading: ticketsLoading } = useQuery({
@@ -56,22 +58,70 @@ export default function CompanySupport() {
     queryKey: ['/api/company/support-ticket-types'],
   });
 
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files) {
+      const validFiles = Array.from(files).filter(file => {
+        const isValidType = file.type.startsWith('image/');
+        const isValidSize = file.size <= 5 * 1024 * 1024; // 5MB limit
+        
+        if (!isValidType) {
+          toast({
+            title: "Erro",
+            description: "Apenas imagens são permitidas.",
+            variant: "destructive",
+          });
+          return false;
+        }
+        
+        if (!isValidSize) {
+          toast({
+            title: "Erro",
+            description: "Imagem deve ter no máximo 5MB.",
+            variant: "destructive",
+          });
+          return false;
+        }
+        
+        return true;
+      });
+      
+      setImageFiles(prev => [...prev, ...validFiles].slice(0, 3)); // Max 3 images
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setImageFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
   // Create ticket mutation
   const createTicketMutation = useMutation({
-    mutationFn: (data: any) =>
-      fetch('/api/company/support-tickets', {
+    mutationFn: (data: any) => {
+      const formData = new FormData();
+      formData.append('title', data.title);
+      formData.append('description', data.description);
+      formData.append('typeId', data.typeId);
+      
+      imageFiles.forEach((file, index) => {
+        formData.append(`image_${index}`, file);
+      });
+
+      return fetch('/api/company/support-tickets', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      }).then(res => res.json()),
+        body: formData,
+        credentials: 'include',
+      }).then(res => res.json());
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/company/support-tickets'] });
       setIsCreateDialogOpen(false);
       setTicketForm({
         title: '',
         description: '',
-        typeId: ''
+        typeId: '',
+        attachments: []
       });
+      setImageFiles([]);
       toast({
         title: "Sucesso",
         description: "Ticket criado com sucesso!",
@@ -185,6 +235,57 @@ export default function CompanySupport() {
                   placeholder="Descreva detalhadamente o problema ou solicitação"
                   rows={6}
                 />
+              </div>
+
+              <div>
+                <Label htmlFor="images">Imagens (opcional)</Label>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="images"
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => document.getElementById('images')?.click()}
+                      className="flex items-center gap-2"
+                    >
+                      <Upload className="h-4 w-4" />
+                      Adicionar Imagem
+                    </Button>
+                    <span className="text-sm text-gray-500">
+                      Máximo 3 imagens, até 5MB cada
+                    </span>
+                  </div>
+                  
+                  {imageFiles.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {imageFiles.map((file, index) => (
+                        <div key={index} className="relative">
+                          <div className="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-2">
+                            <span className="text-sm truncate max-w-[150px]">
+                              {file.name}
+                            </span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeImage(index)}
+                              className="h-5 w-5 p-0 hover:bg-red-100"
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
               
               <div className="flex justify-end gap-2">

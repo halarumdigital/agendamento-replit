@@ -26,6 +26,39 @@ import {
 import { formatBrazilianPhone, validateBrazilianPhone, normalizePhone } from "../shared/phone-utils";
 import { stripeService } from "./services/stripe";
 
+// Configure multer for file uploads
+const storage_config = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = './uploads/support-tickets';
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, `ticket-${uniqueSuffix}${path.extname(file.originalname)}`);
+  }
+});
+
+const supportTicketUpload = multer({
+  storage: storage_config,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Apenas imagens são permitidas!'));
+    }
+  }
+});
+
 // Temporary in-memory storage for WhatsApp instances
 const tempWhatsappInstances: any[] = [];
 
@@ -4561,21 +4594,33 @@ const broadcastEvent = (eventData: any) => {
     }
   });
 
-  app.post('/api/company/support-tickets', async (req: any, res) => {
+  app.post('/api/company/support-tickets', supportTicketUpload.array('image_0', 3), async (req: any, res) => {
     try {
       const companyId = req.session.companyId;
-      const { title, description, priority, category } = req.body;
+      const { title, description, typeId } = req.body;
+
+      // Handle file attachments
+      const attachments = req.files ? req.files.map((file: any) => ({
+        filename: file.filename,
+        originalName: file.originalname,
+        path: file.path,
+        size: file.size
+      })) : [];
 
       const newTicket = await db.insert(supportTickets).values({
         companyId,
         title,
         description,
-        priority: priority || 'medium',
-        category: category || 'general',
-        status: 'open'
+        typeId: typeId ? parseInt(typeId) : null,
+        statusId: 1, // Default to 'open' status
+        attachments: JSON.stringify(attachments)
       });
 
-      res.json({ message: "Ticket criado com sucesso", id: newTicket.insertId });
+      res.json({ 
+        message: "Ticket criado com sucesso", 
+        id: newTicket.insertId,
+        attachments: attachments.length 
+      });
     } catch (error) {
       console.error("Error creating support ticket:", error);
       res.status(500).json({ message: "Erro ao criar ticket de suporte" });
