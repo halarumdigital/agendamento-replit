@@ -117,10 +117,11 @@ export default function AdminSupport() {
   // Update ticket type mutation
   const updateTypeMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: any }) =>
-      apiRequest(`/api/admin/support-ticket-types/${id}`, {
+      fetch(`/api/admin/support-ticket-types/${id}`, {
         method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
-      }),
+      }).then(res => res.json()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/support-ticket-types'] });
       toast({
@@ -143,9 +144,9 @@ export default function AdminSupport() {
   // Delete ticket type mutation
   const deleteTypeMutation = useMutation({
     mutationFn: (id: number) =>
-      apiRequest(`/api/admin/support-ticket-types/${id}`, {
+      fetch(`/api/admin/support-ticket-types/${id}`, {
         method: 'DELETE',
-      }),
+      }).then(res => res.json()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/support-ticket-types'] });
       toast({
