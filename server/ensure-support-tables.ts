@@ -45,6 +45,19 @@ export async function ensureSupportTables() {
       )
     `);
     
+    // Create support_ticket_comments table for additional information
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS support_ticket_comments (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        ticket_id INT NOT NULL,
+        company_id INT NOT NULL,
+        comment TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (ticket_id) REFERENCES support_tickets(id) ON DELETE CASCADE,
+        FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+      )
+    `);
+    
     // Check if support_tickets table exists and handle migration
     const [tableCheck] = await pool.execute(`
       SELECT COUNT(*) as table_exists 

@@ -4893,6 +4893,69 @@ const broadcastEvent = (eventData: any) => {
     }
   });
 
+  // Routes for support ticket comments
+  app.get('/api/company/support-tickets/:ticketId/comments', isCompanyAuthenticated, async (req: any, res) => {
+    try {
+      const ticketId = parseInt(req.params.ticketId);
+      const companyId = req.session.companyId;
+
+      // Verify ticket belongs to company
+      const [ticket] = await pool.execute(
+        'SELECT id FROM support_tickets WHERE id = ? AND company_id = ?',
+        [ticketId, companyId]
+      ) as any;
+
+      if (!ticket.length) {
+        return res.status(404).json({ message: "Ticket não encontrado" });
+      }
+
+      const [comments] = await pool.execute(`
+        SELECT id, comment, created_at
+        FROM support_ticket_comments 
+        WHERE ticket_id = ? 
+        ORDER BY created_at ASC
+      `, [ticketId]) as any;
+
+      res.json(comments);
+    } catch (error) {
+      console.error("Error fetching ticket comments:", error);
+      res.status(500).json({ message: "Erro ao buscar comentários do ticket" });
+    }
+  });
+
+  app.post('/api/company/support-tickets/:ticketId/comments', isCompanyAuthenticated, async (req: any, res) => {
+    try {
+      const ticketId = parseInt(req.params.ticketId);
+      const companyId = req.session.companyId;
+      const { comment } = req.body;
+
+      if (!comment || !comment.trim()) {
+        return res.status(400).json({ message: "Comentário é obrigatório" });
+      }
+
+      // Verify ticket belongs to company
+      const [ticket] = await pool.execute(
+        'SELECT id FROM support_tickets WHERE id = ? AND company_id = ?',
+        [ticketId, companyId]
+      ) as any;
+
+      if (!ticket.length) {
+        return res.status(404).json({ message: "Ticket não encontrado" });
+      }
+
+      // Insert comment
+      await pool.execute(`
+        INSERT INTO support_ticket_comments (ticket_id, company_id, comment)
+        VALUES (?, ?, ?)
+      `, [ticketId, companyId, comment.trim()]);
+
+      res.json({ message: "Comentário adicionado com sucesso" });
+    } catch (error) {
+      console.error("Error adding ticket comment:", error);
+      res.status(500).json({ message: "Erro ao adicionar comentário" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

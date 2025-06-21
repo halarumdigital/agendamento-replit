@@ -28,6 +28,12 @@ interface SupportTicket {
   resolvedAt?: string;
 }
 
+interface SupportTicketComment {
+  id: number;
+  comment: string;
+  created_at: string;
+}
+
 interface SupportTicketType {
   id: number;
   name: string;
@@ -58,6 +64,12 @@ export default function CompanySupport() {
   // Fetch support ticket types
   const { data: ticketTypes = [], isLoading: typesLoading } = useQuery({
     queryKey: ['/api/company/support-ticket-types'],
+  });
+
+  // Fetch comments for selected ticket
+  const { data: ticketComments = [], refetch: refetchComments } = useQuery({
+    queryKey: ['/api/company/support-tickets', selectedTicket?.id, 'comments'],
+    enabled: !!selectedTicket?.id,
   });
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
