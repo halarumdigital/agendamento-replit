@@ -416,19 +416,27 @@ export default function CompanySupport() {
                 <div>
                   <Label className="text-sm font-semibold">Imagens Anexadas</Label>
                   <div className="mt-2 grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {selectedTicket.attachments.split(',').map((filename, index) => (
-                      <div key={index} className="border rounded-lg overflow-hidden">
-                        <img
-                          src={`/uploads/support-tickets/${filename.trim()}`}
-                          alt={`Anexo ${index + 1}`}
-                          className="w-full h-32 object-cover cursor-pointer hover:opacity-80 transition-opacity"
-                          onClick={() => window.open(`/uploads/support-tickets/${filename.trim()}`, '_blank')}
-                        />
-                        <div className="p-2 bg-gray-50 text-xs text-gray-600 truncate">
-                          {filename.trim()}
+                    {selectedTicket.attachments.split(',').map((filename, index) => {
+                      const imageUrl = `/uploads/support-tickets/${filename.trim()}`;
+                      console.log('Tentando carregar imagem:', imageUrl);
+                      return (
+                        <div key={index} className="border rounded-lg overflow-hidden">
+                          <img
+                            src={imageUrl}
+                            alt={`Anexo ${index + 1}`}
+                            className="w-full h-32 object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                            onClick={() => window.open(imageUrl, '_blank')}
+                            onError={(e) => {
+                              console.error('Erro ao carregar imagem:', imageUrl);
+                              e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTIxIDkuNVYxOC41QzIxIDE5LjYwNDYgMjAuMTA0NiAyMC41IDE5IDIwLjVINUMzLjg5NTQzIDIwLjUgMyAxOS42MDQ2IDMgMTguNVY5LjVNMjEgOS41VjZDMjEgNC44OTU0MyAyMC4xMDQ2IDQgMTkgNEg1QzMuODk1NDMgNCAzIDQuODk1NDMgMyA2VjkuNU0yMSA5LjVMMTMuNSAxNS41TDEwIDEyTDMgMTkuNSIgc3Ryb2tlPSIjOTk5IiBzdHJva2Utd2lkdGg9IjIiIGZpbGw9Im5vbmUiLz4KPHN2Zz4=';
+                            }}
+                          />
+                          <div className="p-2 bg-gray-50 text-xs text-gray-600 truncate">
+                            {filename.trim()}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
