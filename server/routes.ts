@@ -138,7 +138,7 @@ async function transcribeAudio(audioBase64: string, openaiApiKey: string): Promi
   }
 }
 
-const upload = multer({
+const logoUpload = multer({
   storage: storage_multer,
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB limit
@@ -1645,7 +1645,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Logo upload endpoint
-  app.post('/api/upload/logo', isAuthenticated, upload.single('logo'), async (req, res) => {
+  app.post('/api/upload/logo', isAuthenticated, logoUpload.single('logo'), async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ message: "Nenhum arquivo foi enviado" });
@@ -1669,7 +1669,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Favicon upload endpoint
-  app.post('/api/upload/favicon', isAuthenticated, upload.single('favicon'), async (req, res) => {
+  app.post('/api/upload/favicon', isAuthenticated, logoUpload.single('favicon'), async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ message: "Nenhum arquivo foi enviado" });
@@ -4594,7 +4594,7 @@ const broadcastEvent = (eventData: any) => {
     }
   });
 
-  app.post('/api/company/support-tickets', supportTicketUpload.array('image_0', 3), async (req: any, res) => {
+  app.post('/api/company/support-tickets', supportTicketUpload.array('images', 3), async (req: any, res) => {
     try {
       const companyId = req.session.companyId;
       const { title, description, typeId } = req.body;

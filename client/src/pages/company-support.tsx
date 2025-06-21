@@ -102,8 +102,8 @@ export default function CompanySupport() {
       formData.append('description', data.description);
       formData.append('typeId', data.typeId);
       
-      imageFiles.forEach((file, index) => {
-        formData.append(`image_${index}`, file);
+      imageFiles.forEach((file) => {
+        formData.append('images', file);
       });
 
       return fetch('/api/company/support-tickets', {
