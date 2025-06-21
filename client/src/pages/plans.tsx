@@ -500,6 +500,14 @@ export default function Plans() {
                         R$ {parseFloat(plan.price).toFixed(2).replace('.', ',')}
                       </span>
                     </div>
+                    {plan.annualPrice && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-slate-600">Valor anual:</span>
+                        <span className="text-lg font-bold text-green-600">
+                          R$ {parseFloat(plan.annualPrice).toFixed(2).replace('.', ',')}
+                        </span>
+                      </div>
+                    )}
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-slate-600">Dias grátis:</span>
                       <span className="text-sm font-medium text-slate-900">
