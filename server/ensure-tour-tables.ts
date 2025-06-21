@@ -1,20 +1,9 @@
-import mysql from 'mysql2/promise';
-
-const pool = mysql.createPool({
-  host: '69.62.101.23',
-  port: 3306,
-  user: 'gilliard_salao',
-  password: process.env.DB_PASSWORD,
-  database: 'gilliard_salao',
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
-});
+import { storage } from './storage';
 
 export async function ensureTourTables() {
   try {
-    // Create tour_steps table using raw query
-    await pool.execute(`
+    // Create tour_steps table using storage connection
+    await storage.connection.execute(`
       CREATE TABLE IF NOT EXISTS tour_steps (
         id INT PRIMARY KEY AUTO_INCREMENT,
         title VARCHAR(255) NOT NULL,
@@ -29,7 +18,7 @@ export async function ensureTourTables() {
     `);
 
     // Create company_tour_progress table
-    await pool.execute(`
+    await storage.connection.execute(`
       CREATE TABLE IF NOT EXISTS company_tour_progress (
         id INT PRIMARY KEY AUTO_INCREMENT,
         company_id INT NOT NULL,
@@ -42,7 +31,7 @@ export async function ensureTourTables() {
     `);
 
     // Check if tour steps already exist
-    const [existingSteps] = await pool.execute('SELECT COUNT(*) as count FROM tour_steps');
+    const [existingSteps] = await storage.connection.execute('SELECT COUNT(*) as count FROM tour_steps');
     const count = (existingSteps as any)[0].count;
     
     if (count === 0) {
@@ -100,7 +89,7 @@ export async function ensureTourTables() {
       ];
 
       for (const step of tourSteps) {
-        await pool.execute(
+        await storage.connection.execute(
           `INSERT INTO tour_steps (title, description, target_element, placement, step_order)
            VALUES (?, ?, ?, ?, ?)`,
           [step.title, step.description, step.target_element, step.placement, step.step_order]

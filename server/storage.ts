@@ -81,6 +81,12 @@ import {
   type InsertMessageCampaign,
   type Coupon,
   type InsertCoupon,
+  tourSteps,
+  companyTourProgress,
+  type TourStep,
+  type InsertTourStep,
+  type CompanyTourProgress,
+  type InsertCompanyTourProgress,
 } from "@shared/schema";
 import { normalizePhone, validateBrazilianPhone, comparePhones } from "../shared/phone-utils";
 
@@ -3011,3 +3017,105 @@ export async function getLoyaltyRewardsHistory(companyId: number) {
     }
   }
 })();
+
+// Add tour system methods to DatabaseStorage class
+Object.assign(storage, {
+  // ===== TOUR SYSTEM METHODS =====
+
+  async getTourSteps(): Promise<TourStep[]> {
+    try {
+      const steps = await db.select().from(tourSteps).orderBy(tourSteps.stepOrder);
+      return steps;
+    } catch (error) {
+      console.error('Error fetching tour steps:', error);
+      throw error;
+    }
+  },
+
+  async getActiveTourSteps(): Promise<TourStep[]> {
+    try {
+      const steps = await db
+        .select()
+        .from(tourSteps)
+        .where(eq(tourSteps.isActive, true))
+        .orderBy(tourSteps.stepOrder);
+      return steps;
+    } catch (error) {
+      console.error('Error fetching active tour steps:', error);
+      throw error;
+    }
+  },
+
+  async createTourStep(stepData: InsertTourStep): Promise<TourStep> {
+    try {
+      const [newStep] = await db.insert(tourSteps).values(stepData).returning();
+      return newStep;
+    } catch (error) {
+      console.error('Error creating tour step:', error);
+      throw error;
+    }
+  },
+
+  async updateTourStep(stepId: number, stepData: Partial<InsertTourStep>): Promise<TourStep> {
+    try {
+      const [updatedStep] = await db
+        .update(tourSteps)
+        .set(stepData)
+        .where(eq(tourSteps.id, stepId))
+        .returning();
+      return updatedStep;
+    } catch (error) {
+      console.error('Error updating tour step:', error);
+      throw error;
+    }
+  },
+
+  async deleteTourStep(stepId: number): Promise<void> {
+    try {
+      await db.delete(tourSteps).where(eq(tourSteps.id, stepId));
+    } catch (error) {
+      console.error('Error deleting tour step:', error);
+      throw error;
+    }
+  },
+
+  async getCompanyTourProgress(companyId: number): Promise<CompanyTourProgress | null> {
+    try {
+      const [progress] = await db
+        .select()
+        .from(companyTourProgress)
+        .where(eq(companyTourProgress.companyId, companyId));
+      return progress || null;
+    } catch (error) {
+      console.error('Error fetching company tour progress:', error);
+      throw error;
+    }
+  },
+
+  async createCompanyTourProgress(progressData: InsertCompanyTourProgress): Promise<CompanyTourProgress> {
+    try {
+      const [newProgress] = await db
+        .insert(companyTourProgress)
+        .values(progressData)
+        .returning();
+      return newProgress;
+    } catch (error) {
+      console.error('Error creating company tour progress:', error);
+      throw error;
+    }
+  },
+
+  async updateCompanyTourProgress(progressId: number, progressData: Partial<InsertCompanyTourProgress>): Promise<CompanyTourProgress> {
+    try {
+      const [updatedProgress] = await db
+        .update(companyTourProgress)
+        .set(progressData)
+        .where(eq(companyTourProgress.id, progressId))
+        .returning();
+      return updatedProgress;
+    } catch (error) {
+      console.error('Error updating company tour progress:', error);
+      throw error;
+    }
+  }
+});
