@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
-import { MessageSquare, Plus, Clock, CheckCircle, XCircle, AlertCircle, Upload, X } from 'lucide-react';
+import { MessageSquare, Plus, Clock, CheckCircle, XCircle, AlertCircle, Upload, X, Send } from 'lucide-react';
 
 interface SupportTicket {
   id: number;
@@ -22,6 +22,7 @@ interface SupportTicket {
   priority: string;
   category: string;
   adminResponse?: string;
+  attachments?: string;
   createdAt: string;
   updatedAt: string;
   resolvedAt?: string;
@@ -40,6 +41,7 @@ export default function CompanySupport() {
   const { toast } = useToast();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
+  const [additionalInfo, setAdditionalInfo] = useState('');
   const [ticketForm, setTicketForm] = useState({
     title: '',
     description: '',
@@ -350,11 +352,11 @@ export default function CompanySupport() {
       {/* Ticket Detail Modal */}
       {selectedTicket && (
         <Dialog open={!!selectedTicket} onOpenChange={() => setSelectedTicket(null)}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Ticket #{selectedTicket.id} - {selectedTicket.title}</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div className="flex items-center gap-4">
                 {getPriorityBadge(selectedTicket.priority)}
                 {getStatusBadge(selectedTicket.status)}
@@ -375,6 +377,28 @@ export default function CompanySupport() {
                 </div>
               </div>
               
+              {/* Display attached images */}
+              {selectedTicket.attachments && (
+                <div>
+                  <Label className="text-sm font-semibold">Imagens Anexadas</Label>
+                  <div className="mt-2 grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {selectedTicket.attachments.split(',').map((filename, index) => (
+                      <div key={index} className="border rounded-lg overflow-hidden">
+                        <img
+                          src={`/uploads/support-tickets/${filename.trim()}`}
+                          alt={`Anexo ${index + 1}`}
+                          className="w-full h-32 object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => window.open(`/uploads/support-tickets/${filename.trim()}`, '_blank')}
+                        />
+                        <div className="p-2 bg-gray-50 text-xs text-gray-600 truncate">
+                          {filename.trim()}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
               {selectedTicket.adminResponse && (
                 <div>
                   <Label className="text-sm font-semibold">Resposta do Suporte</Label>
@@ -390,6 +414,37 @@ export default function CompanySupport() {
                   <p className="text-sm mt-1">{new Date(selectedTicket.resolvedAt).toLocaleDateString('pt-BR')}</p>
                 </div>
               )}
+              
+              {/* Additional information section */}
+              <div className="border-t pt-4">
+                <Label className="text-sm font-semibold">Adicionar Informações</Label>
+                <div className="mt-2 space-y-3">
+                  <Textarea
+                    placeholder="Digite informações adicionais sobre este ticket..."
+                    value={additionalInfo}
+                    onChange={(e) => setAdditionalInfo(e.target.value)}
+                    className="min-h-[100px]"
+                  />
+                  <div className="flex justify-end">
+                    <Button
+                      onClick={() => {
+                        if (additionalInfo.trim()) {
+                          toast({
+                            title: "Informação adicionada",
+                            description: "Suas informações adicionais foram registradas.",
+                          });
+                          setAdditionalInfo('');
+                        }
+                      }}
+                      disabled={!additionalInfo.trim()}
+                      className="flex items-center gap-2"
+                    >
+                      <Send className="h-4 w-4" />
+                      Enviar Informação
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
