@@ -339,7 +339,11 @@ export default function Subscription() {
               </div>
               <CardTitle>Finalizar Pagamento</CardTitle>
               <CardDescription>
-                Plano {selectedPlan.name} - R$ {parseFloat(selectedPlan.price).toFixed(2)}/mês
+                Plano {selectedPlan.name} - {isAnnual && selectedPlan.annualPrice ? (
+                  <>R$ {(parseFloat(selectedPlan.annualPrice) / 12).toFixed(2)}/mês (cobrado anualmente)</>
+                ) : (
+                  <>R$ {parseFloat(selectedPlan.price).toFixed(2)}/mês</>
+                )}
               </CardDescription>
             </CardHeader>
             <CardContent>

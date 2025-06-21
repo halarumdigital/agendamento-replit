@@ -15,6 +15,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 
+import { stripeService } from "./services/stripe";
 import { 
   getLoyaltyCampaignsByCompany, 
   createLoyaltyCampaign, 
@@ -1507,6 +1508,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Erro ao buscar planos públicos:", error);
       res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  // Create subscription endpoint with annual billing support
+  app.post('/api/create-subscription', async (req, res) => {
+    try {
+      const { planId, isAnnual } = req.body;
+
+      if (!planId) {
+        return res.status(400).json({ error: 'Plan ID é obrigatório' });
+      }
+
+      // Get plan details
+      const [planResult] = await db.execute(sql`
+        SELECT * FROM plans WHERE id = ${planId} AND is_active = 1
+      `);
+      
+      const plans = Array.isArray(planResult) ? planResult : [planResult];
+      const plan = plans[0];
+
+      if (!plan) {
+        return res.status(404).json({ error: 'Plano não encontrado' });
+      }
+
+      // Calculate price based on billing period
+      let priceToUse = parseFloat(plan.price);
+      if (isAnnual && plan.annual_price) {
+        priceToUse = parseFloat(plan.annual_price);
+      }
+
+      // For free plans or plans with free trial, return success without payment
+      if (priceToUse === 0 || plan.free_days > 0) {
+        return res.json({
+          success: true,
+          message: 'Plano gratuito ativado com sucesso',
+          planName: plan.name,
+          billingPeriod: isAnnual ? 'annual' : 'monthly'
+        });
+      }
+
+      // For paid plans, create Stripe payment intent
+      try {
+        const paymentIntent = await stripeService.createPaymentIntent({
+          amount: priceToUse,
+          currency: 'brl',
+          metadata: {
+            planId: planId.toString(),
+            planName: plan.name,
+            billingPeriod: isAnnual ? 'annual' : 'monthly'
+          }
+        });
+
+        res.json({
+          clientSecret: paymentIntent.client_secret,
+          planName: plan.name,
+          amount: priceToUse,
+          billingPeriod: isAnnual ? 'annual' : 'monthly'
+        });
+      } catch (stripeError) {
+        console.error('Stripe error:', stripeError);
+        res.status(500).json({ error: 'Erro ao processar pagamento' });
+      }
+
+    } catch (error) {
+      console.error('Error creating subscription:', error);
+      res.status(500).json({ error: 'Erro interno do servidor' });
     }
   });
 
