@@ -142,6 +142,10 @@ This is a comprehensive business management system built with Express.js and MyS
 ## Changelog
 ```
 Changelog:
+- June 21, 2025. Resolved Evolution API URL configuration issues - implemented automatic endpoint detection and correction for proper API communication instead of web interface access
+- June 21, 2025. Fixed admin settings FormDescription import error - admin configuration page now loads correctly
+- June 21, 2025. Enhanced Evolution API connection diagnostics - added detailed URL correction logging and improved error messages for HTML responses
+- June 21, 2025. Fixed WhatsApp instance creation errors - applied URL correction to all Evolution API endpoints to prevent "Unexpected token" JSON parsing errors
 - June 21, 2025. Fixed WhatsApp review invitation error - enhanced Evolution API error handling with specific diagnostics and added admin test connection tool
 - June 21, 2025. Added system URL configuration field to admin settings - review invitation links now use configured domain instead of localhost
 - June 21, 2025. Implemented dynamic ticket categories - companies now see categories based on admin-configured ticket types instead of hardcoded values

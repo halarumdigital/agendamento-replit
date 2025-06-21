@@ -1985,14 +1985,15 @@ Obrigado pela preferência! 🙏`;
       console.log('Formatted Phone:', formattedPhone);
       console.log('API Key configured:', !!apiKey);
 
-      // Construct proper Evolution API URL
-      let whatsappApiUrl = `${evolutionApiUrl}/message/sendText/${whatsappInstance.instanceName}`;
+      // Ensure proper Evolution API URL format
+      const correctedApiUrl = evolutionApiUrl?.includes('/api/') ? 
+        evolutionApiUrl : 
+        `${evolutionApiUrl?.replace(/\/$/, '')}/api`;
       
-      // If the URL doesn't contain /api/, try adding it
-      if (!evolutionApiUrl.includes('/api/')) {
-        whatsappApiUrl = `${evolutionApiUrl}/api/message/sendText/${whatsappInstance.instanceName}`;
-      }
+      const whatsappApiUrl = `${correctedApiUrl}/message/sendText/${whatsappInstance.instanceName}`;
       
+      console.log('Original Evolution API URL:', evolutionApiUrl);
+      console.log('Corrected API URL:', correctedApiUrl);
       console.log('Full API URL:', whatsappApiUrl);
 
       const response = await fetch(whatsappApiUrl, {

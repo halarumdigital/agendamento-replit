@@ -26,6 +26,21 @@ import {
 } from "./storage";
 import { formatBrazilianPhone, validateBrazilianPhone, normalizePhone } from "../shared/phone-utils";
 
+// Utility function to ensure Evolution API URLs have proper /api/ endpoint
+function ensureEvolutionApiEndpoint(baseUrl: string): string {
+  if (!baseUrl) return baseUrl;
+  
+  // Remove trailing slash
+  const cleanUrl = baseUrl.replace(/\/$/, '');
+  
+  // If URL doesn't contain /api/, add it
+  if (!cleanUrl.includes('/api/')) {
+    return `${cleanUrl}/api`;
+  }
+  
+  return cleanUrl;
+}
+
 // Configure multer for file uploads
 const storage_config = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -4880,14 +4895,12 @@ const broadcastEvent = (eventData: any) => {
         });
       }
 
-      // Test API connection - try multiple common Evolution API endpoints
-      let testUrl = `${settings.evolutionApiUrl}/manager/findInstances`;
+      // Test API connection using the proper endpoint
+      const correctedApiUrl = ensureEvolutionApiEndpoint(settings.evolutionApiUrl);
+      const testUrl = `${correctedApiUrl}/manager/findInstances`;
       
-      // If the URL doesn't contain /api/, try adding it
-      if (!settings.evolutionApiUrl.includes('/api/')) {
-        testUrl = `${settings.evolutionApiUrl}/api/manager/findInstances`;
-      }
-      
+      console.log('Original URL:', settings.evolutionApiUrl);
+      console.log('Corrected URL:', correctedApiUrl);
       console.log('Testing Evolution API:', testUrl);
       
       const response = await fetch(testUrl, {
