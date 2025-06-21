@@ -63,6 +63,7 @@ export const loadCompanyPlan = async (req: RequestWithPlan, res: Response, next:
         financial: true,
         reports: true,
         settings: true,
+        support: true, // Always allow support access
       }
     };
 

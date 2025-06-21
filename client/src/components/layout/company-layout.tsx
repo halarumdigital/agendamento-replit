@@ -130,7 +130,7 @@ const menuItems = [
     title: "Suporte",
     href: "/company/suporte",
     icon: HelpCircle,
-    permission: "support" as keyof PlanPermissions | null,
+    permission: null, // Always visible regardless of plan
   },
 
 ];
