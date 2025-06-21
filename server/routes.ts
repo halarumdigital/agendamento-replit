@@ -4599,8 +4599,17 @@ const broadcastEvent = (eventData: any) => {
       const companyId = req.session.companyId;
       const { title, description, typeId } = req.body;
 
+      // Debug logging
+      console.log('Files received:', req.files ? req.files.length : 0);
+      if (req.files) {
+        req.files.forEach((file: any, index: number) => {
+          console.log(`File ${index}:`, file.filename, file.originalname);
+        });
+      }
+
       // Handle file attachments - save as comma-separated filenames
       const attachmentFilenames = req.files ? req.files.map((file: any) => file.filename).join(',') : '';
+      console.log('Attachment filenames to save:', attachmentFilenames);
 
       // Get the first available status ID (usually 'Aberto')
       const [statusRows] = await pool.execute(
