@@ -2007,10 +2007,17 @@ Obrigado pela preferência! 🙏`;
       console.log('Formatted Phone:', formattedPhone);
       console.log('API Key configured:', !!apiKey);
 
-      // Ensure proper Evolution API URL format
-      const correctedApiUrl = evolutionApiUrl?.includes('/api/') ? 
-        evolutionApiUrl : 
-        `${evolutionApiUrl?.replace(/\/$/, '')}/api`;
+      // Apply Evolution API URL correction
+      let correctedApiUrl = evolutionApiUrl;
+      
+      // Check if URL needs correction (contains web interface patterns)
+      if (evolutionApiUrl?.includes('.halarum.com.br') && !evolutionApiUrl.includes('/api/')) {
+        console.log('🔧 Correcting Evolution API URL from web interface to API endpoint');
+        const baseUrl = evolutionApiUrl.replace(/\/+$/, ''); // Remove trailing slashes
+        correctedApiUrl = `${baseUrl}/api`;
+      } else if (!evolutionApiUrl?.includes('/api/')) {
+        correctedApiUrl = `${evolutionApiUrl?.replace(/\/$/, '')}/api`;
+      }
       
       const whatsappApiUrl = `${correctedApiUrl}/message/sendText/${whatsappInstance.instanceName}`;
       
