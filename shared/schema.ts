@@ -35,7 +35,7 @@ export const admins = mysqlTable("admins", {
   password: varchar("password", { length: 255 }).notNull(),
   firstName: varchar("first_name", { length: 100 }),
   lastName: varchar("last_name", { length: 100 }),
-  isActive: boolean("is_active").notNull().default(true),
+  isActive: int("is_active").notNull().default(1),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
@@ -56,7 +56,7 @@ export const companies = mysqlTable("companies", {
   password: varchar("password", { length: 255 }).notNull(),
   planId: int("plan_id"),
   planStatus: varchar("plan_status", { length: 50 }).default("inactive"),
-  isActive: boolean("is_active").notNull().default(true),
+  isActive: int("is_active").notNull().default(1),
   aiAgentPrompt: text("ai_agent_prompt"),
   resetToken: varchar("reset_token", { length: 255 }),
   resetTokenExpires: varchar("reset_token_expires", { length: 255 }),
@@ -70,10 +70,10 @@ export const companies = mysqlTable("companies", {
 export const plans = mysqlTable("plans", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
-  freeDays: int("free_days").notNull().default(false),
+  freeDays: int("free_days").notNull().default(0),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
-  maxProfessionals: int("max_professionals").notNull().default(true),
-  isActive: boolean("is_active").notNull().default(true),
+  maxProfessionals: int("max_professionals").notNull().default(1),
+  isActive: int("is_active").notNull().default(1),
   stripeProductId: varchar("stripe_product_id", { length: 255 }),
   stripePriceId: varchar("stripe_price_id", { length: 255 }),
   permissions: json("permissions").$type<{
@@ -119,8 +119,8 @@ export const adminAlerts = mysqlTable("admin_alerts", {
   title: varchar("title", { length: 255 }).notNull(),
   message: text("message").notNull(),
   type: varchar("type", { length: 50 }).notNull().default("info"), // info, warning, success, error
-  isActive: boolean("is_active").notNull().default(true),
-  showToAllCompanies: int("show_to_all_companies").notNull().default(true),
+  isActive: int("is_active").notNull().default(1),
+  showToAllCompanies: int("show_to_all_companies").notNull().default(1),
   targetCompanyIds: json("target_company_ids").$type<number[]>().default([]),
   startDate: date("start_date"),
   endDate: date("end_date"),
@@ -199,7 +199,7 @@ export const messages = mysqlTable("messages", {
   content: text("content").notNull(),
   messageId: varchar("message_id", { length: 255 }),
   messageType: varchar("message_type", { length: 50 }),
-  delivered: int("delivered").default(false),
+  delivered: int("delivered").default(0),
   timestamp: timestamp("timestamp").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -213,8 +213,8 @@ export const services = mysqlTable("services", {
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   duration: int("duration").notNull(),
   color: varchar("color", { length: 7 }).default("#3B82F6"),
-  isActive: boolean("is_active").notNull().default(true),
-  points: int("points").default(false),
+  isActive: int("is_active").notNull().default(1),
+  points: int("points").default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
@@ -230,7 +230,7 @@ export const professionals = mysqlTable("professionals", {
   workDays: json("work_days"),
   workStartTime: varchar("work_start_time", { length: 10 }),
   workEndTime: varchar("work_end_time", { length: 10 }),
-  active: boolean("active").default(true),
+  active: int("active").default(1),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
@@ -250,7 +250,7 @@ export const appointments = mysqlTable("appointments", {
   totalPrice: decimal("total_price", { precision: 10, scale: 2 }).default("0.00"),
   status: varchar("status", { length: 50 }).notNull().default("agendado"),
   notes: text("notes"),
-  reminderSent: boolean("reminder_sent").default(false),
+  reminderSent: int("reminder_sent").default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
@@ -282,7 +282,7 @@ export const birthdayMessages = mysqlTable("birthday_messages", {
   companyId: int("company_id").notNull(),
   message: text("message").notNull(),
   messageTemplate: text("message_template"),
-  isActive: boolean("is_active").default(true),
+  isActive: int("is_active").default(1),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
@@ -301,7 +301,7 @@ export const reminderSettings = mysqlTable("reminder_settings", {
   id: serial("id").primaryKey(),
   companyId: int("company_id").notNull(),
   reminderType: varchar("reminder_type", { length: 50 }).notNull(),
-  isActive: boolean("is_active").default(true),
+  isActive: int("is_active").default(1),
   messageTemplate: text("message_template").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
@@ -356,7 +356,7 @@ export const tasks = mysqlTable("tasks", {
   dueDate: date("due_date").notNull(),
   recurrence: varchar("recurrence", { length: 50 }).default("none"),
   whatsappNumber: varchar("whatsapp_number", { length: 50 }),
-  isActive: boolean("is_active").default(true),
+  isActive: int("is_active").default(1),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
@@ -375,7 +375,7 @@ export const clientPoints = mysqlTable("client_points", {
   id: serial("id").primaryKey(),
   clientId: int("client_id").notNull(),
   companyId: int("company_id").notNull(),
-  totalPoints: int("total_points").default(false),
+  totalPoints: int("total_points").default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
@@ -387,7 +387,7 @@ export const pointsCampaigns = mysqlTable("points_campaigns", {
   name: varchar("name", { length: 255 }).notNull(),
   requiredPoints: int("required_points").notNull(),
   rewardServiceId: int("reward_service_id").notNull(),
-  active: boolean("active").default(true),
+  active: int("active").default(1),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
@@ -412,7 +412,7 @@ export const loyaltyCampaigns = mysqlTable("loyalty_campaigns", {
   rewardType: varchar("reward_type", { length: 50 }).notNull(), // 'service' or 'discount'
   rewardValue: int("reward_value").notNull(), // service ID or discount percentage
   rewardServiceId: int("reward_service_id"), // ID of the service to give as reward
-  active: boolean("active").default(true),
+  active: int("active").default(1),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
@@ -438,9 +438,9 @@ export const products = mysqlTable("products", {
   description: text("description"),
   purchasePrice: decimal("purchase_price", { precision: 10, scale: 2 }).notNull(),
   supplierName: varchar("supplier_name", { length: 255 }),
-  stockQuantity: int("stock_quantity").notNull().default(false),
-  alertStock: int("alert_stock").default(false),
-  minStockLevel: int("min_stock_level").default(false),
+  stockQuantity: int("stock_quantity").notNull().default(0),
+  alertStock: int("alert_stock").default(0),
+  minStockLevel: int("min_stock_level").default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
@@ -454,9 +454,9 @@ export const coupons = mysqlTable("coupons", {
   discountType: varchar("discount_type", { length: 20 }).notNull(), // 'percentage' or 'fixed'
   discountValue: decimal("discount_value", { precision: 10, scale: 2 }).notNull(),
   expiresAt: timestamp("expires_at"),
-  maxUses: int("max_uses").notNull().default(true),
-  usesCount: int("uses_count").notNull().default(false),
-  isActive: boolean("is_active").notNull().default(true),
+  maxUses: int("max_uses").notNull().default(1),
+  usesCount: int("uses_count").notNull().default(0),
+  isActive: int("is_active").notNull().default(1),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
@@ -471,8 +471,8 @@ export const messageCampaigns = mysqlTable("message_campaigns", {
   status: varchar("status", { length: 50 }).notNull().default("pending"), // pending, sending, completed, failed
   targetType: varchar("target_type", { length: 20 }).notNull(), // all, specific
   selectedClients: json("selected_clients"), // array of client IDs for specific targeting
-  sentCount: int("sent_count").default(false),
-  totalTargets: int("total_targets").default(false),
+  sentCount: int("sent_count").default(0),
+  totalTargets: int("total_targets").default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
@@ -496,7 +496,7 @@ export const paymentMethods = mysqlTable("payment_methods", {
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   type: varchar("type", { length: 20 }).notNull(), // cash, card, pix, transfer, other
-  isActive: boolean("is_active").default(true),
+  isActive: int("is_active").default(1),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
