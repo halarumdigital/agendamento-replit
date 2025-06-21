@@ -21,20 +21,21 @@ interface SupportTicket {
   id: number;
   companyId: number;
   typeId?: number;
+  statusId?: number;
   title: string;
   description: string;
-  status: string;
   priority: string;
   category: string;
   adminResponse?: string;
+  attachments?: string;
   createdAt: string;
   updatedAt: string;
   resolvedAt?: string;
-  company: {
-    id: number;
-    fantasyName: string;
-    email: string;
-  };
+  companyName: string;
+  companyEmail: string;
+  typeName?: string;
+  statusName?: string;
+  statusColor?: string;
 }
 
 interface SupportTicketType {
@@ -259,18 +260,16 @@ export default function AdminSupport() {
     },
   });
 
-  const getStatusBadge = (status: string) => {
-    const statusColors = {
-      open: "bg-blue-500",
-      in_progress: "bg-yellow-500",
-      resolved: "bg-green-500",
-      closed: "bg-gray-500",
-    };
+  const getStatusBadge = (ticket: SupportTicket) => {
+    const statusName = ticket.statusName || 'Sem Status';
+    const statusColor = ticket.statusColor || 'gray';
+    
     return (
-      <Badge className={statusColors[status as keyof typeof statusColors] || "bg-gray-500"}>
-        {status === 'open' ? 'Aberto' : 
-         status === 'in_progress' ? 'Em Progresso' :
-         status === 'resolved' ? 'Resolvido' : 'Fechado'}
+      <Badge 
+        className="text-white" 
+        style={{ backgroundColor: statusColor }}
+      >
+        {statusName}
       </Badge>
     );
   };
@@ -385,7 +384,7 @@ export default function AdminSupport() {
                         <div className="flex-1">
                           <h3 className="font-semibold text-lg">{ticket.title}</h3>
                           <p className="text-sm text-gray-600 mb-2">
-                            Empresa: {ticket.company.fantasyName} - {ticket.company.email}
+                            Empresa: {ticket.companyName} - {ticket.companyEmail}
                           </p>
                           <p className="text-gray-700 mb-2">{ticket.description}</p>
                           <div className="flex gap-2 mb-2">

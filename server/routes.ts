@@ -4851,29 +4851,27 @@ const broadcastEvent = (eventData: any) => {
   // Admin routes for support tickets
   app.get('/api/admin/support-tickets', isAuthenticated, async (req, res) => {
     try {
-      const tickets = await db.select({
-        id: supportTickets.id,
-        companyId: supportTickets.companyId,
-        typeId: supportTickets.typeId,
-        title: supportTickets.title,
-        description: supportTickets.description,
-        status: supportTickets.status,
-        priority: supportTickets.priority,
-        category: supportTickets.category,
-        adminResponse: supportTickets.adminResponse,
-        createdAt: supportTickets.createdAt,
-        updatedAt: supportTickets.updatedAt,
-        resolvedAt: supportTickets.resolvedAt,
-        company: {
-          id: companies.id,
-          fantasyName: companies.fantasyName,
-          email: companies.email
-        }
-      })
-      .from(supportTickets)
-      .leftJoin(companies, eq(supportTickets.companyId, companies.id))
-      .orderBy(desc(supportTickets.createdAt));
+      console.log("Fetching admin support tickets...");
+      
+      const query = `
+        SELECT 
+          st.id, st.company_id as companyId, st.type_id as typeId, st.status_id as statusId,
+          st.title, st.description, st.priority, st.category, st.admin_response as adminResponse,
+          st.attachments, st.created_at as createdAt, st.updated_at as updatedAt, 
+          st.resolved_at as resolvedAt,
+          c.fantasy_name as companyName, c.email as companyEmail,
+          stt.name as typeName,
+          sts.name as statusName, sts.color as statusColor
+        FROM support_tickets st
+        LEFT JOIN companies c ON st.company_id = c.id
+        LEFT JOIN support_ticket_types stt ON st.type_id = stt.id
+        LEFT JOIN support_ticket_statuses sts ON st.status_id = sts.id
+        ORDER BY st.created_at DESC
+      `;
 
+      const [tickets] = await pool.execute(query);
+      console.log(`Found ${Array.isArray(tickets) ? tickets.length : 0} admin tickets`);
+      
       res.json(tickets);
     } catch (error) {
       console.error("Error fetching admin support tickets:", error);
