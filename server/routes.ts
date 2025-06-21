@@ -4880,8 +4880,14 @@ const broadcastEvent = (eventData: any) => {
         });
       }
 
-      // Test API connection
-      const testUrl = `${settings.evolutionApiUrl}/manager/findInstances`;
+      // Test API connection - try multiple common Evolution API endpoints
+      let testUrl = `${settings.evolutionApiUrl}/manager/findInstances`;
+      
+      // If the URL doesn't contain /api/, try adding it
+      if (!settings.evolutionApiUrl.includes('/api/')) {
+        testUrl = `${settings.evolutionApiUrl}/api/manager/findInstances`;
+      }
+      
       console.log('Testing Evolution API:', testUrl);
       
       const response = await fetch(testUrl, {

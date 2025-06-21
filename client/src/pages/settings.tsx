@@ -786,9 +786,11 @@ export default function SettingsPage() {
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
                     <h4 className="font-medium text-blue-900 mb-2">Como configurar:</h4>
                     <ul className="text-sm text-blue-800 space-y-1">
-                      <li>• URL: Endereço completo da sua instância Evolution API</li>
-                      <li>• Global Key: Chave de autenticação global da API</li>
-                      <li>• Essas configurações são necessárias para integração com WhatsApp</li>
+                      <li>• <strong>URL da API:</strong> Use o endpoint da API, não da interface web</li>
+                      <li>• <strong>Exemplo correto:</strong> https://apizap.halarum.com.br/api</li>
+                      <li>• <strong>Exemplo incorreto:</strong> https://apizap.halarum.com.br (sem /api)</li>
+                      <li>• <strong>Global Key:</strong> Chave de autenticação global da Evolution API</li>
+                      <li>• Se o teste falhar, verifique se a URL aponta para o endpoint da API</li>
                     </ul>
                   </div>
 
