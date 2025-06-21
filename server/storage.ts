@@ -1939,7 +1939,8 @@ export class DatabaseStorage implements IStorage {
 
       // Get WhatsApp instance
       const [whatsappInstance] = await db.select().from(whatsappInstances)
-        .where(eq(whatsappInstances.companyId, appointment.companyId));
+        .where(eq(whatsappInstances.companyId, appointment.companyId))
+        .limit(1);
 
       if (!whatsappInstance) {
         return { success: false, message: "Instância do WhatsApp não configurada" };
@@ -2011,19 +2012,9 @@ Obrigado pela preferência! 🙏`;
       console.log('WhatsApp instance apiUrl:', whatsappInstance.apiUrl);
       console.log('WhatsApp instance apiKey:', !!whatsappInstance.apiKey);
 
-      // Apply Evolution API URL correction - ensure proper API endpoint format
-      let correctedApiUrl = evolutionApiUrl;
-      
-      // Remove trailing slashes first
+      // For Evolution API v2.2.2, use direct endpoint without /api prefix
       const baseUrl = evolutionApiUrl.replace(/\/+$/, '');
-      
-      // Check if URL needs correction (ensure it ends with /api for Evolution API v2.3.0)
-      if (!baseUrl.endsWith('/api')) {
-        correctedApiUrl = `${baseUrl}/api`;
-        console.log('🔧 Corrected Evolution API URL to include /api endpoint');
-      }
-      
-      const whatsappApiUrl = `${correctedApiUrl}/message/sendText/${whatsappInstance.instanceName}`;
+      const whatsappApiUrl = `${baseUrl}/message/sendText/${whatsappInstance.instanceName}`;
       
       console.log('=== EVOLUTION API URL DETAILS ===');
       console.log('Original URL:', evolutionApiUrl);
