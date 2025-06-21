@@ -5549,16 +5549,14 @@ const broadcastEvent = (eventData: any) => {
       const webhookSetUrl = `${baseUrl}/webhook/set/${instance.instanceName}`;
       
       const webhookPayload = {
-        webhook: {
-          enabled: true,
-          url: webhookUrl,
-          events: [
-            "QRCODE_UPDATED",
-            "MESSAGES_UPSERT"
-          ]
-        },
+        enabled: true,
+        url: webhookUrl,
         webhookByEvents: true,
-        webhookBase64: true
+        webhookBase64: true,
+        events: [
+          "QRCODE_UPDATED",
+          "MESSAGES_UPSERT"
+        ]
       };
 
       console.log(`🔗 Sending webhook configuration to: ${webhookSetUrl}`);
