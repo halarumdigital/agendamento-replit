@@ -98,6 +98,7 @@ export default function CompanySettings() {
     resolver: zodResolver(whatsappInstanceSchema),
     defaultValues: {
       instanceName: "",
+      phoneNumber: "",
     },
   });
 
@@ -961,6 +962,20 @@ export default function CompanySettings() {
                         <FormLabel>Nome da Instância</FormLabel>
                         <FormControl>
                           <Input placeholder="Ex: principal" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={whatsappForm.control}
+                    name="phoneNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Número de Telefone</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Ex: 5511999999999" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

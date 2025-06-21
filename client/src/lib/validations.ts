@@ -72,6 +72,7 @@ export const companyAiAgentSchema = z.object({
 
 export const whatsappInstanceSchema = z.object({
   instanceName: z.string().min(3, "Nome da instância deve ter pelo menos 3 caracteres"),
+  phoneNumber: z.string().min(10, "Número de telefone é obrigatório (com DDD)"),
 });
 
 export const webhookConfigSchema = z.object({
