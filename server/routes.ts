@@ -5419,8 +5419,9 @@ const broadcastEvent = (eventData: any) => {
         return res.status(500).json({ message: "Configurações da Evolution API não encontradas" });
       }
 
-      const correctedApiUrl = ensureEvolutionApiEndpoint(globalSettings.evolutionApiUrl);
-      const qrcodeUrl = `${correctedApiUrl}/instance/connect/${instanceName}`;
+      // For QR code endpoint, use base URL without /api/ prefix
+      const baseUrl = globalSettings.evolutionApiUrl.replace(/\/$/, '');
+      const qrcodeUrl = `${baseUrl}/instance/connect/${instanceName}`;
       
       const evolutionResponse = await fetch(qrcodeUrl, {
         method: 'GET',
