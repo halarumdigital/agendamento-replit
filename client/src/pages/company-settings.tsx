@@ -501,6 +501,36 @@ export default function CompanySettings() {
     },
   });
 
+  const getQrCodeMutation = useMutation({
+    mutationFn: async (instanceName: string) => {
+      const response = await apiRequest("GET", `/api/company/whatsapp/instances/${instanceName}/qrcode`);
+      return response;
+    },
+    onSuccess: (data: any) => {
+      if (data.qrcode) {
+        setQrCodeData(data.qrcode);
+        setShowQrDialog(true);
+        toast({
+          title: "QR Code gerado",
+          description: "Escaneie o QR code com seu WhatsApp para conectar.",
+        });
+      } else {
+        toast({
+          title: "QR Code não disponível",
+          description: "A instância pode já estar conectada ou não estar pronta.",
+          variant: "destructive",
+        });
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao buscar QR Code",
+        description: error.message || "Erro ao buscar QR code da instância",
+        variant: "destructive",
+      });
+    },
+  });
+
   // State for AI agent testing
   const [testMessage, setTestMessage] = useState("");
   const [agentResponse, setAgentResponse] = useState("");
@@ -1076,13 +1106,13 @@ export default function CompanySettings() {
                                 size="sm"
                                 onClick={() => {
                                   setSelectedInstance(instance);
-                                  connectInstanceMutation.mutate(instance.instanceName);
+                                  getQrCodeMutation.mutate(instance.instanceName);
                                 }}
-                                disabled={connectInstanceMutation.isPending}
+                                disabled={getQrCodeMutation.isPending}
                                 className="flex items-center gap-2"
                               >
                                 <QrCode className="w-4 h-4" />
-                                {connectInstanceMutation.isPending ? "Conectando..." : "Conectar"}
+                                {getQrCodeMutation.isPending ? "Gerando..." : "Gerar QR Code"}
                               </Button>
                             )}
                             

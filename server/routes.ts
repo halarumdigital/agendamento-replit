@@ -5396,6 +5396,65 @@ const broadcastEvent = (eventData: any) => {
     }
   });
 
+  // Get QR Code for WhatsApp instance
+  app.get('/api/company/whatsapp/instances/:instanceName/qrcode', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const instanceName = req.params.instanceName;
+      
+      // Verify instance belongs to company
+      const instance = await storage.getWhatsappInstanceByName(instanceName, companyId);
+      if (!instance) {
+        return res.status(404).json({ message: "Instância não encontrada" });
+      }
+
+      console.log(`📱 Getting QR code for instance: ${instanceName}`);
+
+      const globalSettings = await storage.getGlobalSettings();
+      if (!globalSettings?.evolutionApiUrl || !globalSettings?.evolutionApiGlobalKey) {
+        return res.status(500).json({ message: "Configurações da Evolution API não encontradas" });
+      }
+
+      const correctedApiUrl = ensureEvolutionApiEndpoint(globalSettings.evolutionApiUrl);
+      const qrcodeUrl = `${correctedApiUrl}/instance/connect/${instanceName}`;
+      
+      const evolutionResponse = await fetch(qrcodeUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': globalSettings.evolutionApiGlobalKey
+        }
+      });
+
+      if (!evolutionResponse.ok) {
+        console.error(`❌ Evolution API QR code error: ${evolutionResponse.status}`);
+        return res.status(evolutionResponse.status).json({ 
+          message: "Erro ao buscar QR code da Evolution API" 
+        });
+      }
+
+      const qrcodeData = await evolutionResponse.json();
+      console.log(`✅ QR code retrieved for instance: ${instanceName}`);
+
+      res.json({
+        qrcode: qrcodeData.base64 || qrcodeData.qrcode,
+        pairingCode: qrcodeData.pairingCode,
+        status: qrcodeData.instance?.state || 'connecting'
+      });
+
+    } catch (error: any) {
+      console.error("Error getting QR code:", error);
+      res.status(500).json({ 
+        message: "Erro ao buscar QR code",
+        details: error.message
+      });
+    }
+  });
+
   app.delete('/api/company/whatsapp/instances/:id', async (req: any, res) => {
     try {
       const companyId = req.session.companyId;

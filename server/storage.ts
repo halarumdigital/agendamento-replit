@@ -505,6 +505,24 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async getWhatsappInstanceByName(instanceName: string, companyId: number): Promise<WhatsappInstance | undefined> {
+    try {
+      const [instance] = await db
+        .select()
+        .from(whatsappInstances)
+        .where(
+          and(
+            eq(whatsappInstances.instanceName, instanceName),
+            eq(whatsappInstances.companyId, companyId)
+          )
+        );
+      return instance;
+    } catch (error: any) {
+      console.error("Error getting WhatsApp instance by name:", error);
+      return undefined;
+    }
+  }
+
   async createWhatsappInstance(instanceData: InsertWhatsappInstance): Promise<WhatsappInstance> {
     try {
       await db
