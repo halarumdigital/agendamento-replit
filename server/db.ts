@@ -15,7 +15,9 @@ const connectionConfig = {
   acquireTimeout: 60000,
   timeout: 60000,
   reconnect: true,
-  ssl: false
+  ssl: {
+    rejectUnauthorized: false
+  }
 };
 
 console.log('Connecting to MySQL:', {

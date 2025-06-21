@@ -45,7 +45,7 @@ export const companies = mysqlTable("companies", {
   id: serial("id").primaryKey(),
   fantasyName: varchar("fantasy_name", { length: 255 }).notNull(),
   document: varchar("document", { length: 20 }).notNull().unique(),
-  address: varchar("address").notNull(),
+  address: text("address").notNull(),
   phone: varchar("phone", { length: 20 }),
   zipCode: varchar("zip_code", { length: 10 }),
   number: varchar("number", { length: 20 }),
@@ -57,9 +57,9 @@ export const companies = mysqlTable("companies", {
   planId: int("plan_id"),
   planStatus: varchar("plan_status", { length: 50 }).default("inactive"),
   isActive: boolean("is_active").notNull().default(true),
-  aiAgentPrompt: varchar("ai_agent_prompt"),
+  aiAgentPrompt: text("ai_agent_prompt"),
   resetToken: varchar("reset_token", { length: 255 }),
-  resetTokenExpires: varchar("reset_token_expires"),
+  resetTokenExpires: varchar("reset_token_expires", { length: 255 }),
   stripeCustomerId: varchar("stripe_customer_id", { length: 255 }),
   stripeSubscriptionId: varchar("stripe_subscription_id", { length: 255 }),
   createdAt: timestamp("created_at").defaultNow(),
@@ -117,7 +117,7 @@ export const plans = mysqlTable("plans", {
 export const adminAlerts = mysqlTable("admin_alerts", {
   id: serial("id").primaryKey(),
   title: varchar("title", { length: 255 }).notNull(),
-  message: varchar("message").notNull(),
+  message: text("message").notNull(),
   type: varchar("type", { length: 50 }).notNull().default("info"), // info, warning, success, error
   isActive: boolean("is_active").notNull().default(true),
   showToAllCompanies: int("show_to_all_companies").notNull().default(true),
@@ -160,7 +160,7 @@ export const globalSettings = mysqlTable("global_settings", {
   smtpFromEmail: varchar("smtp_from_email", { length: 255 }),
   smtpFromName: varchar("smtp_from_name", { length: 255 }),
   smtpSecure: varchar("smtp_secure", { length: 10 }).default("tls"),
-  customHtml: varchar("custom_html"),
+  customHtml: text("custom_html"),
   customDomainUrl: varchar("custom_domain_url", { length: 500 }),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
@@ -171,7 +171,7 @@ export const whatsappInstances = mysqlTable("whatsapp_instances", {
   companyId: int("company_id").notNull(),
   instanceName: varchar("instance_name", { length: 255 }).notNull(),
   status: varchar("status", { length: 50 }),
-  qrCode: varchar("qr_code"),
+  qrCode: text("qr_code"),
   webhook: varchar("webhook", { length: 500 }),
   apiUrl: varchar("api_url", { length: 500 }),
   apiKey: varchar("api_key", { length: 500 }),
@@ -196,7 +196,7 @@ export const messages = mysqlTable("messages", {
   id: serial("id").primaryKey(),
   conversationId: int("conversation_id").notNull(),
   role: varchar("role", { length: 20 }).notNull(),
-  content: varchar("content").notNull(),
+  content: text("content").notNull(),
   messageId: varchar("message_id", { length: 255 }),
   messageType: varchar("message_type", { length: 50 }),
   delivered: int("delivered").default(false),
@@ -209,7 +209,7 @@ export const services = mysqlTable("services", {
   id: serial("id").primaryKey(),
   companyId: int("company_id").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
-  description: varchar("description"),
+  description: text("description"),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   duration: int("duration").notNull(),
   color: varchar("color", { length: 7 }).default("#3B82F6"),
@@ -249,7 +249,7 @@ export const appointments = mysqlTable("appointments", {
   duration: int("duration").default(30),
   totalPrice: decimal("total_price", { precision: 10, scale: 2 }).default("0.00"),
   status: varchar("status", { length: 50 }).notNull().default("agendado"),
-  notes: varchar("notes"),
+  notes: text("notes"),
   reminderSent: boolean("reminder_sent").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
@@ -271,7 +271,7 @@ export const clients = mysqlTable("clients", {
   email: varchar("email", { length: 255 }),
   phone: varchar("phone", { length: 50 }),
   birthDate: date("birth_date"),
-  notes: varchar("notes"),
+  notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
@@ -280,8 +280,8 @@ export const clients = mysqlTable("clients", {
 export const birthdayMessages = mysqlTable("birthday_messages", {
   id: serial("id").primaryKey(),
   companyId: int("company_id").notNull(),
-  message: varchar("message").notNull(),
-  messageTemplate: varchar("message_template"),
+  message: text("message").notNull(),
+  messageTemplate: text("message_template"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
@@ -292,8 +292,8 @@ export const birthdayMessageHistory = mysqlTable("birthday_message_history", {
   id: serial("id").primaryKey(),
   companyId: int("company_id").notNull(),
   clientId: int("client_id").notNull(),
-  message: varchar("message").notNull(),
-  sentAt: varchar("sent_at").defaultNow(),
+  message: text("message").notNull(),
+  sentAt: timestamp("sent_at").defaultNow(),
 });
 
 // Reminder settings table
@@ -302,7 +302,7 @@ export const reminderSettings = mysqlTable("reminder_settings", {
   companyId: int("company_id").notNull(),
   reminderType: varchar("reminder_type", { length: 50 }).notNull(),
   isActive: boolean("is_active").default(true),
-  messageTemplate: varchar("message_template").notNull(),
+  messageTemplate: text("message_template").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
@@ -314,8 +314,8 @@ export const reminderHistory = mysqlTable("reminder_history", {
   appointmentId: int("appointment_id").notNull(),
   reminderType: varchar("reminder_type", { length: 50 }).notNull(),
   clientPhone: varchar("client_phone", { length: 20 }).notNull(),
-  message: varchar("message").notNull(),
-  sentAt: varchar("sent_at").defaultNow(),
+  message: text("message").notNull(),
+  sentAt: timestamp("sent_at").defaultNow(),
   status: varchar("status", { length: 20 }).default("sent"),
   whatsappInstanceId: int("whatsapp_instance_id"),
 });
@@ -329,7 +329,7 @@ export const professionalReviews = mysqlTable("professional_reviews", {
   clientPhone: varchar("client_phone", { length: 50 }).notNull(),
   clientName: varchar("client_name", { length: 255 }).notNull(),
   rating: int("rating").notNull(),
-  comment: varchar("comment"),
+  comment: text("comment"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -342,8 +342,8 @@ export const reviewInvitations = mysqlTable("review_invitations", {
   appointmentId: int("appointment_id").notNull(),
   clientPhone: varchar("client_phone", { length: 50 }).notNull(),
   invitationToken: varchar("invitation_token", { length: 255 }).notNull().unique(),
-  sentAt: varchar("sent_at"),
-  reviewSubmittedAt: varchar("review_submitted_at"),
+  sentAt: timestamp("sent_at"),
+  reviewSubmittedAt: timestamp("review_submitted_at"),
   status: varchar("status", { length: 50 }).default("pending"),
 });
 
@@ -352,8 +352,8 @@ export const tasks = mysqlTable("tasks", {
   id: serial("id").primaryKey(),
   companyId: int("company_id").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
-  description: varchar("description"),
-  dueDate: varchar("due_date").notNull(),
+  description: text("description"),
+  dueDate: date("due_date").notNull(),
   recurrence: varchar("recurrence", { length: 50 }).default("none"),
   whatsappNumber: varchar("whatsapp_number", { length: 50 }),
   isActive: boolean("is_active").default(true),
@@ -366,8 +366,8 @@ export const taskReminders = mysqlTable("task_reminders", {
   id: serial("id").primaryKey(),
   taskId: int("task_id").notNull(),
   whatsappNumber: varchar("whatsapp_number", { length: 50 }).notNull(),
-  message: varchar("message").notNull(),
-  sentAt: varchar("sent_at").defaultNow(),
+  message: text("message").notNull(),
+  sentAt: timestamp("sent_at").defaultNow(),
 });
 
 // Client points table
@@ -398,7 +398,7 @@ export const pointsHistory = mysqlTable("points_history", {
   companyId: int("company_id").notNull(),
   clientId: int("client_id").notNull(),
   pointsChange: int("points_change").notNull(),
-  description: varchar("description").notNull(),
+  description: text("description").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -425,7 +425,7 @@ export const loyaltyRewardsHistory = mysqlTable("loyalty_rewards_history", {
   campaignId: int("campaign_id").notNull(),
   rewardType: varchar("reward_type", { length: 50 }).notNull(),
   rewardValue: varchar("reward_value", { length: 255 }).notNull(),
-  usedAt: varchar("used_at"),
+  usedAt: timestamp("used_at"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -435,7 +435,7 @@ export const products = mysqlTable("products", {
   companyId: int("company_id").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   photo: varchar("photo", { length: 500 }),
-  description: varchar("description"),
+  description: text("description"),
   purchasePrice: decimal("purchase_price", { precision: 10, scale: 2 }).notNull(),
   supplierName: varchar("supplier_name", { length: 255 }),
   stockQuantity: int("stock_quantity").notNull().default(0),
@@ -453,7 +453,7 @@ export const coupons = mysqlTable("coupons", {
   code: varchar("code", { length: 50 }).notNull().unique(),
   discountType: varchar("discount_type", { length: 20 }).notNull(), // 'percentage' or 'fixed'
   discountValue: decimal("discount_value", { precision: 10, scale: 2 }).notNull(),
-  expiresAt: varchar("expires_at"),
+  expiresAt: timestamp("expires_at"),
   maxUses: int("max_uses").notNull().default(1),
   usesCount: int("uses_count").notNull().default(0),
   isActive: boolean("is_active").notNull().default(true),
@@ -466,8 +466,8 @@ export const messageCampaigns = mysqlTable("message_campaigns", {
   id: serial("id").primaryKey(),
   companyId: int("company_id").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
-  message: varchar("message").notNull(),
-  scheduledDate: varchar("scheduled_date").notNull(),
+  message: text("message").notNull(),
+  scheduledDate: date("scheduled_date").notNull(),
   status: varchar("status", { length: 50 }).notNull().default("pending"), // pending, sending, completed, failed
   targetType: varchar("target_type", { length: 20 }).notNull(), // all, specific
   selectedClients: json("selected_clients"), // array of client IDs for specific targeting
@@ -482,7 +482,7 @@ export const financialCategories = mysqlTable("financial_categories", {
   id: serial("id").primaryKey(),
   companyId: int("company_id").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
-  description: varchar("description"),
+  description: text("description"),
   type: varchar("type", { length: 20 }).notNull(), // income, expense
   color: varchar("color", { length: 7 }).notNull().default("#3B82F6"),
   createdAt: timestamp("created_at").defaultNow(),
@@ -494,7 +494,7 @@ export const paymentMethods = mysqlTable("payment_methods", {
   id: serial("id").primaryKey(),
   companyId: int("company_id").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
-  description: varchar("description"),
+  description: text("description"),
   type: varchar("type", { length: 20 }).notNull(), // cash, card, pix, transfer, other
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
@@ -511,7 +511,7 @@ export const financialTransactions = mysqlTable("financial_transactions", {
   categoryId: int("category_id").notNull(),
   paymentMethodId: int("payment_method_id").notNull(),
   date: date("date").notNull(),
-  notes: varchar("notes"),
+  notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
