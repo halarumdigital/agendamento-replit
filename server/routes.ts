@@ -1263,17 +1263,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/companies/:id', isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      console.log('Updating company with data:', req.body);
+      
       const validatedData = insertCompanySchema.partial().parse(req.body);
+      console.log('Validated data:', validatedData);
       
       // Hash password if provided
       if (validatedData.password) {
         validatedData.password = await bcrypt.hash(validatedData.password, 12);
       }
       
+      // Convert isActive to number if it's a boolean
+      if (typeof validatedData.isActive === 'boolean') {
+        (validatedData as any).isActive = validatedData.isActive ? 1 : 0;
+      }
+      
       const company = await storage.updateCompany(id, validatedData);
+      console.log('Updated company:', company);
       res.json(company);
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.error("Validation error:", error.errors);
         return res.status(400).json({ message: "Dados inválidos", errors: error.errors });
       }
       console.error("Error updating company:", error);
