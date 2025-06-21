@@ -107,25 +107,51 @@ export async function ensureSupportTables() {
       `);
     }
     
-    // Insert default ticket types if they don't exist
-    await pool.execute(`
-      INSERT IGNORE INTO support_ticket_types (name, description, is_active) VALUES
-      ('Técnico', 'Problemas técnicos e bugs do sistema', TRUE),
-      ('Financeiro', 'Questões relacionadas a pagamentos e cobrança', TRUE),
-      ('Funcionalidade', 'Solicitações de novas funcionalidades', TRUE),
-      ('Geral', 'Dúvidas e suporte geral', TRUE)
-    `);
+    // Insert default ticket types if they don't exist (with proper duplicate checking)
+    const defaultTypes = [
+      { name: 'Técnico', description: 'Problemas técnicos e bugs do sistema' },
+      { name: 'Financeiro', description: 'Questões relacionadas a pagamentos e cobrança' },
+      { name: 'Funcionalidade', description: 'Solicitações de novas funcionalidades' },
+      { name: 'Geral', description: 'Dúvidas e suporte geral' }
+    ];
     
-    // Insert default ticket statuses if they don't exist
-    await pool.execute(`
-      INSERT IGNORE INTO support_ticket_statuses (name, description, color, is_active, sort_order) VALUES
-      ('Aberto', 'Ticket recém-criado', '#ef4444', TRUE, 1),
-      ('Em Análise', 'Ticket sendo analisado pela equipe', '#f59e0b', TRUE, 2),
-      ('Em Andamento', 'Ticket sendo trabalhado', '#3b82f6', TRUE, 3),
-      ('Aguardando Cliente', 'Aguardando resposta do cliente', '#8b5cf6', TRUE, 4),
-      ('Resolvido', 'Ticket resolvido com sucesso', '#10b981', TRUE, 5),
-      ('Fechado', 'Ticket finalizado', '#6b7280', TRUE, 6)
-    `);
+    for (const type of defaultTypes) {
+      const [existing] = await pool.execute(
+        'SELECT id FROM support_ticket_types WHERE name = ?',
+        [type.name]
+      ) as any;
+      
+      if (existing.length === 0) {
+        await pool.execute(
+          'INSERT INTO support_ticket_types (name, description, is_active) VALUES (?, ?, TRUE)',
+          [type.name, type.description]
+        );
+      }
+    }
+    
+    // Insert default ticket statuses if they don't exist (with proper duplicate checking)
+    const defaultStatuses = [
+      { name: 'Aberto', description: 'Ticket recém-criado', color: '#ef4444', sort_order: 1 },
+      { name: 'Em Análise', description: 'Ticket sendo analisado pela equipe', color: '#f59e0b', sort_order: 2 },
+      { name: 'Em Andamento', description: 'Ticket sendo trabalhado', color: '#3b82f6', sort_order: 3 },
+      { name: 'Aguardando Cliente', description: 'Aguardando resposta do cliente', color: '#8b5cf6', sort_order: 4 },
+      { name: 'Resolvido', description: 'Ticket resolvido com sucesso', color: '#10b981', sort_order: 5 },
+      { name: 'Fechado', description: 'Ticket finalizado', color: '#6b7280', sort_order: 6 }
+    ];
+    
+    for (const status of defaultStatuses) {
+      const [existing] = await pool.execute(
+        'SELECT id FROM support_ticket_statuses WHERE name = ?',
+        [status.name]
+      ) as any;
+      
+      if (existing.length === 0) {
+        await pool.execute(
+          'INSERT INTO support_ticket_statuses (name, description, color, is_active, sort_order) VALUES (?, ?, ?, TRUE, ?)',
+          [status.name, status.description, status.color, status.sort_order]
+        );
+      }
+    }
     
     console.log("✅ Support tables verified and initialized");
   } catch (error) {
