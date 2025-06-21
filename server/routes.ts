@@ -5549,31 +5549,23 @@ const broadcastEvent = (eventData: any) => {
       const webhookSetUrl = `${baseUrl}/webhook/set/${instance.instanceName}`;
       
       const webhookPayload = {
-        webhook: {
-          enabled: true,
-          url: webhookUrl,
-          headers: {
-            authorization: "Bearer TOKEN",
-            "Content-Type": "application/json"
-          }
-        },
-        byEvents: false,
-        base64: false,
+        url: webhookUrl,
+        enabled: true,
         events: [
           "APPLICATION_STARTUP",
-          "QRCODE_UPDATED",
+          "QRCODE_UPDATED", 
           "MESSAGES_SET",
           "MESSAGES_UPSERT",
           "MESSAGES_UPDATE",
           "MESSAGES_DELETE",
           "SEND_MESSAGE",
           "CONTACTS_SET",
-          "CONTACTS_UPSERT",
+          "CONTACTS_UPSERT", 
           "CONTACTS_UPDATE",
           "PRESENCE_UPDATE",
           "CHATS_SET",
           "CHATS_UPSERT",
-          "CHATS_UPDATE",
+          "CHATS_UPDATE", 
           "CHATS_DELETE",
           "GROUPS_UPSERT",
           "GROUP_UPDATE",
