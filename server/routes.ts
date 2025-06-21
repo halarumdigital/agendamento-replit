@@ -4583,10 +4583,18 @@ const broadcastEvent = (eventData: any) => {
   });
 
   // Support tickets routes
-  app.get('/api/company/support-tickets', async (req: any, res) => {
+  app.get('/api/company/support-tickets', isCompanyAuthenticated, async (req: any, res) => {
     try {
       const companyId = req.session.companyId;
+      console.log('Fetching tickets for company:', companyId);
+      
       const tickets = await db.select().from(supportTickets).where(eq(supportTickets.companyId, companyId)).orderBy(desc(supportTickets.createdAt));
+      console.log('Found tickets:', tickets.length);
+      
+      if (tickets.length > 0) {
+        console.log('First ticket attachments:', tickets[0].attachments);
+      }
+      
       res.json(tickets);
     } catch (error) {
       console.error("Error fetching support tickets:", error);
