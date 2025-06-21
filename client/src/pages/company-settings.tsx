@@ -1100,7 +1100,7 @@ export default function CompanySettings() {
                               Verificar
                             </Button>
                             
-                            {!isConnected && !isConnecting && (
+                            {!isConnected && (
                               <Button
                                 variant="outline"
                                 size="sm"

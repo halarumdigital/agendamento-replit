@@ -142,7 +142,7 @@ This is a comprehensive business management system built with Express.js and MyS
 ## Changelog
 ```
 Changelog:
-- June 21, 2025. RESOLVED Evolution API v2.3.0 integration - fixed WhatsApp instance creation by removing /api/ prefix from endpoints and using minimal payload structure with correct "WHATSAPP-BAILEYS" integration type
+- June 21, 2025. COMPLETED Evolution API v2.3.0 integration with QR code functionality - fixed WhatsApp instance creation and added working QR code generation using /instance/connect endpoint with proper payload structure
 - June 21, 2025. Implemented complete WhatsApp instance management system - added full CRUD operations for WhatsApp instances with proper Evolution API integration using /instance/create endpoint, webhook configuration, and comprehensive error handling
 - June 21, 2025. Applied Evolution API URL correction across entire codebase - fixed all WhatsApp messaging, campaign scheduling, and instance management to use proper /api/ endpoints instead of web interface URLs
 - June 21, 2025. Resolved Evolution API URL configuration issues - implemented automatic endpoint detection and correction for proper API communication instead of web interface access
