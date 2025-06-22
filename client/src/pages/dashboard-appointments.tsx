@@ -266,7 +266,7 @@ export default function DashboardAppointments() {
     const matchesSearch = appointment.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          appointment.service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          appointment.professional.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = !statusFilter || appointment.status === statusFilter;
+    const matchesStatus = !statusFilter || statusFilter === 'all' || appointment.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
@@ -372,7 +372,7 @@ export default function DashboardAppointments() {
                   <SelectValue placeholder="Filtrar por status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os status</SelectItem>
+                  <SelectItem value="all">Todos os status</SelectItem>
                   {statuses.map((status) => (
                     <SelectItem key={status.id} value={status.name}>
                       {status.name}
