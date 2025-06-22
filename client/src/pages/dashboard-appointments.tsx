@@ -174,21 +174,24 @@ export default function DashboardAppointments() {
     },
   });
 
+  const [editFormData, setEditFormData] = useState<AppointmentFormData>({
+    clientId: undefined,
+    serviceId: 0,
+    professionalId: 0,
+    statusId: 0,
+    clientName: "",
+    clientEmail: "",
+    clientPhone: "",
+    appointmentDate: "",
+    appointmentTime: "",
+    notes: "",
+    confirmed: false,
+  });
+
   const editForm = useForm<AppointmentFormData>({
     resolver: zodResolver(appointmentSchema),
-    defaultValues: {
-      clientId: undefined,
-      serviceId: 0,
-      professionalId: 0,
-      statusId: 0,
-      clientName: "",
-      clientEmail: "",
-      clientPhone: "",
-      appointmentDate: "",
-      appointmentTime: "",
-      notes: "",
-      confirmed: false,
-    },
+    defaultValues: editFormData,
+    values: editFormData,
     mode: 'onChange',
     resetOptions: {
       keepDirtyValues: false,
@@ -623,8 +626,8 @@ export default function DashboardAppointments() {
       // Force form recreation by incrementing key
       setEditFormKey(prev => prev + 1);
       
-      // Clear form completely
-      editForm.reset({
+      // Clear form data completely
+      setEditFormData({
         clientId: undefined,
         serviceId: 0,
         professionalId: 0,
@@ -679,7 +682,7 @@ export default function DashboardAppointments() {
       };
       
       console.log('✏️ Edit: Form data to populate:', formData);
-      editForm.reset(formData);
+      setEditFormData(formData);
       
       // Add small delay to ensure state is fully reset
       setTimeout(() => {
