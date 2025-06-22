@@ -34,7 +34,15 @@ interface Professional {
   updatedAt: string;
 }
 
-const professionalSchema = z.object({
+const createProfessionalSchema = z.object({
+  name: z.string().min(1, "Nome é obrigatório"),
+  email: z.string().email("Email inválido").optional().or(z.literal("")),
+  phone: z.string().optional(),
+  password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
+  active: z.boolean().default(true),
+});
+
+const updateProfessionalSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
   email: z.string().email("Email inválido").optional().or(z.literal("")),
   phone: z.string().optional(),
@@ -42,7 +50,7 @@ const professionalSchema = z.object({
   active: z.boolean().default(true),
 });
 
-type ProfessionalFormData = z.infer<typeof professionalSchema>;
+type ProfessionalFormData = z.infer<typeof updateProfessionalSchema>;
 
 export default function CompanyProfessionals() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -120,7 +128,7 @@ export default function CompanyProfessionals() {
   });
 
   const form = useForm<ProfessionalFormData>({
-    resolver: zodResolver(professionalSchema),
+    resolver: zodResolver(updateProfessionalSchema),
     defaultValues: {
       name: "",
       email: "",
@@ -399,6 +407,7 @@ export default function CompanyProfessionals() {
                             id="password"
                             type={showPassword ? 'text' : 'password'}
                             placeholder="Digite a senha"
+                            autoComplete="current-password"
                             {...form.register('password')}
                           />
                           <Button
@@ -433,22 +442,22 @@ export default function CompanyProfessionals() {
                         />
                       </div>
                     </div>
-                  <DialogFooter>
-                    <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                      Cancelar
-                    </Button>
-                    <Button 
-                      type="submit" 
-                      disabled={
-                        createMutation.isPending || 
-                        updateMutation.isPending || 
-                        (!editingProfessional && !canAddProfessional())
-                      }
-                      className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {editingProfessional ? 'Atualizar' : 'Cadastrar'}
-                    </Button>
-                  </DialogFooter>
+                    <DialogFooter>
+                      <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                        Cancelar
+                      </Button>
+                      <Button 
+                        type="submit" 
+                        disabled={
+                          createMutation.isPending || 
+                          updateMutation.isPending || 
+                          (!editingProfessional && !canAddProfessional())
+                        }
+                        className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {editingProfessional ? 'Atualizar' : 'Cadastrar'}
+                      </Button>
+                    </DialogFooter>
                   </form>
                 </TabsContent>
                 
