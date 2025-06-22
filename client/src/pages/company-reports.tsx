@@ -316,88 +316,91 @@ export default function CompanyReports() {
   const totalReport = generateTotalReport();
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Relatórios</h1>
-        <div className="flex items-center gap-4">
+    <div className="space-y-4 lg:space-y-6">
+      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 lg:gap-6">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold responsive-title">Relatórios</h1>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
           {/* Filtros de Data */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">Período:</span>
-            <Popover>
-              <PopoverTrigger asChild>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            <span className="text-sm font-medium hidden sm:inline">Período:</span>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full sm:w-[140px] justify-start text-left font-normal text-xs sm:text-sm",
+                      !startDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                    {startDate ? format(startDate, "dd/MM/yyyy", { locale: ptBR }) : "Data inicial"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={startDate}
+                    onSelect={setStartDate}
+                    initialFocus
+                    locale={ptBR}
+                  />
+                </PopoverContent>
+              </Popover>
+              
+              <span className="text-xs sm:text-sm text-gray-500 self-center">até</span>
+              
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full sm:w-[140px] justify-start text-left font-normal text-xs sm:text-sm",
+                      !endDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                    {endDate ? format(endDate, "dd/MM/yyyy", { locale: ptBR }) : "Data final"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={endDate}
+                    onSelect={setEndDate}
+                    initialFocus
+                    locale={ptBR}
+                  />
+                </PopoverContent>
+              </Popover>
+              
+              {(startDate || endDate) && (
                 <Button
-                  variant="outline"
-                  className={cn(
-                    "w-[150px] justify-start text-left font-normal",
-                    !startDate && "text-muted-foreground"
-                  )}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setStartDate(undefined);
+                    setEndDate(undefined);
+                  }}
+                  className="h-8 px-2 lg:px-3 text-xs sm:text-sm"
                 >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {startDate ? format(startDate, "dd/MM/yyyy", { locale: ptBR }) : "Data inicial"}
+                  Limpar
                 </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={startDate}
-                  onSelect={setStartDate}
-                  initialFocus
-                  locale={ptBR}
-                />
-              </PopoverContent>
-            </Popover>
-            
-            <span className="text-sm text-gray-500">até</span>
-            
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-[150px] justify-start text-left font-normal",
-                    !endDate && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {endDate ? format(endDate, "dd/MM/yyyy", { locale: ptBR }) : "Data final"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={endDate}
-                  onSelect={setEndDate}
-                  initialFocus
-                  locale={ptBR}
-                />
-              </PopoverContent>
-            </Popover>
-            
-            {(startDate || endDate) && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setStartDate(undefined);
-                  setEndDate(undefined);
-                }}
-                className="h-8 px-2 lg:px-3"
-              >
-                Limpar
-              </Button>
-            )}
+              )}
+            </div>
           </div>
           
-          <div className="flex items-center gap-2 text-sm text-gray-500">
+          <div className="hidden lg:flex items-center gap-2 text-sm text-gray-500">
             <CalendarIcon className="w-4 h-4" />
             Atualizado em: {format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
           </div>
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="clients" className="flex items-center gap-2">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 lg:space-y-6">
+        <div className="overflow-x-auto -mx-2 sm:mx-0">
+          <TabsList className="grid w-full grid-cols-4 min-w-[400px] sm:min-w-0 text-xs sm:text-sm">
+            <TabsTrigger value="clients" className="flex items-center gap-2">
             <Users className="w-4 h-4" />
             Clientes
           </TabsTrigger>
@@ -413,38 +416,39 @@ export default function CompanyReports() {
             <TrendingUp className="w-4 h-4" />
             Total
           </TabsTrigger>
-        </TabsList>
+          </TabsList>
+        </div>
 
         {/* Aba Clientes */}
         <TabsContent value="clients">
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="space-y-4 lg:space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               <Card>
-                <CardContent className="pt-6">
+                <CardContent className="pt-4 sm:pt-6">
                   <div className="flex items-center gap-2">
-                    <Users className="w-5 h-5 text-blue-600" />
+                    <Users className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
                     <div>
-                      <p className="text-2xl font-bold">{clientReports.length}</p>
-                      <p className="text-sm text-gray-600">Total de Clientes</p>
+                      <p className="text-lg sm:text-xl lg:text-2xl font-bold">{clientReports.length}</p>
+                      <p className="text-xs sm:text-sm text-gray-600">Total de Clientes</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="pt-6">
+                <CardContent className="pt-4 sm:pt-6">
                   <div className="flex items-center gap-2">
-                    <DollarSign className="w-5 h-5 text-green-600" />
+                    <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
                     <div>
-                      <p className="text-2xl font-bold">{formatCurrency(totalReport.totalRevenue)}</p>
-                      <p className="text-sm text-gray-600">Faturamento Total</p>
+                      <p className="text-lg sm:text-xl lg:text-2xl font-bold">{formatCurrency(totalReport.totalRevenue)}</p>
+                      <p className="text-xs sm:text-sm text-gray-600">Faturamento Total</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
-              <Card>
-                <CardContent className="pt-6">
+              <Card className="sm:col-span-2 lg:col-span-1">
+                <CardContent className="pt-4 sm:pt-6">
                   <div className="flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5 text-purple-600" />
+                    <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
                     <div>
                       <p className="text-2xl font-bold">{formatCurrency(totalReport.averageAppointmentValue)}</p>
                       <p className="text-sm text-gray-600">Ticket Médio</p>

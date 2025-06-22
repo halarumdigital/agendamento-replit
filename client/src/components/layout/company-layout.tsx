@@ -264,26 +264,40 @@ export default function CompanyLayout({ children }: CompanyLayoutProps) {
         </div>
       </div>
 
-      {/* Mobile Sidebar */}
-      <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        <SheetTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="lg:hidden fixed top-4 left-4 z-50 bg-white shadow-md"
-          >
-            <Menu className="h-6 w-6" />
-          </Button>
-        </SheetTrigger>
-        <SheetContent side="left" className="w-64 p-0">
-          <SidebarContent />
-        </SheetContent>
-      </Sheet>
+      {/* Mobile Header */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 bg-white border-b border-gray-200 px-4 py-3 z-50 flex items-center justify-between">
+        <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+          <SheetTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="touch-target"
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-72 sm:w-80 p-0 max-w-[85vw]">
+            <SidebarContent />
+          </SheetContent>
+        </Sheet>
+        
+        <div className="flex items-center">
+          {/* Mobile Logo */}
+          <div className="text-sm font-semibold text-gray-900">
+            {company?.fantasyName || 'Agenday'}
+          </div>
+        </div>
+        
+        <div className="w-10"> {/* Spacer for centering */}
+        </div>
+      </div>
 
       {/* Main Content */}
       <div className="min-h-screen bg-gray-50 lg:ml-64">
-        <main className="min-h-screen pb-16">
-          {children}
+        <main className="min-h-screen pt-16 lg:pt-0 pb-16 lg:pb-8">
+          <div className="px-4 sm:px-6 lg:px-8 py-4 lg:py-6">
+            {children}
+          </div>
         </main>
         
         {/* Company Alerts */}

@@ -718,35 +718,42 @@ export default function CompanySettings() {
   }
 
   return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center gap-2 mb-6">
-          <Settings className="w-6 h-6" />
-          <h1 className="text-2xl font-bold">Configurações da Empresa</h1>
+      <div>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-4 lg:mb-6">
+          <Settings className="w-5 h-5 sm:w-6 sm:h-6" />
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold responsive-title">Configurações da Empresa</h1>
         </div>
 
         <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="profile" className="flex items-center gap-2">
-              <Building2 className="w-4 h-4" />
-              Empresa
-            </TabsTrigger>
-            <TabsTrigger value="whatsapp" className="flex items-center gap-2">
-              <Smartphone className="w-4 h-4" />
-              WhatsApp
-            </TabsTrigger>
-            <TabsTrigger value="ai-agent" className="flex items-center gap-2">
-              <Bot className="w-4 h-4" />
-              IA
-            </TabsTrigger>
-            <TabsTrigger value="reminders" className="flex items-center gap-2">
-              <Bell className="w-4 h-4" />
-              Lembretes
-            </TabsTrigger>
-            <TabsTrigger value="birthdays" className="flex items-center gap-2">
-              <Gift className="w-4 h-4" />
-              Aniversários
-            </TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto -mx-2 sm:mx-0">
+            <TabsList className="grid w-full grid-cols-5 min-w-[500px] sm:min-w-0 text-xs sm:text-sm">
+              <TabsTrigger value="profile" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 px-2 sm:px-3">
+                <Building2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">Empresa</span>
+                <span className="sm:hidden text-xs">Empresa</span>
+              </TabsTrigger>
+              <TabsTrigger value="whatsapp" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 px-2 sm:px-3">
+                <Smartphone className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">WhatsApp</span>
+                <span className="sm:hidden text-xs">WhatsApp</span>
+              </TabsTrigger>
+              <TabsTrigger value="ai-agent" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 px-2 sm:px-3">
+                <Bot className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">IA</span>
+                <span className="sm:hidden text-xs">IA</span>
+              </TabsTrigger>
+              <TabsTrigger value="reminders" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 px-2 sm:px-3">
+                <Bell className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">Lembretes</span>
+                <span className="sm:hidden text-xs">Lembretes</span>
+              </TabsTrigger>
+              <TabsTrigger value="birthdays" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 px-2 sm:px-3">
+                <Gift className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">Aniversários</span>
+                <span className="sm:hidden text-xs">Aniversários</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
         <TabsContent value="profile" className="space-y-6">
           <Card>
@@ -762,15 +769,15 @@ export default function CompanySettings() {
             <CardContent>
               <Form {...profileForm}>
                 <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <FormField
                       control={profileForm.control}
                       name="fantasyName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Nome Fantasia</FormLabel>
+                          <FormLabel className="text-sm font-medium">Nome Fantasia</FormLabel>
                           <FormControl>
-                            <Input placeholder="Nome da empresa" {...field} />
+                            <Input placeholder="Nome da empresa" className="mobile-input" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -782,18 +789,18 @@ export default function CompanySettings() {
                       <Input 
                         value={formatDocument(company.document)} 
                         disabled 
-                        className="bg-gray-50"
+                        className="bg-gray-50 mobile-input"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div>
                       <label className="text-sm font-medium text-gray-500">Email</label>
                       <Input 
                         value={company.email} 
                         disabled 
-                        className="bg-gray-50"
+                        className="bg-gray-50 mobile-input"
                       />
                     </div>
 
