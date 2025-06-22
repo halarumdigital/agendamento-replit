@@ -625,10 +625,13 @@ export default function CompanySettings() {
     },
     onSuccess: (data: any) => {
       toast({
-        title: "Mensagem de teste enviada",
-        description: `Mensagem enviada para ${testPhoneNumber}`,
+        title: data.success ? "Mensagem de teste enviada" : "Erro no teste",
+        description: data.message || `Mensagem enviada para ${testPhoneNumber}`,
+        variant: data.success ? "default" : "destructive",
       });
-      setTestPhoneNumber(""); // Limpar o campo após envio
+      if (data.success) {
+        setTestPhoneNumber(""); // Limpar o campo apenas se bem-sucedido
+      }
     },
     onError: (error: any) => {
       toast({
