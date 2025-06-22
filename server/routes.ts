@@ -5775,6 +5775,13 @@ const broadcastEvent = (eventData: any) => {
   app.get('/api/company/tour/status', isCompanyAuthenticated, async (req: any, res) => {
     try {
       const companyId = req.session.companyId;
+      
+      // First check if tour is enabled for this company
+      const company = await storage.getCompany(companyId);
+      if (!company || !company.tourEnabled) {
+        return res.json({ shouldShowTour: false, progress: null });
+      }
+      
       const progress = await (storage as any).getCompanyTourProgress(companyId);
       
       if (!progress) {

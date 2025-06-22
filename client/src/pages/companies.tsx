@@ -53,6 +53,7 @@ export default function Companies() {
       password: "",
       planId: undefined,
       isActive: true,
+      tourEnabled: true,
     },
   });
 
@@ -409,13 +410,24 @@ export default function Companies() {
                 </div>
               </div>
 
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="isActive"
-                  checked={editForm.watch("isActive")}
-                  onCheckedChange={(checked) => editForm.setValue("isActive", checked)}
-                />
-                <Label htmlFor="isActive">Empresa ativa</Label>
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="isActive"
+                    checked={editForm.watch("isActive")}
+                    onCheckedChange={(checked) => editForm.setValue("isActive", checked)}
+                  />
+                  <Label htmlFor="isActive">Empresa ativa</Label>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="tourEnabled"
+                    checked={editForm.watch("tourEnabled") ?? true}
+                    onCheckedChange={(checked) => editForm.setValue("tourEnabled", checked)}
+                  />
+                  <Label htmlFor="tourEnabled">Tour guiado habilitado</Label>
+                </div>
               </div>
 
               <div className="flex justify-end space-x-4">
@@ -620,6 +632,15 @@ export default function Companies() {
                     {form.formState.errors.planId.message}
                   </p>
                 )}
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="tourEnabled"
+                  checked={form.watch("tourEnabled") ?? true}
+                  onCheckedChange={(checked) => form.setValue("tourEnabled", checked)}
+                />
+                <Label htmlFor="tourEnabled">Tour guiado habilitado</Label>
               </div>
 
               <div className="flex justify-end space-x-4">

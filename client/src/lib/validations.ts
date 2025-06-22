@@ -94,6 +94,7 @@ export const companySchema = z.object({
   state: z.string().min(1, "Estado é obrigatório"),
   planId: z.number().min(1, "Plano é obrigatório"),
   isActive: z.boolean().default(true),
+  tourEnabled: z.boolean().default(true),
 });
 
 export const planSchema = z.object({

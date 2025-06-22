@@ -15,6 +15,7 @@ import { ensureStripeColumns } from "./ensure-stripe-columns";
 import { ensureAdminAlertsTables } from "./ensure-admin-alerts-tables";
 import { ensureSupportTables } from "./ensure-support-tables";
 import { ensureTourTables } from "./ensure-tour-tables";
+import { ensureTourEnabledColumn } from "./ensure-tour-enabled-column";
 import { db } from "./db";
 import path from "path";
 
@@ -91,6 +92,9 @@ app.use((req, res, next) => {
   
   // Ensure tour tables exist
   await ensureTourTables();
+  
+  // Ensure tour_enabled column exists
+  await ensureTourEnabledColumn();
   
   // Start campaign scheduler
   startCampaignScheduler();
