@@ -1563,23 +1563,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // For paid plans, create Stripe payment intent
+      // For all paid plans (including those with free trial), create Stripe subscription
       try {
-        const paymentIntent = await stripeService.createPaymentIntent({
-          amount: priceToUse,
-          currency: 'brl',
+        const setupIntent = await stripeService.createSetupIntent({
           metadata: {
             planId: planId.toString(),
             planName: plan.name,
-            billingPeriod: isAnnual ? 'annual' : 'monthly'
+            billingPeriod: isAnnual ? 'annual' : 'monthly',
+            amount: priceToUse.toString(),
+            freeDays: plan.free_days?.toString() || '0'
           }
         });
 
         res.json({
-          clientSecret: paymentIntent.client_secret,
+          clientSecret: setupIntent.client_secret,
           planName: plan.name,
           amount: priceToUse,
-          billingPeriod: isAnnual ? 'annual' : 'monthly'
+          billingPeriod: isAnnual ? 'annual' : 'monthly',
+          freeDays: plan.free_days || 0
         });
       } catch (stripeError) {
         console.error('Stripe error:', stripeError);

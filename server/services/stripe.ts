@@ -87,6 +87,26 @@ export class StripeService {
     return paymentIntent;
   }
 
+  async createSetupIntent(data: {
+    customerId?: string;
+    metadata?: Record<string, string>;
+  }) {
+    this.checkStripeAvailable();
+    console.log('🔄 Criando SetupIntent no Stripe para configurar método de pagamento');
+
+    const setupIntent = await stripe!.setupIntents.create({
+      customer: data.customerId,
+      metadata: data.metadata || {},
+      automatic_payment_methods: {
+        enabled: true,
+      },
+      usage: 'off_session',
+    });
+
+    console.log('✅ SetupIntent criado no Stripe:', setupIntent.id);
+    return setupIntent;
+  }
+
   async getSubscription(subscriptionId: string) {
     this.checkStripeAvailable();
     return await stripe!.subscriptions.retrieve(subscriptionId, {
