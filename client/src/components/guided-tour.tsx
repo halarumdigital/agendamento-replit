@@ -49,19 +49,36 @@ function TourContent({ tourSteps, closeTour }: { tourSteps: TourStep[], closeTou
     }, 100);
   };
 
+  // Cleanup function to remove all tour highlights
+  const cleanupAllHighlights = () => {
+    // Remove all existing tour highlights from any element
+    const allHighlighted = document.querySelectorAll('.tour-highlighted');
+    allHighlighted.forEach((el) => {
+      const element = el as HTMLElement;
+      element.style.removeProperty('box-shadow');
+      element.style.removeProperty('position');
+      element.style.removeProperty('z-index');
+      element.style.removeProperty('animation');
+      element.style.removeProperty('outline');
+      element.style.removeProperty('outline-offset');
+      element.style.removeProperty('border-radius');
+      element.style.removeProperty('transition');
+      element.classList.remove('tour-highlighted');
+    });
+  };
+
   // Highlight target element with click functionality
   useEffect(() => {
+    // Always cleanup first
+    cleanupAllHighlights();
+    
     if (tourSteps.length > 0 && currentStep < tourSteps.length) {
       const step = tourSteps[currentStep];
       const element = document.querySelector(step.targetElement) as HTMLElement;
       
       if (element) {
-        // Remove previous highlight and click handler
+        // Remove previous click handler if exists
         if (highlightedElement && clickHandler) {
-          highlightedElement.style.boxShadow = '';
-          highlightedElement.style.position = '';
-          highlightedElement.style.zIndex = '';
-          highlightedElement.style.animation = '';
           highlightedElement.removeEventListener('click', clickHandler, true);
         }
 
@@ -95,6 +112,7 @@ function TourContent({ tourSteps, closeTour }: { tourSteps: TourStep[], closeTou
         // Debug: Log when element is highlighted
         console.log('🎯 Element highlighted:', step.targetElement, element);
         console.log('🎯 Element bounds:', element.getBoundingClientRect());
+        console.log('🎯 Current step:', currentStep, 'of', tourSteps.length);
         
         // Add click listener to detect clicks
         const handler = (e: Event) => handleElementClick(e);
@@ -108,17 +126,13 @@ function TourContent({ tourSteps, closeTour }: { tourSteps: TourStep[], closeTou
     }
 
     return () => {
+      // Cleanup current element click handler
       if (highlightedElement && clickHandler) {
-        highlightedElement.style.removeProperty('box-shadow');
-        highlightedElement.style.removeProperty('position');
-        highlightedElement.style.removeProperty('z-index');
-        highlightedElement.style.removeProperty('animation');
-        highlightedElement.style.removeProperty('cursor');
-        highlightedElement.style.removeProperty('border-radius');
-        highlightedElement.style.removeProperty('background-color');
-        highlightedElement.style.removeProperty('color');
         highlightedElement.removeEventListener('click', clickHandler, true);
       }
+      
+      // Always cleanup all highlights on step change
+      cleanupAllHighlights();
       
       // Remove click indicator
       const existingIndicator = document.getElementById('tour-click-indicator');
@@ -127,6 +141,13 @@ function TourContent({ tourSteps, closeTour }: { tourSteps: TourStep[], closeTou
       }
     };
   }, [currentStep, tourSteps]);
+
+  // Cleanup on component unmount
+  useEffect(() => {
+    return () => {
+      cleanupAllHighlights();
+    };
+  }, []);
 
   const handleNext = () => {
     if (currentStep < tourSteps.length - 1) {
@@ -150,14 +171,7 @@ function TourContent({ tourSteps, closeTour }: { tourSteps: TourStep[], closeTou
     await updateProgress(tourSteps.length);
     
     // Clean up all tour visual elements
-    if (highlightedElement && clickHandler) {
-      highlightedElement.style.boxShadow = '';
-      highlightedElement.style.position = '';
-      highlightedElement.style.zIndex = '';
-      highlightedElement.style.animation = '';
-      highlightedElement.style.cursor = '';
-      highlightedElement.removeEventListener('click', clickHandler, true);
-    }
+    cleanupAllHighlights();
     
     // Remove click indicator
     const existingIndicator = document.getElementById('tour-click-indicator');
