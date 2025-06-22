@@ -16,35 +16,46 @@ export function useGuidedTour() {
   const [showTour, setShowTour] = useState(false);
 
   // Check if company has completed the tour
-  const { data: tourProgress, isLoading } = useQuery({
-    queryKey: ['/api/company/tour/progress'],
-    queryFn: () => fetch('/api/company/tour/progress').then(res => res.json()),
+  const { data: tourProgress, isLoading: tourProgressLoading } = useQuery({
+    queryKey: ['/api/company/tour/status'],
+    queryFn: () => fetch('/api/company/tour/status').then(res => res.json()),
     enabled: !!user
   });
 
   // Check if tour steps exist
-  const { data: tourSteps = [] } = useQuery({
+  const { data: tourSteps = [], isLoading: tourStepsLoading } = useQuery({
     queryKey: ['/api/company/tour/steps'],
     queryFn: () => fetch('/api/company/tour/steps').then(res => res.json()),
     enabled: !!user
   });
 
   useEffect(() => {
-    if (!isLoading && user && tourSteps.length > 0) {
-      // Show tour if:
-      // 1. No tour progress exists (first time user)
-      // 2. Tour exists but not completed
-      const shouldShowTour = !tourProgress || !tourProgress.completed;
+    console.log('🎯 Tour Debug:', {
+      user: !!user,
+      tourProgressLoading,
+      tourStepsLoading,
+      tourProgress,
+      tourSteps,
+      tourStepsLength: tourSteps?.length
+    });
+
+    if (!tourProgressLoading && !tourStepsLoading && user) {
+      // Show tour if there are steps and shouldShowTour is true
+      const hasSteps = Array.isArray(tourSteps) && tourSteps.length > 0;
+      const shouldShowTour = tourProgress?.shouldShowTour === true;
       
-      if (shouldShowTour) {
+      console.log('🎯 Tour Decision:', { hasSteps, shouldShowTour });
+      
+      if (hasSteps && shouldShowTour) {
         // Small delay to let the page load first
         const timer = setTimeout(() => {
+          console.log('🎯 Starting tour!');
           setShowTour(true);
         }, 1000);
         return () => clearTimeout(timer);
       }
     }
-  }, [isLoading, tourProgress, user, tourSteps]);
+  }, [tourProgressLoading, tourStepsLoading, tourProgress, user, tourSteps]);
 
   const closeTour = () => {
     setShowTour(false);
