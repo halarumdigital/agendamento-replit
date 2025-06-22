@@ -61,13 +61,14 @@ function TourContent({ tourSteps, closeTour }: { tourSteps: TourStep[], closeTou
           highlightedElement.removeEventListener('click', clickHandler, true);
         }
 
-        // Add color blinking highlight
-        element.style.boxShadow = '0 0 0 2px hsl(var(--primary)), 0 0 10px hsl(var(--primary) / 0.3)';
-        element.style.position = 'relative';
-        element.style.zIndex = '9999';
-        element.style.transition = 'all 0.3s ease';
-        element.style.animation = 'tour-color-blink 1.5s infinite';
-        element.style.cursor = 'pointer';
+        // Add color blinking highlight with strong visual effects
+        element.style.setProperty('box-shadow', '0 0 0 2px hsl(var(--primary)), 0 0 10px hsl(var(--primary) / 0.3)', 'important');
+        element.style.setProperty('position', 'relative', 'important');
+        element.style.setProperty('z-index', '9999', 'important');
+        element.style.setProperty('transition', 'all 0.3s ease', 'important');
+        element.style.setProperty('animation', 'tour-color-blink 1.5s infinite', 'important');
+        element.style.setProperty('cursor', 'pointer', 'important');
+        element.style.setProperty('border-radius', '4px', 'important');
         
         // Add click listener to detect clicks
         const handler = (e: Event) => handleElementClick(e);
@@ -82,11 +83,14 @@ function TourContent({ tourSteps, closeTour }: { tourSteps: TourStep[], closeTou
 
     return () => {
       if (highlightedElement && clickHandler) {
-        highlightedElement.style.boxShadow = '';
-        highlightedElement.style.position = '';
-        highlightedElement.style.zIndex = '';
-        highlightedElement.style.animation = '';
-        highlightedElement.style.cursor = '';
+        highlightedElement.style.removeProperty('box-shadow');
+        highlightedElement.style.removeProperty('position');
+        highlightedElement.style.removeProperty('z-index');
+        highlightedElement.style.removeProperty('animation');
+        highlightedElement.style.removeProperty('cursor');
+        highlightedElement.style.removeProperty('border-radius');
+        highlightedElement.style.removeProperty('background-color');
+        highlightedElement.style.removeProperty('color');
         highlightedElement.removeEventListener('click', clickHandler, true);
       }
       
