@@ -308,6 +308,8 @@ export default function DashboardAppointments() {
   // Update appointment status mutation
   const updateAppointmentStatusMutation = useMutation({
     mutationFn: async ({ appointmentId, status }: { appointmentId: number; status: string }) => {
+      console.log('🎯 Kanban API Call: Updating appointment', appointmentId, 'to status', status);
+      
       const response = await fetch(`/api/company/appointments/${appointmentId}`, {
         method: 'PATCH',
         headers: {
@@ -317,12 +319,17 @@ export default function DashboardAppointments() {
         body: JSON.stringify({ status }),
       });
       
+      console.log('🎯 Kanban API Response:', response.status, response.statusText);
+      
       if (!response.ok) {
         const error = await response.json();
+        console.error('🎯 Kanban API Error:', error);
         throw new Error(error.message || 'Erro ao atualizar status');
       }
       
-      return response.json();
+      const result = await response.json();
+      console.log('🎯 Kanban API Success:', result);
+      return result;
     },
     onMutate: async ({ appointmentId, status }) => {
       console.log('🎯 Kanban onMutate: Starting optimistic update for appointment', appointmentId, 'to status', status);
