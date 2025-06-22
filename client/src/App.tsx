@@ -5,7 +5,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import { useCompanyAuth } from "@/hooks/useCompanyAuth";
-import { useSystemBranding } from "@/hooks/use-system-branding";
 import AdminLayout from "@/components/layout/admin-layout";
 import CompanyLayout from "./components/layout/company-layout";
 import Landing from "@/pages/landing";
@@ -53,7 +52,6 @@ import StripeTest from "@/pages/stripe-test";
 import CompanySubscription from "@/pages/company-subscription";
 import ThankYou from "@/pages/thank-you";
 import EmbedPlans from "@/pages/embed-plans";
-
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -346,255 +344,13 @@ function Router() {
   );
 }
 
-function AppRouter() {
-  const { user: admin, isLoading: isAdminLoading, isAuthenticated: isAdminAuthenticated } = useAuth();
-  const { company, isLoading: isCompanyLoading, isAuthenticated: isCompanyAuthenticated } = useCompanyAuth();
-
-  return (
-    <Switch>
-      <Route path="/">
-        <Landing />
-      </Route>
-      <Route path="/login">
-        <Login />
-      </Route>
-      <Route path="/company-login">
-        <CompanyLogin />
-      </Route>
-      <Route path="/company">
-        {isCompanyLoading ? (
-          <div className="min-h-screen flex items-center justify-center">
-            <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-          </div>
-        ) : isCompanyAuthenticated ? (
-          <CompanyLayout><CompanyDashboard /></CompanyLayout>
-        ) : (
-          <CompanyLogin />
-        )}
-      </Route>
-      <Route path="/company/assinatura">
-        <CompanyLayout>
-          <CompanySubscriptionManagement />
-        </CompanyLayout>
-      </Route>
-      <Route path="/company/services">
-        <CompanyLayout>
-          <CompanyServices />
-        </CompanyLayout>
-      </Route>
-      <Route path="/company/professionals">
-        <CompanyLayout>
-          <CompanyProfessionals />
-        </CompanyLayout>
-      </Route>
-      <Route path="/company/clients">
-        <CompanyLayout>
-          <CompanyClients />
-        </CompanyLayout>
-      </Route>
-      <Route path="/company/settings">
-        <CompanyLayout>
-          <CompanySettings />
-        </CompanyLayout>
-      </Route>
-      <Route path="/company/reminders">
-        <CompanyLayout>
-          <CompanyReminders />
-        </CompanyLayout>
-      </Route>
-      <Route path="/company/reviews">
-        <CompanyLayout>
-          <CompanyReviews />
-        </CompanyLayout>
-      </Route>
-      <Route path="/company/tasks">
-        <CompanyLayout>
-          <CompanyTasks />
-        </CompanyLayout>
-      </Route>
-      <Route path="/company/points-program">
-        <CompanyLayout>
-          <CompanyPointsProgram />
-        </CompanyLayout>
-      </Route>
-      <Route path="/company/fidelidade">
-        <CompanyLayout>
-          <CompanyLoyalty />
-        </CompanyLayout>
-      </Route>
-      <Route path="/company/inventory">
-        <CompanyLayout>
-          <CompanyInventory />
-        </CompanyLayout>
-      </Route>
-      <Route path="/company/messages">
-        <CompanyLayout>
-          <CompanyMessages />
-        </CompanyLayout>
-      </Route>
-      <Route path="/company/coupons">
-        <CompanyLayout>
-          <CompanyCoupons />
-        </CompanyLayout>
-      </Route>
-      <Route path="/company/financial">
-        <CompanyLayout>
-          <CompanyFinancial />
-        </CompanyLayout>
-      </Route>
-      <Route path="/company/reports">
-        <CompanyLayout>
-          <CompanyReports />
-        </CompanyLayout>
-      </Route>
-      <Route path="/company/support">
-        <CompanyLayout>
-          <CompanySupport />
-        </CompanyLayout>
-      </Route>
-      <Route path="/company/appointments">
-        <CompanyLayout>
-          <DashboardAppointments />
-        </CompanyLayout>
-      </Route>
-
-      {/* Public Routes */}
-      <Route path="/planos">
-        <Subscription />
-      </Route>
-      <Route path="/embed/plans">
-        <EmbedPlans />
-      </Route>
-      <Route path="/obrigado">
-        <ThankYou />
-      </Route>
-      <Route path="/review/:token">
-        <PublicReview />
-      </Route>
-
-      {/* Admin Routes */}
-      <Route path="/admin">
-        {isAdminLoading ? (
-          <div className="min-h-screen flex items-center justify-center">
-            <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-          </div>
-        ) : isAdminAuthenticated ? (
-          <AdminLayout><Dashboard /></AdminLayout>
-        ) : (
-          <Login />
-        )}
-      </Route>
-      
-      {/* Protected Admin Routes */}
-      {!isAdminLoading && (
-        <>
-          <Route path="/admin/companies">
-            <AdminLayout>
-              <Companies />
-            </AdminLayout>
-          </Route>
-          <Route path="/administrador/empresas">
-            <AdminLayout>
-              <Companies />
-            </AdminLayout>
-          </Route>
-          <Route path="/admin/plans">
-            <AdminLayout>
-              <Plans />
-            </AdminLayout>
-          </Route>
-          <Route path="/administrador/planos">
-            <AdminLayout>
-              <Plans />
-            </AdminLayout>
-          </Route>
-          <Route path="/admin/status">
-            <AdminLayout>
-              <Status />
-            </AdminLayout>
-          </Route>
-          <Route path="/administrador/status">
-            <AdminLayout>
-              <Status />
-            </AdminLayout>
-          </Route>
-          <Route path="/admin/stripe/subscriptions">
-            {isAdminAuthenticated ? (
-              <AdminLayout>
-                <AdminSubscriptions />
-              </AdminLayout>
-            ) : (
-              <Login />
-            )}
-          </Route>
-          <Route path="/administrador/subscriptions">
-            {isAdminAuthenticated ? (
-              <AdminLayout>
-                <AdminSubscriptionTest />
-              </AdminLayout>
-            ) : (
-              <Login />
-            )}
-          </Route>
-          <Route path="/administrador/suporte">
-            {isAdminAuthenticated ? (
-              <AdminLayout>
-                <AdminSupport />
-              </AdminLayout>
-            ) : (
-              <Login />
-            )}
-          </Route>
-          <Route path="/administrador/tour-config">
-            {isAdminAuthenticated ? (
-              <AdminLayout>
-                <AdminTourConfig />
-              </AdminLayout>
-            ) : (
-              <Login />
-            )}
-          </Route>
-          <Route path="/administrador/configuracoes">
-            {isAdminAuthenticated ? (
-              <AdminLayout>
-                <SettingsPage />
-              </AdminLayout>
-            ) : (
-              <Login />
-            )}
-          </Route>
-          <Route path="/administrador/plans">
-            {isAdminAuthenticated ? (
-              <AdminLayout>
-                <AdminStripePlans />
-              </AdminLayout>
-            ) : (
-              <Login />
-            )}
-          </Route>
-        </>
-      )}
-      <Route component={NotFound} />
-    </Switch>
-  );
-}
-
-function AppWithBranding() {
-  // Hook para atualizar título e favicon baseado nas configurações
-  useSystemBranding();
-  
-  return (
-    <TooltipProvider>
-      <Toaster />
-      <AppRouter />
-    </TooltipProvider>
-  );
-}
-
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AppWithBranding />
+      <TooltipProvider>
+        <Toaster />
+        <Router />
+      </TooltipProvider>
     </QueryClientProvider>
   );
 }
