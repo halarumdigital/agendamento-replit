@@ -19,6 +19,7 @@ import { usePlan } from "@/hooks/use-plan";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Lock } from "lucide-react";
 import { ProfessionalServiceHistory } from "@/components/professional-service-history";
+import { useGlobalTheme } from "@/hooks/use-global-theme";
 
 interface Professional {
   id: number;
@@ -62,6 +63,7 @@ export default function CompanyProfessionals() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { canAddProfessional, getProfessionalsLimitInfo } = usePlan();
+  const globalSettings = useGlobalTheme();
 
   // Schedule management state
   const [schedules, setSchedules] = useState(() => {
@@ -314,6 +316,8 @@ export default function CompanyProfessionals() {
               variant={viewMode === 'grid' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setViewMode('grid')}
+              className={viewMode === 'grid' ? 'text-white' : ''}
+              style={viewMode === 'grid' ? { backgroundColor: globalSettings?.primaryColor || '#5e6d8d' } : {}}
             >
               <Grid className="h-4 w-4" />
             </Button>
@@ -321,13 +325,19 @@ export default function CompanyProfessionals() {
               variant={viewMode === 'list' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setViewMode('list')}
+              className={viewMode === 'list' ? 'text-white' : ''}
+              style={viewMode === 'list' ? { backgroundColor: globalSettings?.primaryColor || '#5e6d8d' } : {}}
             >
               <List className="h-4 w-4" />
             </Button>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button onClick={openCreateDialog} className="bg-purple-600 hover:bg-purple-700">
+              <Button 
+                onClick={openCreateDialog} 
+                className="text-white"
+                style={{ backgroundColor: globalSettings?.primaryColor || '#5e6d8d' }}
+              >
                 <Plus className="mr-2 h-4 w-4" />
                 Novo Profissional
               </Button>
