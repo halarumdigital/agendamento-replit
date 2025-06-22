@@ -3,9 +3,19 @@ import { Link, useLocation } from 'wouter';
 import { CheckCircle, ArrowRight, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useQuery } from '@tanstack/react-query';
+
+interface PublicSettings {
+  logoUrl: string | null;
+  systemName: string | null;
+}
 
 export default function ThankYou() {
   const [, setLocation] = useLocation();
+
+  const { data: settings } = useQuery<PublicSettings>({
+    queryKey: ["/api/public-settings"],
+  });
 
   useEffect(() => {
     // Redirect to home after 60 seconds if user doesn't take action
@@ -20,10 +30,21 @@ export default function ThankYou() {
     <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center pb-4">
-          <div className="mx-auto mb-4 w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center">
-            <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
+          {/* Logo */}
+          {settings?.logoUrl && (
+            <div className="mx-auto mb-6">
+              <img 
+                src={settings.logoUrl} 
+                alt={settings.systemName || "Logo"} 
+                className="h-16 w-auto mx-auto"
+              />
+            </div>
+          )}
+          
+          <div className="mx-auto mb-4 w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+            <CheckCircle className="w-8 h-8 text-primary" />
           </div>
-          <CardTitle className="text-2xl font-bold text-green-700 dark:text-green-300">
+          <CardTitle className="text-2xl font-bold text-primary">
             Pagamento Confirmado!
           </CardTitle>
         </CardHeader>
@@ -40,7 +61,7 @@ export default function ThankYou() {
 
           <div className="space-y-3">
             <Link href="/company/login">
-              <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
+              <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
                 <Building2 className="w-4 h-4 mr-2" />
                 Clique aqui para entrar no seu portal
                 <ArrowRight className="w-4 h-4 ml-2" />
