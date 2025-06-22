@@ -256,15 +256,12 @@
 /* Tour animations */
 @keyframes tour-color-blink {
   0%, 100% {
-    background-color: transparent !important;
-    color: inherit !important;
-    box-shadow: 0 0 0 4px hsl(294, 72%, 54%), 0 0 20px hsl(294, 72%, 54%, 0.6) !important;
+    background-color: var(--tour-color) !important;
+    opacity: 0.7 !important;
   }
   50% {
-    background-color: hsl(294, 72%, 54%) !important;
-    color: hsl(0, 0%, 100%) !important;
-    box-shadow: 0 0 0 6px hsl(294, 72%, 54%), 0 0 30px hsl(294, 72%, 54%, 0.9) !important;
-    transform: scale(1.03) !important;
+    background-color: var(--tour-color) !important;
+    opacity: 1 !important;
   }
 }
 
@@ -275,18 +272,7 @@
   animation: tour-color-blink 1.2s infinite !important;
 }
 
-.tour-highlighted::before {
-  content: '' !important;
-  position: absolute !important;
-  top: -8px !important;
-  left: -8px !important;
-  right: -8px !important;
-  bottom: -8px !important;
-  border: 3px solid hsl(294, 72%, 54%) !important;
-  border-radius: 8px !important;
-  z-index: -1 !important;
-  animation: tour-color-blink 1.2s infinite !important;
-}
+
 
 .tour-click-indicator {
   position: fixed;

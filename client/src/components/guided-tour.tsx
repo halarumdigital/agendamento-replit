@@ -55,12 +55,10 @@ function TourContent({ tourSteps, closeTour }: { tourSteps: TourStep[], closeTou
     const allHighlighted = document.querySelectorAll('.tour-highlighted');
     allHighlighted.forEach((el) => {
       const element = el as HTMLElement;
-      element.style.removeProperty('box-shadow');
+      element.style.removeProperty('background-color');
       element.style.removeProperty('position');
       element.style.removeProperty('z-index');
       element.style.removeProperty('animation');
-      element.style.removeProperty('outline');
-      element.style.removeProperty('outline-offset');
       element.style.removeProperty('border-radius');
       element.style.removeProperty('transition');
       element.classList.remove('tour-highlighted');
@@ -94,14 +92,12 @@ function TourContent({ tourSteps, closeTour }: { tourSteps: TourStep[], closeTou
         element.style.removeProperty('outline-offset');
         element.classList.remove('tour-highlighted');
         
-        // Add strong highlighting with better visibility
-        element.style.setProperty('box-shadow', `0 0 0 3px ${tourColor}, 0 0 15px ${tourColor}50, inset 0 0 0 2px rgba(255,255,255,0.9)`, 'important');
+        // Apply only background color highlighting
+        element.style.setProperty('background-color', tourColor, 'important');
         element.style.setProperty('position', 'relative', 'important');
         element.style.setProperty('z-index', '10000', 'important');
         element.style.setProperty('border-radius', '8px', 'important');
         element.style.setProperty('transition', 'all 0.3s ease', 'important');
-        element.style.setProperty('outline', `2px solid ${tourColor}`, 'important');
-        element.style.setProperty('outline-offset', '1px', 'important');
         
         // Add pulsing animation
         element.style.setProperty('animation', 'tour-color-blink 1.5s infinite ease-in-out', 'important');
