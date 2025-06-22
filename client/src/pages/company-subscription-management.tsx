@@ -155,33 +155,29 @@ function PaymentForm({
             <div className="space-y-4">
               <div className="mb-4 p-2 bg-blue-50 border border-blue-200 rounded text-xs">
                 Debug: Stripe={stripe ? 'OK' : 'ERRO'}, Elements={elements ? 'OK' : 'ERRO'}
+                <br />ClientSecret: {paymentData?.clientSecret ? 'OK' : 'ERRO'}
               </div>
               
-              <div className="payment-element-container">
-                <PaymentElement
-                  id="payment-element"
-                  options={{
-                    layout: {
-                      type: 'tabs',
-                      defaultCollapsed: false,
-                      radios: false,
-                      spacedAccordionItems: false
-                    }
-                  }}
-                  onReady={() => {
-                    console.log('✅ PaymentElement ready');
-                  }}
-                  onLoadError={(error) => {
-                    console.error('❌ PaymentElement load error:', error);
-                  }}
-                  onChange={(event) => {
-                    console.log('🔄 PaymentElement change:', event);
-                    if (event.complete) {
-                      console.log('🎯 Payment form completed');
-                    }
-                  }}
-                />
-              </div>
+              {paymentData?.clientSecret ? (
+                <div className="payment-element-container" style={{ minHeight: '200px' }}>
+                  <PaymentElement
+                    options={{}}
+                    onReady={() => {
+                      console.log('✅ PaymentElement ready and mounted');
+                    }}
+                    onLoadError={(error) => {
+                      console.error('❌ PaymentElement load error:', error);
+                    }}
+                    onChange={(event) => {
+                      console.log('🔄 PaymentElement change:', event);
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">Aguardando dados de pagamento...</p>
+                </div>
+              )}
             </div>
           )}
         </div>
