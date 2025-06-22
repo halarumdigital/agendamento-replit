@@ -141,32 +141,31 @@ function PaymentForm({
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="min-h-[200px] border rounded p-4">
-          {!stripe ? (
-            <div className="flex items-center justify-center h-32">
+        <div className="min-h-[300px] border rounded p-4">
+          {!stripe || !elements ? (
+            <div className="flex items-center justify-center h-64">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-                <p className="text-sm text-muted-foreground">Carregando Stripe...</p>
-              </div>
-            </div>
-          ) : !elements ? (
-            <div className="flex items-center justify-center h-32">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-                <p className="text-sm text-muted-foreground">Carregando Elements...</p>
+                <p className="text-sm text-muted-foreground">
+                  {!stripe ? 'Carregando Stripe...' : 'Carregando formulário de pagamento...'}
+                </p>
               </div>
             </div>
           ) : (
-            <div>
+            <div className="space-y-4">
               <div className="mb-4 p-2 bg-blue-50 border border-blue-200 rounded text-xs">
                 Debug: Stripe={stripe ? 'OK' : 'ERRO'}, Elements={elements ? 'OK' : 'ERRO'}
               </div>
-              <div className="space-y-4">
+              
+              <div className="payment-element-container">
                 <PaymentElement
+                  id="payment-element"
                   options={{
-                    layout: 'tabs',
-                    fields: {
-                      billingDetails: 'auto'
+                    layout: {
+                      type: 'tabs',
+                      defaultCollapsed: false,
+                      radios: false,
+                      spacedAccordionItems: false
                     }
                   }}
                   onReady={() => {
@@ -177,6 +176,9 @@ function PaymentForm({
                   }}
                   onChange={(event) => {
                     console.log('🔄 PaymentElement change:', event);
+                    if (event.complete) {
+                      console.log('🎯 Payment form completed');
+                    }
                   }}
                 />
               </div>
