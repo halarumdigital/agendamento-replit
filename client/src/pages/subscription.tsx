@@ -137,16 +137,8 @@ export default function Subscription() {
   });
 
   const handleSelectPlan = (plan: Plan) => {
-    // Store selected plan in localStorage to access after registration
-    localStorage.setItem('selectedPlan', JSON.stringify({ 
-      id: plan.id, 
-      name: plan.name, 
-      price: plan.price,
-      annualPrice: plan.annualPrice,
-      isAnnual 
-    }));
-    // Redirect to registration page
-    window.location.href = '/cadastro';
+    setSelectedPlan(plan);
+    createSubscriptionMutation.mutate({ planId: plan.id, isAnnual });
   };
 
   const handlePaymentSuccess = () => {
