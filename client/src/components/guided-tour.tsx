@@ -68,22 +68,33 @@ function TourContent({ tourSteps, closeTour }: { tourSteps: TourStep[], closeTou
         // Set dynamic tour color in CSS variable
         document.documentElement.style.setProperty('--tour-color', tourColor);
         
-        // Add strong color blinking highlight using CSS variables
-        element.style.setProperty('box-shadow', `0 0 0 4px ${tourColor}, 0 0 20px ${tourColor}60`, 'important');
-        element.style.setProperty('position', 'relative', 'important');
-        element.style.setProperty('z-index', '9999', 'important');
-        element.style.setProperty('transition', 'all 0.3s ease', 'important');
-        element.style.setProperty('animation', 'tour-color-blink 1.2s infinite', 'important');
-        element.style.setProperty('cursor', 'pointer', 'important');
-        element.style.setProperty('border-radius', '6px', 'important');
-        element.style.setProperty('outline', `2px solid ${tourColor}`, 'important');
-        element.style.setProperty('outline-offset', '2px', 'important');
+        // Clear any existing styles first
+        element.style.removeProperty('box-shadow');
+        element.style.removeProperty('position');
+        element.style.removeProperty('z-index');
+        element.style.removeProperty('animation');
+        element.style.removeProperty('outline');
+        element.style.removeProperty('outline-offset');
+        element.classList.remove('tour-highlighted');
         
-        // Add a CSS class for additional styling
+        // Add strong highlighting with better visibility
+        element.style.setProperty('box-shadow', `0 0 0 3px ${tourColor}, 0 0 15px ${tourColor}50, inset 0 0 0 2px rgba(255,255,255,0.9)`, 'important');
+        element.style.setProperty('position', 'relative', 'important');
+        element.style.setProperty('z-index', '10000', 'important');
+        element.style.setProperty('border-radius', '8px', 'important');
+        element.style.setProperty('transition', 'all 0.3s ease', 'important');
+        element.style.setProperty('outline', `2px solid ${tourColor}`, 'important');
+        element.style.setProperty('outline-offset', '1px', 'important');
+        
+        // Add pulsing animation
+        element.style.setProperty('animation', 'tour-color-blink 1.5s infinite ease-in-out', 'important');
+        
+        // Add CSS class for additional styling
         element.classList.add('tour-highlighted');
         
         // Debug: Log when element is highlighted
         console.log('🎯 Element highlighted:', step.targetElement, element);
+        console.log('🎯 Element bounds:', element.getBoundingClientRect());
         
         // Add click listener to detect clicks
         const handler = (e: Event) => handleElementClick(e);
