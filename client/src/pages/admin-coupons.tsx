@@ -188,7 +188,6 @@ export default function AdminCoupons() {
         expiresAt: "",
         maxUses: 1,
         isActive: true,
-        companyId: getCurrentCompanyId(),
       });
     }
     setIsDialogOpen(true);

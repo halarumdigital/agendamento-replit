@@ -142,6 +142,8 @@ This is a comprehensive business management system built with Express.js and MyS
 ## Changelog
 ```
 Changelog:
+- June 22, 2025. COMPLETED: Company registration form fixed - added missing mandatory plan selection field, corrected form validation, and resolved non-functional "Cadastrar Empresa" button
+- June 22, 2025. COMPLETED: Tour system MySQL compatibility fixes - removed unsupported .returning() methods, corrected API endpoint from /progress to /status, added comprehensive debugging, and ensured proper first-time user tour display
 - June 22, 2025. COMPLETED: Full guided tour system implementation - created admin configuration panel for tour steps, company-side interactive tour component with step navigation and overlay, automatic first-time user detection, tour progress tracking, and database schema with tour_steps and company_tour_progress tables
 - June 21, 2025. COMPLETED Evolution API v2.3.0 integration with QR code functionality - fixed WhatsApp instance creation and added working QR code generation using /instance/connect endpoint with proper payload structure
 - June 21, 2025. Updated WhatsApp instance deletion to use correct Evolution API endpoint - fixed DELETE /instance/delete/{instanceName} to use base URL without /api/ prefix

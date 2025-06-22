@@ -135,17 +135,16 @@ export default function Sidebar({ systemName = "AdminPro", logoUrl }: SidebarPro
                   key={item.name} 
                   href={item.href}
                   onClick={() => setIsMobileOpen(false)}
-                >
-                  <a className={`
+                  className={`
                     flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors
                     ${active 
                       ? 'text-white bg-[var(--primary-color)]' 
                       : 'text-slate-600 hover:text-slate-800 hover:bg-slate-100'
                     }
-                  `}>
-                    <Icon className="w-5 h-5 mr-3" />
-                    {item.name}
-                  </a>
+                  `}
+                >
+                  <Icon className="w-5 h-5 mr-3" />
+                  {item.name}
                 </Link>
               );
             })}
