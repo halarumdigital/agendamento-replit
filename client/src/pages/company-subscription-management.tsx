@@ -161,20 +161,25 @@ function PaymentForm({
               <div className="mb-4 p-2 bg-blue-50 border border-blue-200 rounded text-xs">
                 Debug: Stripe={stripe ? 'OK' : 'ERRO'}, Elements={elements ? 'OK' : 'ERRO'}
               </div>
-              <PaymentElement
-                options={{
-                  layout: 'tabs'
-                }}
-                onReady={() => {
-                  console.log('✅ PaymentElement ready');
-                }}
-                onLoadError={(error) => {
-                  console.error('❌ PaymentElement load error:', error);
-                }}
-                onChange={(event) => {
-                  console.log('🔄 PaymentElement change:', event);
-                }}
-              />
+              <div className="space-y-4">
+                <PaymentElement
+                  options={{
+                    layout: 'tabs',
+                    fields: {
+                      billingDetails: 'auto'
+                    }
+                  }}
+                  onReady={() => {
+                    console.log('✅ PaymentElement ready');
+                  }}
+                  onLoadError={(error) => {
+                    console.error('❌ PaymentElement load error:', error);
+                  }}
+                  onChange={(event) => {
+                    console.log('🔄 PaymentElement change:', event);
+                  }}
+                />
+              </div>
             </div>
           )}
         </div>
