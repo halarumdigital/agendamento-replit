@@ -10,7 +10,7 @@ interface GlobalSettings {
 
 export function useGlobalTheme() {
   const { data: settings } = useQuery<GlobalSettings>({
-    queryKey: ['/api/settings'],
+    queryKey: ['/api/public-settings'],
     refetchOnWindowFocus: false,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });

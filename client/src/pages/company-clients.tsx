@@ -211,7 +211,7 @@ export default function CompanyClients() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { globalSettings } = useGlobalTheme();
+  const globalSettings = useGlobalTheme();
 
   const { data: clients = [], isLoading } = useQuery<Client[]>({
     queryKey: ['/api/company/clients'],
