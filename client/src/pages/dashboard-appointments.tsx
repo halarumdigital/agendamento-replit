@@ -1751,7 +1751,7 @@ export default function DashboardAppointments() {
                                           <Button
                                             variant="ghost"
                                             size="sm"
-                                            className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            className="h-6 w-6 p-0 opacity-100 transition-opacity z-50 relative bg-red-500"
                                             onClick={(e) => {
                                               console.log('✏️ Edit button clicked in Kanban for appointment:', appointment.id);
                                               e.stopPropagation();
