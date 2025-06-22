@@ -18,7 +18,8 @@ import {
   Bell,
   Ticket,
   MessageSquare,
-  MapPin
+  MapPin,
+  Code
 } from "lucide-react";
 import { useState } from "react";
 
@@ -39,6 +40,7 @@ export default function Sidebar({ systemName = "AdminPro", logoUrl }: SidebarPro
     { name: "Dashboard", href: "/administrador", icon: BarChart3 },
     { name: "Empresas", href: "/administrador/empresas", icon: Building },
     { name: "Planos", href: "/administrador/planos", icon: Tags },
+    { name: "Embed de Planos", href: "/administrador/embed-planos", icon: Code },
     { name: "Stripe Planos", href: "/administrador/stripe-planos", icon: CreditCard },
     { name: "Cupons", href: "/administrador/cupons", icon: Ticket },
     { name: "Assinaturas", href: "/administrador/assinaturas", icon: CreditCard },

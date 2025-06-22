@@ -39,6 +39,7 @@ import AdminAlerts from "@/pages/admin-alerts";
 import AdminCoupons from "@/pages/admin-coupons";
 import AdminSupport from "@/pages/admin-support";
 import AdminTourConfig from "@/pages/admin-tour-config";
+import AdminPlanEmbed from "@/pages/admin-plan-embed";
 import SettingsPage from "@/pages/settings";
 import Status from "@/pages/status";
 import PublicReview from "@/pages/public-review";
@@ -49,6 +50,7 @@ import SubscriptionTest from "@/pages/subscription-test";
 import StripeTest from "@/pages/stripe-test";
 import CompanySubscription from "@/pages/company-subscription";
 import ThankYou from "@/pages/thank-you";
+import EmbedPlans from "@/pages/embed-plans";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -164,6 +166,7 @@ function Router() {
       {/* Public Routes (no authentication required) */}
       <Route path="/assinatura" component={Subscription} />
       <Route path="/review/:token" component={PublicReview} />
+      <Route path="/embed/plans" component={EmbedPlans} />
       
       {/* Admin Login Routes */}
       <Route path="/login" component={Login} />
@@ -314,6 +317,15 @@ function Router() {
             {isAdminAuthenticated ? (
               <AdminLayout>
                 <AdminTourConfig />
+              </AdminLayout>
+            ) : (
+              <Login />
+            )}
+          </Route>
+          <Route path="/administrador/embed-planos">
+            {isAdminAuthenticated ? (
+              <AdminLayout>
+                <AdminPlanEmbed />
               </AdminLayout>
             ) : (
               <Login />
