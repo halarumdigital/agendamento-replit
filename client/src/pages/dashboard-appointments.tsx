@@ -98,6 +98,7 @@ export default function DashboardAppointments() {
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [isAppointmentDetailsOpen, setIsAppointmentDetailsOpen] = useState(false);
+  const [editFormKey, setEditFormKey] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   
   // Pagination states
@@ -188,6 +189,13 @@ export default function DashboardAppointments() {
       notes: "",
       confirmed: false,
     },
+    mode: 'onChange',
+    resetOptions: {
+      keepDirtyValues: false,
+      keepErrors: false,
+      keepDirty: false,
+      keepValues: false,
+    }
   });
 
   const createClientMutation = useMutation({
@@ -611,6 +619,9 @@ export default function DashboardAppointments() {
       // Reset states first
       setEditingAppointment(null);
       setIsEditAppointmentOpen(false);
+      
+      // Force form recreation by incrementing key
+      setEditFormKey(prev => prev + 1);
       
       // Clear form completely
       editForm.reset({
@@ -1852,7 +1863,7 @@ export default function DashboardAppointments() {
           <DialogHeader>
             <DialogTitle>Editar Agendamento</DialogTitle>
           </DialogHeader>
-          <Form {...editForm}>
+          <Form {...editForm} key={editFormKey}>
             <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
               <FormField
                 control={editForm.control}
