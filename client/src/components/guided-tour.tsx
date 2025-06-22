@@ -163,8 +163,8 @@ function TourContent({ tourSteps, closeTour }: { tourSteps: TourStep[], closeTou
   }
 
   return (
-    <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-[9999] p-4 pointer-events-none">
-      <Card className="w-full max-w-md pointer-events-auto">
+    <div className="fixed bottom-4 right-4 z-[9999] pointer-events-none">
+      <Card className="w-80 pointer-events-auto shadow-2xl border-2 border-blue-500/20">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-lg font-semibold">
             Tour Guiado ({currentStep + 1}/{tourSteps.length})
