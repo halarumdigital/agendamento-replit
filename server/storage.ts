@@ -1214,9 +1214,28 @@ export class DatabaseStorage implements IStorage {
     try {
       console.log('💾 Storage: Updating appointment ID:', id, 'with data:', JSON.stringify(appointmentData, null, 2));
       
-      const result = await db.update(appointments)
-        .set({ ...appointmentData, updatedAt: new Date() })
-        .where(eq(appointments.id, id));
+      // Retry logic for database connection issues
+      let retries = 3;
+      let result;
+      
+      while (retries > 0) {
+        try {
+          result = await db.update(appointments)
+            .set({ ...appointmentData, updatedAt: new Date() })
+            .where(eq(appointments.id, id));
+          break;
+        } catch (dbError: any) {
+          console.log(`💾 Storage: Update attempt failed, retries left: ${retries - 1}`, dbError.message);
+          retries--;
+          
+          if (retries === 0) {
+            throw dbError;
+          }
+          
+          // Wait 100ms before retry
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      }
       
       console.log('💾 Storage: Update result:', result);
       

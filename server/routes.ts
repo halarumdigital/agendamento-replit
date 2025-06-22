@@ -3164,6 +3164,40 @@ INSTRUÇÕES OBRIGATÓRIAS:
     }
   });
 
+  // Dedicated endpoint for status updates (lightweight for Kanban)
+  app.patch('/api/company/appointments/:id/status', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const id = parseInt(req.params.id);
+      const { status } = req.body;
+      
+      console.log('🎯 Kanban: Updating appointment', id, 'status to:', status);
+      
+      if (!status) {
+        return res.status(400).json({ message: "Status é obrigatório" });
+      }
+
+      // Direct database update for speed
+      await db.update(schema.appointments)
+        .set({ 
+          status: status,
+          updatedAt: new Date() 
+        })
+        .where(eq(schema.appointments.id, id));
+      
+      console.log('🎯 Kanban: Status updated successfully');
+      res.json({ id, status, success: true });
+      
+    } catch (error) {
+      console.error("🎯 Kanban: Error updating status:", error);
+      res.status(500).json({ message: "Erro ao atualizar status", error: error.message });
+    }
+  });
+
   app.patch('/api/company/appointments/:id', async (req: any, res) => {
     try {
       const companyId = req.session.companyId;

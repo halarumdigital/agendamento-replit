@@ -310,26 +310,40 @@ export default function DashboardAppointments() {
     mutationFn: async ({ appointmentId, status }: { appointmentId: number; status: string }) => {
       console.log('🎯 Kanban API Call: Updating appointment', appointmentId, 'to status', status);
       
-      const response = await fetch(`/api/company/appointments/${appointmentId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ status }),
-      });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
       
-      console.log('🎯 Kanban API Response:', response.status, response.statusText);
-      
-      if (!response.ok) {
-        const error = await response.json();
-        console.error('🎯 Kanban API Error:', error);
-        throw new Error(error.message || 'Erro ao atualizar status');
+      try {
+        const response = await fetch(`/api/company/appointments/${appointmentId}/status`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({ status }),
+          signal: controller.signal,
+        });
+        
+        clearTimeout(timeoutId);
+        console.log('🎯 Kanban API Response:', response.status, response.statusText);
+        
+        if (!response.ok) {
+          const error = await response.json().catch(() => ({ message: 'Erro desconhecido' }));
+          console.error('🎯 Kanban API Error:', error);
+          throw new Error(error.message || 'Erro ao atualizar status');
+        }
+        
+        const result = await response.json();
+        console.log('🎯 Kanban API Success:', result);
+        return result;
+      } catch (error: any) {
+        clearTimeout(timeoutId);
+        if (error.name === 'AbortError') {
+          console.error('🎯 Kanban API Timeout');
+          throw new Error('Timeout ao atualizar status - tente novamente');
+        }
+        throw error;
       }
-      
-      const result = await response.json();
-      console.log('🎯 Kanban API Success:', result);
-      return result;
     },
     onMutate: async ({ appointmentId, status }) => {
       console.log('🎯 Kanban onMutate: Starting optimistic update for appointment', appointmentId, 'to status', status);
