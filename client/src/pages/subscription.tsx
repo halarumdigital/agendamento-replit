@@ -114,7 +114,7 @@ function PaymentForm({ onSuccess, onError }: { onSuccess: () => void; onError: (
 
     setLoading(true);
 
-    const { error } = await stripe.confirmPayment({
+    const { error } = await stripe.confirmSetup({
       elements,
       confirmParams: {
         return_url: window.location.origin + '/company/dashboard',
