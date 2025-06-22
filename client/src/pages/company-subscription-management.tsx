@@ -149,14 +149,39 @@ function PaymentForm({
                 <p className="text-sm text-muted-foreground">Carregando Stripe...</p>
               </div>
             </div>
+          ) : !elements ? (
+            <div className="flex items-center justify-center h-32">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+                <p className="text-sm text-muted-foreground">Carregando Elements...</p>
+              </div>
+            </div>
           ) : (
-            <PaymentElement
-              options={{
-                layout: 'tabs'
-              }}
-              onReady={() => console.log('PaymentElement ready')}
-              onLoadError={(error) => console.error('PaymentElement load error:', error)}
-            />
+            <div>
+              <div className="mb-4 p-2 bg-blue-50 border border-blue-200 rounded text-xs">
+                Debug: Stripe={stripe ? 'OK' : 'ERRO'}, Elements={elements ? 'OK' : 'ERRO'}
+              </div>
+              <PaymentElement
+                options={{
+                  layout: 'tabs',
+                  fields: {
+                    billingDetails: {
+                      name: 'auto',
+                      email: 'auto'
+                    }
+                  }
+                }}
+                onReady={() => {
+                  console.log('✅ PaymentElement ready');
+                }}
+                onLoadError={(error) => {
+                  console.error('❌ PaymentElement load error:', error);
+                }}
+                onChange={(event) => {
+                  console.log('🔄 PaymentElement change:', event);
+                }}
+              />
+            </div>
           )}
         </div>
         

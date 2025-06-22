@@ -97,7 +97,9 @@ export class StripeService {
     const setupIntentData: any = {
       metadata: data.metadata || {},
       usage: 'off_session',
-      payment_method_types: ['card'],
+      automatic_payment_methods: {
+        enabled: true,
+      },
     };
 
     // Only add customer if provided
