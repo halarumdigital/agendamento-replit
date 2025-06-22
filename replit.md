@@ -142,6 +142,7 @@ This is a comprehensive business management system built with Express.js and MyS
 ## Changelog
 ```
 Changelog:
+- June 22, 2025. COMPLETED: Migration from Replit Agent to Replit environment - fixed subscription flow to correctly redirect to payment page for plans with free trial periods, updated Stripe integration to use SetupIntent for payment method configuration, corrected plan descriptions to display number of professionals allowed
 - June 22, 2025. COMPLETED: Tour system critical fixes - corrected invalid CSS selectors causing JavaScript errors, updated step 3 to target services menu link correctly, fixed step 4 to use proper href selector for settings menu, resolved tour synchronization issues
 - June 22, 2025. COMPLETED: Tour visual styling simplified - removed outline and border effects, now uses only background color highlighting from global tour color configuration for cleaner visual experience
 - June 22, 2025. COMPLETED: Tour step cleanup system fixed - resolved multiple highlight issue where previous tour steps remained highlighted when advancing to next step, implemented comprehensive cleanup function that removes all tour-highlighted classes and styles before applying new highlights, ensured proper visual progression with only one element highlighted at a time
