@@ -621,7 +621,7 @@ export default function CompanySettings() {
       const response = await apiRequest("POST", "/api/company/test-birthday-message", {
         testPhoneNumber: testPhoneNumber.trim()
       });
-      return await response.json();
+      return response;
     },
     onSuccess: (data: any) => {
       toast({
