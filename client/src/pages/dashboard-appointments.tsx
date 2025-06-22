@@ -1424,7 +1424,10 @@ export default function DashboardAppointments() {
                             variant="outline"
                             size="sm"
                             className="h-8 w-8 p-0"
-                            onClick={() => handleEditAppointment(appointment)}
+                            onClick={() => {
+                              console.log('✏️ Edit button clicked in Calendar for appointment:', appointment.id);
+                              handleEditAppointment(appointment);
+                            }}
                           >
                             <Edit className="h-3 w-3" />
                           </Button>
@@ -1487,7 +1490,10 @@ export default function DashboardAppointments() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleEditAppointment(appointment)}
+                            onClick={() => {
+                              console.log('✏️ Edit button clicked in List for appointment:', appointment.id);
+                              handleEditAppointment(appointment);
+                            }}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -1747,6 +1753,7 @@ export default function DashboardAppointments() {
                                             size="sm"
                                             className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                                             onClick={(e) => {
+                                              console.log('✏️ Edit button clicked in Kanban for appointment:', appointment.id);
                                               e.stopPropagation();
                                               handleEditAppointment(appointment);
                                             }}
