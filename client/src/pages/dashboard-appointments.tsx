@@ -1,58 +1,24 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { format, addDays, startOfWeek, endOfWeek, isSameDay, parseISO, addWeeks, subWeeks } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { format, addDays, startOfWeek, endOfWeek, addMonths, subMonths, startOfMonth, isSameDay, isSameMonth } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Plus, 
-  Calendar, 
-  List, 
-  Kanban, 
-  ChevronLeft, 
-  ChevronRight, 
-  Clock, 
-  User, 
-  Phone,
-  Edit,
-  Trash2,
-  Filter,
-  Search
-} from 'lucide-react';
-import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { Calendar, List, Plus, ChevronLeft, ChevronRight, Clock, User, MapPin, Phone, Mail, Edit, Trash2 } from 'lucide-react';
+import { Kanban } from 'lucide-react';
+import { apiRequest } from '@/lib/queryClient';
 
-// Schemas de validação
-const appointmentSchema = z.object({
-  serviceId: z.string().min(1, 'Selecione um serviço'),
-  professionalId: z.string().min(1, 'Selecione um profissional'),
-  clientName: z.string().min(1, 'Nome do cliente é obrigatório'),
-  clientPhone: z.string().min(1, 'Telefone é obrigatório'),
-  clientEmail: z.string().email('Email inválido').optional().or(z.literal('')),
-  appointmentDate: z.string().min(1, 'Data é obrigatória'),
-  appointmentTime: z.string().min(1, 'Horário é obrigatório'),
-  notes: z.string().optional(),
-});
-
-const clientSchema = z.object({
-  name: z.string().min(1, 'Nome é obrigatório'),
-  phone: z.string().min(1, 'Telefone é obrigatório'),
-  email: z.string().email('Email inválido').optional().or(z.literal('')),
-});
-
-// Tipos
 interface Appointment {
   id: number;
   serviceId: number;
@@ -94,41 +60,65 @@ interface Status {
   color: string;
 }
 
+const appointmentSchema = z.object({
+  serviceId: z.number().min(1, 'Selecione um serviço'),
+  professionalId: z.number().min(1, 'Selecione um profissional'),
+  clientName: z.string().min(1, 'Nome do cliente é obrigatório'),
+  clientPhone: z.string().min(1, 'Telefone é obrigatório'),
+  clientEmail: z.string().email('Email inválido').optional().or(z.literal('')),
+  appointmentDate: z.string().min(1, 'Data é obrigatória'),
+  appointmentTime: z.string().min(1, 'Horário é obrigatório'),
+  notes: z.string().optional(),
+});
+
+const clientSchema = z.object({
+  name: z.string().min(1, 'Nome é obrigatório'),
+  phone: z.string().min(1, 'Telefone é obrigatório'),
+  email: z.string().email('Email inválido').optional().or(z.literal('')),
+});
+
 type AppointmentFormData = z.infer<typeof appointmentSchema>;
 type ClientFormData = z.infer<typeof clientSchema>;
 
-// Componente de notificações (placeholder)
-const NotificationContainer = () => <div />;
-
 export default function DashboardAppointments() {
-  // Estados
   const [viewMode, setViewMode] = useState<'calendar' | 'list' | 'kanban'>('calendar');
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [currentWeek, setCurrentWeek] = useState(new Date());
   const [isNewAppointmentOpen, setIsNewAppointmentOpen] = useState(false);
   const [isNewClientOpen, setIsNewClientOpen] = useState(false);
   const [isEditAppointmentOpen, setIsEditAppointmentOpen] = useState(false);
-  const [isAppointmentDetailsOpen, setIsAppointmentDetailsOpen] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
+  const [filterProfessional, setFilterProfessional] = useState('all');
 
-  // Hooks
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Forms
+  // Calculate week boundaries
+  const weekStart = startOfWeek(currentWeek, { weekStartsOn: 0 });
+  const weekEnd = endOfWeek(currentWeek, { weekStartsOn: 0 });
+
+  // Week navigation
+  const previousWeek = () => setCurrentWeek(subWeeks(currentWeek, 1));
+  const nextWeek = () => setCurrentWeek(addWeeks(currentWeek, 1));
+
+  // Generate week days
+  const weekDays = useMemo(() => {
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+      days.push(addDays(weekStart, i));
+    }
+    return days;
+  }, [weekStart]);
+
   const form = useForm<AppointmentFormData>({
     resolver: zodResolver(appointmentSchema),
     defaultValues: {
-      serviceId: '',
-      professionalId: '',
+      serviceId: 0,
+      professionalId: 0,
       clientName: '',
       clientPhone: '',
       clientEmail: '',
-      appointmentDate: format(new Date(), 'yyyy-MM-dd'),
+      appointmentDate: '',
       appointmentTime: '',
       notes: '',
     },
@@ -143,24 +133,56 @@ export default function DashboardAppointments() {
     },
   });
 
+  const editForm = useForm<AppointmentFormData>({
+    resolver: zodResolver(appointmentSchema),
+    defaultValues: {
+      serviceId: 0,
+      professionalId: 0,
+      clientName: '',
+      clientPhone: '',
+      clientEmail: '',
+      appointmentDate: '',
+      appointmentTime: '',
+      notes: '',
+    },
+  });
+
   // Queries
-  const { data: appointments = [], isLoading: isLoadingAppointments } = useQuery({
+  const { data: appointments = [], isLoading: appointmentsLoading } = useQuery({
     queryKey: ['/api/company/appointments'],
   });
 
-  const { data: services = [] } = useQuery<Service[]>({
+  const { data: services = [] } = useQuery({
     queryKey: ['/api/company/services'],
   });
 
-  const { data: professionals = [] } = useQuery<Professional[]>({
+  const { data: professionals = [] } = useQuery({
     queryKey: ['/api/company/professionals'],
   });
 
-  const { data: statuses = [] } = useQuery<Status[]>({
+  const { data: statuses = [] } = useQuery({
     queryKey: ['/api/company/appointment-statuses'],
   });
 
   // Mutations
+  const createClientMutation = useMutation({
+    mutationFn: async (data: ClientFormData) => {
+      return apiRequest('/api/company/clients', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    },
+    onSuccess: () => {
+      toast({ title: 'Cliente criado com sucesso!' });
+      queryClient.invalidateQueries({ queryKey: ['/api/company/clients'] });
+      setIsNewClientOpen(false);
+      clientForm.reset();
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Erro ao criar cliente', description: error.message, variant: 'destructive' });
+    },
+  });
+
   const createAppointmentMutation = useMutation({
     mutationFn: async (data: AppointmentFormData) => {
       return apiRequest('/api/company/appointments', {
@@ -169,45 +191,33 @@ export default function DashboardAppointments() {
       });
     },
     onSuccess: () => {
+      toast({ title: 'Agendamento criado com sucesso!' });
       queryClient.invalidateQueries({ queryKey: ['/api/company/appointments'] });
       setIsNewAppointmentOpen(false);
       form.reset();
-      toast({
-        title: 'Sucesso',
-        description: 'Agendamento criado com sucesso!',
-      });
     },
     onError: (error: Error) => {
-      toast({
-        title: 'Erro',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast({ title: 'Erro ao criar agendamento', description: error.message, variant: 'destructive' });
     },
   });
 
   const updateAppointmentMutation = useMutation({
-    mutationFn: async (data: AppointmentFormData) => {
-      return apiRequest(`/api/company/appointments/${selectedAppointment?.id}`, {
+    mutationFn: async (data: AppointmentFormData & { id: number }) => {
+      const { id, ...updateData } = data;
+      return apiRequest(`/api/company/appointments/${id}`, {
         method: 'PUT',
-        body: JSON.stringify(data),
+        body: JSON.stringify(updateData),
       });
     },
     onSuccess: () => {
+      toast({ title: 'Agendamento atualizado com sucesso!' });
       queryClient.invalidateQueries({ queryKey: ['/api/company/appointments'] });
       setIsEditAppointmentOpen(false);
-      form.reset();
-      toast({
-        title: 'Sucesso',
-        description: 'Agendamento atualizado com sucesso!',
-      });
+      setEditingAppointment(null);
+      editForm.reset();
     },
     onError: (error: Error) => {
-      toast({
-        title: 'Erro',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast({ title: 'Erro ao atualizar agendamento', description: error.message, variant: 'destructive' });
     },
   });
 
@@ -218,79 +228,26 @@ export default function DashboardAppointments() {
       });
     },
     onSuccess: () => {
+      toast({ title: 'Agendamento excluído com sucesso!' });
       queryClient.invalidateQueries({ queryKey: ['/api/company/appointments'] });
-      toast({
-        title: 'Sucesso',
-        description: 'Agendamento excluído com sucesso!',
-      });
     },
     onError: (error: Error) => {
-      toast({
-        title: 'Erro',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast({ title: 'Erro ao excluir agendamento', description: error.message, variant: 'destructive' });
     },
   });
 
-  const createClientMutation = useMutation({
-    mutationFn: async (data: ClientFormData) => {
-      return apiRequest('/api/company/clients', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/company/clients'] });
-      setIsNewClientOpen(false);
-      clientForm.reset();
-      toast({
-        title: 'Sucesso',
-        description: 'Cliente criado com sucesso!',
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: 'Erro',
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
-  });
-
-  // Funções auxiliares
-  const previousMonth = () => setCurrentDate(subMonths(currentDate, 1));
-  const nextMonth = () => setCurrentDate(addMonths(currentDate, 1));
-
-  const filteredAppointments = appointments.filter((appointment: Appointment) => {
-    const matchesSearch = appointment.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         appointment.service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         appointment.professional.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = !statusFilter || statusFilter === 'all' || appointment.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
-
-  const paginatedAppointments = filteredAppointments.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  const totalPages = Math.ceil(filteredAppointments.length / itemsPerPage);
-
-  // Handlers
-  const handleDragEnd = (result: DropResult) => {
-    if (!result.destination) return;
-    
-    const { source, destination, draggableId } = result;
-    if (source.droppableId !== destination.droppableId) {
-      // Atualizar status do agendamento
-      const appointmentId = parseInt(draggableId);
-      const newStatus = destination.droppableId;
-      
-      // Implementar lógica de atualização de status
-      console.log('Update appointment status:', appointmentId, newStatus);
+  // Update appointment date when a day is selected
+  useEffect(() => {
+    if (selectedDate) {
+      form.setValue('appointmentDate', format(selectedDate, 'yyyy-MM-dd'));
     }
-  };
+  }, [selectedDate, form]);
+
+  // Filter appointments by professional
+  const filteredAppointments = appointments.filter((appointment: Appointment) => {
+    if (filterProfessional === 'all') return true;
+    return appointment.professionalId.toString() === filterProfessional;
+  });
 
   const onSubmit = (data: AppointmentFormData) => {
     createAppointmentMutation.mutate(data);
@@ -301,394 +258,543 @@ export default function DashboardAppointments() {
   };
 
   const onEditSubmit = (data: AppointmentFormData) => {
-    updateAppointmentMutation.mutate(data);
+    if (editingAppointment) {
+      updateAppointmentMutation.mutate({ ...data, id: editingAppointment.id });
+    }
   };
 
   const handleEditAppointment = async (appointment: Appointment) => {
-    setSelectedAppointment(appointment);
-    form.setValue('serviceId', appointment.serviceId.toString());
-    form.setValue('professionalId', appointment.professionalId.toString());
-    form.setValue('clientName', appointment.clientName);
-    form.setValue('clientPhone', appointment.clientPhone);
-    form.setValue('clientEmail', appointment.clientEmail || '');
-    form.setValue('appointmentDate', appointment.appointmentDate);
-    form.setValue('appointmentTime', appointment.appointmentTime);
-    form.setValue('notes', appointment.notes || '');
+    setEditingAppointment(appointment);
+    editForm.reset({
+      serviceId: appointment.serviceId,
+      professionalId: appointment.professionalId,
+      clientName: appointment.clientName,
+      clientPhone: appointment.clientPhone,
+      clientEmail: appointment.clientEmail || '',
+      appointmentDate: appointment.appointmentDate,
+      appointmentTime: appointment.appointmentTime,
+      notes: appointment.notes || '',
+    });
     setIsEditAppointmentOpen(true);
   };
 
-  // Effect para atualizar data no form quando selecionada
-  useEffect(() => {
-    if (selectedDate) {
-      form.setValue('appointmentDate', format(selectedDate, 'yyyy-MM-dd'));
-    }
-  }, [selectedDate, form]);
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+    // Handle drag and drop logic here if needed
+  };
+
+  // Get appointments for a specific day
+  const getAppointmentsForDay = (day: Date) => {
+    return filteredAppointments.filter((appointment: Appointment) => {
+      const appointmentDate = parseISO(appointment.appointmentDate);
+      return isSameDay(appointmentDate, day);
+    });
+  };
+
+  // Render calendar view
+  const renderCalendarView = () => (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-xl">
+            {format(weekStart, 'dd MMM', { locale: ptBR })} - {format(weekEnd, 'dd MMM yyyy', { locale: ptBR })}
+          </CardTitle>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={previousWeek}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="sm" onClick={nextWeek}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-7 gap-0 mb-4">
+          {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day) => (
+            <div key={day} className="p-2 text-center font-medium text-gray-500 bg-gray-50">
+              {day}
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-7 gap-0 border border-gray-200">
+          {weekDays.map((day) => {
+            const dayAppointments = getAppointmentsForDay(day);
+            const isSelected = selectedDate && isSameDay(day, selectedDate);
+            const isToday = isSameDay(day, new Date());
+
+            return (
+              <div
+                key={day.toISOString()}
+                className={`min-h-[150px] p-2 border-r border-b border-gray-200 cursor-pointer hover:bg-gray-50 ${
+                  isSelected ? 'bg-blue-50 border-blue-300' : ''
+                } ${isToday ? 'bg-yellow-50' : ''}`}
+                onClick={() => setSelectedDate(day)}
+              >
+                <div className={`text-sm font-medium mb-2 ${isToday ? 'text-blue-600' : 'text-gray-900'}`}>
+                  {format(day, 'd')}
+                </div>
+                <div className="space-y-1">
+                  {dayAppointments.slice(0, 3).map((appointment: Appointment) => (
+                    <div
+                      key={appointment.id}
+                      className="text-xs p-1 rounded truncate cursor-pointer hover:opacity-80"
+                      style={{ backgroundColor: appointment.service.color + '20', color: appointment.service.color }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditAppointment(appointment);
+                      }}
+                    >
+                      <div className="font-medium">{appointment.appointmentTime}</div>
+                      <div className="truncate">{appointment.clientName}</div>
+                      <div className="truncate">{appointment.service.name}</div>
+                    </div>
+                  ))}
+                  {dayAppointments.length > 3 && (
+                    <div className="text-xs text-gray-500 text-center">
+                      +{dayAppointments.length - 3} mais
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  // Render list view
+  const renderListView = () => (
+    <Card>
+      <CardHeader>
+        <CardTitle>Lista de Agendamentos</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {filteredAppointments.map((appointment: Appointment) => (
+            <div
+              key={appointment.id}
+              className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
+            >
+              <div className="flex items-center space-x-4">
+                <div
+                  className="w-4 h-4 rounded-full"
+                  style={{ backgroundColor: appointment.service.color }}
+                />
+                <div>
+                  <div className="font-medium">{appointment.clientName}</div>
+                  <div className="text-sm text-gray-500">
+                    {appointment.service.name} - {appointment.professional.name}
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    {format(parseISO(appointment.appointmentDate), 'dd/MM/yyyy')} às {appointment.appointmentTime}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Badge variant="outline">{appointment.status}</Badge>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleEditAppointment(appointment)}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => deleteAppointmentMutation.mutate(appointment.id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  // Render kanban view
+  const renderKanbanView = () => (
+    <DragDropContext onDragEnd={handleDragEnd}>
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {statuses.map((status: Status) => {
+          const statusAppointments = filteredAppointments.filter((apt: Appointment) => {
+            const matchesStatus = apt.status === status.name;
+            if (!selectedDate) return matchesStatus;
+            return matchesStatus && isSameDay(parseISO(apt.appointmentDate), selectedDate);
+          });
+
+          return (
+            <Card key={status.id}>
+              <CardHeader>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <div
+                    className="w-3 h-3 rounded-full"
+                    style={{ backgroundColor: status.color }}
+                  />
+                  {status.name} ({statusAppointments.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Droppable droppableId={status.id.toString()}>
+                  {(provided) => (
+                    <div
+                      {...provided.droppableProps}
+                      ref={provided.innerRef}
+                      className="space-y-2 min-h-[200px]"
+                    >
+                      {statusAppointments.map((appointment: Appointment, index: number) => (
+                        <Draggable
+                          key={appointment.id}
+                          draggableId={appointment.id.toString()}
+                          index={index}
+                        >
+                          {(provided) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              className="p-3 bg-white border rounded-lg shadow-sm hover:shadow-md cursor-pointer"
+                              onClick={() => handleEditAppointment(appointment)}
+                            >
+                              <div className="font-medium text-sm">{appointment.clientName}</div>
+                              <div className="text-xs text-gray-500 mt-1">
+                                {appointment.service.name}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {format(parseISO(appointment.appointmentDate), 'dd/MM')} às {appointment.appointmentTime}
+                              </div>
+                              <div className="text-xs text-gray-500 mt-1">
+                                {appointment.professional.name}
+                              </div>
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    </DragDropContext>
+  );
+
+  if (appointmentsLoading) {
+    return <div className="flex items-center justify-center h-64">Carregando...</div>;
+  }
 
   return (
     <div className="p-3 sm:p-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-0 mb-4 sm:mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-4">
         <div>
-          <h1 className="text-xl sm:text-3xl font-bold text-gray-900">Agendamentos</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Agendamentos</h1>
           <p className="text-sm sm:text-base text-gray-600">Gerencie seus agendamentos e horários</p>
         </div>
-        
-        <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
-          <Button
-            onClick={() => setIsNewClientOpen(true)}
-            variant="outline"
-            className="w-full sm:w-auto"
-          >
-            <User className="h-4 w-4" />
-            <span className="ml-2">Novo Cliente</span>
-          </Button>
-          <Button
-            onClick={() => setIsNewAppointmentOpen(true)}
-            className="w-full sm:w-auto"
-          >
-            <Plus className="h-4 w-4" />
-            <span className="ml-2">Novo Agendamento</span>
-          </Button>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
+          <Select value={filterProfessional} onValueChange={setFilterProfessional}>
+            <SelectTrigger className="w-full sm:w-48">
+              <SelectValue placeholder="Todos os profissionais" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os profissionais</SelectItem>
+              {professionals.map((prof) => (
+                <SelectItem key={prof.id} value={prof.id.toString()}>
+                  {prof.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Dialog open={isNewAppointmentOpen} onOpenChange={setIsNewAppointmentOpen}>
+            <DialogTrigger asChild>
+              <Button className="w-full sm:w-auto">
+                <Plus className="h-4 w-4 mr-2" />
+                Novo Agendamento
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Novo Agendamento</DialogTitle>
+              </DialogHeader>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="serviceId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Serviço</FormLabel>
+                        <FormControl>
+                          <Select
+                            value={field.value?.toString()}
+                            onValueChange={(value) => field.onChange(parseInt(value))}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione um serviço" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {services.map((service) => (
+                                <SelectItem key={service.id} value={service.id.toString()}>
+                                  {service.name} - R$ {typeof service.price === 'string' ? parseFloat(service.price).toFixed(2) : service.price.toFixed(2)}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="professionalId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Profissional</FormLabel>
+                        <FormControl>
+                          <Select
+                            value={field.value?.toString()}
+                            onValueChange={(value) => field.onChange(parseInt(value))}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione um profissional" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {professionals.map((professional) => (
+                                <SelectItem key={professional.id} value={professional.id.toString()}>
+                                  {professional.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="clientName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nome do Cliente</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Nome completo" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="clientPhone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Telefone</FormLabel>
+                        <FormControl>
+                          <Input placeholder="(11) 99999-9999" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="clientEmail"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email (opcional)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="email@exemplo.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="appointmentDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Data</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="appointmentTime"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Horário</FormLabel>
+                        <FormControl>
+                          <Input type="time" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="notes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Observações</FormLabel>
+                        <FormControl>
+                          <Textarea placeholder="Observações sobre o agendamento" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="flex justify-end space-x-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsNewAppointmentOpen(false)}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button type="submit" disabled={createAppointmentMutation.isPending}>
+                      {createAppointmentMutation.isPending ? 'Criando...' : 'Criar Agendamento'}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
-      {/* Filtros e busca */}
-      <Card className="mb-6">
-        <CardContent className="p-6">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Buscar por cliente, serviço ou profissional..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            <div className="w-full sm:w-48">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Filtrar por status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os status</SelectItem>
-                  {statuses.map((status) => (
-                    <SelectItem key={status.id} value={status.name}>
-                      {status.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+      {/* View Mode Controls Above Calendar */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between mb-4 gap-3 sm:gap-4">
+        <div className="flex items-center bg-gray-100 rounded-lg p-1 w-full sm:w-auto">
+          <Button
+            variant={viewMode === 'calendar' ? 'default' : 'ghost'}
+            size="sm"
+            className="flex-1 sm:flex-none"
+            onClick={() => setViewMode('calendar')}
+          >
+            <Calendar className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Agendar</span>
+          </Button>
+          <Button
+            variant={viewMode === 'list' ? 'default' : 'ghost'}
+            size="sm"
+            className="flex-1 sm:flex-none"
+            onClick={() => setViewMode('list')}
+          >
+            <List className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Lista</span>
+          </Button>
+          <Button
+            variant={viewMode === 'kanban' ? 'default' : 'ghost'}
+            size="sm"
+            className="flex-1 sm:flex-none"
+            onClick={() => setViewMode('kanban')}
+          >
+            <Kanban className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Kanban</span>
+          </Button>
+        </div>
+        
+        {viewMode === 'kanban' && (
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              value={selectedDate ? format(selectedDate, 'yyyy-MM-dd') : ''}
+              onChange={(e) => {
+                const newDate = e.target.value ? new Date(e.target.value) : null;
+                setSelectedDate(newDate);
+              }}
+              className="px-3 py-2 border rounded-md text-sm"
+            />
+            {selectedDate && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedDate(null)}
+              >
+                Limpar
+              </Button>
+            )}
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Controles de visualização */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-0 mb-6">
-        <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as any)} className="w-full sm:w-auto">
-          <TabsList className="grid w-full grid-cols-3 sm:w-auto">
-            <TabsTrigger value="calendar" className="flex items-center">
-              <Calendar className="h-4 w-4" />
-              <span className="hidden sm:inline ml-2">Calendário</span>
-            </TabsTrigger>
-            <TabsTrigger value="list" className="flex items-center">
-              <List className="h-4 w-4" />
-              <span className="hidden sm:inline ml-2">Lista</span>
-            </TabsTrigger>
-            <TabsTrigger value="kanban" className="flex items-center">
-              <Kanban className="h-4 w-4" />
-              <span className="hidden sm:inline ml-2">Kanban</span>
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+        )}
       </div>
 
-      {/* Conteúdo principal */}
-      {viewMode === 'calendar' ? (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-xl">
-                {format(currentDate, 'MMMM yyyy', { locale: ptBR })}
-              </CardTitle>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={previousMonth}>
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button variant="outline" size="sm" onClick={nextMonth}>
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-7 gap-4 mb-4">
-              {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day) => (
-                <div key={day} className="text-center font-medium text-sm text-gray-600 p-2">
-                  {day}
-                </div>
-              ))}
-              {Array.from({ length: 35 }, (_, i) => {
-                const date = startOfMonth(currentDate);
-                const firstDay = startOfWeek(date);
-                const currentDay = addDays(firstDay, i);
-                const isCurrentMonth = isSameMonth(currentDay, currentDate);
-                const isToday = isSameDay(currentDay, new Date());
-                const isSelected = selectedDate && isSameDay(currentDay, selectedDate);
-                
-                return (
-                  <div
-                    key={i}
-                    className={`p-2 h-20 border rounded cursor-pointer transition-colors ${
-                      isCurrentMonth ? 'bg-white hover:bg-gray-50' : 'bg-gray-50'
-                    } ${isToday ? 'border-blue-500' : 'border-gray-200'} ${
-                      isSelected ? 'bg-blue-50 border-blue-500' : ''
-                    }`}
-                    onClick={() => setSelectedDate(currentDay)}
-                  >
-                    <div className={`text-sm ${isCurrentMonth ? 'text-gray-900' : 'text-gray-400'}`}>
-                      {format(currentDay, 'd')}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      ) : viewMode === 'list' ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Lista de Agendamentos</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <div className="min-w-full">
-                {paginatedAppointments.map((appointment: Appointment) => (
-                  <div
-                    key={appointment.id}
-                    className="border-b p-4 hover:bg-gray-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-                  >
-                    <div className="flex-1">
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                        <div className="flex-1">
-                          <h3 className="font-medium">{appointment.clientName}</h3>
-                          <p className="text-sm text-gray-600">{appointment.service.name}</p>
-                          <p className="text-sm text-gray-500">{appointment.professional.name}</p>
-                        </div>
-                        <div className="flex flex-col sm:items-end">
-                          <div className="flex items-center gap-2 text-sm text-gray-600">
-                            <Calendar className="h-4 w-4" />
-                            {format(new Date(appointment.appointmentDate), 'dd/MM/yyyy')}
-                          </div>
-                          <div className="flex items-center gap-2 text-sm text-gray-600">
-                            <Clock className="h-4 w-4" />
-                            {appointment.appointmentTime}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between sm:justify-end gap-2">
-                      <Badge variant="secondary">
-                        {appointment.status}
-                      </Badge>
-                      <div className="flex gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEditAppointment(appointment)}
-                          className="h-8 w-8 p-0"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => deleteAppointmentMutation.mutate(appointment.id)}
-                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            
-            {/* Paginação */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between p-4 border-t">
-                <div className="text-sm text-gray-600">
-                  Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, filteredAppointments.length)} de {filteredAppointments.length} agendamentos
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(currentPage - 1)}
-                    disabled={currentPage === 1}
-                  >
-                    Anterior
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                  >
-                    Próximo
-                  </Button>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      ) : (
-        <DragDropContext onDragEnd={handleDragEnd}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {statuses.map((status) => {
-              const statusAppointments = appointments.filter((apt: Appointment) => {
-                return apt.status === status.name &&
-                  (statusFilter === 'all' || apt.status === statusFilter) &&
-                  (searchTerm === '' || 
-                    apt.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    apt.service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    apt.professional.name.toLowerCase().includes(searchTerm.toLowerCase()));
-              });
+      {/* Render different views */}
+      {viewMode === 'calendar' && renderCalendarView()}
+      {viewMode === 'list' && renderListView()}
+      {viewMode === 'kanban' && renderKanbanView()}
 
-              return (
-                <div key={status.id} className="bg-gray-50 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-medium text-gray-900">
-                      {status.name}
-                    </h3>
-                    <Badge variant="secondary">
-                      {statusAppointments.length}
-                    </Badge>
-                  </div>
-
-                  <Droppable droppableId={status.name}>
-                    {(provided) => (
-                      <div
-                        {...provided.droppableProps}
-                        ref={provided.innerRef}
-                        className="space-y-3 min-h-[200px]"
-                      >
-                        {statusAppointments.map((appointment: Appointment, index: number) => (
-                          <Draggable
-                            key={appointment.id}
-                            draggableId={appointment.id.toString()}
-                            index={index}
-                          >
-                            {(provided) => (
-                              <div
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                {...provided.dragHandleProps}
-                                className="bg-white p-4 rounded-lg shadow-sm border hover:shadow-md transition-shadow"
-                              >
-                                <div className="flex flex-col gap-2">
-                                  <h4 className="font-medium text-gray-900">
-                                    {appointment.clientName}
-                                  </h4>
-                                  <p className="text-sm text-gray-600">
-                                    {appointment.service.name}
-                                  </p>
-                                  <p className="text-sm text-gray-500">
-                                    {appointment.professional.name}
-                                  </p>
-                                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-sm text-gray-500">
-                                    <div className="flex items-center gap-1">
-                                      <Calendar className="h-4 w-4" />
-                                      {format(new Date(appointment.appointmentDate), 'dd/MM')}
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                      <Clock className="h-4 w-4" />
-                                      {appointment.appointmentTime}
-                                    </div>
-                                  </div>
-                                  <div className="flex justify-end gap-1 mt-2">
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => handleEditAppointment(appointment)}
-                                      className="h-8 w-8 p-0"
-                                    >
-                                      <Edit className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => deleteAppointmentMutation.mutate(appointment.id)}
-                                      className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </Draggable>
-                        ))}
-                        {provided.placeholder}
-                      </div>
-                    )}
-                  </Droppable>
-                </div>
-              );
-            })}
-          </div>
-        </DragDropContext>
-      )}
-
-      {/* Dialog Novo Agendamento */}
-      <Dialog open={isNewAppointmentOpen} onOpenChange={setIsNewAppointmentOpen}>
-        <DialogContent className="max-w-md sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+      {/* Edit Appointment Dialog */}
+      <Dialog open={isEditAppointmentOpen} onOpenChange={setIsEditAppointmentOpen}>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Novo Agendamento</DialogTitle>
+            <DialogTitle>Editar Agendamento</DialogTitle>
           </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="serviceId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Serviço</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione um serviço" />
-                          </SelectTrigger>
-                        </FormControl>
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
+              <FormField
+                control={editForm.control}
+                name="serviceId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Serviço</FormLabel>
+                    <FormControl>
+                      <Select
+                        value={field.value?.toString()}
+                        onValueChange={(value) => field.onChange(parseInt(value))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione um serviço" />
+                        </SelectTrigger>
                         <SelectContent>
                           {services.map((service) => (
                             <SelectItem key={service.id} value={service.id.toString()}>
-                              {service.name} - R$ {service.price}
+                              {service.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                <FormField
-                  control={form.control}
-                  name="professionalId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Profissional</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione um profissional" />
-                          </SelectTrigger>
-                        </FormControl>
+              <FormField
+                control={editForm.control}
+                name="professionalId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Profissional</FormLabel>
+                    <FormControl>
+                      <Select
+                        value={field.value?.toString()}
+                        onValueChange={(value) => field.onChange(parseInt(value))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione um profissional" />
+                        </SelectTrigger>
                         <SelectContent>
                           {professionals.map((professional) => (
                             <SelectItem key={professional.id} value={professional.id.toString()}>
@@ -697,136 +803,18 @@ export default function DashboardAppointments() {
                           ))}
                         </SelectContent>
                       </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="clientName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nome do Cliente</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Nome completo" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="clientPhone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Telefone</FormLabel>
-                      <FormControl>
-                        <Input placeholder="(11) 99999-9999" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={form.control}
-                name="clientEmail"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email (opcional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="email@exemplo.com" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="appointmentDate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Data</FormLabel>
-                      <FormControl>
-                        <Input type="date" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="appointmentTime"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Horário</FormLabel>
-                      <FormControl>
-                        <Input type="time" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
               <FormField
-                control={form.control}
-                name="notes"
+                control={editForm.control}
+                name="clientName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Observações</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Observações adicionais..." {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsNewAppointmentOpen(false)}
-                  className="w-full sm:w-auto"
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={createAppointmentMutation.isPending}
-                  className="w-full sm:w-auto"
-                >
-                  {createAppointmentMutation.isPending ? "Salvando..." : "Salvar"}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Dialog Novo Cliente */}
-      <Dialog open={isNewClientOpen} onOpenChange={setIsNewClientOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Novo Cliente</DialogTitle>
-          </DialogHeader>
-          <Form {...clientForm}>
-            <form onSubmit={clientForm.handleSubmit(onClientSubmit)} className="space-y-4">
-              <FormField
-                control={clientForm.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nome</FormLabel>
+                    <FormLabel>Nome do Cliente</FormLabel>
                     <FormControl>
                       <Input placeholder="Nome completo" {...field} />
                     </FormControl>
@@ -836,8 +824,8 @@ export default function DashboardAppointments() {
               />
 
               <FormField
-                control={clientForm.control}
-                name="phone"
+                control={editForm.control}
+                name="clientPhone"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Telefone</FormLabel>
@@ -850,137 +838,11 @@ export default function DashboardAppointments() {
               />
 
               <FormField
-                control={clientForm.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email (opcional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="email@exemplo.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsNewClientOpen(false)}
-                  className="w-full sm:w-auto"
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={createClientMutation.isPending}
-                  className="w-full sm:w-auto"
-                >
-                  {createClientMutation.isPending ? "Salvando..." : "Salvar"}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Dialog Editar Agendamento */}
-      <Dialog open={isEditAppointmentOpen} onOpenChange={setIsEditAppointmentOpen}>
-        <DialogContent className="max-w-md sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Editar Agendamento</DialogTitle>
-          </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onEditSubmit)} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="serviceId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Serviço</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione um serviço" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {services.map((service) => (
-                            <SelectItem key={service.id} value={service.id.toString()}>
-                              {service.name} - R$ {service.price}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="professionalId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Profissional</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione um profissional" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {professionals.map((professional) => (
-                            <SelectItem key={professional.id} value={professional.id.toString()}>
-                              {professional.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="clientName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nome do Cliente</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Nome completo" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="clientPhone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Telefone</FormLabel>
-                      <FormControl>
-                        <Input placeholder="(11) 99999-9999" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={form.control}
+                control={editForm.control}
                 name="clientEmail"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email (opcional)</FormLabel>
+                    <FormLabel>Email</FormLabel>
                     <FormControl>
                       <Input placeholder="email@exemplo.com" {...field} />
                     </FormControl>
@@ -989,130 +851,64 @@ export default function DashboardAppointments() {
                 )}
               />
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="appointmentDate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Data</FormLabel>
-                      <FormControl>
-                        <Input type="date" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="appointmentTime"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Horário</FormLabel>
-                      <FormControl>
-                        <Input type="time" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              <FormField
+                control={editForm.control}
+                name="appointmentDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Data</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <FormField
-                control={form.control}
+                control={editForm.control}
+                name="appointmentTime"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Horário</FormLabel>
+                    <FormControl>
+                      <Input type="time" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={editForm.control}
                 name="notes"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Observações</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="Observações adicionais..." {...field} />
+                      <Textarea placeholder="Observações sobre o agendamento" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
+              <div className="flex justify-end space-x-2">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => setIsEditAppointmentOpen(false)}
-                  className="w-full sm:w-auto"
                 >
                   Cancelar
                 </Button>
-                <Button
-                  type="submit"
-                  disabled={updateAppointmentMutation.isPending}
-                  className="w-full sm:w-auto"
-                >
-                  {updateAppointmentMutation.isPending ? "Salvando..." : "Salvar"}
+                <Button type="submit" disabled={updateAppointmentMutation.isPending}>
+                  {updateAppointmentMutation.isPending ? 'Salvando...' : 'Salvar Alterações'}
                 </Button>
               </div>
             </form>
           </Form>
         </DialogContent>
       </Dialog>
-
-      {/* Dialog Detalhes do Agendamento */}
-      <Dialog open={isAppointmentDetailsOpen} onOpenChange={setIsAppointmentDetailsOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Detalhes do Agendamento</DialogTitle>
-          </DialogHeader>
-          {selectedAppointment && (
-            <div className="space-y-4">
-              <div>
-                <h3 className="font-medium">Cliente</h3>
-                <p className="text-sm text-gray-600">{selectedAppointment.clientName}</p>
-                <p className="text-sm text-gray-600">{selectedAppointment.clientPhone}</p>
-                {selectedAppointment.clientEmail && (
-                  <p className="text-sm text-gray-600">{selectedAppointment.clientEmail}</p>
-                )}
-              </div>
-              
-              <div>
-                <h3 className="font-medium">Serviço</h3>
-                <p className="text-sm text-gray-600">{selectedAppointment.service.name}</p>
-              </div>
-              
-              <div>
-                <h3 className="font-medium">Profissional</h3>
-                <p className="text-sm text-gray-600">{selectedAppointment.professional.name}</p>
-              </div>
-              
-              <div>
-                <h3 className="font-medium">Data e Horário</h3>
-                <p className="text-sm text-gray-600">
-                  {format(new Date(selectedAppointment.appointmentDate), 'dd/MM/yyyy')} às {selectedAppointment.appointmentTime}
-                </p>
-              </div>
-              
-              <div>
-                <h3 className="font-medium">Status</h3>
-                <Badge variant="secondary">{selectedAppointment.status}</Badge>
-              </div>
-              
-              {selectedAppointment.notes && (
-                <div>
-                  <h3 className="font-medium">Observações</h3>
-                  <p className="text-sm text-gray-600">{selectedAppointment.notes}</p>
-                </div>
-              )}
-
-              <div className="flex justify-end">
-                <Button variant="outline" onClick={() => setIsAppointmentDetailsOpen(false)}>
-                  Fechar
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-      
-      {/* Container de Notificações */}
-      <NotificationContainer />
     </div>
   );
 }
