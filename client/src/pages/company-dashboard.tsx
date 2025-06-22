@@ -1,8 +1,11 @@
 import { Building2, Users, Calendar, CreditCard, Settings, FileText, User, MessageSquare } from "lucide-react";
 import { useCompanyAuth } from "@/hooks/useCompanyAuth";
+import { useGuidedTour } from "@/hooks/use-guided-tour";
+import { GuidedTour } from "@/components/guided-tour";
 
 export default function CompanyDashboard() {
   const { company, isLoading } = useCompanyAuth();
+  const { showTour, closeTour } = useGuidedTour();
 
   if (isLoading) {
     return (
@@ -179,6 +182,11 @@ export default function CompanyDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Guided Tour */}
+      {showTour && company && (
+        <GuidedTour companyId={company.id} onClose={closeTour} />
+      )}
     </div>
   );
 }
