@@ -38,7 +38,7 @@ const professionalSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
   email: z.string().email("Email inválido").optional().or(z.literal("")),
   phone: z.string().optional(),
-  password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
+  password: z.string().optional(),
   active: z.boolean().default(true),
 });
 
@@ -165,12 +165,19 @@ export default function CompanyProfessionals() {
   const updateMutation = useMutation({
     mutationFn: async (data: ProfessionalFormData) => {
       if (!editingProfessional) return;
+      
+      // Remove empty password field from update data
+      const updateData = { ...data };
+      if (!updateData.password || updateData.password.trim() === '') {
+        delete updateData.password;
+      }
+      
       const response = await fetch(`/api/company/professionals/${editingProfessional.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(updateData),
       });
       if (!response.ok) {
         throw new Error('Erro ao atualizar profissional');
@@ -223,15 +230,9 @@ export default function CompanyProfessionals() {
   });
 
   const onSubmit = (data: ProfessionalFormData) => {
-    console.log('Form submitted with data:', data);
-    console.log('Editing professional:', editingProfessional);
-    console.log('Form errors:', form.formState.errors);
-    
     if (editingProfessional) {
-      console.log('Calling updateMutation.mutate');
       updateMutation.mutate(data);
     } else {
-      console.log('Calling createMutation.mutate');
       createMutation.mutate(data);
     }
   };
@@ -444,13 +445,6 @@ export default function CompanyProfessionals() {
                         (!editingProfessional && !canAddProfessional())
                       }
                       className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                      onClick={(e) => {
-                        console.log('Button clicked!', e);
-                        console.log('Button type:', e.currentTarget.type);
-                        console.log('Form valid:', form.formState.isValid);
-                        console.log('Form errors:', form.formState.errors);
-                        console.log('Editing professional:', editingProfessional);
-                      }}
                     >
                       {editingProfessional ? 'Atualizar' : 'Cadastrar'}
                     </Button>
