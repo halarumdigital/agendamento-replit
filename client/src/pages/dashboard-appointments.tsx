@@ -1749,17 +1749,15 @@ export default function DashboardAppointments() {
                                             </Button>
                                           )}
                                           <Button
-                                            variant="default"
+                                            variant="ghost"
                                             size="sm"
-                                            className="h-8 w-16 p-1 bg-red-500 hover:bg-red-600 text-white z-50 relative"
+                                            className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                                             onClick={(e) => {
-                                              console.log('🔥 BUTTON CLICKED!!!');
-                                              alert('Button clicked!');
                                               e.stopPropagation();
-                                              setIsEditAppointmentOpen(true);
+                                              handleEditAppointment(appointment);
                                             }}
                                           >
-                                            EDIT
+                                            <Edit className="h-3 w-3" />
                                           </Button>
                                         </div>
                                       </div>
@@ -1806,7 +1804,28 @@ export default function DashboardAppointments() {
       )}
 
       {/* Edit Appointment Modal */}
-      <Dialog open={isEditAppointmentOpen} onOpenChange={setIsEditAppointmentOpen}>
+      <Dialog open={isEditAppointmentOpen} onOpenChange={(open) => {
+        if (!open) {
+          // Reset all edit states when dialog closes
+          setIsEditAppointmentOpen(false);
+          setEditingAppointment(null);
+          editForm.reset({
+            clientId: undefined,
+            serviceId: 0,
+            professionalId: 0,
+            statusId: 0,
+            clientName: "",
+            clientEmail: "",
+            clientPhone: "",
+            appointmentDate: "",
+            appointmentTime: "",
+            notes: "",
+            confirmed: false,
+          });
+        } else {
+          setIsEditAppointmentOpen(true);
+        }
+      }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Editar Agendamento</DialogTitle>
