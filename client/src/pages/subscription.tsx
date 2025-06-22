@@ -438,25 +438,42 @@ export default function Subscription() {
                 </div>
 
                 {/* Opções de Parcelamento */}
-                {!isAnnual && (
-                  <div className="border-t pt-3 mt-3">
-                    <h4 className="font-medium text-sm text-gray-700 mb-2">Opções de parcelamento:</h4>
-                    <div className="space-y-1 text-sm text-gray-600">
-                      <div className="flex justify-between">
-                        <span>1x sem juros</span>
-                        <span className="font-medium">R$ {parseFloat(selectedPlan.price).toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>2x sem juros</span>
-                        <span className="font-medium">R$ {(parseFloat(selectedPlan.price) / 2).toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>3x sem juros</span>
-                        <span className="font-medium">R$ {(parseFloat(selectedPlan.price) / 3).toFixed(2)}</span>
-                      </div>
-                    </div>
+                <div className="border-t pt-3 mt-3">
+                  <h4 className="font-medium text-sm text-gray-700 mb-2">Opções de parcelamento:</h4>
+                  <div className="space-y-1 text-sm text-gray-600">
+                    {isAnnual && selectedPlan.annualPrice ? (
+                      <>
+                        <div className="flex justify-between">
+                          <span>1x sem juros</span>
+                          <span className="font-medium">R$ {parseFloat(selectedPlan.annualPrice).toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>2x sem juros</span>
+                          <span className="font-medium">R$ {(parseFloat(selectedPlan.annualPrice) / 2).toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>3x sem juros</span>
+                          <span className="font-medium">R$ {(parseFloat(selectedPlan.annualPrice) / 3).toFixed(2)}</span>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex justify-between">
+                          <span>1x sem juros</span>
+                          <span className="font-medium">R$ {parseFloat(selectedPlan.price).toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>2x sem juros</span>
+                          <span className="font-medium">R$ {(parseFloat(selectedPlan.price) / 2).toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>3x sem juros</span>
+                          <span className="font-medium">R$ {(parseFloat(selectedPlan.price) / 3).toFixed(2)}</span>
+                        </div>
+                      </>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
             </div>
             <CardContent>
