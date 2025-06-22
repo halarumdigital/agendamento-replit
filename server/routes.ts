@@ -1858,15 +1858,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/auth/logout', async (req: any, res) => {
     try {
+      console.log('🚪 Admin logout requested');
       req.session.destroy((err: any) => {
         if (err) {
-          console.error("Error destroying session:", err);
+          console.error("🚪 Error destroying session:", err);
           return res.status(500).json({ message: "Erro ao fazer logout" });
         }
+        console.log('🚪 Admin logout successful');
+        res.clearCookie('connect.sid');
         res.json({ message: "Logout realizado com sucesso" });
       });
     } catch (error) {
-      console.error("Error during admin logout:", error);
+      console.error("🚪 Error during admin logout:", error);
       res.status(500).json({ message: "Erro interno do servidor" });
     }
   });
@@ -3182,12 +3185,10 @@ INSTRUÇÕES OBRIGATÓRIAS:
       }
 
       // Direct database update for speed
-      await db.update(schema.appointments)
-        .set({ 
-          status: status,
-          updatedAt: new Date() 
-        })
-        .where(eq(schema.appointments.id, id));
+      const result = await pool.execute(
+        'UPDATE appointments SET status = ?, updated_at = ? WHERE id = ?',
+        [status, new Date(), id]
+      );
       
       console.log('🎯 Kanban: Status updated successfully');
       res.json({ id, status, success: true });
