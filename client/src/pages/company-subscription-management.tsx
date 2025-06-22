@@ -12,6 +12,7 @@ import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-
 import { loadStripe } from '@stripe/stripe-js';
 
 // Initialize Stripe
+console.log('🔑 Stripe Public Key:', import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY || 'pk_test_dummy');
 
 interface Plan {
@@ -145,12 +146,23 @@ function PaymentForm({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="min-h-[200px]">
-            <PaymentElement
-              options={{
-                layout: 'tabs'
-              }}
-            />
+          <div className="min-h-[200px] border rounded p-4">
+            {!stripe ? (
+              <div className="flex items-center justify-center h-32">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+                  <p className="text-sm text-muted-foreground">Carregando Stripe...</p>
+                </div>
+              </div>
+            ) : (
+              <PaymentElement
+                options={{
+                  layout: 'tabs'
+                }}
+                onReady={() => console.log('PaymentElement ready')}
+                onLoadError={(error) => console.error('PaymentElement load error:', error)}
+              />
+            )}
           </div>
           
           <div className="flex gap-3">
@@ -486,33 +498,40 @@ export default function CompanySubscriptionManagement() {
 
       {/* Stripe Payment Interface */}
       {showPayment && clientSecret && selectedPlanId && (
-        <Elements 
-          stripe={stripePromise} 
-          options={{ 
-            clientSecret,
-            appearance: {
-              theme: 'stripe',
-              variables: {
-                colorPrimary: 'hsl(var(--primary))',
+        <div className="mt-6">
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
+            <p className="text-sm text-blue-800">
+              Debug: clientSecret = {clientSecret ? 'presente' : 'não encontrado'}
+            </p>
+          </div>
+          <Elements 
+            stripe={stripePromise} 
+            options={{ 
+              clientSecret,
+              appearance: {
+                theme: 'stripe',
+                variables: {
+                  colorPrimary: '#8b5cf6',
+                }
               }
-            }
-          }}
-        >
-          <PaymentForm
-            selectedPlan={availablePlans.find(p => p.id === selectedPlanId)!}
-            billingPeriod={billingPeriod}
-            onSuccess={() => {
-              setShowPayment(false);
-              setClientSecret(null);
-              setSelectedPlanId(null);
-              queryClient.invalidateQueries({ queryKey: ['/api/subscription/status'] });
             }}
-            onCancel={() => {
-              setShowPayment(false);
-              setClientSecret(null);
-            }}
-          />
-        </Elements>
+          >
+            <PaymentForm
+              selectedPlan={availablePlans.find(p => p.id === selectedPlanId)!}
+              billingPeriod={billingPeriod}
+              onSuccess={() => {
+                setShowPayment(false);
+                setClientSecret(null);
+                setSelectedPlanId(null);
+                queryClient.invalidateQueries({ queryKey: ['/api/subscription/status'] });
+              }}
+              onCancel={() => {
+                setShowPayment(false);
+                setClientSecret(null);
+              }}
+            />
+          </Elements>
+        </div>
       )}
     </div>
   );
