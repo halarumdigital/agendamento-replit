@@ -6397,6 +6397,113 @@ const broadcastEvent = (eventData: any) => {
     }
   });
 
+  // Test birthday message function
+  app.post('/api/company/test-birthday-message', isCompanyAuthenticated, async (req, res) => {
+    try {
+      const companyId = req.session.companyId;
+      const { testPhoneNumber } = req.body;
+      
+      if (!testPhoneNumber?.trim()) {
+        return res.status(400).json({
+          success: false,
+          message: "Número de telefone é obrigatório para o teste"
+        });
+      }
+      
+      console.log(`🎂 Testing birthday message for company ${companyId} to phone: ${testPhoneNumber}`);
+      
+      // Get birthday message template
+      const birthdayMessages = await storage.getBirthdayMessagesByCompany(companyId);
+      const activeMessage = birthdayMessages.find(msg => msg.isActive) || birthdayMessages[0];
+      
+      if (!activeMessage) {
+        return res.status(400).json({
+          success: false,
+          message: "Nenhuma mensagem de aniversário configurada"
+        });
+      }
+      
+      // Get WhatsApp instance
+      const whatsappInstances = await storage.getWhatsappInstancesByCompany(companyId);
+      const whatsappInstance = whatsappInstances[0];
+      
+      if (!whatsappInstance) {
+        return res.status(400).json({
+          success: false,
+          message: "Nenhuma instância do WhatsApp configurada"
+        });
+      }
+      
+      // Get global settings for Evolution API
+      const settings = await storage.getGlobalSettings();
+      if (!settings?.evolutionApiUrl || !settings?.evolutionApiGlobalKey) {
+        return res.status(400).json({
+          success: false,
+          message: "Configurações da Evolution API não encontradas"
+        });
+      }
+      
+      // Prepare test message
+      let cleanPhone = testPhoneNumber.replace(/\D/g, '');
+      if (cleanPhone.length >= 10 && !cleanPhone.startsWith('55')) {
+        cleanPhone = '55' + cleanPhone;
+      }
+      
+      const testMessage = `🎂 TESTE - ${activeMessage.messageTemplate.replace('{NOME}', 'Cliente Teste').replace('{EMPRESA}', 'Empresa Teste')}`;
+      
+      // Send via Evolution API
+      const correctedApiUrl = settings.evolutionApiUrl.replace(/\/api\/?$/, '').replace(/\/$/, '');
+      
+      const response = await fetch(`${correctedApiUrl}/message/sendText/${whatsappInstance.instanceName}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': settings.evolutionApiGlobalKey
+        },
+        body: JSON.stringify({
+          number: cleanPhone,
+          text: testMessage
+        })
+      });
+      
+      const responseText = await response.text();
+      
+      if (!response.ok) {
+        console.log(`❌ API Error - Status: ${response.status}`);
+        console.log(`📄 Raw response: ${responseText}`);
+        
+        try {
+          const errorData = JSON.parse(responseText);
+          if (errorData.response?.message?.[0]?.exists === false) {
+            return res.json({
+              success: true,
+              message: `✅ Integração funcionando! O número ${testPhoneNumber} não existe no WhatsApp (comportamento esperado para teste).`
+            });
+          }
+        } catch (e) {
+          // Response is not JSON
+        }
+        
+        return res.json({
+          success: false,
+          message: `Erro da Evolution API: ${responseText}`
+        });
+      }
+      
+      res.json({
+        success: true,
+        message: `Mensagem de teste enviada com sucesso para ${testPhoneNumber}!`
+      });
+      
+    } catch (error: any) {
+      console.error("Error testing birthday message:", error);
+      res.status(500).json({
+        success: false,
+        message: "Erro interno do servidor: " + error.message
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
