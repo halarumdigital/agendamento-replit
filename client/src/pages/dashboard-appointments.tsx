@@ -608,6 +608,25 @@ export default function DashboardAppointments() {
     console.log('✏️ Edit: handleEditAppointment called for appointment:', appointment.id);
     
     try {
+      // Reset states first
+      setEditingAppointment(null);
+      setIsEditAppointmentOpen(false);
+      
+      // Clear form completely
+      editForm.reset({
+        clientId: undefined,
+        serviceId: 0,
+        professionalId: 0,
+        statusId: 0,
+        clientName: "",
+        clientEmail: "",
+        clientPhone: "",
+        appointmentDate: "",
+        appointmentTime: "",
+        notes: "",
+        confirmed: false,
+      });
+      
       // Fetch fresh appointment data from server
       console.log('✏️ Edit: Fetching appointment data from server...');
       const response = await fetch(`/api/company/appointments/${appointment.id}`, {
@@ -621,6 +640,8 @@ export default function DashboardAppointments() {
       
       const freshAppointment = await response.json();
       console.log('✏️ Edit: Fresh appointment data received:', freshAppointment);
+      
+      // Set editing appointment after clean reset
       setEditingAppointment(freshAppointment);
       
       // Find status ID by status name
@@ -649,8 +670,11 @@ export default function DashboardAppointments() {
       console.log('✏️ Edit: Form data to populate:', formData);
       editForm.reset(formData);
       
-      console.log('✏️ Edit: Opening edit dialog...');
-      setIsEditAppointmentOpen(true);
+      // Add small delay to ensure state is fully reset
+      setTimeout(() => {
+        console.log('✏️ Edit: Opening edit dialog...');
+        setIsEditAppointmentOpen(true);
+      }, 100);
     } catch (error) {
       console.error('✏️ Edit: Error in handleEditAppointment:', error);
       toast({
