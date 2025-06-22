@@ -94,14 +94,18 @@ export class StripeService {
     this.checkStripeAvailable();
     console.log('🔄 Criando SetupIntent no Stripe para configurar método de pagamento');
 
-    const setupIntent = await stripe!.setupIntents.create({
-      customer: data.customerId,
+    const setupIntentData: any = {
       metadata: data.metadata || {},
-      automatic_payment_methods: {
-        enabled: true,
-      },
       usage: 'off_session',
-    });
+      payment_method_types: ['card'],
+    };
+
+    // Only add customer if provided
+    if (data.customerId) {
+      setupIntentData.customer = data.customerId;
+    }
+
+    const setupIntent = await stripe!.setupIntents.create(setupIntentData);
 
     console.log('✅ SetupIntent criado no Stripe:', setupIntent.id);
     return setupIntent;

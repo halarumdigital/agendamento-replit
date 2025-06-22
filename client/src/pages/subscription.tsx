@@ -194,7 +194,15 @@ export default function Subscription() {
 
   const handleSelectPlan = (plan: Plan) => {
     setSelectedPlan(plan);
-    createSubscriptionMutation.mutate({ planId: plan.id, isAnnual, installments: isAnnual ? installments : undefined });
+    // Reset installments to 1 when switching to monthly billing
+    if (!isAnnual) {
+      setInstallments(1);
+    }
+    createSubscriptionMutation.mutate({ 
+      planId: plan.id, 
+      isAnnual, 
+      installments: isAnnual ? installments : 1 
+    });
   };
 
   const handlePaymentSuccess = () => {
