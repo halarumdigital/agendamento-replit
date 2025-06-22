@@ -6381,10 +6381,11 @@ const broadcastEvent = (eventData: any) => {
   app.post('/api/company/test-reminder', isCompanyAuthenticated, async (req, res) => {
     try {
       const companyId = req.session.companyId;
+      const { testPhone } = req.body;
       
-      console.log(`🧪 Testing reminder function for company ${companyId}`);
+      console.log(`🧪 Testing reminder function for company ${companyId}`, testPhone ? `with custom phone: ${testPhone}` : '');
       
-      const result = await storage.testReminderFunction(companyId);
+      const result = await storage.testReminderFunction(companyId, testPhone);
       
       res.json(result);
     } catch (error: any) {

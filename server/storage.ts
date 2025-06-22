@@ -3137,7 +3137,7 @@ Object.assign(storage, {
   },
 
   // Test reminder function for companies
-  async testReminderFunction(companyId: number) {
+  async testReminderFunction(companyId: number, customTestPhone?: string) {
     try {
       console.log(`🧪 Testing reminder function for company ${companyId}`);
       
@@ -3186,9 +3186,21 @@ Object.assign(storage, {
         };
       }
 
-      // Test sending a simple message
-      const testMessage = "🧪 Teste de lembrete - sistema funcionando corretamente!";
-      const testPhone = "5511999999999"; // Test phone number
+      // Use custom test phone if provided, otherwise default test number
+      const defaultTestPhone = "5511999999999";
+      let testPhone = customTestPhone || defaultTestPhone;
+      
+      // Clean and format the phone number if custom phone provided
+      if (customTestPhone) {
+        testPhone = customTestPhone.replace(/\D/g, '');
+        if (testPhone && testPhone.length >= 10 && !testPhone.startsWith('55')) {
+          testPhone = '55' + testPhone;
+        }
+      }
+      
+      const testMessage = customTestPhone ? 
+        `🧪 Teste de lembrete para ${customTestPhone} - sistema funcionando corretamente!` :
+        "🧪 Teste de lembrete - sistema funcionando corretamente!";
 
       // Evolution API URL should NOT include /api/ prefix for message endpoints
       const correctedApiUrl = settings.evolutionApiUrl?.replace(/\/api\/?$/, '').replace(/\/$/, '');
@@ -3248,6 +3260,24 @@ Object.assign(storage, {
       } else {
         console.error(`❌ API Error - Status: ${response.status}`);
         console.error(`❌ Error details:`, result);
+        
+        // Check if the error is due to test number not existing in WhatsApp
+        if (result?.response?.message && Array.isArray(result.response.message)) {
+          const errorMessage = result.response.message[0];
+          if (errorMessage && errorMessage.exists === false && errorMessage.number === testPhone) {
+            return {
+              success: true,
+              message: "✅ Integração Evolution API funcionando! O número de teste não existe no WhatsApp, mas a conexão está correta.",
+              details: { 
+                status: response.status, 
+                testPhone: testPhone,
+                instanceName: whatsappInstance.instanceName,
+                note: "A API está respondendo corretamente. Use um número real para testes completos."
+              }
+            };
+          }
+        }
+        
         return {
           success: false,
           message: `Erro Evolution API (${response.status}): ${result?.message || result?.error || 'Resposta inválida da API'}`,

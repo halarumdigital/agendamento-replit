@@ -686,8 +686,10 @@ export default function CompanySettings() {
   });
 
   const testReminderMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/company/test-reminder");
+    mutationFn: async (phoneNumber?: string) => {
+      const response = await apiRequest("POST", "/api/company/test-reminder", { 
+        testPhone: phoneNumber 
+      });
       return response;
     },
     onSuccess: (data: any) => {
@@ -1836,23 +1838,51 @@ export default function CompanySettings() {
                 </Card>
               </div>
 
-              <div className="flex gap-2 mt-6">
-                <Button
-                  onClick={() => testReminderMutation.mutate()}
-                  disabled={testReminderMutation.isPending}
-                  className="flex items-center gap-2"
-                >
-                  <Send className="w-4 h-4" />
-                  {testReminderMutation.isPending ? "Testando..." : "Testar Função"}
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/company/reminder-settings'] })}
-                  className="flex items-center gap-2"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                  Atualizar
-                </Button>
+              <div className="space-y-4 mt-6">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <Send className="w-5 h-5 text-blue-600 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-blue-800">Teste da Função de Lembrete</p>
+                      <p className="text-sm text-blue-700 mb-3">
+                        Envie uma mensagem de teste via WhatsApp para verificar a integração
+                      </p>
+                      <div className="space-y-2">
+                        <Label htmlFor="test-phone">Número de telefone para teste</Label>
+                        <Input
+                          id="test-phone"
+                          type="tel"
+                          placeholder="Ex: (11) 99999-9999"
+                          value={testPhoneNumber}
+                          onChange={(e) => setTestPhoneNumber(e.target.value)}
+                          className="max-w-xs"
+                        />
+                        <p className="text-xs text-blue-600">
+                          Digite um número válido do WhatsApp para testar a integração
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => testReminderMutation.mutate(testPhoneNumber)}
+                    disabled={testReminderMutation.isPending || !testPhoneNumber.trim()}
+                    className="flex items-center gap-2"
+                  >
+                    <Send className="w-4 h-4" />
+                    {testReminderMutation.isPending ? "Testando..." : "Testar Função"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/company/reminder-settings'] })}
+                    className="flex items-center gap-2"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Atualizar
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
