@@ -1,9 +1,10 @@
-import { storage } from './storage';
+import { db } from './db';
+import { sql } from 'drizzle-orm';
 
 export async function ensureTourTables() {
   try {
-    // Create tour_steps table using storage connection
-    await storage.connection.execute(`
+    // Create tour_steps table
+    await db.execute(sql`
       CREATE TABLE IF NOT EXISTS tour_steps (
         id INT PRIMARY KEY AUTO_INCREMENT,
         title VARCHAR(255) NOT NULL,
@@ -18,7 +19,7 @@ export async function ensureTourTables() {
     `);
 
     // Create company_tour_progress table
-    await storage.connection.execute(`
+    await db.execute(sql`
       CREATE TABLE IF NOT EXISTS company_tour_progress (
         id INT PRIMARY KEY AUTO_INCREMENT,
         company_id INT NOT NULL,
@@ -31,7 +32,7 @@ export async function ensureTourTables() {
     `);
 
     // Check if tour steps already exist
-    const [existingSteps] = await storage.connection.execute('SELECT COUNT(*) as count FROM tour_steps');
+    const existingSteps = await db.execute(sql`SELECT COUNT(*) as count FROM tour_steps`);
     const count = (existingSteps as any)[0].count;
     
     if (count === 0) {
@@ -89,11 +90,10 @@ export async function ensureTourTables() {
       ];
 
       for (const step of tourSteps) {
-        await storage.connection.execute(
-          `INSERT INTO tour_steps (title, description, target_element, placement, step_order)
-           VALUES (?, ?, ?, ?, ?)`,
-          [step.title, step.description, step.target_element, step.placement, step.step_order]
-        );
+        await db.execute(sql`
+          INSERT INTO tour_steps (title, description, target_element, placement, step_order)
+          VALUES (${step.title}, ${step.description}, ${step.target_element}, ${step.placement}, ${step.step_order})
+        `);
       }
       console.log('✅ Default tour steps created');
     } else {

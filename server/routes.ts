@@ -5703,6 +5703,173 @@ const broadcastEvent = (eventData: any) => {
     }
   });
 
+  // ===== TOUR SYSTEM ROUTES =====
+
+  // Get all tour steps (admin only)
+  app.get('/api/admin/tour/steps', isAuthenticated, async (req, res) => {
+    try {
+      const steps = await (storage as any).getTourSteps();
+      res.json(steps);
+    } catch (error) {
+      console.error('Error fetching tour steps:', error);
+      res.status(500).json({ message: 'Erro ao buscar etapas do tour' });
+    }
+  });
+
+  // Create new tour step (admin only)
+  app.post('/api/admin/tour/steps', isAuthenticated, async (req, res) => {
+    try {
+      const { title, description, targetElement, placement, stepOrder } = req.body;
+      
+      const newStep = await (storage as any).createTourStep({
+        title,
+        description,
+        targetElement,
+        placement: placement || 'bottom',
+        stepOrder,
+        isActive: true
+      });
+      
+      res.json(newStep);
+    } catch (error) {
+      console.error('Error creating tour step:', error);
+      res.status(500).json({ message: 'Erro ao criar etapa do tour' });
+    }
+  });
+
+  // Update tour step (admin only)
+  app.put('/api/admin/tour/steps/:id', requireAdminAuth, async (req, res) => {
+    try {
+      const stepId = parseInt(req.params.id);
+      const { title, description, targetElement, placement, stepOrder, isActive } = req.body;
+      
+      const updatedStep = await (storage as any).updateTourStep(stepId, {
+        title,
+        description,
+        targetElement,
+        placement,
+        stepOrder,
+        isActive
+      });
+      
+      res.json(updatedStep);
+    } catch (error) {
+      console.error('Error updating tour step:', error);
+      res.status(500).json({ message: 'Erro ao atualizar etapa do tour' });
+    }
+  });
+
+  // Delete tour step (admin only)
+  app.delete('/api/admin/tour/steps/:id', requireAdminAuth, async (req, res) => {
+    try {
+      const stepId = parseInt(req.params.id);
+      await (storage as any).deleteTourStep(stepId);
+      res.json({ message: 'Etapa do tour excluída com sucesso' });
+    } catch (error) {
+      console.error('Error deleting tour step:', error);
+      res.status(500).json({ message: 'Erro ao excluir etapa do tour' });
+    }
+  });
+
+  // Get tour status for company
+  app.get('/api/company/tour/status', requireCompanyAuth, async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      const progress = await (storage as any).getCompanyTourProgress(companyId);
+      
+      if (!progress) {
+        // First time accessing - create initial progress
+        const newProgress = await (storage as any).createCompanyTourProgress({
+          companyId,
+          hasCompletedTour: false,
+          currentStep: 1
+        });
+        return res.json({ shouldShowTour: true, progress: newProgress });
+      }
+      
+      res.json({ 
+        shouldShowTour: !progress.hasCompletedTour,
+        progress 
+      });
+    } catch (error) {
+      console.error('Error fetching tour status:', error);
+      res.status(500).json({ message: 'Erro ao buscar status do tour' });
+    }
+  });
+
+  // Get active tour steps for company
+  app.get('/api/company/tour/steps', requireCompanyAuth, async (req, res) => {
+    try {
+      const steps = await (storage as any).getActiveTourSteps();
+      res.json(steps);
+    } catch (error) {
+      console.error('Error fetching active tour steps:', error);
+      res.status(500).json({ message: 'Erro ao buscar etapas do tour' });
+    }
+  });
+
+  // Update tour progress
+  app.post('/api/company/tour/progress', requireCompanyAuth, async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      const { currentStep, completed } = req.body;
+      
+      const progress = await (storage as any).getCompanyTourProgress(companyId);
+      
+      if (!progress) {
+        // Create new progress record
+        const newProgress = await (storage as any).createCompanyTourProgress({
+          companyId,
+          hasCompletedTour: completed || false,
+          currentStep: currentStep || 1,
+          completedAt: completed ? new Date() : null
+        });
+        return res.json(newProgress);
+      }
+      
+      // Update existing progress
+      const updatedProgress = await (storage as any).updateCompanyTourProgress(progress.id, {
+        currentStep: currentStep || progress.currentStep,
+        hasCompletedTour: completed !== undefined ? completed : progress.hasCompletedTour,
+        completedAt: completed ? new Date() : progress.completedAt
+      });
+      
+      res.json(updatedProgress);
+    } catch (error) {
+      console.error('Error updating tour progress:', error);
+      res.status(500).json({ message: 'Erro ao atualizar progresso do tour' });
+    }
+  });
+
+  // Mark tour as completed
+  app.post('/api/company/tour/complete', requireCompanyAuth, async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      
+      const progress = await (storage as any).getCompanyTourProgress(companyId);
+      
+      if (!progress) {
+        const newProgress = await (storage as any).createCompanyTourProgress({
+          companyId,
+          hasCompletedTour: true,
+          currentStep: 1,
+          completedAt: new Date()
+        });
+        return res.json(newProgress);
+      }
+      
+      const updatedProgress = await (storage as any).updateCompanyTourProgress(progress.id, {
+        hasCompletedTour: true,
+        completedAt: new Date()
+      });
+      
+      res.json(updatedProgress);
+    } catch (error) {
+      console.error('Error completing tour:', error);
+      res.status(500).json({ message: 'Erro ao completar tour' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

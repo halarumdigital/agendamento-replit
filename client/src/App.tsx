@@ -38,6 +38,7 @@ import AdminSubscriptionTest from "@/pages/admin-subscription-test";
 import AdminAlerts from "@/pages/admin-alerts";
 import AdminCoupons from "@/pages/admin-coupons";
 import AdminSupport from "@/pages/admin-support";
+import AdminTourConfig from "@/pages/admin-tour-config";
 import SettingsPage from "@/pages/settings";
 import Status from "@/pages/status";
 import PublicReview from "@/pages/public-review";
@@ -292,6 +293,15 @@ function Router() {
             {isAdminAuthenticated ? (
               <AdminLayout>
                 <AdminSupport />
+              </AdminLayout>
+            ) : (
+              <Login />
+            )}
+          </Route>
+          <Route path="/administrador/tour">
+            {isAdminAuthenticated ? (
+              <AdminLayout>
+                <AdminTourConfig />
               </AdminLayout>
             ) : (
               <Login />
