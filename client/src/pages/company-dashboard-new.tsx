@@ -1,10 +1,14 @@
-import { Building2, Users, Calendar, CreditCard, Settings, FileText, User, MessageSquare, DollarSign, Clock, UserCheck, TrendingUp, TrendingDown, Plus, MoreHorizontal, Download } from "lucide-react";
+import { Building2, Users, Calendar, CreditCard, Settings, FileText, User, MessageSquare, DollarSign, Clock, UserCheck, TrendingUp, TrendingDown, Plus, MoreHorizontal, Download, HelpCircle } from "lucide-react";
 import { useCompanyAuth } from "@/hooks/useCompanyAuth";
 import { useQuery } from "@tanstack/react-query";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
+import { useGuidedTour } from "@/hooks/use-guided-tour";
+import { GuidedTour } from "@/components/guided-tour";
+import { Button } from "@/components/ui/button";
 
 export default function CompanyDashboardNew() {
   const { company, isLoading } = useCompanyAuth();
+  const { showTour, closeTour, resetTour } = useGuidedTour();
 
   // Buscar agendamentos do dia
   const { data: appointments = [] } = useQuery({
@@ -402,7 +406,7 @@ export default function CompanyDashboardNew() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="mb-6 px-6 pt-6">
+      <div className="mb-6 px-6 pt-6 flex justify-between items-start">
         <div>
           <h2 className="text-xl font-semibold text-gray-800">Dashboard</h2>
           <p className="text-sm text-gray-500">
@@ -414,10 +418,21 @@ export default function CompanyDashboardNew() {
             })}
           </p>
         </div>
+        
+        {/* Tour restart button */}
+        <Button
+          onClick={resetTour}
+          variant="outline"
+          size="sm"
+          className="flex items-center gap-2 bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 hover:border-blue-300"
+        >
+          <HelpCircle className="w-4 h-4" />
+          Reiniciar Tour
+        </Button>
       </div>
 
       {/* Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6 px-6">
+      <div className="dashboard-overview grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6 px-6">
         <div className="bg-white rounded shadow-sm p-5 border border-gray-100">
           <div className="flex justify-between items-start mb-4">
             <div>
@@ -738,6 +753,11 @@ export default function CompanyDashboardNew() {
           </div>
         </div>
       </div>
+
+      {/* Guided Tour */}
+      {showTour && company && (
+        <GuidedTour onClose={closeTour} />
+      )}
     </div>
   );
 }
