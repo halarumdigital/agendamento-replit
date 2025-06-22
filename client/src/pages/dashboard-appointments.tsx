@@ -1753,9 +1753,10 @@ export default function DashboardAppointments() {
                                             size="sm"
                                             className="h-8 w-16 p-1 bg-red-500 hover:bg-red-600 text-white z-50 relative"
                                             onClick={(e) => {
-                                              console.log('✏️ Edit button clicked in Kanban for appointment:', appointment.id);
+                                              console.log('🔥 BUTTON CLICKED!!!');
+                                              alert('Button clicked!');
                                               e.stopPropagation();
-                                              handleEditAppointment(appointment);
+                                              setIsEditAppointmentOpen(true);
                                             }}
                                           >
                                             EDIT
