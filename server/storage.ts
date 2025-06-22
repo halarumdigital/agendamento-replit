@@ -3100,10 +3100,18 @@ Object.assign(storage, {
 
   async createCompanyTourProgress(progressData: InsertCompanyTourProgress): Promise<CompanyTourProgress> {
     try {
-      const [newProgress] = await db
+      const result = await db
         .insert(companyTourProgress)
-        .values(progressData)
-        .returning();
+        .values(progressData);
+      
+      // Get the inserted record
+      const [newProgress] = await db
+        .select()
+        .from(companyTourProgress)
+        .where(eq(companyTourProgress.companyId, progressData.companyId))
+        .orderBy(desc(companyTourProgress.id))
+        .limit(1);
+      
       return newProgress;
     } catch (error) {
       console.error('Error creating company tour progress:', error);
@@ -3113,11 +3121,16 @@ Object.assign(storage, {
 
   async updateCompanyTourProgress(progressId: number, progressData: Partial<InsertCompanyTourProgress>): Promise<CompanyTourProgress> {
     try {
-      const [updatedProgress] = await db
+      await db
         .update(companyTourProgress)
         .set(progressData)
-        .where(eq(companyTourProgress.id, progressId))
-        .returning();
+        .where(eq(companyTourProgress.id, progressId));
+        
+      // Get the updated record
+      const [updatedProgress] = await db
+        .select()
+        .from(companyTourProgress)
+        .where(eq(companyTourProgress.id, progressId));
       return updatedProgress;
     } catch (error) {
       console.error('Error updating company tour progress:', error);
