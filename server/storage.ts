@@ -3148,9 +3148,11 @@ Object.assign(storage, {
       console.log(`🧪 Testing reminder function for company ${companyId}`);
       
       // Check if company has WhatsApp instance configured
+      console.log(`🔍 Checking WhatsApp instance for company ${companyId}`);
       const [whatsappInstance] = await db.select().from(whatsappInstances)
         .where(eq(whatsappInstances.companyId, companyId));
 
+      console.log(`📱 WhatsApp instance found:`, !!whatsappInstance);
       if (!whatsappInstance) {
         return {
           success: false,
@@ -3159,12 +3161,14 @@ Object.assign(storage, {
       }
 
       // Check if there are any active reminder settings
+      console.log(`🔍 Checking active reminder settings for company ${companyId}`);
       const activeReminders = await db.select().from(reminderSettings)
         .where(and(
           eq(reminderSettings.companyId, companyId),
           eq(reminderSettings.isActive, true)
         ));
 
+      console.log(`📋 Active reminders found: ${activeReminders.length}`);
       if (activeReminders.length === 0) {
         return {
           success: false,
@@ -3173,7 +3177,13 @@ Object.assign(storage, {
       }
 
       // Get global settings for Evolution API
+      console.log(`🌐 Fetching global settings for Evolution API`);
       const [settings] = await db.select().from(globalSettings).limit(1);
+      
+      console.log(`⚙️ Global settings found:`, {
+        hasUrl: !!settings?.evolutionApiUrl,
+        hasKey: !!settings?.evolutionApiGlobalKey
+      });
       
       if (!settings?.evolutionApiUrl || !settings?.evolutionApiGlobalKey) {
         return {
@@ -3191,45 +3201,86 @@ Object.assign(storage, {
         settings.evolutionApiUrl : 
         `${settings.evolutionApiUrl?.replace(/\/$/, '')}/api`;
 
+      console.log(`🌐 Making API call to Evolution API`);
+      console.log(`📡 URL: ${correctedApiUrl}/message/sendText/${whatsappInstance.instanceName}`);
+      console.log(`📱 Instance: ${whatsappInstance.instanceName}`);
+      console.log(`📞 Test phone: ${testPhone}`);
+
+      const requestPayload = {
+        number: testPhone,
+        textMessage: {
+          text: testMessage
+        }
+      };
+
+      console.log(`📦 Request payload:`, JSON.stringify(requestPayload, null, 2));
+
       const response = await fetch(`${correctedApiUrl}/message/sendText/${whatsappInstance.instanceName}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'apikey': settings.evolutionApiGlobalKey!
         },
-        body: JSON.stringify({
-          number: testPhone,
-          textMessage: {
-            text: testMessage
-          }
-        })
+        body: JSON.stringify(requestPayload)
       });
 
-      const result = await response.json();
+      console.log(`📊 Response status: ${response.status}`);
+      console.log(`📊 Response ok: ${response.ok}`);
+
+      const responseText = await response.text();
+      console.log(`📄 Raw response text: ${responseText.substring(0, 500)}`);
+
+      let result;
+      try {
+        result = JSON.parse(responseText);
+        console.log(`📋 Parsed result:`, result);
+      } catch (parseError) {
+        console.error(`❌ Failed to parse response as JSON:`, parseError);
+        return {
+          success: false,
+          message: `Erro ao processar resposta da Evolution API: ${responseText.substring(0, 200)}`,
+          details: { responseText, status: response.status }
+        };
+      }
 
       if (response.ok) {
+        console.log(`✅ Test successful! Status: ${response.status}`);
         return {
           success: true,
           message: "Teste de lembrete realizado com sucesso! Sistema funcionando corretamente.",
           details: {
             instanceName: whatsappInstance.instanceName,
             activeReminders: activeReminders.length,
-            testMessage: testMessage
+            testMessage: testMessage,
+            apiResponse: result
           }
         };
       } else {
+        console.error(`❌ API Error - Status: ${response.status}`);
+        console.error(`❌ Error details:`, result);
         return {
           success: false,
-          message: `Erro no teste de lembrete: ${result.message || 'Erro desconhecido'}`,
-          details: result
+          message: `Erro Evolution API (${response.status}): ${result?.message || result?.error || 'Resposta inválida da API'}`,
+          details: { 
+            status: response.status, 
+            response: result,
+            url: `${correctedApiUrl}/message/sendText/${whatsappInstance.instanceName}`,
+            instanceName: whatsappInstance.instanceName
+          }
         };
       }
 
     } catch (error: any) {
-      console.error('Error in testReminderFunction:', error);
+      console.error('❌ Critical error in testReminderFunction:', error);
+      console.error('❌ Error stack:', error.stack);
       return {
         success: false,
-        message: `Erro interno: ${error.message}`
+        message: `Erro crítico no sistema: ${error.message || 'Erro desconhecido'}`,
+        details: { 
+          error: error.message,
+          stack: error.stack,
+          type: error.name
+        }
       };
     }
   }
