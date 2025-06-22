@@ -55,6 +55,7 @@ export const companyProfileSchema = z.object({
   state: z.string().optional(),
   planId: z.number().nullable().optional(),
   isActive: z.boolean().optional(),
+  tourEnabled: z.boolean().optional(),
 });
 
 export const companyPasswordSchema = z.object({

@@ -72,6 +72,7 @@ export default function Companies() {
       email: "",
       planId: null,
       isActive: true,
+      tourEnabled: true,
     },
   });
 
