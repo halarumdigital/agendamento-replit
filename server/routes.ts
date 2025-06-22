@@ -6271,7 +6271,8 @@ const broadcastEvent = (eventData: any) => {
       }
 
       const plan = plansArray[0];
-      const price = billingPeriod === 'annual' && plan.annual_price ? plan.annual_price : plan.price;
+      const isAnnual = billingPeriod === 'annual';
+      const basePrice = isAnnual && plan.annual_price ? parseFloat(plan.annual_price) : parseFloat(plan.price);
 
       // Get company info
       const companyResult = await db.execute(sql`
@@ -6285,17 +6286,49 @@ const broadcastEvent = (eventData: any) => {
 
       const company = companiesArray[0];
 
-      // Create new subscription redirect URL
-      const subscriptionUrl = `/assinatura?planId=${planId}&billingPeriod=${billingPeriod}&companyId=${companyId}`;
-      
-      console.log(`✅ Upgrade initiated for company ${companyId}, redirecting to: ${subscriptionUrl}`);
+      // Try to create Stripe payment intent/setup intent
+      try {
+        const stripeService = (await import('./services/stripe')).default;
+        
+        const setupIntent = await stripeService.createSetupIntent({
+          metadata: {
+            planId: planId.toString(),
+            planName: plan.name,
+            billingPeriod: isAnnual ? 'annual' : 'monthly',
+            amount: basePrice.toString(),
+            freeDays: plan.free_days?.toString() || '0',
+            companyId: companyId.toString()
+          }
+        });
 
-      res.json({
-        message: "Upgrade iniciado com sucesso",
-        redirectUrl: subscriptionUrl,
-        planName: plan.name,
-        price: price
-      });
+        console.log(`✅ Stripe SetupIntent created for company ${companyId}`);
+
+        res.json({
+          clientSecret: setupIntent.client_secret,
+          planName: plan.name,
+          amount: basePrice,
+          billingPeriod: isAnnual ? 'annual' : 'monthly',
+          freeDays: plan.free_days || 0
+        });
+
+      } catch (stripeError: any) {
+        console.error('Stripe error:', stripeError);
+        
+        // Fallback para demonstração quando Stripe não está disponível
+        if (stripeError.message && (stripeError.message.includes('Stripe não está configurado') || stripeError.message.includes('Invalid API Key'))) {
+          console.log('🔄 Usando fallback para demonstração - Stripe não configurado');
+          res.json({
+            demoMode: true,
+            message: 'Modo demonstração - Configure as chaves Stripe para pagamentos reais',
+            planName: plan.name,
+            amount: basePrice,
+            billingPeriod: isAnnual ? 'annual' : 'monthly',
+            freeDays: plan.free_days || 0
+          });
+        } else {
+          throw stripeError;
+        }
+      }
 
     } catch (error: any) {
       console.error("Error upgrading subscription:", error);
