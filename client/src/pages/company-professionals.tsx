@@ -223,9 +223,15 @@ export default function CompanyProfessionals() {
   });
 
   const onSubmit = (data: ProfessionalFormData) => {
+    console.log('Form submitted with data:', data);
+    console.log('Editing professional:', editingProfessional);
+    console.log('Form errors:', form.formState.errors);
+    
     if (editingProfessional) {
+      console.log('Calling updateMutation.mutate');
       updateMutation.mutate(data);
     } else {
+      console.log('Calling createMutation.mutate');
       createMutation.mutate(data);
     }
   };
@@ -438,6 +444,13 @@ export default function CompanyProfessionals() {
                         (!editingProfessional && !canAddProfessional())
                       }
                       className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={(e) => {
+                        console.log('Button clicked!', e);
+                        console.log('Button type:', e.currentTarget.type);
+                        console.log('Form valid:', form.formState.isValid);
+                        console.log('Form errors:', form.formState.errors);
+                        console.log('Editing professional:', editingProfessional);
+                      }}
                     >
                       {editingProfessional ? 'Atualizar' : 'Cadastrar'}
                     </Button>
