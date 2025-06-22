@@ -142,6 +142,7 @@ This is a comprehensive business management system built with Express.js and MyS
 ## Changelog
 ```
 Changelog:
+- June 22, 2025. COMPLETED: Full guided tour system implementation - created admin configuration panel for tour steps, company-side interactive tour component with step navigation and overlay, automatic first-time user detection, tour progress tracking, and database schema with tour_steps and company_tour_progress tables
 - June 21, 2025. COMPLETED Evolution API v2.3.0 integration with QR code functionality - fixed WhatsApp instance creation and added working QR code generation using /instance/connect endpoint with proper payload structure
 - June 21, 2025. Updated WhatsApp instance deletion to use correct Evolution API endpoint - fixed DELETE /instance/delete/{instanceName} to use base URL without /api/ prefix
 - June 21, 2025. Implemented WhatsApp instance status refresh using Evolution API - added GET /instance/connectionState/{instanceName} endpoint for real-time status updates

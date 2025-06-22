@@ -298,6 +298,15 @@ function Router() {
               <Login />
             )}
           </Route>
+          <Route path="/administrador/tour-config">
+            {isAdminAuthenticated ? (
+              <AdminLayout>
+                <AdminTourConfig />
+              </AdminLayout>
+            ) : (
+              <Login />
+            )}
+          </Route>
           <Route path="/administrador/tour">
             {isAdminAuthenticated ? (
               <AdminLayout>
