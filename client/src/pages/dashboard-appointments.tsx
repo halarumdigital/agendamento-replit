@@ -1425,7 +1425,6 @@ export default function DashboardAppointments() {
                             size="sm"
                             className="h-8 w-8 p-0"
                             onClick={() => {
-                              console.log('✏️ Edit button clicked in Calendar for appointment:', appointment.id);
                               handleEditAppointment(appointment);
                             }}
                           >
@@ -1491,7 +1490,6 @@ export default function DashboardAppointments() {
                             variant="outline"
                             size="sm"
                             onClick={() => {
-                              console.log('✏️ Edit button clicked in List for appointment:', appointment.id);
                               handleEditAppointment(appointment);
                             }}
                           >
