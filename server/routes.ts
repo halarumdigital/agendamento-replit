@@ -6291,7 +6291,8 @@ const broadcastEvent = (eventData: any) => {
       try {
         const stripeService = (await import('./services/stripe')).default;
         
-        const setupIntent = await stripeService.createSetupIntent({
+        const paymentIntent = await stripeService.createPaymentIntent({
+          amount: basePrice,
           metadata: {
             planId: planId.toString(),
             planName: plan.name,
@@ -6302,10 +6303,10 @@ const broadcastEvent = (eventData: any) => {
           }
         });
 
-        console.log(`✅ Stripe SetupIntent created for company ${companyId}`);
+        console.log(`✅ Stripe PaymentIntent created for company ${companyId}`);
 
         res.json({
-          clientSecret: setupIntent.client_secret,
+          clientSecret: paymentIntent.client_secret,
           planName: plan.name,
           amount: basePrice,
           billingPeriod: isAnnual ? 'annual' : 'monthly',
