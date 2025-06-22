@@ -116,6 +116,7 @@ export const settingsSchema = z.object({
   secondaryColor: z.string().min(4, "Cor secundária é obrigatória"),
   backgroundColor: z.string().min(4, "Cor de fundo é obrigatória"),
   textColor: z.string().min(4, "Cor do texto é obrigatória"),
+  tourColor: z.string().min(4, "Cor do tour guiado é obrigatória"),
   evolutionApiUrl: z.string().optional(),
   evolutionApiGlobalKey: z.string().optional(),
   openaiApiKey: z.string().optional(),

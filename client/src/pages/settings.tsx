@@ -201,6 +201,7 @@ export default function SettingsPage() {
       secondaryColor: "#64748b",
       backgroundColor: "#f8fafc",
       textColor: "#1e293b",
+      tourColor: "#b845dc",
       evolutionApiUrl: "",
       evolutionApiGlobalKey: "",
       openaiApiKey: "",
@@ -226,6 +227,7 @@ export default function SettingsPage() {
       secondaryColor: settings.secondaryColor,
       backgroundColor: settings.backgroundColor,
       textColor: settings.textColor,
+      tourColor: (settings as any).tourColor || "#b845dc",
       evolutionApiUrl: settings.evolutionApiUrl || "",
       evolutionApiGlobalKey: settings.evolutionApiGlobalKey || "",
       openaiApiKey: (settings as any).openaiApiKey || "",
@@ -662,6 +664,26 @@ export default function SettingsPage() {
                             <Input placeholder="#1e293b" {...field} />
                           </div>
                         </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="tourColor"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Cor do Tour Guiado</FormLabel>
+                        <FormControl>
+                          <div className="flex gap-2">
+                            <Input type="color" className="w-16 h-10 p-1" {...field} />
+                            <Input placeholder="#b845dc" {...field} />
+                          </div>
+                        </FormControl>
+                        <FormDescription>
+                          Cor utilizada para destacar elementos durante o tour guiado das empresas
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
