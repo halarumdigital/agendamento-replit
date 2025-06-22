@@ -2508,7 +2508,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
                       },
                       body: JSON.stringify({
                         number: phoneNumber,
-                        text: fallbackResponse
+                        textMessage: {
+                          text: fallbackResponse
+                        }
                       })
                     });
                     
@@ -2820,7 +2822,9 @@ INSTRUÇÕES OBRIGATÓRIAS:
                 },
                 body: JSON.stringify({
                   number: phoneNumber,
-                  text: aiResponse
+                  textMessage: {
+                    text: aiResponse
+                  }
                 })
               });
 
@@ -6369,6 +6373,25 @@ const broadcastEvent = (eventData: any) => {
       res.status(500).json({ 
         message: "Erro ao atualizar configuração do plano",
         error: error.message 
+      });
+    }
+  });
+
+  // Test reminder function
+  app.post('/api/company/test-reminder', isCompanyAuthenticated, async (req, res) => {
+    try {
+      const companyId = req.session.companyId;
+      
+      console.log(`🧪 Testing reminder function for company ${companyId}`);
+      
+      const result = await storage.testReminderFunction(companyId);
+      
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error testing reminder function:", error);
+      res.status(500).json({
+        success: false,
+        message: "Erro interno do servidor: " + error.message
       });
     }
   });

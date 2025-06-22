@@ -194,7 +194,9 @@ async function processCampaign(campaign: any) {
           },
           body: JSON.stringify({
             number: formattedPhone,
-            text: campaign.message
+            textMessage: {
+              text: campaign.message
+            }
           })
         });
 

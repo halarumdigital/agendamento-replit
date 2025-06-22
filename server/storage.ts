@@ -1462,7 +1462,9 @@ export class DatabaseStorage implements IStorage {
           },
           body: JSON.stringify({
             number: formattedPhone,
-            text: message
+            textMessage: {
+              text: message
+            }
           })
         });
 
@@ -2046,7 +2048,9 @@ Obrigado pela preferência! 🙏`;
         },
         body: JSON.stringify({
           number: formattedPhone,
-          text: message
+          textMessage: {
+            text: message
+          }
         })
       });
 
@@ -3135,6 +3139,98 @@ Object.assign(storage, {
     } catch (error) {
       console.error('Error updating company tour progress:', error);
       throw error;
+    }
+  },
+
+  // Test reminder function for companies
+  async testReminderFunction(companyId: number) {
+    try {
+      console.log(`🧪 Testing reminder function for company ${companyId}`);
+      
+      // Check if company has WhatsApp instance configured
+      const [whatsappInstance] = await db.select().from(whatsappInstances)
+        .where(eq(whatsappInstances.companyId, companyId));
+
+      if (!whatsappInstance) {
+        return {
+          success: false,
+          message: "Nenhuma instância do WhatsApp configurada para esta empresa"
+        };
+      }
+
+      // Check if there are any active reminder settings
+      const activeReminders = await db.select().from(reminderSettings)
+        .where(and(
+          eq(reminderSettings.companyId, companyId),
+          eq(reminderSettings.isActive, true)
+        ));
+
+      if (activeReminders.length === 0) {
+        return {
+          success: false,
+          message: "Nenhum lembrete ativo configurado para esta empresa"
+        };
+      }
+
+      // Get global settings for Evolution API
+      const [globalSettings] = await db.select().from(globalSettings).limit(1);
+      
+      if (!globalSettings?.evolutionApiUrl || !globalSettings?.evolutionApiGlobalKey) {
+        return {
+          success: false,
+          message: "Configurações globais da Evolution API não encontradas"
+        };
+      }
+
+      // Test sending a simple message
+      const testMessage = "🧪 Teste de lembrete - sistema funcionando corretamente!";
+      const testPhone = "5511999999999"; // Test phone number
+
+      // Ensure Evolution API URL uses proper API endpoint
+      const correctedApiUrl = globalSettings.evolutionApiUrl?.includes('/api/') ? 
+        globalSettings.evolutionApiUrl : 
+        `${globalSettings.evolutionApiUrl?.replace(/\/$/, '')}/api`;
+
+      const response = await fetch(`${correctedApiUrl}/message/sendText/${whatsappInstance.instanceName}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': globalSettings.evolutionApiGlobalKey
+        },
+        body: JSON.stringify({
+          number: testPhone,
+          textMessage: {
+            text: testMessage
+          }
+        })
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        return {
+          success: true,
+          message: "Teste de lembrete realizado com sucesso! Sistema funcionando corretamente.",
+          details: {
+            instanceName: whatsappInstance.instanceName,
+            activeReminders: activeReminders.length,
+            testMessage: testMessage
+          }
+        };
+      } else {
+        return {
+          success: false,
+          message: `Erro no teste de lembrete: ${result.message || 'Erro desconhecido'}`,
+          details: result
+        };
+      }
+
+    } catch (error: any) {
+      console.error('Error in testReminderFunction:', error);
+      return {
+        success: false,
+        message: `Erro interno: ${error.message}`
+      };
     }
   }
 });
