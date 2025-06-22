@@ -36,14 +36,13 @@ function TourContent({ tourSteps, closeTour }: { tourSteps: TourStep[], closeTou
 
   // Handle element click to advance tour
   const handleElementClick = (e: Event) => {
-    e.preventDefault();
-    e.stopPropagation();
     console.log('🎯 Tour: Element clicked, advancing to next step');
     
-    // Small delay to allow any navigation/actions to complete
+    // Don't prevent default behavior - let the click work normally
+    // Just advance the tour after a small delay
     setTimeout(() => {
       handleNext();
-    }, 300);
+    }, 100);
   };
 
   // Highlight target element with click functionality
@@ -70,9 +69,9 @@ function TourContent({ tourSteps, closeTour }: { tourSteps: TourStep[], closeTou
         element.style.animation = 'tour-pulse 2s infinite';
         element.style.cursor = 'pointer';
         
-        // Add click listener with capture to intercept clicks
+        // Add click listener to detect clicks
         const handler = (e: Event) => handleElementClick(e);
-        element.addEventListener('click', handler, { capture: true });
+        element.addEventListener('click', handler, false);
         setClickHandler(() => handler);
         setHighlightedElement(element);
 
@@ -164,7 +163,7 @@ function TourContent({ tourSteps, closeTour }: { tourSteps: TourStep[], closeTou
   }
 
   return (
-    <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-40 p-4 pointer-events-none">
+    <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-[9999] p-4 pointer-events-none">
       <Card className="w-full max-w-md pointer-events-auto">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-lg font-semibold">
