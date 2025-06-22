@@ -5775,27 +5775,37 @@ const broadcastEvent = (eventData: any) => {
   app.get('/api/company/tour/status', isCompanyAuthenticated, async (req: any, res) => {
     try {
       const companyId = req.session.companyId;
+      console.log('🎯 Tour Status - Company ID:', companyId);
       
       // First check if tour is enabled for this company
       const company = await storage.getCompany(companyId);
+      console.log('🎯 Company found:', company ? { id: company.id, tourEnabled: company.tourEnabled } : 'Not found');
+      
       if (!company || !company.tourEnabled) {
+        console.log('🎯 Tour disabled for company');
         return res.json({ shouldShowTour: false, progress: null });
       }
       
       const progress = await (storage as any).getCompanyTourProgress(companyId);
+      console.log('🎯 Existing progress:', progress);
       
       if (!progress) {
         // First time accessing - create initial progress
+        console.log('🎯 Creating new tour progress');
         const newProgress = await (storage as any).createCompanyTourProgress({
           companyId,
           hasCompletedTour: false,
           currentStep: 1
         });
+        console.log('🎯 New progress created:', newProgress);
         return res.json({ shouldShowTour: true, progress: newProgress });
       }
       
+      const shouldShow = !progress.hasCompletedTour;
+      console.log('🎯 Should show tour:', shouldShow);
+      
       res.json({ 
-        shouldShowTour: !progress.hasCompletedTour,
+        shouldShowTour: shouldShow,
         progress 
       });
     } catch (error) {
