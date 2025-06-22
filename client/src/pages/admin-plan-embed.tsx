@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Copy, Code, Eye, Settings } from "lucide-react";
-import type { Plan } from "@shared/schema";
+import type { Plan, GlobalSettings } from "@shared/schema";
 
 export default function AdminPlanEmbed() {
   const { toast } = useToast();
@@ -31,6 +31,10 @@ export default function AdminPlanEmbed() {
     queryKey: ["/api/plans"],
   });
 
+  const { data: settings } = useQuery<GlobalSettings>({
+    queryKey: ["/api/settings"],
+  });
+
   const activePlans = plans.filter(plan => plan.isActive);
 
   const handlePlanSelection = (planId: number, selected: boolean) => {
@@ -48,7 +52,12 @@ export default function AdminPlanEmbed() {
       ...embedConfig
     };
 
-    const embedUrl = `${window.location.origin}/embed/plans?config=${encodeURIComponent(btoa(JSON.stringify(config)))}`;
+    // Use custom domain if configured, otherwise fall back to current origin
+    const baseUrl = settings?.systemUrl && settings.systemUrl.trim() 
+      ? settings.systemUrl.replace(/\/+$/, '') // Remove trailing slashes
+      : window.location.origin;
+    
+    const embedUrl = `${baseUrl}/embed/plans?config=${encodeURIComponent(btoa(JSON.stringify(config)))}`;
     
     return {
       iframe: `<iframe src="${embedUrl}" width="100%" height="600" frameborder="0" style="max-width: ${embedConfig.maxWidth}; margin: 0 auto; display: block;"></iframe>`,
