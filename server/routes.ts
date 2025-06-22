@@ -5817,7 +5817,10 @@ const broadcastEvent = (eventData: any) => {
   // Get active tour steps for company
   app.get('/api/company/tour/steps', isCompanyAuthenticated, async (req, res) => {
     try {
+      console.log('🎯 Fetching tour steps...');
       const steps = await (storage as any).getActiveTourSteps();
+      console.log('🎯 Tour steps found:', steps?.length || 0);
+      console.log('🎯 Tour steps data:', steps);
       res.json(steps);
     } catch (error) {
       console.error('Error fetching active tour steps:', error);
