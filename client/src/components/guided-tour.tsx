@@ -109,10 +109,7 @@ function TourContent({ tourSteps, closeTour }: { tourSteps: TourStep[], closeTou
         // Add CSS class for additional styling
         element.classList.add('tour-highlighted');
         
-        // Debug: Log when element is highlighted
-        console.log('🎯 Element highlighted:', step.targetElement, element);
-        console.log('🎯 Element bounds:', element.getBoundingClientRect());
-        console.log('🎯 Current step:', currentStep, 'of', tourSteps.length);
+        // Element successfully highlighted
         
         // Add click listener to detect clicks
         const handler = (e: Event) => handleElementClick(e);
