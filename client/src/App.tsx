@@ -5,6 +5,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import { useCompanyAuth } from "@/hooks/useCompanyAuth";
+import { useEffect } from "react";
+import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
+import { registerSW, optimizeViewport, preventIOSBehaviors } from "@/utils/pwa";
 import AdminLayout from "@/components/layout/admin-layout";
 import CompanyLayout from "./components/layout/company-layout";
 import Landing from "@/pages/landing";
@@ -345,11 +348,19 @@ function Router() {
 }
 
 function App() {
+  useEffect(() => {
+    // Initialize PWA features
+    registerSW();
+    optimizeViewport();
+    preventIOSBehaviors();
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
         <Router />
+        <PWAInstallPrompt />
       </TooltipProvider>
     </QueryClientProvider>
   );
