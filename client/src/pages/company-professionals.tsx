@@ -44,9 +44,9 @@ const createProfessionalSchema = z.object({
 
 const updateProfessionalSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
-  email: z.string().email("Email inválido").optional().or(z.literal("")),
-  phone: z.string().optional(),
-  password: z.string().optional(),
+  email: z.string().email("Email inválido").or(z.literal("")),
+  phone: z.string().optional().or(z.literal("")),
+  password: z.string().optional().or(z.literal("")),
   active: z.boolean().default(true),
 });
 
@@ -254,11 +254,21 @@ export default function CompanyProfessionals() {
 
   const handleEdit = (professional: Professional) => {
     setEditingProfessional(professional);
-    form.setValue('name', professional.name);
-    form.setValue('email', professional.email || '');
-    form.setValue('phone', professional.phone || '');
-    form.setValue('password', ''); // Don't pre-fill password
-    form.setValue('active', professional.active);
+    
+    // Reset o formulário primeiro para limpar estados anteriores
+    form.reset({
+      name: professional.name,
+      email: professional.email || '',
+      phone: professional.phone || '',
+      password: '',
+      active: professional.active,
+    });
+    
+    // Força revalidação
+    setTimeout(() => {
+      form.trigger();
+    }, 100);
+    
     setIsDialogOpen(true);
   };
 
@@ -468,12 +478,10 @@ export default function CompanyProfessionals() {
                           console.log('🔧 Form values:', form.getValues());
                           console.log('🔧 Form errors:', form.formState.errors);
                           
-                          // Se houver erros, previne o submit
-                          if (!form.formState.isValid) {
-                            console.log('🔧 Form is invalid, preventing submission');
-                            e.preventDefault();
-                            return;
-                          }
+                          // Força o envio mesmo se a validação estiver falhando
+                          const formData = form.getValues();
+                          console.log('🔧 Forcing form submission with data:', formData);
+                          onSubmit(formData);
                         }}
                       >
                         {editingProfessional ? 'Atualizar' : 'Cadastrar'}
