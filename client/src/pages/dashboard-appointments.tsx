@@ -1749,16 +1749,16 @@ export default function DashboardAppointments() {
                                             </Button>
                                           )}
                                           <Button
-                                            variant="ghost"
+                                            variant="default"
                                             size="sm"
-                                            className="h-6 w-6 p-0 opacity-100 transition-opacity z-50 relative bg-red-500"
+                                            className="h-8 w-16 p-1 bg-red-500 hover:bg-red-600 text-white z-50 relative"
                                             onClick={(e) => {
                                               console.log('✏️ Edit button clicked in Kanban for appointment:', appointment.id);
                                               e.stopPropagation();
                                               handleEditAppointment(appointment);
                                             }}
                                           >
-                                            <Edit className="h-3 w-3" />
+                                            EDIT
                                           </Button>
                                         </div>
                                       </div>
