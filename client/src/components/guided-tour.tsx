@@ -61,12 +61,12 @@ function TourContent({ tourSteps, closeTour }: { tourSteps: TourStep[], closeTou
           highlightedElement.removeEventListener('click', clickHandler, true);
         }
 
-        // Add subtle highlight with gentle movement
+        // Add color blinking highlight
         element.style.boxShadow = '0 0 0 2px hsl(var(--primary)), 0 0 10px hsl(var(--primary) / 0.3)';
         element.style.position = 'relative';
         element.style.zIndex = '9999';
         element.style.transition = 'all 0.3s ease';
-        element.style.animation = 'tour-gentle-pulse 2s infinite';
+        element.style.animation = 'tour-color-blink 1.5s infinite';
         element.style.cursor = 'pointer';
         
         // Add click listener to detect clicks
@@ -74,21 +74,6 @@ function TourContent({ tourSteps, closeTour }: { tourSteps: TourStep[], closeTou
         element.addEventListener('click', handler, false);
         setClickHandler(() => handler);
         setHighlightedElement(element);
-
-        // Add "CLIQUE AQUI" indicator
-        const indicator = document.createElement('div');
-        indicator.className = 'tour-click-indicator';
-        indicator.textContent = '👆 CLIQUE AQUI';
-        indicator.id = 'tour-click-indicator';
-        
-        // Position indicator near the element
-        const rect = element.getBoundingClientRect();
-        indicator.style.position = 'fixed';
-        indicator.style.top = `${rect.top - 35}px`;
-        indicator.style.left = `${rect.left + rect.width / 2 - 50}px`;
-        indicator.style.transform = 'translateX(-50%)';
-        
-        document.body.appendChild(indicator);
 
         // Scroll to element
         element.scrollIntoView({ behavior: 'smooth', block: 'center' });

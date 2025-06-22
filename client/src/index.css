@@ -226,13 +226,15 @@
 }
 
 /* Tour animations */
-@keyframes tour-gentle-pulse {
+@keyframes tour-color-blink {
   0%, 100% {
-    transform: scale(1) translateY(0px);
+    background-color: transparent;
+    color: inherit;
     box-shadow: 0 0 0 2px hsl(var(--primary)), 0 0 10px hsl(var(--primary) / 0.3);
   }
   50% {
-    transform: scale(1.01) translateY(-1px);
+    background-color: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
     box-shadow: 0 0 0 3px hsl(var(--primary)), 0 0 15px hsl(var(--primary) / 0.4);
   }
 }
