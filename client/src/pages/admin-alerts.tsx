@@ -182,25 +182,25 @@ export default function AdminAlerts() {
   }
 
   return (
-    <div className="space-y-4 lg:space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold flex items-center gap-2 responsive-title">
-            <Bell className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8" />
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            <Bell className="w-8 h-8" />
             Alertas e Avisos
           </h1>
-          <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">
+          <p className="text-gray-600 mt-2">
             Gerencie alertas e avisos que serão exibidos para as empresas após o login.
           </p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={handleNewAlert} className="flex items-center gap-2 w-full sm:w-auto">
+            <Button onClick={handleNewAlert} className="flex items-center gap-2">
               <Plus className="w-4 h-4" />
               Novo Alerta
             </Button>
           </DialogTrigger>
-          <DialogContent className="mx-2 max-w-[calc(100vw-16px)] sm:max-w-2xl max-h-[90vh] overflow-y-auto dialog-content">
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>
                 {editingAlert ? "Editar Alerta" : "Novo Alerta"}
@@ -214,15 +214,15 @@ export default function AdminAlerts() {
             </DialogHeader>
 
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3 sm:space-y-4 form-container">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField
                   control={form.control}
                   name="title"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-sm font-medium">Título</FormLabel>
+                      <FormLabel>Título</FormLabel>
                       <FormControl>
-                        <Input placeholder="Digite o título do alerta" className="mobile-input" {...field} />
+                        <Input placeholder="Digite o título do alerta" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

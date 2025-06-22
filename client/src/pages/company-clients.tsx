@@ -403,20 +403,17 @@ export default function CompanyClients() {
   }
 
   return (
-    <div className="bg-white min-h-screen">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 lg:mb-6">
-        <div className="min-w-0 flex-1">
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 responsive-title">Clientes</h1>
-          <p className="text-sm sm:text-base text-gray-600 responsive-text">Gerencie seus clientes e histórico</p>
-        </div>
+    <div className="p-6 bg-white min-h-screen">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Clientes</h1>
         
-        <div className="flex items-center gap-2 sm:gap-4">
+        <div className="flex items-center space-x-4">
           <div className="flex bg-gray-100 rounded-lg p-1">
             <Button
               variant={viewMode === 'grid' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setViewMode('grid')}
-              className={`touch-target ${viewMode === 'grid' ? 'bg-purple-600 text-white' : ''}`}
+              className={viewMode === 'grid' ? 'bg-purple-600 text-white' : ''}
             >
               <Grid className="h-4 w-4" />
             </Button>
@@ -424,7 +421,7 @@ export default function CompanyClients() {
               variant={viewMode === 'list' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setViewMode('list')}
-              className={`touch-target ${viewMode === 'list' ? 'bg-purple-600 text-white' : ''}`}
+              className={viewMode === 'list' ? 'bg-purple-600 text-white' : ''}
             >
               <List className="h-4 w-4" />
             </Button>
@@ -436,38 +433,36 @@ export default function CompanyClients() {
               form.reset();
               setIsDialogOpen(true);
             }}
-            className="bg-purple-600 hover:bg-purple-700 text-white touch-target small-mobile-button"
+            className="bg-purple-600 hover:bg-purple-700 text-white"
           >
-            <Plus className="mr-1 sm:mr-2 h-4 w-4" />
-            <span className="hidden sm:inline">Novo Cliente</span>
-            <span className="sm:hidden">Novo</span>
+            <Plus className="mr-2 h-4 w-4" />
+            Novo Cliente
           </Button>
         </div>
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="dialog-content max-w-[95vw] sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle className="text-base sm:text-lg">{editingClient ? 'Editar Cliente' : 'Novo Cliente'}</DialogTitle>
+              <DialogTitle>{editingClient ? 'Editar Cliente' : 'Novo Cliente'}</DialogTitle>
             </DialogHeader>
             
             <Tabs defaultValue="dados" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 text-xs sm:text-sm">
-                <TabsTrigger value="dados" className="px-2 sm:px-4">Dados</TabsTrigger>
-                <TabsTrigger value="servicos" className="px-2 sm:px-4">Histórico</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="dados">Dados do Cliente</TabsTrigger>
+                <TabsTrigger value="servicos">Histórico de Serviços</TabsTrigger>
               </TabsList>
               
-              <TabsContent value="dados" className="space-y-3 sm:space-y-4">
-                <form onSubmit={form.handleSubmit(onSubmit)} className="form-container space-y-3 sm:space-y-4">
-                  <div className="space-y-3 sm:space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
-                      <Label htmlFor="name" className="text-left sm:text-right text-sm font-medium">
+              <TabsContent value="dados" className="space-y-4">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="name" className="text-right">
                         Nome *
                       </Label>
-                      <div className="col-span-1 sm:col-span-3">
+                      <div className="col-span-3">
                         <Input
                           id="name"
                           placeholder="Nome completo do cliente"
-                          className="mobile-input"
                           {...form.register('name')}
                         />
                         {form.formState.errors.name && (
@@ -478,11 +473,11 @@ export default function CompanyClients() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
-                      <Label htmlFor="email" className="text-left sm:text-right text-sm font-medium">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="email" className="text-right">
                         Email
                       </Label>
-                      <div className="col-span-1 sm:col-span-3">
+                      <div className="col-span-3">
                         <Input
                           id="email"
                           type="email"

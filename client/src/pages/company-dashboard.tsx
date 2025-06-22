@@ -39,12 +39,12 @@ export default function CompanyDashboard() {
   }
 
   return (
-    <div className="bg-gray-50 min-h-screen">
+    <div className="p-6 bg-gray-50 min-h-screen">
       {/* Header */}
-      <div className="mb-4 lg:mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
-        <div className="min-w-0 flex-1">
-          <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 responsive-title">Dashboard</h1>
-          <p className="text-xs sm:text-sm text-gray-500 responsive-text">
+      <div className="mb-6 flex justify-between items-start">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
+          <p className="text-sm text-gray-500">
             {new Date().toLocaleDateString('pt-BR', { 
               weekday: 'long',
               day: '2-digit',
@@ -59,45 +59,44 @@ export default function CompanyDashboard() {
           onClick={resetTour}
           variant="outline"
           size="sm"
-          className="flex items-center gap-2 bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 hover:border-blue-300 touch-target small-mobile-button"
+          className="flex items-center gap-2 bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 hover:border-blue-300"
         >
           <HelpCircle className="w-4 h-4" />
-          <span className="hidden sm:inline">Reiniciar Tour</span>
-          <span className="sm:hidden">Tour</span>
+          Reiniciar Tour
         </Button>
       </div>
 
       {/* Company Info Card */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 mb-4 lg:mb-6">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
         <div className="flex items-center gap-2 mb-4">
-          <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
-          <h2 className="text-base sm:text-lg font-semibold text-gray-900">Informações da Empresa</h2>
+          <Building2 className="w-5 h-5 text-gray-600" />
+          <h2 className="text-lg font-semibold text-gray-900">Informações da Empresa</h2>
         </div>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-          <div className="min-w-0">
-            <p className="text-xs sm:text-sm text-gray-500 mb-1">Nome Fantasia</p>
-            <p className="font-semibold text-gray-900 text-sm sm:text-base truncate">{company?.fantasyName || "Salão"}</p>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div>
+            <p className="text-sm text-gray-500 mb-1">Nome Fantasia</p>
+            <p className="font-semibold text-gray-900">{company?.fantasyName || "Salão"}</p>
           </div>
-          <div className="min-w-0">
-            <p className="text-xs sm:text-sm text-gray-500 mb-1">Documento</p>
-            <p className="font-semibold text-gray-900 text-sm sm:text-base truncate">{company?.document || "573.286.450-40"}</p>
+          <div>
+            <p className="text-sm text-gray-500 mb-1">Documento</p>
+            <p className="font-semibold text-gray-900">{company?.document || "573.286.450-40"}</p>
           </div>
-          <div className="min-w-0">
-            <p className="text-xs sm:text-sm text-gray-500 mb-1">Email</p>
-            <p className="font-semibold text-gray-900 text-sm sm:text-base truncate">{company?.email || "damasceno02@hotmail.com"}</p>
+          <div>
+            <p className="text-sm text-gray-500 mb-1">Email</p>
+            <p className="font-semibold text-gray-900">{company?.email || "damasceno02@hotmail.com"}</p>
           </div>
-          <div className="min-w-0">
-            <p className="text-xs sm:text-sm text-gray-500 mb-1">Status</p>
-            <span className="inline-flex items-center px-2 sm:px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+          <div>
+            <p className="text-sm text-gray-500 mb-1">Status</p>
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
               Ativo
             </span>
           </div>
         </div>
         
-        <div className="mt-4 lg:mt-6">
-          <p className="text-xs sm:text-sm text-gray-500 mb-1">Endereço</p>
-          <p className="text-gray-900 text-sm sm:text-base break-words">{company?.address || "asasasa"}</p>
+        <div className="mt-6">
+          <p className="text-sm text-gray-500 mb-1">Endereço</p>
+          <p className="text-gray-900">{company?.address || "asasasa"}</p>
         </div>
       </div>
 

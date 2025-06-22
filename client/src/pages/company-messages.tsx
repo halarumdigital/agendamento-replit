@@ -213,39 +213,39 @@ export default function CompanyMessages() {
   const targetType = form.watch("targetType");
 
   return (
-    <div className="space-y-4 lg:space-y-8">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+    <div className="container mx-auto p-6 space-y-8">
+      <div className="flex justify-between items-start">
         <div className="space-y-1">
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight responsive-title">Campanhas de Mensagens</h1>
-          <p className="text-sm sm:text-base text-muted-foreground">
+          <h1 className="text-3xl font-bold tracking-tight">Campanhas de Mensagens</h1>
+          <p className="text-muted-foreground">
             Gerencie suas campanhas de mensagens via WhatsApp
           </p>
         </div>
-        <Button onClick={() => setIsCreateModalOpen(true)} className="w-full sm:w-auto shrink-0">
+        <Button onClick={() => setIsCreateModalOpen(true)} className="shrink-0">
           <Plus className="w-4 h-4 mr-2" />
           Nova Campanha
         </Button>
       </div>
 
       {/* Estatísticas */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs sm:text-sm font-medium">Total de Campanhas</CardTitle>
-            <MessageSquare className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Total de Campanhas</CardTitle>
+            <MessageSquare className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-lg sm:text-xl lg:text-2xl font-bold">{campaigns.length}</div>
+            <div className="text-2xl font-bold">{campaigns.length}</div>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs sm:text-sm font-medium">Pendentes</CardTitle>
-            <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Pendentes</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-lg sm:text-xl lg:text-2xl font-bold">
+            <div className="text-2xl font-bold">
               {campaigns.filter((c: Campaign) => c.status === "pending").length}
             </div>
           </CardContent>
@@ -253,46 +253,46 @@ export default function CompanyMessages() {
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs sm:text-sm font-medium">Concluídas</CardTitle>
-            <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Concluídas</CardTitle>
+            <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-lg sm:text-xl lg:text-2xl font-bold">
-              {((campaigns as any[]) || []).filter((c: Campaign) => c.status === "completed").length}
+            <div className="text-2xl font-bold">
+              {campaigns.filter((c: Campaign) => c.status === "completed").length}
             </div>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs sm:text-sm font-medium">Total de Clientes</CardTitle>
-            <Users className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Total de Clientes</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-lg sm:text-xl lg:text-2xl font-bold">{((clients as any[]) || []).length}</div>
+            <div className="text-2xl font-bold">{clients.length}</div>
           </CardContent>
         </Card>
       </div>
 
       {/* Lista de campanhas */}
       <Card>
-        <CardHeader className="pb-3 sm:pb-4">
-          <CardTitle className="text-lg sm:text-xl font-semibold">Campanhas</CardTitle>
+        <CardHeader className="pb-4">
+          <CardTitle className="text-xl font-semibold">Campanhas</CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
           {isLoadingCampaigns ? (
-            <div className="text-center py-8 sm:py-12">
-              <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-primary mx-auto"></div>
-              <p className="mt-3 sm:mt-4 text-sm sm:text-base text-muted-foreground">Carregando campanhas...</p>
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+              <p className="mt-4 text-muted-foreground">Carregando campanhas...</p>
             </div>
-          ) : ((campaigns as any[]) || []).length === 0 ? (
-            <div className="text-center py-12 sm:py-16">
-              <MessageSquare className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-gray-400 mb-4 sm:mb-6" />
-              <h3 className="text-base sm:text-lg font-semibold mb-2">Nenhuma campanha criada</h3>
-              <p className="text-sm sm:text-base text-muted-foreground mb-4 sm:mb-6 max-w-sm mx-auto px-4">
+          ) : campaigns.length === 0 ? (
+            <div className="text-center py-16">
+              <MessageSquare className="w-16 h-16 mx-auto text-gray-400 mb-6" />
+              <h3 className="text-lg font-semibold mb-2">Nenhuma campanha criada</h3>
+              <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
                 Comece criando sua primeira campanha de mensagens
               </p>
-              <Button onClick={() => setIsCreateModalOpen(true)} className="w-full sm:w-auto">
+              <Button onClick={() => setIsCreateModalOpen(true)}>
                 <Plus className="w-4 h-4 mr-2" />
                 Criar Primeira Campanha
               </Button>
@@ -360,28 +360,24 @@ export default function CompanyMessages() {
 
       {/* Modal de criação de campanha */}
       <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-        <DialogContent className="w-[95vw] max-w-2xl h-[90vh] max-h-[90vh] overflow-y-auto mx-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-lg sm:text-xl">Nova Campanha de Mensagens</DialogTitle>
-            <DialogDescription className="text-sm sm:text-base">
+            <DialogTitle>Nova Campanha de Mensagens</DialogTitle>
+            <DialogDescription>
               Crie uma nova campanha para enviar mensagens via WhatsApp
             </DialogDescription>
           </DialogHeader>
           
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-3 sm:space-y-4">
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-sm sm:text-base">Nome da Campanha *</FormLabel>
+                    <FormLabel>Nome da Campanha *</FormLabel>
                     <FormControl>
-                      <Input 
-                        placeholder="Ex: Promoção de Natal" 
-                        className="text-sm sm:text-base"
-                        {...field} 
-                      />
+                      <Input placeholder="Ex: Promoção de Natal" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -393,12 +389,11 @@ export default function CompanyMessages() {
                 name="message"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-sm sm:text-base">Mensagem *</FormLabel>
+                    <FormLabel>Mensagem *</FormLabel>
                     <FormControl>
                       <Textarea 
                         placeholder="Digite sua mensagem aqui..." 
-                        rows={3}
-                        className="text-sm sm:text-base min-h-[80px] sm:min-h-[100px]"
+                        rows={4}
                         {...field} 
                       />
                     </FormControl>
@@ -439,10 +434,10 @@ export default function CompanyMessages() {
                 name="targetType"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-sm sm:text-base">Destinatários *</FormLabel>
+                    <FormLabel>Destinatários *</FormLabel>
                     <FormControl>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <SelectTrigger className="text-sm sm:text-base">
+                        <SelectTrigger>
                           <SelectValue placeholder="Selecione os destinatários" />
                         </SelectTrigger>
                         <SelectContent>
@@ -505,11 +500,10 @@ export default function CompanyMessages() {
                 </div>
               )}
 
-              <div className="flex flex-col sm:flex-row gap-2 sm:gap-0 sm:justify-end sm:space-x-2 pt-3 sm:pt-4">
+              <div className="flex justify-end space-x-2 pt-4">
                 <Button 
                   type="button" 
                   variant="outline" 
-                  className="w-full sm:w-auto"
                   onClick={() => setIsCreateModalOpen(false)}
                 >
                   Cancelar
@@ -517,7 +511,6 @@ export default function CompanyMessages() {
                 <Button 
                   type="submit" 
                   disabled={createCampaignMutation.isPending}
-                  className="w-full sm:w-auto"
                 >
                   {createCampaignMutation.isPending ? "Criando..." : "Criar Campanha"}
                 </Button>

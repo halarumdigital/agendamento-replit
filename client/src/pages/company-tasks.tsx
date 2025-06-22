@@ -274,17 +274,17 @@ export default function CompanyTasks() {
   }
 
   return (
-    <div className="space-y-4 lg:space-y-6">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold responsive-title">Gerenciamento de Tarefas</h1>
+    <div className="container mx-auto p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Gerenciamento de Tarefas</h1>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={handleNewTask} className="w-full sm:w-auto gap-2">
+            <Button onClick={handleNewTask} className="gap-2">
               <Plus className="w-4 h-4" />
               Nova Tarefa
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md mx-4 sm:mx-auto">
+          <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>
                 {selectedTask ? "Editar Tarefa" : "Nova Tarefa"}
@@ -446,47 +446,46 @@ export default function CompanyTasks() {
         </Dialog>
       </div>
 
-      <div className="grid gap-4 lg:gap-6">
+      <div className="grid gap-6">
         {/* Active Tasks */}
         <div>
-          <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 flex items-center gap-2">
-            <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <CheckCircle className="w-5 h-5 text-green-600" />
             Tarefas Ativas ({activeTasks.length})
           </h2>
-          <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {activeTasks.map((task: Task) => (
               <Card key={task.id} className="relative">
                 <div
                   className="absolute top-0 left-0 w-1 h-full rounded-l-lg"
                   style={{ backgroundColor: task.color }}
                 />
-                <CardHeader className="pb-2 sm:pb-3">
+                <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-base sm:text-lg pr-2">{task.name}</CardTitle>
+                    <CardTitle className="text-lg">{task.name}</CardTitle>
                     <div className="flex gap-1">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => handleEdit(task)}
-                        className="h-7 w-7 sm:h-8 sm:w-8 p-0"
                       >
-                        <Edit2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                        <Edit2 className="w-4 h-4" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => handleDelete(task.id)}
-                        className="text-red-600 hover:text-red-800 h-7 w-7 sm:h-8 sm:w-8 p-0"
+                        className="text-red-600 hover:text-red-800"
                       >
-                        <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                        <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="pt-2">
+                <CardContent>
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-xs sm:text-sm">
-                      <CalendarIcon className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <div className="flex items-center gap-2 text-sm">
+                      <CalendarIcon className="w-4 h-4" />
                       <span
                         className={
                           isTaskOverdue(task.dueDate)
@@ -566,52 +565,51 @@ export default function CompanyTasks() {
         {/* Inactive Tasks */}
         {inactiveTasks.length > 0 && (
           <div>
-            <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 flex items-center gap-2">
-              <XCircle className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              <XCircle className="w-5 h-5 text-gray-600" />
               Tarefas Inativas ({inactiveTasks.length})
             </h2>
-            <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {inactiveTasks.map((task: Task) => (
                 <Card key={task.id} className="relative opacity-60">
                   <div
                     className="absolute top-0 left-0 w-1 h-full rounded-l-lg"
                     style={{ backgroundColor: task.color }}
                   />
-                  <CardHeader className="pb-2 sm:pb-3">
+                  <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-base sm:text-lg pr-2">{task.name}</CardTitle>
+                      <CardTitle className="text-lg">{task.name}</CardTitle>
                       <div className="flex gap-1">
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => handleEdit(task)}
-                          className="h-7 w-7 sm:h-8 sm:w-8 p-0"
                         >
-                          <Edit2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                          <Edit2 className="w-4 h-4" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => handleDelete(task.id)}
-                          className="text-red-600 hover:text-red-800 h-7 w-7 sm:h-8 sm:w-8 p-0"
+                          className="text-red-600 hover:text-red-800"
                         >
-                          <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                          <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
                     </div>
                   </CardHeader>
-                  <CardContent className="pt-2">
+                  <CardContent>
                     <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-xs sm:text-sm">
-                        <CalendarIcon className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <div className="flex items-center gap-2 text-sm">
+                        <CalendarIcon className="w-4 h-4" />
                         <span>
                           {format(new Date(task.dueDate), "dd/MM/yyyy", {
                             locale: ptBR,
                           })}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2 text-xs sm:text-sm">
-                        <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <div className="flex items-center gap-2 text-sm">
+                        <Clock className="w-4 h-4" />
                         <span>{getRecurrenceLabel(task.recurrence)}</span>
                       </div>
                       <div className="pt-2">
@@ -619,9 +617,9 @@ export default function CompanyTasks() {
                           variant="outline"
                           size="sm"
                           onClick={() => toggleTaskStatus(task)}
-                          className="w-full text-xs sm:text-sm"
+                          className="w-full"
                         >
-                          <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
+                          <CheckCircle className="w-4 h-4 mr-2" />
                           Ativar
                         </Button>
                       </div>

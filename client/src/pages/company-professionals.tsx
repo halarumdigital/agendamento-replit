@@ -268,19 +268,18 @@ export default function CompanyProfessionals() {
   }
 
   return (
-    <div>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 lg:mb-6">
-        <div className="min-w-0 flex-1">
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 responsive-title">Profissionais</h1>
-          <p className="text-sm sm:text-base text-gray-600 responsive-text">Gerencie sua equipe de profissionais</p>
+    <div className="p-6">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Profissionais</h1>
+          <p className="text-gray-600">Gerencie sua equipe de profissionais</p>
         </div>
-        <div className="flex items-center gap-2 sm:gap-4">
+        <div className="flex items-center gap-4">
           <div className="flex bg-gray-100 rounded-lg p-1">
             <Button
               variant={viewMode === 'grid' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setViewMode('grid')}
-              className="touch-target"
             >
               <Grid className="h-4 w-4" />
             </Button>
@@ -288,25 +287,23 @@ export default function CompanyProfessionals() {
               variant={viewMode === 'list' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setViewMode('list')}
-              className="touch-target"
             >
               <List className="h-4 w-4" />
             </Button>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button onClick={openCreateDialog} className="bg-purple-600 hover:bg-purple-700 touch-target small-mobile-button">
-                <Plus className="mr-1 sm:mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">Novo Profissional</span>
-                <span className="sm:hidden">Novo</span>
+              <Button onClick={openCreateDialog} className="bg-purple-600 hover:bg-purple-700">
+                <Plus className="mr-2 h-4 w-4" />
+                Novo Profissional
               </Button>
             </DialogTrigger>
-            <DialogContent className="dialog-content max-w-[95vw] sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-[600px]">
               <DialogHeader>
-                <DialogTitle className="text-base sm:text-lg">
+                <DialogTitle>
                   {editingProfessional ? 'Editar Profissional' : 'Novo Profissional'}
                 </DialogTitle>
-                <DialogDescription className="text-sm">
+                <DialogDescription>
                   {editingProfessional 
                     ? 'Edite as informações do profissional.' 
                     : 'Adicione um novo profissional à sua equipe.'}
@@ -315,9 +312,9 @@ export default function CompanyProfessionals() {
               
               {/* Alert for professional limit when creating new professional */}
               {!editingProfessional && !canAddProfessional() && (
-                <Alert className="border-red-200 bg-red-50 mx-1">
+                <Alert className="border-red-200 bg-red-50">
                   <Lock className="h-4 w-4 text-red-600" />
-                  <AlertDescription className="text-red-800 text-sm">
+                  <AlertDescription className="text-red-800">
                     Você pode adicionar somente {getProfessionalsLimitInfo()?.limit} profissionais. 
                     Atualmente você tem {getProfessionalsLimitInfo()?.current} profissionais cadastrados. 
                     Faça upgrade do seu plano para adicionar mais profissionais.
@@ -326,42 +323,41 @@ export default function CompanyProfessionals() {
               )}
               
               <Tabs defaultValue="dados" className="w-full">
-                <TabsList className="grid w-full grid-cols-3 text-xs sm:text-sm">
-                  <TabsTrigger value="dados" className="px-2 sm:px-4">Dados</TabsTrigger>
-                  <TabsTrigger value="horarios" className="px-2 sm:px-4">Horários</TabsTrigger>
-                  <TabsTrigger value="servicos" className="px-2 sm:px-4">Histórico</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="dados">Dados do Profissional</TabsTrigger>
+                  <TabsTrigger value="horarios">Horários</TabsTrigger>
+                  <TabsTrigger value="servicos">Histórico de Serviços</TabsTrigger>
                 </TabsList>
                 
-                <TabsContent value="dados" className="space-y-3 sm:space-y-4">
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="form-container">
-                    <div className="grid gap-3 sm:gap-4 py-4">
-                      <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
-                        <Label htmlFor="name" className="text-left sm:text-right text-sm font-medium">
+                <TabsContent value="dados" className="space-y-4">
+                  <form onSubmit={form.handleSubmit(onSubmit)}>
+                    <div className="grid gap-4 py-4">
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="name" className="text-right">
                           Nome *
                         </Label>
                         <Input
                           id="name"
-                          className="col-span-1 sm:col-span-3 mobile-input"
+                          className="col-span-3"
                           placeholder="Nome completo do profissional"
                           {...form.register('name')}
                         />
                         {form.formState.errors.name && (
-                          <p className="col-span-1 sm:col-span-4 text-sm text-red-500">
+                          <p className="col-span-4 text-sm text-red-500">
                             {form.formState.errors.name.message}
                           </p>
                         )}
                       </div>
                       
-                      <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
-                        <Label htmlFor="email" className="text-left sm:text-right text-sm font-medium">
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="email" className="text-right">
                           Email (Login) *
                         </Label>
-                        <div className="col-span-1 sm:col-span-3 space-y-1">
+                        <div className="col-span-3 space-y-1">
                           <Input
                             id="email"
                             type="email"
                             placeholder="email@exemplo.com"
-                            className="mobile-input"
                             {...form.register('email')}
                           />
                           <p className="text-xs text-gray-500">
@@ -369,29 +365,29 @@ export default function CompanyProfessionals() {
                           </p>
                         </div>
                         {form.formState.errors.email && (
-                          <p className="col-span-1 sm:col-span-4 text-sm text-red-500">
+                          <p className="col-span-4 text-sm text-red-500">
                             {form.formState.errors.email.message}
                           </p>
                         )}
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
-                        <Label htmlFor="phone" className="text-left sm:text-right text-sm font-medium">
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="phone" className="text-right">
                           Telefone
                         </Label>
                         <Input
                           id="phone"
-                          className="col-span-1 sm:col-span-3 mobile-input"
+                          className="col-span-3"
                           placeholder="(11) 99999-9999"
                           {...form.register('phone')}
                         />
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
-                        <Label htmlFor="password" className="text-left sm:text-right text-sm font-medium">
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="password" className="text-right">
                           Senha *
                         </Label>
-                        <div className="col-span-1 sm:col-span-3 relative">
+                        <div className="col-span-3 relative">
                           <Input
                             id="password"
                             type={showPassword ? 'text' : 'password'}

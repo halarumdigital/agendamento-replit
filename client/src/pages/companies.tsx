@@ -207,13 +207,13 @@ export default function Companies() {
   };
 
   return (
-    <div className="space-y-4 lg:space-y-8">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900 responsive-title">Empresas</h1>
-          <p className="text-slate-600 mt-1 text-sm sm:text-base">Gerencie as empresas cadastradas</p>
+          <h1 className="text-2xl font-bold text-slate-900">Empresas</h1>
+          <p className="text-slate-600 mt-1">Gerencie as empresas cadastradas</p>
         </div>
-        <Button className="w-full sm:w-auto" onClick={handleNewCompany}>
+        <Button className="mt-4 sm:mt-0" onClick={handleNewCompany}>
           <Plus className="w-4 h-4 mr-2" />
           Nova Empresa
         </Button>
@@ -221,7 +221,7 @@ export default function Companies() {
 
       {/* Company Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="mx-2 max-w-[calc(100vw-16px)] sm:max-w-2xl max-h-[90vh] overflow-y-auto dialog-content">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingCompany ? "Editar Empresa" : "Cadastro de Empresa"}
@@ -234,15 +234,14 @@ export default function Companies() {
             </DialogDescription>
           </DialogHeader>
 {editingCompany ? (
-            <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-3 sm:space-y-6 form-container">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6 responsive-grid-2">
+            <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="fantasyName" className="text-sm font-medium">Nome Fantasia</Label>
+                  <Label htmlFor="fantasyName">Nome Fantasia</Label>
                   <Input
                     id="fantasyName"
                     {...editForm.register("fantasyName")}
                     placeholder="Digite o nome fantasia"
-                    className="mobile-input"
                   />
                   {editForm.formState.errors.fantasyName && (
                     <p className="text-sm text-red-600">

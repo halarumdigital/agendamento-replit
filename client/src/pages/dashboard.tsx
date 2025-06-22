@@ -46,14 +46,14 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-4 lg:space-y-8">
+    <div className="space-y-8">
       <div>
-        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900 responsive-title">Dashboard</h1>
-        <p className="text-slate-600 mt-1 text-sm sm:text-base">Visão geral do sistema</p>
+        <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
+        <p className="text-slate-600 mt-1">Visão geral do sistema</p>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 responsive-grid-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">

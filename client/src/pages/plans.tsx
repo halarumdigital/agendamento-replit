@@ -181,13 +181,13 @@ export default function Plans() {
   };
 
   return (
-    <div className="space-y-4 lg:space-y-8">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900 responsive-title">Planos de Assinatura</h1>
-          <p className="text-slate-600 mt-1 text-sm sm:text-base">Gerencie os planos disponíveis</p>
+          <h1 className="text-2xl font-bold text-slate-900">Planos de Assinatura</h1>
+          <p className="text-slate-600 mt-1">Gerencie os planos disponíveis</p>
         </div>
-        <Button onClick={handleNewPlan} className="w-full sm:w-auto">
+        <Button onClick={handleNewPlan} className="mt-4 sm:mt-0">
           <Plus className="w-4 h-4 mr-2" />
           Novo Plano
         </Button>
@@ -195,7 +195,7 @@ export default function Plans() {
 
       {/* Modal de Cadastro/Edição de Planos */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="mx-2 max-w-[calc(100vw-16px)] sm:max-w-[600px] max-h-[90vh] overflow-y-auto dialog-content">
+        <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>
               {editingPlan ? "Editar Plano" : "Novo Plano"}
@@ -207,15 +207,14 @@ export default function Plans() {
               }
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3 sm:space-y-6 form-container">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6 responsive-grid-2">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-sm font-medium">Nome do Plano</Label>
+                <Label htmlFor="name">Nome do Plano</Label>
                 <Input
                   id="name"
                   {...form.register("name")}
                   placeholder="Ex: Plano Premium"
-                  className="mobile-input"
                 />
                 {form.formState.errors.name && (
                   <p className="text-sm text-red-600">
@@ -225,14 +224,13 @@ export default function Plans() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="freeDays" className="text-sm font-medium">Dias Grátis</Label>
+                <Label htmlFor="freeDays">Dias Grátis</Label>
                 <Input
                   id="freeDays"
                   type="number"
                   min="0"
                   {...form.register("freeDays", { valueAsNumber: true })}
                   placeholder="0"
-                  className="mobile-input"
                 />
                 {form.formState.errors.freeDays && (
                   <p className="text-sm text-red-600">
@@ -242,15 +240,14 @@ export default function Plans() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6 responsive-grid-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="price" className="text-sm font-medium">Valor Mensal (R$)</Label>
+                <Label htmlFor="price">Valor Mensal (R$)</Label>
                 <Input
                   id="price"
                   type="number"
                   step="0.01"
                   min="0"
-                  className="mobile-input"
                   {...form.register("price")}
                   placeholder="49.90"
                 />

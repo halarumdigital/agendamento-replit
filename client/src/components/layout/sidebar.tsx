@@ -79,11 +79,11 @@ export default function Sidebar({ systemName = "AdminPro", logoUrl }: SidebarPro
       {/* Mobile menu button */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-200">
         <div className="flex items-center justify-between h-16 px-4">
-          <Button variant="ghost" size="sm" onClick={toggleMobile} className="touch-target">
-            <Menu className="h-5 w-5" />
+          <Button variant="ghost" size="sm" onClick={toggleMobile}>
+            <Menu className="h-6 w-6" />
           </Button>
-          <span className="text-sm sm:text-lg font-semibold text-slate-800 truncate">{systemName}</span>
-          <div className="w-10"></div>
+          <span className="text-lg font-semibold text-slate-800">{systemName}</span>
+          <div></div>
         </div>
       </div>
 
@@ -97,29 +97,29 @@ export default function Sidebar({ systemName = "AdminPro", logoUrl }: SidebarPro
 
       {/* Sidebar */}
       <aside className={`
-        fixed inset-y-0 left-0 z-50 w-72 sm:w-80 lg:w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out
-        lg:translate-x-0 lg:static lg:inset-0 max-w-[85vw]
+        fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out
+        lg:translate-x-0 lg:static lg:inset-0
         ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
-        <div className="flex items-center justify-between h-16 px-4 lg:px-6 border-b border-slate-200">
-          <div className="flex items-center space-x-2 lg:space-x-3 min-w-0">
+        <div className="flex items-center justify-between h-16 px-6 border-b border-slate-200">
+          <div className="flex items-center space-x-3">
             {logoUrl ? (
               <img 
                 src={logoUrl} 
                 alt="Logo" 
-                className="w-[120px] sm:w-[140px] lg:w-[165px] h-auto rounded object-contain flex-shrink-0"
+                className="w-[165px] h-auto rounded object-contain"
               />
             ) : (
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                 <Settings className="w-4 h-4 text-white" />
               </div>
             )}
-            <span className="text-sm sm:text-base lg:text-lg font-semibold text-slate-800 truncate">{systemName}</span>
+            <span className="text-lg font-semibold text-slate-800">{systemName}</span>
           </div>
           <Button 
             variant="ghost" 
             size="sm" 
-            className="lg:hidden touch-target flex-shrink-0"
+            className="lg:hidden"
             onClick={() => setIsMobileOpen(false)}
           >
             <X className="h-4 w-4" />

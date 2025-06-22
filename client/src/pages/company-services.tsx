@@ -203,19 +203,18 @@ export default function CompanyServices() {
   }
 
   return (
-    <div>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 lg:mb-6">
-        <div className="min-w-0 flex-1">
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 responsive-title">Serviços</h1>
-          <p className="text-sm sm:text-base text-gray-600 responsive-text">Gerencie seus serviços e preços</p>
+    <div className="p-6">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Serviços</h1>
+          <p className="text-gray-600">Gerencie seus serviços e preços</p>
         </div>
-        <div className="flex items-center gap-2 sm:gap-4">
+        <div className="flex items-center gap-4">
           <div className="flex bg-gray-100 rounded-lg p-1">
             <Button
               variant={viewMode === 'grid' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setViewMode('grid')}
-              className="touch-target"
             >
               <Grid className="h-4 w-4" />
             </Button>
@@ -223,34 +222,32 @@ export default function CompanyServices() {
               variant={viewMode === 'list' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setViewMode('list')}
-              className="touch-target"
             >
               <List className="h-4 w-4" />
             </Button>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button onClick={openCreateDialog} className="bg-purple-600 hover:bg-purple-700 touch-target small-mobile-button">
-                <Plus className="mr-1 sm:mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">Novo Serviço</span>
-                <span className="sm:hidden">Novo</span>
+              <Button onClick={openCreateDialog} className="bg-purple-600 hover:bg-purple-700">
+                <Plus className="mr-2 h-4 w-4" />
+                Novo Serviço
               </Button>
             </DialogTrigger>
-            <DialogContent className="dialog-content max-w-[95vw] sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-[500px]">
               <DialogHeader>
-                <DialogTitle className="text-base sm:text-lg">
+                <DialogTitle>
                   {editingService ? 'Editar Serviço' : 'Novo Serviço'}
                 </DialogTitle>
-                <DialogDescription className="text-sm">
+                <DialogDescription>
                   {editingService 
                     ? 'Edite as informações do serviço.' 
                     : 'Adicione um novo serviço à sua empresa.'}
                 </DialogDescription>
               </DialogHeader>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="form-container">
-                <div className="grid gap-3 sm:gap-4 py-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
-                    <Label htmlFor="name" className="text-left sm:text-right text-sm font-medium">
+              <form onSubmit={form.handleSubmit(onSubmit)}>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="name" className="text-right">
                       Nome do Serviço
                     </Label>
                     <Input
@@ -301,36 +298,36 @@ export default function CompanyServices() {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
-                    <Label htmlFor="points" className="text-left sm:text-right text-sm font-medium">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="points" className="text-right">
                       Pontos de Fidelidade
                     </Label>
                     <Input
                       id="points"
                       type="number"
                       min="0"
-                      className="col-span-1 sm:col-span-3 mobile-input"
+                      className="col-span-3"
                       placeholder="0"
                       {...form.register('points', { valueAsNumber: true })}
                     />
                     {form.formState.errors.points && (
-                      <p className="col-span-1 sm:col-span-4 text-sm text-red-500">
+                      <p className="col-span-4 text-sm text-red-500">
                         {form.formState.errors.points.message}
                       </p>
                     )}
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
-                    <Label className="text-left sm:text-right text-sm font-medium">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label className="text-right">
                       Cor do Serviço
                     </Label>
-                    <div className="col-span-1 sm:col-span-3">
+                    <div className="col-span-3">
                       <div className="grid grid-cols-5 gap-2 mb-3">
                         {colorPalette.map((color) => (
                           <button
                             key={color}
                             type="button"
-                            className={`w-8 h-8 rounded-lg border-2 touch-target ${
+                            className={`w-8 h-8 rounded-lg border-2 ${
                               form.watch('color') === color ? 'border-gray-800' : 'border-gray-200'
                             }`}
                             style={{ backgroundColor: color }}
@@ -343,13 +340,12 @@ export default function CompanyServices() {
                         value={form.watch('color')}
                         onChange={(e) => form.setValue('color', e.target.value)}
                         placeholder="#3b82f6"
-                        className="mobile-input"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
-                    <Label htmlFor="isActive" className="text-left sm:text-right text-sm font-medium">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="isActive" className="text-right">
                       Serviço ativo
                     </Label>
                     <Switch
@@ -359,14 +355,14 @@ export default function CompanyServices() {
                     />
                   </div>
                 </div>
-                <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-0">
-                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="small-mobile-button">
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                     Cancelar
                   </Button>
                   <Button 
                     type="submit" 
                     disabled={createMutation.isPending || updateMutation.isPending}
-                    className="bg-purple-600 hover:bg-purple-700 small-mobile-button"
+                    className="bg-purple-600 hover:bg-purple-700"
                   >
                     {editingService ? 'Atualizar' : 'Criar'}
                   </Button>
@@ -378,26 +374,26 @@ export default function CompanyServices() {
       </div>
 
       {viewMode === 'grid' ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {services.map((service) => (
-            <Card key={service.id} className="relative mobile-card">
-              <CardHeader className="pb-3 px-4 sm:px-6">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                  <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
+            <Card key={service.id} className="relative">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
                     <div 
-                      className="w-3 h-3 rounded-full flex-shrink-0"
+                      className="w-3 h-3 rounded-full"
                       style={{ backgroundColor: service.color }}
                     />
-                    <CardTitle className="text-base sm:text-lg responsive-title truncate">{service.name}</CardTitle>
+                    <CardTitle className="text-lg">{service.name}</CardTitle>
                   </div>
                   <Badge 
-                    className="bg-purple-100 text-purple-800 hover:bg-purple-100 text-xs self-start sm:self-center"
+                    className="bg-purple-100 text-purple-800 hover:bg-purple-100"
                   >
                     Ativo
                   </Badge>
                 </div>
               </CardHeader>
-              <CardContent className="px-4 sm:px-6">
+              <CardContent>
                 <div className="space-y-2 mb-4">
                   <p className="text-sm text-gray-600">
                     Duração: {service.duration}min

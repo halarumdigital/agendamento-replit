@@ -503,15 +503,15 @@ export default function CompanyFinancial() {
           ) : (
             <>
               {/* Cards de Métricas - Estilo Moderno */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
-                <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border border-gray-50 hover:shadow-xl transition-all duration-300">
-                  <div className="flex justify-between items-start mb-3 sm:mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-50 hover:shadow-xl transition-all duration-300">
+                  <div className="flex justify-between items-start mb-4">
                     <div>
-                      <p className="text-xs sm:text-sm font-medium text-gray-500 uppercase tracking-wide">Receitas do Mês</p>
-                      <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mt-1 sm:mt-2">{formatCurrency(safeData.monthlyIncome)}</h3>
+                      <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">Receitas do Mês</p>
+                      <h3 className="text-3xl font-bold text-gray-900 mt-2">{formatCurrency(safeData.monthlyIncome)}</h3>
                     </div>
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full bg-gradient-to-r from-green-400 to-green-600 text-white shadow-lg">
-                      <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6" />
+                    <div className="w-12 h-12 flex items-center justify-center rounded-full bg-gradient-to-r from-green-400 to-green-600 text-white shadow-lg">
+                      <TrendingUp className="w-6 h-6" />
                     </div>
                   </div>
                   <div className="flex items-center">
@@ -525,24 +525,24 @@ export default function CompanyFinancial() {
                   </div>
                 </div>
 
-                <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border border-gray-50 hover:shadow-xl transition-all duration-300">
-                  <div className="flex justify-between items-start mb-3 sm:mb-4">
+                <div className="bg-white rounded shadow-sm p-5 border border-gray-100">
+                  <div className="flex justify-between items-start mb-4">
                     <div>
-                      <p className="text-xs sm:text-sm font-medium text-gray-500 uppercase tracking-wide">Despesas do Mês</p>
-                      <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mt-1 sm:mt-2">{formatCurrency(safeData.monthlyExpenses)}</h3>
+                      <p className="text-sm font-medium text-gray-500">Despesas do Mês</p>
+                      <h3 className="text-2xl font-bold text-gray-800">{formatCurrency(safeData.monthlyExpenses)}</h3>
                     </div>
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full bg-gradient-to-r from-red-400 to-red-600 text-white shadow-lg">
-                      <TrendingDown className="w-5 h-5 sm:w-6 sm:h-6" />
+                    <div className="w-10 h-10 flex items-center justify-center rounded-full bg-red-100 text-red-600">
+                      <TrendingDown className="w-5 h-5" />
                     </div>
                   </div>
                   <div className="flex items-center">
-                    <div className="flex items-center text-red-600 text-xs sm:text-sm font-semibold">
-                      <div className="w-3 h-3 sm:w-4 sm:h-4 flex items-center justify-center mr-1 sm:mr-2">
-                        <TrendingDown className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <div className="flex items-center text-red-600 text-sm font-medium">
+                      <div className="w-4 h-4 flex items-center justify-center mr-1">
+                        <TrendingDown className="w-4 h-4" />
                       </div>
                       <span>{safeData.expenseGrowth}%</span>
                     </div>
-                    <span className="text-xs text-gray-400 ml-2">vs. mês anterior</span>
+                    <span className="text-xs text-gray-500 ml-2">vs. mês anterior</span>
                   </div>
                 </div>
 
