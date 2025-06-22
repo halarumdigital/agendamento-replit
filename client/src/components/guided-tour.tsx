@@ -16,6 +16,7 @@ interface TourStep {
 function TourContent({ tourSteps, closeTour }: { tourSteps: TourStep[], closeTour: () => void }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [highlightedElement, setHighlightedElement] = useState<HTMLElement | null>(null);
+  const [clickHandler, setClickHandler] = useState<(() => void) | null>(null);
 
   // Update tour progress
   const updateProgress = async (stepIndex: number) => {
@@ -33,26 +34,62 @@ function TourContent({ tourSteps, closeTour }: { tourSteps: TourStep[], closeTou
     }
   };
 
-  // Highlight target element
+  // Handle element click to advance tour
+  const handleElementClick = (e: Event) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('🎯 Tour: Element clicked, advancing to next step');
+    
+    // Small delay to allow any navigation/actions to complete
+    setTimeout(() => {
+      handleNext();
+    }, 300);
+  };
+
+  // Highlight target element with click functionality
   useEffect(() => {
     if (tourSteps.length > 0 && currentStep < tourSteps.length) {
       const step = tourSteps[currentStep];
       const element = document.querySelector(step.targetElement) as HTMLElement;
       
       if (element) {
-        // Remove previous highlight
-        if (highlightedElement) {
+        // Remove previous highlight and click handler
+        if (highlightedElement && clickHandler) {
           highlightedElement.style.boxShadow = '';
           highlightedElement.style.position = '';
           highlightedElement.style.zIndex = '';
+          highlightedElement.style.animation = '';
+          highlightedElement.removeEventListener('click', clickHandler, true);
         }
 
-        // Add highlight to current element
-        element.style.boxShadow = '0 0 0 4px rgba(59, 130, 246, 0.5)';
+        // Add enhanced highlight with pulsing effect
+        element.style.boxShadow = '0 0 0 4px rgba(59, 130, 246, 0.8), 0 0 20px rgba(59, 130, 246, 0.3)';
         element.style.position = 'relative';
         element.style.zIndex = '1000';
+        element.style.transition = 'all 0.3s ease';
+        element.style.animation = 'tour-pulse 2s infinite';
+        element.style.cursor = 'pointer';
         
+        // Add click listener with capture to intercept clicks
+        const handler = (e: Event) => handleElementClick(e);
+        element.addEventListener('click', handler, { capture: true });
+        setClickHandler(() => handler);
         setHighlightedElement(element);
+
+        // Add "CLIQUE AQUI" indicator
+        const indicator = document.createElement('div');
+        indicator.className = 'tour-click-indicator';
+        indicator.textContent = '👆 CLIQUE AQUI';
+        indicator.id = 'tour-click-indicator';
+        
+        // Position indicator near the element
+        const rect = element.getBoundingClientRect();
+        indicator.style.position = 'fixed';
+        indicator.style.top = `${rect.top - 35}px`;
+        indicator.style.left = `${rect.left + rect.width / 2 - 50}px`;
+        indicator.style.transform = 'translateX(-50%)';
+        
+        document.body.appendChild(indicator);
 
         // Scroll to element
         element.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -60,13 +97,22 @@ function TourContent({ tourSteps, closeTour }: { tourSteps: TourStep[], closeTou
     }
 
     return () => {
-      if (highlightedElement) {
+      if (highlightedElement && clickHandler) {
         highlightedElement.style.boxShadow = '';
         highlightedElement.style.position = '';
         highlightedElement.style.zIndex = '';
+        highlightedElement.style.animation = '';
+        highlightedElement.style.cursor = '';
+        highlightedElement.removeEventListener('click', clickHandler, true);
+      }
+      
+      // Remove click indicator
+      const existingIndicator = document.getElementById('tour-click-indicator');
+      if (existingIndicator) {
+        existingIndicator.remove();
       }
     };
-  }, [currentStep, tourSteps, highlightedElement]);
+  }, [currentStep, tourSteps]);
 
   const handleNext = () => {
     if (currentStep < tourSteps.length - 1) {
