@@ -1460,9 +1460,7 @@ export class DatabaseStorage implements IStorage {
           },
           body: JSON.stringify({
             number: formattedPhone,
-            textMessage: {
-              text: message
-            }
+            text: message
           })
         });
 
@@ -2046,9 +2044,7 @@ Obrigado pela preferência! 🙏`;
         },
         body: JSON.stringify({
           number: formattedPhone,
-          textMessage: {
-            text: message
-          }
+          text: message
         })
       });
 
@@ -3204,9 +3200,7 @@ Object.assign(storage, {
 
       const requestPayload = {
         number: testPhone,
-        textMessage: {
-          text: testMessage
-        }
+        text: testMessage
       };
 
       console.log(`📦 Request payload:`, JSON.stringify(requestPayload, null, 2));
