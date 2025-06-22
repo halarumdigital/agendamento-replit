@@ -1,13 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { AlertCircle, CheckCircle, CreditCard, Calendar, Users, ArrowUpRight } from "lucide-react";
+import { AlertCircle, CheckCircle, CreditCard, Calendar, Users, ArrowUpRight, ArrowLeft } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
+
+// Initialize Stripe
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY || 'pk_test_dummy');
 
 interface Plan {
   id: number;
@@ -48,9 +53,133 @@ interface AvailablePlan {
   isRecommended?: boolean;
 }
 
+// Payment Form Component
+function PaymentForm({ 
+  selectedPlan, 
+  billingPeriod, 
+  onSuccess, 
+  onCancel 
+}: {
+  selectedPlan: AvailablePlan;
+  billingPeriod: 'monthly' | 'annual';
+  onSuccess: () => void;
+  onCancel: () => void;
+}) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const { toast } = useToast();
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!stripe || !elements) {
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      const { error } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: `${window.location.origin}/obrigado`,
+        },
+      });
+
+      if (error) {
+        toast({
+          title: "Erro no Pagamento",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Pagamento Processado",
+          description: "Redirecionando...",
+        });
+        onSuccess();
+      }
+    } catch (error: any) {
+      toast({
+        title: "Erro no Pagamento",
+        description: error.message || "Erro inesperado",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const price = billingPeriod === 'annual' && selectedPlan.annualPrice ? selectedPlan.annualPrice : selectedPlan.price;
+  const priceLabel = billingPeriod === 'annual' ? 'ano' : 'mês';
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <CreditCard className="h-5 w-5" />
+          Finalizar Pagamento
+        </CardTitle>
+        <CardDescription>
+          Complete o pagamento para ativar seu novo plano
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Plan Summary */}
+        <div className="bg-muted/50 p-4 rounded-lg">
+          <h3 className="font-semibold text-lg">{selectedPlan.name}</h3>
+          <p className="text-2xl font-bold text-primary">R$ {price}</p>
+          <p className="text-sm text-muted-foreground">por {priceLabel}</p>
+          <div className="flex items-center gap-2 mt-2">
+            <Users className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm">Até {selectedPlan.maxProfessionals} profissionais</span>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <PaymentElement />
+          
+          <div className="flex gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              disabled={isProcessing}
+              className="flex-1"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Voltar
+            </Button>
+            <Button
+              type="submit"
+              disabled={!stripe || isProcessing}
+              className="flex-1"
+            >
+              {isProcessing ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Processando...
+                </>
+              ) : (
+                <>
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  Confirmar Pagamento
+                </>
+              )}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function CompanySubscriptionManagement() {
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>('monthly');
+  const [showPayment, setShowPayment] = useState(false);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -77,7 +206,16 @@ export default function CompanySubscriptionManagement() {
       return response.json();
     },
     onSuccess: (data) => {
-      if (data.redirectUrl) {
+      if (data.clientSecret) {
+        setClientSecret(data.clientSecret);
+        setShowPayment(true);
+      } else if (data.demoMode) {
+        toast({
+          title: "Modo Demonstração",
+          description: data.message,
+          variant: "default",
+        });
+      } else if (data.redirectUrl) {
         window.location.href = data.redirectUrl;
       } else {
         toast({
@@ -307,7 +445,7 @@ export default function CompanySubscriptionManagement() {
               })}
             </div>
 
-            {selectedPlanId && selectedPlanId !== subscriptionStatus?.planId && (
+            {selectedPlanId && selectedPlanId !== subscriptionStatus?.planId && !showPayment && (
               <div className="mt-6 text-center">
                 <Button 
                   onClick={handleUpgrade}
@@ -331,6 +469,37 @@ export default function CompanySubscriptionManagement() {
             )}
           </CardContent>
         </Card>
+      )}
+
+      {/* Stripe Payment Interface */}
+      {showPayment && clientSecret && selectedPlanId && (
+        <Elements 
+          stripe={stripePromise} 
+          options={{ 
+            clientSecret,
+            appearance: {
+              theme: 'stripe',
+              variables: {
+                colorPrimary: 'hsl(var(--primary))',
+              }
+            }
+          }}
+        >
+          <PaymentForm
+            selectedPlan={availablePlans.find(p => p.id === selectedPlanId)!}
+            billingPeriod={billingPeriod}
+            onSuccess={() => {
+              setShowPayment(false);
+              setClientSecret(null);
+              setSelectedPlanId(null);
+              queryClient.invalidateQueries({ queryKey: ['/api/subscription/status'] });
+            }}
+            onCancel={() => {
+              setShowPayment(false);
+              setClientSecret(null);
+            }}
+          />
+        </Elements>
       )}
     </div>
   );
