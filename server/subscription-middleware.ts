@@ -12,8 +12,8 @@ export interface SubscriptionStatus {
 
 export const checkSubscriptionStatus: RequestHandler = async (req: any, res, next) => {
   try {
-    // Skip subscription check for admin routes
-    if (req.path.startsWith('/api/admin') || req.path.startsWith('/api/auth') || req.path.startsWith('/api/public-settings')) {
+    // Skip subscription check for admin routes and public endpoints
+    if (req.path.startsWith('/api/admin') || req.path.startsWith('/api/auth') || req.path.startsWith('/api/public-settings') || req.path === '/api/plans') {
       return next();
     }
 

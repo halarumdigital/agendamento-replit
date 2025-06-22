@@ -26,6 +26,7 @@ import CompanyCoupons from "@/pages/company-coupons";
 import CompanyFinancial from "@/pages/company-financial";
 import CompanyReports from "@/pages/company-reports";
 import CompanySupport from "@/pages/company-support";
+import CompanySubscriptionManagement from "@/pages/company-subscription-management";
 import DashboardAppointments from "@/pages/dashboard-appointments";
 import Dashboard from "@/pages/dashboard";
 import Companies from "@/pages/companies";
@@ -159,6 +160,11 @@ function Router() {
       <Route path="/company/suporte">
         <CompanyLayout>
           <CompanySupport />
+        </CompanyLayout>
+      </Route>
+      <Route path="/company/assinatura">
+        <CompanyLayout>
+          <CompanySubscriptionManagement />
         </CompanyLayout>
       </Route>
 

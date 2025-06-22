@@ -133,6 +133,12 @@ const menuItems = [
     icon: HelpCircle,
     permission: null, // Always visible regardless of plan
   },
+  {
+    title: "Assinatura",
+    href: "/company/assinatura",
+    icon: CreditCard,
+    permission: null, // Always visible regardless of plan
+  },
 
 ];
 

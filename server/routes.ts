@@ -1350,8 +1350,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Plan routes
-  app.get('/api/plans', isAuthenticated, async (req, res) => {
+  // Plan routes (public endpoint for subscription selection)
+  app.get('/api/plans', async (req, res) => {
     try {
       const plans = await storage.getPlans();
       res.json(plans);
@@ -6202,6 +6202,105 @@ const broadcastEvent = (eventData: any) => {
       console.error("Error fetching admin plans:", error);
       res.status(500).json({ 
         message: "Erro ao buscar planos",
+        error: error.message 
+      });
+    }
+  });
+
+  // Get available plans for company subscription upgrade (public endpoint)
+  app.get('/api/plans', async (req, res) => {
+    try {
+      console.log('🎯 Fetching available plans for subscription...');
+      
+      const plans = await db.execute(sql`
+        SELECT 
+          id,
+          name,
+          price,
+          annual_price,
+          max_professionals,
+          CASE 
+            WHEN name LIKE '%Premium%' OR name LIKE '%Profissional%' THEN 1
+            ELSE 0
+          END as is_recommended
+        FROM plans 
+        WHERE is_active = 1
+        ORDER BY 
+          CAST(REPLACE(price, '.', '') AS UNSIGNED) ASC
+      `);
+
+      const plansArray = Array.isArray(plans[0]) ? plans[0] : plans as any[];
+      console.log(`Found ${plansArray.length} available plans`);
+
+      const formattedPlans = plansArray.map((plan: any) => ({
+        id: plan.id,
+        name: plan.name,
+        price: plan.price,
+        annualPrice: plan.annual_price,
+        maxProfessionals: plan.max_professionals || 1,
+        isRecommended: plan.is_recommended === 1
+      }));
+
+      res.json(formattedPlans);
+
+    } catch (error: any) {
+      console.error("Error fetching available plans:", error);
+      res.status(500).json({ 
+        message: "Erro ao buscar planos disponíveis",
+        error: error.message 
+      });
+    }
+  });
+
+  // Upgrade company subscription
+  app.post('/api/subscription/upgrade', isCompanyAuthenticated, async (req, res) => {
+    try {
+      const { planId, billingPeriod } = req.body;
+      const companyId = req.session.companyId;
+
+      console.log(`🔄 Starting subscription upgrade for company ${companyId} to plan ${planId} (${billingPeriod})`);
+
+      // Get the target plan
+      const planResult = await db.execute(sql`
+        SELECT * FROM plans WHERE id = ${planId} AND is_active = 1
+      `);
+      
+      const plansArray = Array.isArray(planResult[0]) ? planResult[0] : planResult as any[];
+      if (plansArray.length === 0) {
+        return res.status(404).json({ message: "Plano não encontrado" });
+      }
+
+      const plan = plansArray[0];
+      const price = billingPeriod === 'annual' && plan.annual_price ? plan.annual_price : plan.price;
+
+      // Get company info
+      const companyResult = await db.execute(sql`
+        SELECT * FROM companies WHERE id = ${companyId}
+      `);
+      
+      const companiesArray = Array.isArray(companyResult[0]) ? companyResult[0] : companyResult as any[];
+      if (companiesArray.length === 0) {
+        return res.status(404).json({ message: "Empresa não encontrada" });
+      }
+
+      const company = companiesArray[0];
+
+      // Create new subscription redirect URL
+      const subscriptionUrl = `/assinatura?planId=${planId}&billingPeriod=${billingPeriod}&companyId=${companyId}`;
+      
+      console.log(`✅ Upgrade initiated for company ${companyId}, redirecting to: ${subscriptionUrl}`);
+
+      res.json({
+        message: "Upgrade iniciado com sucesso",
+        redirectUrl: subscriptionUrl,
+        planName: plan.name,
+        price: price
+      });
+
+    } catch (error: any) {
+      console.error("Error upgrading subscription:", error);
+      res.status(500).json({ 
+        message: "Erro ao fazer upgrade da assinatura",
         error: error.message 
       });
     }
