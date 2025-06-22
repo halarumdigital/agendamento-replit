@@ -3048,8 +3048,12 @@ Object.assign(storage, {
 
   async createTourStep(stepData: InsertTourStep): Promise<TourStep> {
     try {
-      const [newStep] = await db.insert(tourSteps).values(stepData).returning();
-      return newStep;
+      const result = await db.insert(tourSteps).values(stepData);
+      const insertId = (result as any).insertId;
+      
+      // Fetch the created step
+      const [createdStep] = await db.select().from(tourSteps).where(eq(tourSteps.id, insertId));
+      return createdStep;
     } catch (error) {
       console.error('Error creating tour step:', error);
       throw error;
