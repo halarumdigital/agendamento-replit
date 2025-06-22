@@ -180,6 +180,7 @@ function PaymentForm({
           <div className="space-y-2 max-h-48 overflow-y-auto">
             {installmentOptions.map((option) => {
               const isSelected = installments === option.value;
+              const optionInstallmentValue = calculateInstallmentValue(basePrice, option.value);
               
               return (
                 <label
@@ -207,7 +208,7 @@ function PaymentForm({
                   </div>
                   <div className="text-right">
                     <div className="font-semibold">
-                      R$ {installmentValue.toFixed(2)}
+                      R$ {optionInstallmentValue.toFixed(2)}
                     </div>
                     {option.value > 1 && (
                       <div className="text-xs text-muted-foreground">
@@ -621,7 +622,7 @@ export default function CompanySubscriptionManagement() {
 
       {/* Payment Modal */}
       <Dialog open={showPayment} onOpenChange={setShowPayment}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CreditCard className="h-5 w-5" />
