@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertCircle, CheckCircle, CreditCard, Calendar, Users, ArrowUpRight, ArrowLeft } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
@@ -123,80 +124,73 @@ function PaymentForm({
   const priceLabel = billingPeriod === 'annual' ? 'ano' : 'mês';
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <CreditCard className="h-5 w-5" />
-          Finalizar Pagamento
-        </CardTitle>
-        <CardDescription>
-          Complete o pagamento para ativar seu novo plano
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Plan Summary */}
-        <div className="bg-muted/50 p-4 rounded-lg">
-          <h3 className="font-semibold text-lg">{selectedPlan.name}</h3>
-          <p className="text-2xl font-bold text-primary">R$ {price}</p>
-          <p className="text-sm text-muted-foreground">por {priceLabel}</p>
-          <div className="flex items-center gap-2 mt-2">
-            <Users className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm">Até {selectedPlan.maxProfessionals} profissionais</span>
-          </div>
+    <div className="space-y-6">
+      {/* Plan Summary */}
+      <div className="bg-muted/50 p-4 rounded-lg">
+        <h3 className="font-semibold text-lg">{selectedPlan.name}</h3>
+        <p className="text-2xl font-bold text-primary">R$ {price}</p>
+        <p className="text-sm text-muted-foreground">por {priceLabel}</p>
+        <div className="flex items-center gap-2 mt-2">
+          <Users className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm">Até {selectedPlan.maxProfessionals} profissionais</span>
         </div>
+      </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="min-h-[200px] border rounded p-4">
-            {!stripe ? (
-              <div className="flex items-center justify-center h-32">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-                  <p className="text-sm text-muted-foreground">Carregando Stripe...</p>
-                </div>
+      <p className="text-sm text-muted-foreground">
+        Complete o pagamento para ativar seu novo plano
+      </p>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="min-h-[200px] border rounded p-4">
+          {!stripe ? (
+            <div className="flex items-center justify-center h-32">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+                <p className="text-sm text-muted-foreground">Carregando Stripe...</p>
               </div>
+            </div>
+          ) : (
+            <PaymentElement
+              options={{
+                layout: 'tabs'
+              }}
+              onReady={() => console.log('PaymentElement ready')}
+              onLoadError={(error) => console.error('PaymentElement load error:', error)}
+            />
+          )}
+        </div>
+        
+        <div className="flex gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            disabled={isProcessing}
+            className="flex-1"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Voltar
+          </Button>
+          <Button
+            type="submit"
+            disabled={!stripe || isProcessing}
+            className="flex-1"
+          >
+            {isProcessing ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Processando...
+              </>
             ) : (
-              <PaymentElement
-                options={{
-                  layout: 'tabs'
-                }}
-                onReady={() => console.log('PaymentElement ready')}
-                onLoadError={(error) => console.error('PaymentElement load error:', error)}
-              />
+              <>
+                <CreditCard className="h-4 w-4 mr-2" />
+                Confirmar Pagamento
+              </>
             )}
-          </div>
-          
-          <div className="flex gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onCancel}
-              disabled={isProcessing}
-              className="flex-1"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Voltar
-            </Button>
-            <Button
-              type="submit"
-              disabled={!stripe || isProcessing}
-              className="flex-1"
-            >
-              {isProcessing ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Processando...
-                </>
-              ) : (
-                <>
-                  <CreditCard className="h-4 w-4 mr-2" />
-                  Confirmar Pagamento
-                </>
-              )}
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+          </Button>
+        </div>
+      </form>
+    </div>
   );
 }
 
@@ -496,43 +490,47 @@ export default function CompanySubscriptionManagement() {
         </Card>
       )}
 
-      {/* Stripe Payment Interface */}
-      {showPayment && clientSecret && selectedPlanId && (
-        <div className="mt-6">
-          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
-            <p className="text-sm text-blue-800">
-              Debug: clientSecret = {clientSecret ? 'presente' : 'não encontrado'}
-            </p>
-          </div>
-          <Elements 
-            stripe={stripePromise} 
-            options={{ 
-              clientSecret,
-              appearance: {
-                theme: 'stripe',
-                variables: {
-                  colorPrimary: '#8b5cf6',
+      {/* Payment Modal */}
+      <Dialog open={showPayment} onOpenChange={setShowPayment}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5" />
+              Finalizar Pagamento
+            </DialogTitle>
+          </DialogHeader>
+          
+          {clientSecret && selectedPlanId && (
+            <Elements 
+              stripe={stripePromise} 
+              options={{ 
+                clientSecret,
+                appearance: {
+                  theme: 'stripe',
+                  variables: {
+                    colorPrimary: '#8b5cf6',
+                  }
                 }
-              }
-            }}
-          >
-            <PaymentForm
-              selectedPlan={availablePlans.find(p => p.id === selectedPlanId)!}
-              billingPeriod={billingPeriod}
-              onSuccess={() => {
-                setShowPayment(false);
-                setClientSecret(null);
-                setSelectedPlanId(null);
-                queryClient.invalidateQueries({ queryKey: ['/api/subscription/status'] });
               }}
-              onCancel={() => {
-                setShowPayment(false);
-                setClientSecret(null);
-              }}
-            />
-          </Elements>
-        </div>
-      )}
+            >
+              <PaymentForm
+                selectedPlan={availablePlans.find(p => p.id === selectedPlanId)!}
+                billingPeriod={billingPeriod}
+                onSuccess={() => {
+                  setShowPayment(false);
+                  setClientSecret(null);
+                  setSelectedPlanId(null);
+                  queryClient.invalidateQueries({ queryKey: ['/api/subscription/status'] });
+                }}
+                onCancel={() => {
+                  setShowPayment(false);
+                  setClientSecret(null);
+                }}
+              />
+            </Elements>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
