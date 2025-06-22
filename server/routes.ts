@@ -5986,10 +5986,9 @@ const broadcastEvent = (eventData: any) => {
           id,
           fantasy_name as companyName,
           email as companyEmail,
-          status,
+          is_active,
           stripe_customer_id,
           stripe_subscription_id,
-          is_active,
           created_at
         FROM companies 
         ORDER BY created_at DESC
@@ -6011,7 +6010,7 @@ const broadcastEvent = (eventData: any) => {
           companyId: company.id,
           companyName: company.companyName || 'Sem nome',
           companyEmail: company.companyEmail || 'Sem email',
-          companyStatus: company.status === 1 ? 'active' : 'inactive',
+          companyStatus: company.is_active === 1 ? 'active' : 'inactive',
           stripeCustomerId: company.stripe_customer_id || null,
           stripeSubscriptionId: company.stripe_subscription_id || null,
           stripeStatus: company.stripe_subscription_id ? 'active' : 'no_subscription',
@@ -6033,7 +6032,139 @@ const broadcastEvent = (eventData: any) => {
     }
   });
 
+  // Get Stripe plans configuration (admin only)
+  app.get('/api/admin/stripe/plans', isAuthenticated, async (req, res) => {
+    try {
+      console.log('🎯 Fetching Stripe plans configuration...');
+      
+      // Check if Stripe is configured
+      const hasStripe = !!process.env.STRIPE_SECRET_KEY;
+      
+      if (!hasStripe) {
+        return res.json({
+          total: 0,
+          configured: 0,
+          pending: 0,
+          plans: []
+        });
+      }
 
+      // Get all plans from database with correct column names from schema
+      const plans = await db.execute(sql`
+        SELECT 
+          id,
+          name,
+          price,
+          annual_price,
+          stripe_product_id,
+          stripe_price_id,
+          max_professionals,
+          permissions,
+          is_active,
+          free_days,
+          created_at
+        FROM plans 
+        ORDER BY price ASC
+      `);
+
+      const plansArray = Array.isArray(plans[0]) ? plans[0] : plans as any[];
+      console.log(`Found ${plansArray.length} plans in database`);
+
+      let configured = 0;
+      let pending = 0;
+      const planData = [];
+
+      for (const plan of plansArray) {
+        const hasStripeIds = !!(plan.stripe_product_id && plan.stripe_price_id);
+        
+        if (hasStripeIds) {
+          configured++;
+        } else {
+          pending++;
+        }
+
+        const planInfo = {
+          id: plan.id,
+          name: plan.name,
+          description: `Plano ${plan.name}`, // Generate description from name
+          monthlyPrice: parseFloat(plan.price) || 0,
+          annualPrice: parseFloat(plan.annual_price) || 0,
+          maxProfessionals: plan.max_professionals || 1,
+          permissions: plan.permissions ? JSON.parse(plan.permissions) : [],
+          isActive: plan.is_active === 1,
+          trialDays: plan.free_days || 0,
+          stripeProductId: plan.stripe_product_id,
+          stripeMonthlyPriceId: plan.stripe_price_id,
+          stripeAnnualPriceId: null, // No separate annual price ID in schema
+          configured: hasStripeIds,
+          createdAt: plan.created_at
+        };
+
+        planData.push(planInfo);
+      }
+
+      const summary = {
+        total: plansArray.length,
+        configured,
+        pending,
+        plans: planData
+      };
+
+      console.log(`Stripe plans summary: ${configured} configured, ${pending} pending`);
+      res.json(summary);
+
+    } catch (error: any) {
+      console.error("Error fetching Stripe plans:", error);
+      res.status(500).json({ 
+        message: "Erro ao buscar planos do Stripe",
+        error: error.message 
+      });
+    }
+  });
+
+  // Configure Stripe plan (admin only)
+  app.post('/api/admin/stripe/plans/:planId/configure', isAuthenticated, async (req, res) => {
+    try {
+      const { planId } = req.params;
+      const { stripeProductId, stripeMonthlyPriceId, stripeAnnualPriceId } = req.body;
+
+      console.log(`🔧 Configuring Stripe for plan ${planId}...`);
+
+      // Validate required fields
+      if (!stripeProductId || !stripeMonthlyPriceId) {
+        return res.status(400).json({ 
+          message: "Product ID e Monthly Price ID são obrigatórios" 
+        });
+      }
+
+      // Update plan with Stripe IDs
+      await db.execute(sql`
+        UPDATE plans 
+        SET 
+          stripe_product_id = ${stripeProductId},
+          stripe_monthly_price_id = ${stripeMonthlyPriceId},
+          stripe_annual_price_id = ${stripeAnnualPriceId || null}
+        WHERE id = ${parseInt(planId)}
+      `);
+
+      console.log(`✅ Plan ${planId} configured with Stripe IDs`);
+
+      res.json({ 
+        message: "Plano configurado com sucesso no Stripe",
+        planId: parseInt(planId),
+        stripeProductId,
+        stripeMonthlyPriceId,
+        stripeAnnualPriceId
+      });
+
+    } catch (error: any) {
+      console.error("Error configuring Stripe plan:", error);
+      res.status(500).json({ 
+        message: "Erro ao configurar plano no Stripe",
+        error: error.message 
+      });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
