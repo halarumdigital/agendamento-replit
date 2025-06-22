@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
@@ -15,21 +14,9 @@ interface TourStep {
 }
 
 export function GuidedTour() {
-  const { showTour, closeTour } = useGuidedTour();
+  const { showTour, closeTour, tourSteps = [], isLoading } = useGuidedTour();
   const [currentStep, setCurrentStep] = useState(0);
   const [highlightedElement, setHighlightedElement] = useState<HTMLElement | null>(null);
-
-  // Fetch active tour steps
-  const { data: tourSteps = [], isLoading } = useQuery({
-    queryKey: ['/api/company/tour/steps'],
-    queryFn: () => fetch('/api/company/tour/steps').then(res => res.json()),
-    enabled: showTour
-  });
-
-  // Don't render if tour shouldn't be shown
-  if (!showTour) {
-    return null;
-  }
 
   // Update tour progress
   const updateProgress = async (stepIndex: number) => {

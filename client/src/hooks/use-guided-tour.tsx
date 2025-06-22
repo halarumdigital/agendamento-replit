@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "./useAuth";
+import { useCompanyAuth } from "./useCompanyAuth";
 
 interface TourProgress {
   id: number;
@@ -12,26 +12,27 @@ interface TourProgress {
 }
 
 export function useGuidedTour() {
-  const { user } = useAuth();
+  const { company, isAuthenticated } = useCompanyAuth();
   const [showTour, setShowTour] = useState(false);
 
   // Check if company has completed the tour
   const { data: tourProgress, isLoading: tourProgressLoading } = useQuery({
     queryKey: ['/api/company/tour/status'],
     queryFn: () => fetch('/api/company/tour/status').then(res => res.json()),
-    enabled: !!user
+    enabled: !!company
   });
 
   // Check if tour steps exist
   const { data: tourSteps = [], isLoading: tourStepsLoading } = useQuery({
     queryKey: ['/api/company/tour/steps'],
     queryFn: () => fetch('/api/company/tour/steps').then(res => res.json()),
-    enabled: !!user
+    enabled: !!company
   });
 
   useEffect(() => {
     console.log('🎯 Tour Debug:', {
-      user: !!user,
+      company: !!company,
+      isAuthenticated,
       tourProgressLoading,
       tourStepsLoading,
       tourProgress,
@@ -39,7 +40,7 @@ export function useGuidedTour() {
       tourStepsLength: tourSteps?.length
     });
 
-    if (!tourProgressLoading && !tourStepsLoading && user) {
+    if (!tourProgressLoading && !tourStepsLoading && company) {
       // Show tour if there are steps and shouldShowTour is true
       const hasSteps = Array.isArray(tourSteps) && tourSteps.length > 0;
       const shouldShowTour = tourProgress?.shouldShowTour === true;
@@ -55,7 +56,7 @@ export function useGuidedTour() {
         return () => clearTimeout(timer);
       }
     }
-  }, [tourProgressLoading, tourStepsLoading, tourProgress, user, tourSteps]);
+  }, [tourProgressLoading, tourStepsLoading, tourProgress, company, tourSteps]);
 
   const closeTour = () => {
     setShowTour(false);
@@ -70,6 +71,8 @@ export function useGuidedTour() {
     closeTour,
     startTour,
     tourProgress,
+    tourSteps,
+    isLoading: tourProgressLoading || tourStepsLoading,
     hasActiveTour: tourSteps.length > 0
   };
 }
