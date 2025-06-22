@@ -339,20 +339,30 @@ export default function DashboardAppointments() {
       return response.json();
     },
     onMutate: async ({ appointmentId, status }) => {
+      console.log('🎯 Kanban onMutate: Starting optimistic update for appointment', appointmentId, 'to status', status);
+      
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: ['/api/company/appointments'] });
       
       // Snapshot the previous value
       const previousAppointments = queryClient.getQueryData(['/api/company/appointments']);
+      console.log('🎯 Kanban onMutate: Previous appointments count:', previousAppointments ? (previousAppointments as any[]).length : 0);
       
       // Optimistically update to the new value
       queryClient.setQueryData(['/api/company/appointments'], (old: any[]) => {
-        if (!old) return old;
-        return old.map((appointment: any) => 
+        if (!old) {
+          console.log('🎯 Kanban onMutate: No old data found');
+          return old;
+        }
+        
+        const updated = old.map((appointment: any) => 
           appointment.id === appointmentId 
             ? { ...appointment, status }
             : appointment
         );
+        
+        console.log('🎯 Kanban onMutate: Updated appointment found:', updated.find(apt => apt.id === appointmentId)?.status);
+        return updated;
       });
       
       // Return a context object with the snapshotted value
@@ -371,6 +381,7 @@ export default function DashboardAppointments() {
     },
     onSettled: () => {
       // Always refetch after error or success to ensure we have latest data
+      console.log('🎯 Kanban onSettled: Invalidating queries');
       queryClient.invalidateQueries({ queryKey: ['/api/company/appointments'] });
     },
   });
