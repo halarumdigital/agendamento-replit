@@ -3,30 +3,33 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
+import { useGuidedTour } from "@/hooks/use-guided-tour";
 
 interface TourStep {
   id: number;
   title: string;
-  content: string;
+  description: string;
   targetElement: string;
-  position: 'top' | 'bottom' | 'left' | 'right';
-  orderIndex: number;
+  placement: 'top' | 'bottom' | 'left' | 'right';
+  stepOrder: number;
 }
 
-interface GuidedTourProps {
-  companyId: number;
-  onClose: () => void;
-}
-
-export function GuidedTour({ companyId, onClose }: GuidedTourProps) {
+export function GuidedTour() {
+  const { showTour, closeTour } = useGuidedTour();
   const [currentStep, setCurrentStep] = useState(0);
   const [highlightedElement, setHighlightedElement] = useState<HTMLElement | null>(null);
 
   // Fetch active tour steps
   const { data: tourSteps = [], isLoading } = useQuery({
     queryKey: ['/api/company/tour/steps'],
-    queryFn: () => fetch('/api/company/tour/steps').then(res => res.json())
+    queryFn: () => fetch('/api/company/tour/steps').then(res => res.json()),
+    enabled: showTour
   });
+
+  // Don't render if tour shouldn't be shown
+  if (!showTour) {
+    return null;
+  }
 
   // Update tour progress
   const updateProgress = async (stepIndex: number) => {
@@ -104,7 +107,7 @@ export function GuidedTour({ companyId, onClose }: GuidedTourProps) {
       highlightedElement.style.position = '';
       highlightedElement.style.zIndex = '';
     }
-    onClose();
+    closeTour();
   };
 
   if (isLoading) {
@@ -143,7 +146,7 @@ export function GuidedTour({ companyId, onClose }: GuidedTourProps) {
               {currentTourStep.title}
             </h3>
             <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-              {currentTourStep.content}
+              {currentTourStep.description}
             </p>
           </div>
 
