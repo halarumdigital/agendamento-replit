@@ -182,10 +182,8 @@ async function processCampaign(campaign: any) {
           formattedPhone = '55' + formattedPhone;
         }
 
-        // Send WhatsApp message using corrected API URL
-        const correctedApiUrl = settings.evolutionApiUrl?.includes('/api/') ? 
-          settings.evolutionApiUrl : 
-          `${settings.evolutionApiUrl?.replace(/\/$/, '')}/api`;
+        // Evolution API URL should NOT include /api/ prefix for message endpoints
+        const correctedApiUrl = settings.evolutionApiUrl?.replace(/\/api\/?$/, '').replace(/\/$/, '');
         const response = await fetch(`${correctedApiUrl}/message/sendText/${whatsappInstance.instance_name}`, {
           method: 'POST',
           headers: {

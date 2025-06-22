@@ -1450,10 +1450,8 @@ export class DatabaseStorage implements IStorage {
           return;
         }
 
-        // Ensure Evolution API URL uses proper API endpoint
-        const correctedApiUrl = evolutionApiUrl?.includes('/api/') ? 
-          evolutionApiUrl : 
-          `${evolutionApiUrl?.replace(/\/$/, '')}/api`;
+        // Evolution API URL should NOT include /api/ prefix for message endpoints
+        const correctedApiUrl = evolutionApiUrl?.replace(/\/api\/?$/, '').replace(/\/$/, '');
         const response = await fetch(`${correctedApiUrl}/message/sendText/${whatsappInstance.instanceName}`, {
           method: 'POST',
           headers: {
@@ -2020,8 +2018,8 @@ Obrigado pela preferência! 🙏`;
       console.log('WhatsApp instance apiUrl:', whatsappInstance.apiUrl);
       console.log('WhatsApp instance apiKey:', !!whatsappInstance.apiKey);
 
-      // For Evolution API v2.2.2, use direct endpoint without /api prefix
-      const baseUrl = evolutionApiUrl.replace(/\/+$/, '');
+      // Evolution API URL should NOT include /api/ prefix for message endpoints
+      const baseUrl = evolutionApiUrl.replace(/\/api\/?$/, '').replace(/\/$/, '');
       const whatsappApiUrl = `${baseUrl}/message/sendText/${whatsappInstance.instanceName}`;
       
       console.log('=== EVOLUTION API URL DETAILS ===');
@@ -3196,10 +3194,8 @@ Object.assign(storage, {
       const testMessage = "🧪 Teste de lembrete - sistema funcionando corretamente!";
       const testPhone = "5511999999999"; // Test phone number
 
-      // Ensure Evolution API URL uses proper API endpoint
-      const correctedApiUrl = settings.evolutionApiUrl?.includes('/api/') ? 
-        settings.evolutionApiUrl : 
-        `${settings.evolutionApiUrl?.replace(/\/$/, '')}/api`;
+      // Evolution API URL should NOT include /api/ prefix for message endpoints
+      const correctedApiUrl = settings.evolutionApiUrl?.replace(/\/api\/?$/, '').replace(/\/$/, '');
 
       console.log(`🌐 Making API call to Evolution API`);
       console.log(`📡 URL: ${correctedApiUrl}/message/sendText/${whatsappInstance.instanceName}`);
