@@ -64,8 +64,15 @@ export default function AdminTourConfig() {
 
   // Create tour step mutation
   const createStepMutation = useMutation({
-    mutationFn: (data: TourStepFormData) => 
-      apiRequest('/api/admin/tour/steps', { method: 'POST', body: JSON.stringify(data) }),
+    mutationFn: async (data: TourStepFormData) => {
+      const response = await fetch('/api/admin/tour/steps', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) throw new Error('Erro ao criar etapa');
+      return response.json();
+    },
     onSuccess: () => {
       toast({ title: "Etapa criada com sucesso!" });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/tour/steps'] });
@@ -83,8 +90,15 @@ export default function AdminTourConfig() {
 
   // Update tour step mutation
   const updateStepMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: TourStepFormData }) =>
-      apiRequest(`/api/admin/tour/steps/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    mutationFn: async ({ id, data }: { id: number; data: TourStepFormData }) => {
+      const response = await fetch(`/api/admin/tour/steps/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) throw new Error('Erro ao atualizar etapa');
+      return response.json();
+    },
     onSuccess: () => {
       toast({ title: "Etapa atualizada com sucesso!" });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/tour/steps'] });
@@ -103,8 +117,13 @@ export default function AdminTourConfig() {
 
   // Delete tour step mutation
   const deleteStepMutation = useMutation({
-    mutationFn: (id: number) =>
-      apiRequest(`/api/admin/tour/steps/${id}`, { method: 'DELETE' }),
+    mutationFn: async (id: number) => {
+      const response = await fetch(`/api/admin/tour/steps/${id}`, {
+        method: 'DELETE'
+      });
+      if (!response.ok) throw new Error('Erro ao excluir etapa');
+      return response.json();
+    },
     onSuccess: () => {
       toast({ title: "Etapa excluída com sucesso!" });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/tour/steps'] });
