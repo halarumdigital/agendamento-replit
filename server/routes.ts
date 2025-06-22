@@ -5973,6 +5973,68 @@ const broadcastEvent = (eventData: any) => {
     }
   });
 
+  // ===== STRIPE SUBSCRIPTION ADMIN ROUTES =====
+
+  // Get all Stripe subscriptions (admin only)
+  app.get('/api/admin/stripe/subscriptions', isAuthenticated, async (req, res) => {
+    try {
+      console.log('📊 Fetching Stripe subscriptions...');
+      
+      // Get all companies with their Stripe subscription data
+      const companies = await db.execute(sql`
+        SELECT 
+          id,
+          fantasy_name as companyName,
+          email as companyEmail,
+          status,
+          stripe_customer_id,
+          stripe_subscription_id,
+          is_active,
+          created_at
+        FROM companies 
+        ORDER BY created_at DESC
+      `);
+
+      const companiesArray = Array.isArray(companies[0]) ? companies[0] : companies as any[];
+      console.log(`Found ${companiesArray.length} companies`);
+      
+      if (!companiesArray || companiesArray.length === 0) {
+        console.log('No companies found, returning empty array');
+        return res.json([]);
+      }
+
+      const subscriptionsData = [];
+
+      // Process each company
+      for (const company of companiesArray) {
+        const subscriptionData = {
+          companyId: company.id,
+          companyName: company.companyName || 'Sem nome',
+          companyEmail: company.companyEmail || 'Sem email',
+          companyStatus: company.status === 1 ? 'active' : 'inactive',
+          stripeCustomerId: company.stripe_customer_id || null,
+          stripeSubscriptionId: company.stripe_subscription_id || null,
+          stripeStatus: company.stripe_subscription_id ? 'active' : 'no_subscription',
+          createdAt: company.created_at
+        };
+
+        subscriptionsData.push(subscriptionData);
+      }
+
+      console.log(`Returning ${subscriptionsData.length} subscription records`);
+      res.json(subscriptionsData);
+
+    } catch (error: any) {
+      console.error("Error fetching Stripe subscriptions:", error);
+      res.status(500).json({ 
+        message: "Erro ao buscar assinaturas",
+        error: error.message 
+      });
+    }
+  });
+
+
+
   const httpServer = createServer(app);
   return httpServer;
 }
