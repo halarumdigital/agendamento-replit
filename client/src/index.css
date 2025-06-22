@@ -226,21 +226,21 @@
 }
 
 /* Tour animations */
-@keyframes tour-pulse {
+@keyframes tour-gentle-pulse {
   0%, 100% {
-    transform: scale(1);
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.8), 0 0 20px rgba(59, 130, 246, 0.3);
+    transform: scale(1) translateY(0px);
+    box-shadow: 0 0 0 2px hsl(var(--primary)), 0 0 10px hsl(var(--primary) / 0.3);
   }
   50% {
-    transform: scale(1.02);
-    box-shadow: 0 0 0 6px rgba(59, 130, 246, 1), 0 0 30px rgba(59, 130, 246, 0.5);
+    transform: scale(1.01) translateY(-1px);
+    box-shadow: 0 0 0 3px hsl(var(--primary)), 0 0 15px hsl(var(--primary) / 0.4);
   }
 }
 
 .tour-click-indicator {
   position: fixed;
-  background: rgba(59, 130, 246, 0.9);
-  color: white;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
   padding: 6px 12px;
   border-radius: 6px;
   font-size: 12px;

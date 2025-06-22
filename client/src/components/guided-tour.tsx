@@ -61,12 +61,12 @@ function TourContent({ tourSteps, closeTour }: { tourSteps: TourStep[], closeTou
           highlightedElement.removeEventListener('click', clickHandler, true);
         }
 
-        // Add enhanced highlight with pulsing effect
-        element.style.boxShadow = '0 0 0 4px rgba(59, 130, 246, 0.8), 0 0 20px rgba(59, 130, 246, 0.3)';
+        // Add subtle highlight with gentle movement
+        element.style.boxShadow = '0 0 0 2px hsl(var(--primary)), 0 0 10px hsl(var(--primary) / 0.3)';
         element.style.position = 'relative';
         element.style.zIndex = '9999';
         element.style.transition = 'all 0.3s ease';
-        element.style.animation = 'tour-pulse 2s infinite';
+        element.style.animation = 'tour-gentle-pulse 2s infinite';
         element.style.cursor = 'pointer';
         
         // Add click listener to detect clicks

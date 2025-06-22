@@ -142,6 +142,7 @@ This is a comprehensive business management system built with Express.js and MyS
 ## Changelog
 ```
 Changelog:
+- June 22, 2025. COMPLETED: Tour visual design refined - updated animations to use global color scheme instead of hardcoded blue colors, implemented gentle movement animations with minimal scaling and subtle vertical translation, positioned tour modal in bottom-right corner to avoid blocking page interactions
 - June 22, 2025. COMPLETED: Guided tour click-through functionality fixed - removed click prevention in tour elements, implemented proper z-index hierarchy, added smooth pulse animations, and enabled natural navigation while maintaining tour progression
 - June 22, 2025. COMPLETED: Tour restart functionality added to dashboard - integrated "Reiniciar Tour" button with proper authentication, added guided tour component to correct dashboard, and implemented tour reset API endpoint
 - June 22, 2025. COMPLETED: Company registration form fixed - added missing mandatory plan selection field, corrected form validation, and resolved non-functional "Cadastrar Empresa" button
