@@ -163,13 +163,7 @@ function PaymentForm({
               </div>
               <PaymentElement
                 options={{
-                  layout: 'tabs',
-                  fields: {
-                    billingDetails: {
-                      name: 'auto',
-                      email: 'auto'
-                    }
-                  }
+                  layout: 'tabs'
                 }}
                 onReady={() => {
                   console.log('✅ PaymentElement ready');
