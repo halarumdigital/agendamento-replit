@@ -109,24 +109,35 @@ function PaymentForm({ onSuccess, onError }: { onSuccess: () => void; onError: (
     e.preventDefault();
 
     if (!stripe || !elements) {
+      onError('Stripe não foi carregado corretamente');
       return;
     }
 
     setLoading(true);
 
-    const { error } = await stripe.confirmSetup({
-      elements,
-      confirmParams: {
-        return_url: window.location.origin + '/company/dashboard',
-      },
-    });
+    try {
+      const { error, setupIntent } = await stripe.confirmSetup({
+        elements,
+        confirmParams: {
+          return_url: `${window.location.origin}/assinatura`,
+        },
+        redirect: 'if_required',
+      });
 
-    setLoading(false);
+      setLoading(false);
 
-    if (error) {
-      onError(error.message || 'Erro no pagamento');
-    } else {
-      onSuccess();
+      if (error) {
+        console.error('Stripe Setup Error:', error);
+        onError(error.message || 'Erro na configuração do pagamento');
+      } else if (setupIntent && setupIntent.status === 'succeeded') {
+        onSuccess();
+      } else {
+        onError('Não foi possível configurar o método de pagamento');
+      }
+    } catch (err) {
+      setLoading(false);
+      console.error('Payment Setup Error:', err);
+      onError('Erro inesperado na configuração do pagamento');
     }
   };
 
@@ -523,10 +534,16 @@ export default function Subscription() {
                 />
               ) : (
                 <Elements 
+                  key={clientSecret}
                   stripe={stripePromise} 
                   options={{ 
                     clientSecret,
-                    appearance: { theme: 'stripe' }
+                    appearance: { 
+                      theme: 'stripe',
+                      variables: {
+                        colorPrimary: '#6366f1',
+                      }
+                    }
                   }}
                 >
                   <PaymentForm 
