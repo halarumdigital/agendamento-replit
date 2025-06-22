@@ -3062,11 +3062,13 @@ Object.assign(storage, {
 
   async updateTourStep(stepId: number, stepData: Partial<InsertTourStep>): Promise<TourStep> {
     try {
-      const [updatedStep] = await db
+      await db
         .update(tourSteps)
         .set(stepData)
-        .where(eq(tourSteps.id, stepId))
-        .returning();
+        .where(eq(tourSteps.id, stepId));
+      
+      // Fetch the updated step
+      const [updatedStep] = await db.select().from(tourSteps).where(eq(tourSteps.id, stepId));
       return updatedStep;
     } catch (error) {
       console.error('Error updating tour step:', error);
