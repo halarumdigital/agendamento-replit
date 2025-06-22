@@ -401,6 +401,64 @@ export default function Subscription() {
                 )}
               </CardDescription>
             </CardHeader>
+            
+            {/* Resumo do Plano */}
+            <div className="px-6 pb-4">
+              <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                <div className="text-center">
+                  <h3 className="font-medium text-lg text-gray-900">{selectedPlan.name}</h3>
+                  <div className="mt-2">
+                    {isAnnual && selectedPlan.annualPrice ? (
+                      <>
+                        <div className="text-3xl font-bold text-gray-900">
+                          R$ {parseFloat(selectedPlan.annualPrice).toFixed(2)}
+                          <span className="text-base font-normal text-gray-600">/ano</span>
+                        </div>
+                        <div className="text-sm text-green-600 font-medium">
+                          Cobrado anualmente: R$ {parseFloat(selectedPlan.annualPrice).toFixed(2)}
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="text-3xl font-bold text-gray-900">
+                          R$ {parseFloat(selectedPlan.price).toFixed(2)}
+                          <span className="text-base font-normal text-gray-600">/mês</span>
+                        </div>
+                        <div className="text-sm text-green-600 font-medium">
+                          Cobrado mensalmente: R$ {parseFloat(selectedPlan.price).toFixed(2)}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  {selectedPlan.freeDays > 0 && (
+                    <div className="mt-2 text-sm text-blue-600 font-medium">
+                      {selectedPlan.freeDays} dias grátis para testar
+                    </div>
+                  )}
+                </div>
+
+                {/* Opções de Parcelamento */}
+                {!isAnnual && (
+                  <div className="border-t pt-3 mt-3">
+                    <h4 className="font-medium text-sm text-gray-700 mb-2">Opções de parcelamento:</h4>
+                    <div className="space-y-1 text-sm text-gray-600">
+                      <div className="flex justify-between">
+                        <span>1x sem juros</span>
+                        <span className="font-medium">R$ {parseFloat(selectedPlan.price).toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>2x sem juros</span>
+                        <span className="font-medium">R$ {(parseFloat(selectedPlan.price) / 2).toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>3x sem juros</span>
+                        <span className="font-medium">R$ {(parseFloat(selectedPlan.price) / 3).toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
             <CardContent>
               {demoMode ? (
                 <DemoPaymentForm 
