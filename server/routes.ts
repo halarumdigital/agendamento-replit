@@ -1529,7 +1529,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create subscription endpoint with annual billing support
   app.post('/api/create-subscription', async (req, res) => {
     try {
-      const { planId, isAnnual } = req.body;
+      const { planId, isAnnual, installments } = req.body;
 
       if (!planId) {
         return res.status(400).json({ error: 'Plan ID é obrigatório' });
@@ -1566,13 +1566,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // For all paid plans (including those with free trial), create Stripe subscription
       try {
         console.log('🔄 Criando SetupIntent no Stripe para configurar método de pagamento');
+        
+        // Calculate installment amount if installments are specified
+        let installmentAmount = priceToUse;
+        let hasInterest = false;
+        
+        if (installments && installments > 1 && isAnnual) {
+          if (installments <= 3) {
+            // No interest for up to 3 installments
+            installmentAmount = priceToUse / installments;
+          } else {
+            // Apply 2.5% monthly interest for 4+ installments
+            const monthlyRate = 0.025;
+            const totalWithInterest = priceToUse * Math.pow(1 + monthlyRate, installments);
+            installmentAmount = totalWithInterest / installments;
+            hasInterest = true;
+          }
+        }
+        
         const setupIntent = await stripeService.createSetupIntent({
           metadata: {
             planId: planId.toString(),
             planName: plan.name,
             billingPeriod: isAnnual ? 'annual' : 'monthly',
             amount: priceToUse.toString(),
-            freeDays: plan.free_days?.toString() || '0'
+            freeDays: plan.free_days?.toString() || '0',
+            installments: installments?.toString() || '1',
+            installmentAmount: installmentAmount.toFixed(2),
+            hasInterest: hasInterest.toString()
           }
         });
 
@@ -1581,7 +1602,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           planName: plan.name,
           amount: priceToUse,
           billingPeriod: isAnnual ? 'annual' : 'monthly',
-          freeDays: plan.free_days || 0
+          freeDays: plan.free_days || 0,
+          installments: installments || 1,
+          installmentAmount: installmentAmount,
+          hasInterest: hasInterest
         });
       } catch (stripeError: any) {
         console.error('Stripe error:', stripeError);

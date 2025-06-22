@@ -155,6 +155,7 @@ export default function Subscription() {
   const [clientSecret, setClientSecret] = useState<string>('');
   const [isAnnual, setIsAnnual] = useState(false);
   const [demoMode, setDemoMode] = useState(false);
+  const [installments, setInstallments] = useState<1 | 2 | 3 | 4 | 5 | 6 | 12>(1);
   const { company } = useCompanyAuth();
 
   const { data: plans = [], isLoading: plansLoading } = useQuery<Plan[]>({
@@ -166,8 +167,8 @@ export default function Subscription() {
   });
 
   const createSubscriptionMutation = useMutation({
-    mutationFn: async ({ planId, isAnnual }: { planId: number; isAnnual: boolean }) => {
-      return await apiRequest("POST", "/api/create-subscription", { planId, isAnnual });
+    mutationFn: async ({ planId, isAnnual, installments }: { planId: number; isAnnual: boolean; installments?: number }) => {
+      return await apiRequest("POST", "/api/create-subscription", { planId, isAnnual, installments });
     },
     onSuccess: (data) => {
       if (data.clientSecret) {
@@ -193,7 +194,7 @@ export default function Subscription() {
 
   const handleSelectPlan = (plan: Plan) => {
     setSelectedPlan(plan);
-    createSubscriptionMutation.mutate({ planId: plan.id, isAnnual });
+    createSubscriptionMutation.mutate({ planId: plan.id, isAnnual, installments: isAnnual ? installments : undefined });
   };
 
   const handlePaymentSuccess = () => {
@@ -440,20 +441,67 @@ export default function Subscription() {
                 {/* Opções de Parcelamento - apenas para planos anuais */}
                 {isAnnual && selectedPlan.annualPrice && (
                   <div className="border-t pt-3 mt-3">
-                    <h4 className="font-medium text-sm text-gray-700 mb-2">Opções de parcelamento:</h4>
-                    <div className="space-y-1 text-sm text-gray-600">
-                      <div className="flex justify-between">
-                        <span>1x sem juros</span>
-                        <span className="font-medium">R$ {parseFloat(selectedPlan.annualPrice).toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>2x sem juros</span>
-                        <span className="font-medium">R$ {(parseFloat(selectedPlan.annualPrice) / 2).toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>3x sem juros</span>
-                        <span className="font-medium">R$ {(parseFloat(selectedPlan.annualPrice) / 3).toFixed(2)}</span>
-                      </div>
+                    <h4 className="font-medium text-sm text-gray-700 mb-3">Escolha o parcelamento:</h4>
+                    <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto">
+                      {/* Opções sem juros */}
+                      {[1, 2, 3].map((option) => (
+                        <button
+                          key={option}
+                          onClick={() => setInstallments(option as 1 | 2 | 3 | 4 | 5 | 6 | 12)}
+                          className={`flex justify-between items-center p-3 rounded-lg border transition-all ${
+                            installments === option
+                              ? 'border-green-500 bg-green-50 text-green-700'
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                        >
+                          <span className="font-medium">
+                            {option}x sem juros
+                            <span className="ml-2 text-xs bg-green-100 text-green-600 px-2 py-0.5 rounded-full">
+                              Sem juros
+                            </span>
+                          </span>
+                          <span className="font-bold">
+                            R$ {(parseFloat(selectedPlan.annualPrice!) / option).toFixed(2)}
+                          </span>
+                        </button>
+                      ))}
+
+                      {/* Opções com juros */}
+                      {[4, 5, 6, 12].map((option) => {
+                        const monthlyRate = 0.025; // 2.5% ao mês
+                        const baseAmount = parseFloat(selectedPlan.annualPrice!);
+                        const amountWithInterest = baseAmount * Math.pow(1 + monthlyRate, option);
+                        const monthlyPayment = amountWithInterest / option;
+                        const totalInterest = amountWithInterest - baseAmount;
+                        
+                        return (
+                          <button
+                            key={option}
+                            onClick={() => setInstallments(option as 1 | 2 | 3 | 4 | 5 | 6 | 12)}
+                            className={`flex justify-between items-center p-3 rounded-lg border transition-all ${
+                              installments === option
+                                ? 'border-orange-500 bg-orange-50 text-orange-700'
+                                : 'border-gray-200 hover:border-gray-300'
+                            }`}
+                          >
+                            <div className="text-left">
+                              <div className="font-medium">
+                                {option}x com juros
+                                <span className="ml-2 text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full">
+                                  2,5% a.m.
+                                </span>
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                Total: R$ {amountWithInterest.toFixed(2)} 
+                                <span className="text-orange-600"> (+R$ {totalInterest.toFixed(2)})</span>
+                              </div>
+                            </div>
+                            <span className="font-bold">
+                              R$ {monthlyPayment.toFixed(2)}
+                            </span>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
