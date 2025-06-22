@@ -73,6 +73,37 @@ function PaymentForm({
   const elements = useElements();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [installments, setInstallments] = useState(1);
+  
+  // Configuração das parcelas
+  const installmentOptions = [
+    { value: 1, label: '1x sem juros', hasInterest: false },
+    { value: 2, label: '2x sem juros', hasInterest: false },
+    { value: 3, label: '3x sem juros', hasInterest: false },
+    { value: 4, label: '4x com juros (2,5% a.m.)', hasInterest: true },
+    { value: 5, label: '5x com juros (2,5% a.m.)', hasInterest: true },
+    { value: 6, label: '6x com juros (2,5% a.m.)', hasInterest: true },
+    { value: 12, label: '12x com juros (2,5% a.m.)', hasInterest: true },
+  ];
+
+  const calculateInstallmentValue = (baseValue: number, installments: number) => {
+    const option = installmentOptions.find(opt => opt.value === installments);
+    if (!option?.hasInterest) {
+      return baseValue / installments;
+    }
+    
+    // Juros compostos de 2,5% ao mês
+    const monthlyRate = 0.025;
+    const totalWithInterest = baseValue * Math.pow(1 + monthlyRate, installments);
+    return totalWithInterest / installments;
+  };
+  
+  const basePrice = billingPeriod === 'annual' && selectedPlan.annualPrice 
+    ? parseFloat(selectedPlan.annualPrice) 
+    : parseFloat(selectedPlan.price);
+    
+  const installmentValue = calculateInstallmentValue(basePrice, installments);
+  const totalWithInterest = installmentValue * installments;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,9 +130,13 @@ function PaymentForm({
           variant: "destructive",
         });
       } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+        const successMessage = billingPeriod === 'annual' && installments > 1 
+          ? `Pagamento parcelado em ${installments}x de R$ ${installmentValue.toFixed(2)} processado com sucesso!`
+          : "Pagamento processado com sucesso!";
+        
         toast({
           title: "Pagamento Realizado",
-          description: "Pagamento processado com sucesso!",
+          description: successMessage,
         });
         onSuccess();
       } else {
@@ -137,6 +172,69 @@ function PaymentForm({
           <span className="text-sm">Até {selectedPlan.maxProfessionals} profissionais</span>
         </div>
       </div>
+
+      {/* Opções de Parcelamento - apenas para planos anuais */}
+      {billingPeriod === 'annual' && (
+        <div className="border rounded-lg p-4 bg-gray-50">
+          <h4 className="font-medium mb-3 text-center">Opções de Pagamento</h4>
+          <div className="space-y-2 max-h-48 overflow-y-auto">
+            {installmentOptions.map((option) => {
+              const isSelected = installments === option.value;
+              
+              return (
+                <label
+                  key={option.value}
+                  className={`flex items-center justify-between p-2 border rounded cursor-pointer transition-colors text-sm ${
+                    isSelected
+                      ? option.hasInterest
+                        ? 'border-orange-300 bg-orange-50'
+                        : 'border-green-300 bg-green-50'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <div className="flex items-center">
+                    <input
+                      type="radio"
+                      name="installments"
+                      value={option.value}
+                      checked={isSelected}
+                      onChange={(e) => setInstallments(Number(e.target.value))}
+                      className="mr-2"
+                    />
+                    <span className={`${option.hasInterest ? 'text-orange-700' : 'text-green-700'}`}>
+                      {option.label}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-semibold">
+                      R$ {installmentValue.toFixed(2)}
+                    </div>
+                    {option.value > 1 && (
+                      <div className="text-xs text-muted-foreground">
+                        por parcela
+                      </div>
+                    )}
+                  </div>
+                </label>
+              );
+            })}
+          </div>
+          
+          {installments > 1 && (
+            <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded text-sm">
+              <div className="flex justify-between">
+                <span>Total final:</span>
+                <span className="font-semibold">R$ {totalWithInterest.toFixed(2)}</span>
+              </div>
+              {totalWithInterest > basePrice && (
+                <div className="text-xs text-orange-600 mt-1">
+                  Acréscimo de R$ {(totalWithInterest - basePrice).toFixed(2)} em juros
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       <p className="text-sm text-muted-foreground">
         Complete o pagamento para ativar seu novo plano
@@ -244,7 +342,7 @@ export default function CompanySubscriptionManagement() {
 
   // Upgrade subscription mutation
   const upgradeMutation = useMutation({
-    mutationFn: async (data: { planId: number; billingPeriod: 'monthly' | 'annual' }) => {
+    mutationFn: async (data: { planId: number; billingPeriod: 'monthly' | 'annual'; installments?: number }) => {
       const response = await apiRequest('POST', '/api/subscription/upgrade', data);
       return response;
     },
@@ -280,10 +378,17 @@ export default function CompanySubscriptionManagement() {
   const handleUpgrade = () => {
     if (!selectedPlanId) return;
     
-    upgradeMutation.mutate({
+    const upgradeData: { planId: number; billingPeriod: 'monthly' | 'annual'; installments?: number } = {
       planId: selectedPlanId,
       billingPeriod
-    });
+    };
+
+    // Incluir informações de parcelas apenas para planos anuais
+    if (billingPeriod === 'annual') {
+      upgradeData.installments = 1; // Valor padrão será 1x
+    }
+
+    upgradeMutation.mutate(upgradeData);
   };
 
   if (statusLoading || plansLoading) {

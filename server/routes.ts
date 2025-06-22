@@ -6256,7 +6256,7 @@ const broadcastEvent = (eventData: any) => {
   // Upgrade company subscription
   app.post('/api/subscription/upgrade', isCompanyAuthenticated, async (req, res) => {
     try {
-      const { planId, billingPeriod } = req.body;
+      const { planId, billingPeriod, installments } = req.body;
       const companyId = req.session.companyId;
 
       console.log(`🔄 Starting subscription upgrade for company ${companyId} to plan ${planId} (${billingPeriod})`);
