@@ -1565,6 +1565,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // For all paid plans (including those with free trial), create Stripe subscription
       try {
+        console.log('🔄 Criando SetupIntent no Stripe para configurar método de pagamento');
         const setupIntent = await stripeService.createSetupIntent({
           metadata: {
             planId: planId.toString(),
@@ -1582,9 +1583,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
           billingPeriod: isAnnual ? 'annual' : 'monthly',
           freeDays: plan.free_days || 0
         });
-      } catch (stripeError) {
+      } catch (stripeError: any) {
         console.error('Stripe error:', stripeError);
-        res.status(500).json({ error: 'Erro ao processar pagamento' });
+        
+        // Fallback para demonstração quando Stripe não está disponível
+        if (stripeError.message && (stripeError.message.includes('Stripe não está configurado') || stripeError.message.includes('Invalid API Key'))) {
+          console.log('🔄 Usando fallback para demonstração - Stripe não configurado');
+          res.json({
+            clientSecret: 'demo_client_secret_' + Date.now(),
+            planName: plan.name,
+            amount: priceToUse,
+            billingPeriod: isAnnual ? 'annual' : 'monthly',
+            freeDays: plan.free_days || 0,
+            demoMode: true,
+            message: 'Modo demonstração - Configure as chaves Stripe para pagamentos reais'
+          });
+        } else {
+          res.status(500).json({ error: 'Erro ao processar pagamento: ' + stripeError.message });
+        }
       }
 
     } catch (error) {

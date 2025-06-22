@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Check, Crown, Star, Zap, ArrowLeft, Lock, Loader2 } from "lucide-react";
+import { Check, Crown, Star, Zap, ArrowLeft, Lock, Loader2, AlertCircle, CreditCard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useCompanyAuth } from "@/hooks/useCompanyAuth";
 import { apiRequest } from "@/lib/queryClient";
@@ -44,6 +44,59 @@ interface Plan {
 interface PublicSettings {
   logoUrl: string | null;
   systemName: string | null;
+}
+
+// Demo Payment Form Component for when Stripe is not configured
+function DemoPaymentForm({ onSuccess, planName }: { onSuccess: () => void; planName: string }) {
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    // Simulate payment processing
+    setTimeout(() => {
+      setLoading(false);
+      onSuccess();
+    }, 2000);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+        <div className="flex items-center gap-2">
+          <AlertCircle className="w-5 h-5 text-yellow-600" />
+          <div>
+            <h3 className="font-medium text-yellow-800">Modo Demonstração</h3>
+            <p className="text-sm text-yellow-700 mt-1">
+              Configure as chaves Stripe para processar pagamentos reais
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center">
+          <CreditCard className="w-12 h-12 mx-auto text-gray-400 mb-3" />
+          <h3 className="font-medium text-gray-900 mb-2">Configuração de Cartão (Demo)</h3>
+          <p className="text-sm text-gray-600">
+            Em modo real, aqui apareceria o formulário seguro do Stripe
+          </p>
+        </div>
+
+        <Button type="submit" disabled={loading} className="w-full">
+          {loading ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Simulando configuração...
+            </>
+          ) : (
+            `Simular Assinatura do ${planName}`
+          )}
+        </Button>
+      </form>
+    </div>
+  );
 }
 
 // Stripe Payment Form Component
@@ -101,6 +154,7 @@ export default function Subscription() {
   const [step, setStep] = useState<'plans' | 'payment'>('plans');
   const [clientSecret, setClientSecret] = useState<string>('');
   const [isAnnual, setIsAnnual] = useState(false);
+  const [demoMode, setDemoMode] = useState(false);
   const { company } = useCompanyAuth();
 
   const { data: plans = [], isLoading: plansLoading } = useQuery<Plan[]>({
@@ -118,6 +172,7 @@ export default function Subscription() {
     onSuccess: (data) => {
       if (data.clientSecret) {
         setClientSecret(data.clientSecret);
+        setDemoMode(!!data.demoMode);
         setStep('payment');
       } else {
         toast({
@@ -347,18 +402,25 @@ export default function Subscription() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Elements 
-                stripe={stripePromise} 
-                options={{ 
-                  clientSecret,
-                  appearance: { theme: 'stripe' }
-                }}
-              >
-                <PaymentForm 
+              {demoMode ? (
+                <DemoPaymentForm 
                   onSuccess={handlePaymentSuccess}
-                  onError={handlePaymentError}
+                  planName={selectedPlan.name}
                 />
-              </Elements>
+              ) : (
+                <Elements 
+                  stripe={stripePromise} 
+                  options={{ 
+                    clientSecret,
+                    appearance: { theme: 'stripe' }
+                  }}
+                >
+                  <PaymentForm 
+                    onSuccess={handlePaymentSuccess}
+                    onError={handlePaymentError}
+                  />
+                </Elements>
+              )}
             </CardContent>
           </Card>
 
