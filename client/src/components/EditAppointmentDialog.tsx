@@ -36,7 +36,7 @@ interface Appointment {
   clientName: string;
   clientEmail: string | null;
   clientPhone: string | null;
-  appointmentDate: Date;
+  appointmentDate: string;
   appointmentTime: string;
   notes: string | null;
   status: string;

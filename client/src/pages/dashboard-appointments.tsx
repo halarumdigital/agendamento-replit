@@ -1761,11 +1761,79 @@ export default function DashboardAppointments() {
       )}
 
       {/* Edit Appointment Modal */}
-      <EditAppointmentDialog
-        appointment={editingAppointment}
-        isOpen={isEditAppointmentOpen}
-        onOpenChange={setIsEditAppointmentOpen}
-      />
+      {editingAppointment && (
+        <Dialog open={isEditAppointmentOpen} onOpenChange={setIsEditAppointmentOpen} key={`edit-${editingAppointment.id}-${Date.now()}`}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Editar Agendamento #{editingAppointment.id}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Nome do Cliente</label>
+                <input 
+                  type="text" 
+                  defaultValue={editingAppointment.clientName}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  key={`name-${editingAppointment.id}`}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-2">Telefone</label>
+                <input 
+                  type="text" 
+                  defaultValue={editingAppointment.clientPhone || ''}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  key={`phone-${editingAppointment.id}`}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-2">Data</label>
+                <input 
+                  type="date" 
+                  defaultValue={editingAppointment.appointmentDate.toString().split('T')[0]}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  key={`date-${editingAppointment.id}`}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-2">Horário</label>
+                <input 
+                  type="time" 
+                  defaultValue={editingAppointment.appointmentTime}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  key={`time-${editingAppointment.id}`}
+                />
+              </div>
+              
+              <div className="flex gap-2 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsEditAppointmentOpen(false)}
+                  className="flex-1"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={() => {
+                    console.log('✅ Simple edit test - form would be submitted');
+                    toast({
+                      title: "Teste",
+                      description: "Formulário funcionando corretamente!",
+                    });
+                    setIsEditAppointmentOpen(false);
+                  }}
+                  className="flex-1"
+                >
+                  Teste Formulário
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
       
       {/* Container de Notificações */}
       <NotificationContainer />
