@@ -3173,9 +3173,9 @@ Object.assign(storage, {
       }
 
       // Get global settings for Evolution API
-      const [globalSettings] = await db.select().from(globalSettings).limit(1);
+      const [settings] = await db.select().from(globalSettings).limit(1);
       
-      if (!globalSettings?.evolutionApiUrl || !globalSettings?.evolutionApiGlobalKey) {
+      if (!settings?.evolutionApiUrl || !settings?.evolutionApiGlobalKey) {
         return {
           success: false,
           message: "Configurações globais da Evolution API não encontradas"
@@ -3187,15 +3187,15 @@ Object.assign(storage, {
       const testPhone = "5511999999999"; // Test phone number
 
       // Ensure Evolution API URL uses proper API endpoint
-      const correctedApiUrl = globalSettings.evolutionApiUrl?.includes('/api/') ? 
-        globalSettings.evolutionApiUrl : 
-        `${globalSettings.evolutionApiUrl?.replace(/\/$/, '')}/api`;
+      const correctedApiUrl = settings.evolutionApiUrl?.includes('/api/') ? 
+        settings.evolutionApiUrl : 
+        `${settings.evolutionApiUrl?.replace(/\/$/, '')}/api`;
 
       const response = await fetch(`${correctedApiUrl}/message/sendText/${whatsappInstance.instanceName}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'apikey': globalSettings.evolutionApiGlobalKey
+          'apikey': settings.evolutionApiGlobalKey!
         },
         body: JSON.stringify({
           number: testPhone,
