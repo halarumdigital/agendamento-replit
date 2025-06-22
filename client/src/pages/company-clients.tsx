@@ -14,6 +14,7 @@ import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { normalizePhone, validateBrazilianPhone, formatBrazilianPhone } from "../../../shared/phone-utils";
+import { useGlobalTheme } from "@/hooks/use-global-theme";
 
 interface Client {
   id: number;
@@ -210,6 +211,7 @@ export default function CompanyClients() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { globalSettings } = useGlobalTheme();
 
   const { data: clients = [], isLoading } = useQuery<Client[]>({
     queryKey: ['/api/company/clients'],
@@ -413,7 +415,8 @@ export default function CompanyClients() {
               variant={viewMode === 'grid' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setViewMode('grid')}
-              className={viewMode === 'grid' ? 'bg-purple-600 text-white' : ''}
+              className={viewMode === 'grid' ? 'text-white' : ''}
+              style={viewMode === 'grid' ? { backgroundColor: globalSettings?.primaryColor || '#5e6d8d' } : {}}
             >
               <Grid className="h-4 w-4" />
             </Button>
@@ -421,7 +424,8 @@ export default function CompanyClients() {
               variant={viewMode === 'list' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setViewMode('list')}
-              className={viewMode === 'list' ? 'bg-purple-600 text-white' : ''}
+              className={viewMode === 'list' ? 'text-white' : ''}
+              style={viewMode === 'list' ? { backgroundColor: globalSettings?.primaryColor || '#5e6d8d' } : {}}
             >
               <List className="h-4 w-4" />
             </Button>
@@ -433,7 +437,8 @@ export default function CompanyClients() {
               form.reset();
               setIsDialogOpen(true);
             }}
-            className="bg-purple-600 hover:bg-purple-700 text-white"
+            className="text-white"
+            style={{ backgroundColor: globalSettings?.primaryColor || '#5e6d8d' }}
           >
             <Plus className="mr-2 h-4 w-4" />
             Novo Cliente
@@ -535,7 +540,8 @@ export default function CompanyClients() {
                     <Button 
                       type="submit" 
                       disabled={createMutation.isPending || updateMutation.isPending}
-                      className="bg-purple-600 hover:bg-purple-700"
+                      className="text-white"
+                      style={{ backgroundColor: globalSettings?.primaryColor || '#5e6d8d' }}
                     >
                       {editingClient ? 'Atualizar' : 'Cadastrar'}
                     </Button>
@@ -684,7 +690,8 @@ export default function CompanyClients() {
                 form.reset();
                 setIsDialogOpen(true);
               }}
-              className="bg-purple-600 hover:bg-purple-700 text-white"
+              className="text-white"
+              style={{ backgroundColor: globalSettings?.primaryColor || '#5e6d8d' }}
             >
               <Plus className="mr-2 h-4 w-4" />
               Novo Cliente
