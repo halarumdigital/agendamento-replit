@@ -65,7 +65,7 @@ function TourContent({ tourSteps, closeTour }: { tourSteps: TourStep[], closeTou
         // Add enhanced highlight with pulsing effect
         element.style.boxShadow = '0 0 0 4px rgba(59, 130, 246, 0.8), 0 0 20px rgba(59, 130, 246, 0.3)';
         element.style.position = 'relative';
-        element.style.zIndex = '1000';
+        element.style.zIndex = '9999';
         element.style.transition = 'all 0.3s ease';
         element.style.animation = 'tour-pulse 2s infinite';
         element.style.cursor = 'pointer';
@@ -164,8 +164,8 @@ function TourContent({ tourSteps, closeTour }: { tourSteps: TourStep[], closeTou
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-md">
+    <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-40 p-4 pointer-events-none">
+      <Card className="w-full max-w-md pointer-events-auto">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-lg font-semibold">
             Tour Guiado ({currentStep + 1}/{tourSteps.length})
