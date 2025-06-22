@@ -53,6 +53,8 @@ const updateProfessionalSchema = z.object({
 type ProfessionalFormData = z.infer<typeof updateProfessionalSchema>;
 
 export default function CompanyProfessionals() {
+  console.log('🔧 Component loaded!');
+  
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProfessional, setEditingProfessional] = useState<Professional | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -372,6 +374,7 @@ export default function CompanyProfessionals() {
                           id="name"
                           className="col-span-3"
                           placeholder="Nome completo do profissional"
+                          autoComplete="name"
                           {...form.register('name')}
                         />
                         {form.formState.errors.name && (
@@ -390,6 +393,7 @@ export default function CompanyProfessionals() {
                             id="email"
                             type="email"
                             placeholder="email@exemplo.com"
+                            autoComplete="email"
                             {...form.register('email')}
                           />
                           <p className="text-xs text-gray-500">
@@ -411,6 +415,7 @@ export default function CompanyProfessionals() {
                           id="phone"
                           className="col-span-3"
                           placeholder="(11) 99999-9999"
+                          autoComplete="tel"
                           {...form.register('phone')}
                         />
                       </div>
