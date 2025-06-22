@@ -6166,6 +6166,79 @@ const broadcastEvent = (eventData: any) => {
     }
   });
 
+  // Get admin plans with Stripe configuration (admin only)
+  app.get('/api/admin/plans', isAuthenticated, async (req, res) => {
+    try {
+      console.log('🎯 Fetching admin plans...');
+      
+      // Get all plans from database
+      const plans = await db.execute(sql`
+        SELECT 
+          id,
+          name,
+          price,
+          stripe_price_id,
+          stripe_product_id,
+          is_active
+        FROM plans 
+        ORDER BY price ASC
+      `);
+
+      const plansArray = Array.isArray(plans[0]) ? plans[0] : plans as any[];
+      console.log(`Found ${plansArray.length} plans for admin`);
+
+      const formattedPlans = plansArray.map((plan: any) => ({
+        id: plan.id,
+        name: plan.name,
+        price: plan.price.toString(),
+        stripePriceId: plan.stripe_price_id,
+        stripeProductId: plan.stripe_product_id,
+        isActive: plan.is_active === 1
+      }));
+
+      res.json(formattedPlans);
+
+    } catch (error: any) {
+      console.error("Error fetching admin plans:", error);
+      res.status(500).json({ 
+        message: "Erro ao buscar planos",
+        error: error.message 
+      });
+    }
+  });
+
+  // Update plan Stripe configuration (admin only)
+  app.put('/api/admin/plans/:id/stripe', isAuthenticated, async (req, res) => {
+    try {
+      const planId = parseInt(req.params.id);
+      const { stripePriceId } = req.body;
+
+      console.log(`Updating plan ${planId} with Stripe Price ID: ${stripePriceId}`);
+
+      // Update plan with Stripe Price ID
+      await db.execute(sql`
+        UPDATE plans 
+        SET stripe_price_id = ${stripePriceId}
+        WHERE id = ${planId}
+      `);
+
+      console.log(`✅ Plan ${planId} updated with Stripe Price ID`);
+
+      res.json({ 
+        message: "Plano atualizado com sucesso",
+        planId,
+        stripePriceId
+      });
+
+    } catch (error: any) {
+      console.error("Error updating plan Stripe config:", error);
+      res.status(500).json({ 
+        message: "Erro ao atualizar configuração do plano",
+        error: error.message 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
