@@ -82,7 +82,7 @@ function PaymentForm({
     setIsProcessing(true);
 
     try {
-      const { error, setupIntent } = await stripe.confirmSetup({
+      const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: {
           return_url: `${window.location.origin}/obrigado`,
@@ -96,16 +96,16 @@ function PaymentForm({
           description: error.message,
           variant: "destructive",
         });
-      } else if (setupIntent && setupIntent.status === 'succeeded') {
+      } else if (paymentIntent && paymentIntent.status === 'succeeded') {
         toast({
-          title: "Pagamento Configurado",
-          description: "Método de pagamento salvo com sucesso!",
+          title: "Pagamento Realizado",
+          description: "Pagamento processado com sucesso!",
         });
         onSuccess();
       } else {
         toast({
           title: "Erro no Pagamento",
-          description: "Não foi possível configurar o método de pagamento",
+          description: "Não foi possível processar o pagamento",
           variant: "destructive",
         });
       }

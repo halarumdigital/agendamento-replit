@@ -1565,7 +1565,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // For all paid plans (including those with free trial), create Stripe subscription
       try {
-        console.log('🔄 Criando SetupIntent no Stripe para configurar método de pagamento');
+        console.log('🔄 Criando PaymentIntent no Stripe para configurar pagamento');
         
         // Calculate installment amount if installments are specified
         let installmentAmount = priceToUse;
@@ -1584,7 +1584,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
         
-        const setupIntent = await stripeService.createSetupIntent({
+        const paymentIntent = await stripeService.createPaymentIntent({
+          amount: priceToUse,
           metadata: {
             planId: planId.toString(),
             planName: plan.name,
@@ -1598,7 +1599,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
 
         res.json({
-          clientSecret: setupIntent.client_secret,
+          clientSecret: paymentIntent.client_secret,
           planName: plan.name,
           amount: priceToUse,
           billingPeriod: isAnnual ? 'annual' : 'monthly',
