@@ -1222,7 +1222,9 @@ export default function DashboardAppointments() {
                       key={date.toString()}
                       className={`aspect-square p-1 border border-gray-200 cursor-pointer hover:bg-gray-50 text-xs ${
                         !isSameMonth(date, monthStart) ? 'text-gray-400 bg-gray-50' : ''
-                      } ${isSameDay(date, new Date()) ? 'bg-blue-50 border-blue-200' : ''}`}
+                      } ${isSameDay(date, new Date()) ? 'bg-blue-50 border-blue-200' : ''} ${
+                        selectedDate && isSameDay(date, selectedDate) ? 'bg-purple-100 border-purple-300' : ''
+                      }`}
                       onClick={() => {
                         setSelectedDate(date);
                         form.setValue('appointmentDate', format(date, 'yyyy-MM-dd'));
@@ -1238,6 +1240,69 @@ export default function DashboardAppointments() {
                   );
                 })}
               </div>
+              
+              {/* Selected Day Appointments - Mobile Only */}
+              {selectedDate && (
+                <div className="mt-4">
+                  <h3 className="text-sm font-medium mb-2 text-gray-700">
+                    Agendamentos para {format(selectedDate, 'dd/MM/yyyy', { locale: ptBR })}
+                  </h3>
+                  <div className="max-h-60 overflow-y-auto space-y-2 border rounded-lg bg-gray-50 p-2">
+                    {(() => {
+                      const selectedDayAppointments = appointments.filter((apt: Appointment) => {
+                        const appointmentDateString = apt.appointmentDate.split('T')[0];
+                        const appointmentDate = new Date(appointmentDateString + 'T12:00:00');
+                        return isSameDay(appointmentDate, selectedDate) &&
+                          (filterProfessional === 'all' || apt.professionalId.toString() === filterProfessional);
+                      });
+
+                      if (selectedDayAppointments.length === 0) {
+                        return (
+                          <p className="text-gray-500 text-sm text-center py-4">
+                            Nenhum agendamento para este dia
+                          </p>
+                        );
+                      }
+
+                      return selectedDayAppointments.map((appointment: Appointment) => (
+                        <div
+                          key={appointment.id}
+                          className="bg-white border rounded-lg p-2 cursor-pointer hover:bg-gray-50"
+                          onClick={() => {
+                            setSelectedAppointment(appointment);
+                            setIsAppointmentDetailsOpen(true);
+                          }}
+                        >
+                          <div className="flex justify-between items-start mb-1">
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                              <div
+                                className="w-2 h-2 rounded-full"
+                                style={{ backgroundColor: appointment.service?.color || '#3b82f6' }}
+                              />
+                              <span className="font-medium text-sm truncate">{appointment.clientName}</span>
+                            </div>
+                            <span className="text-xs text-gray-500 ml-2">{appointment.appointmentTime}</span>
+                          </div>
+                          <div className="text-xs text-gray-600 truncate">
+                            {appointment.service?.name || 'Serviço não encontrado'}
+                          </div>
+                          <div className="flex justify-between items-center mt-1">
+                            <span className="text-xs text-gray-500 truncate">
+                              {appointment.professional?.name || 'Profissional não encontrado'}
+                            </span>
+                            <Badge variant="outline" className="text-xs">
+                              {appointment.status === 'scheduled' && 'Agendado'}
+                              {appointment.status === 'confirmed' && 'Confirmado'}
+                              {appointment.status === 'cancelled' && 'Cancelado'}
+                              {appointment.status === 'completed' && 'Concluído'}
+                            </Badge>
+                          </div>
+                        </div>
+                      ));
+                    })()}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Desktop Calendar View */}
