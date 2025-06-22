@@ -338,19 +338,40 @@ export default function DashboardAppointments() {
       
       return response.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/company/appointments'] });
-      toast({
-        title: "Status atualizado",
-        description: "O status do agendamento foi atualizado com sucesso.",
+    onMutate: async ({ appointmentId, status }) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['/api/company/appointments'] });
+      
+      // Snapshot the previous value
+      const previousAppointments = queryClient.getQueryData(['/api/company/appointments']);
+      
+      // Optimistically update to the new value
+      queryClient.setQueryData(['/api/company/appointments'], (old: any[]) => {
+        if (!old) return old;
+        return old.map((appointment: any) => 
+          appointment.id === appointmentId 
+            ? { ...appointment, status }
+            : appointment
+        );
       });
+      
+      // Return a context object with the snapshotted value
+      return { previousAppointments };
     },
-    onError: (error: Error) => {
+    onError: (error: Error, variables, context) => {
+      // If the mutation fails, use the context to roll back
+      if (context?.previousAppointments) {
+        queryClient.setQueryData(['/api/company/appointments'], context.previousAppointments);
+      }
       toast({
         title: "Erro ao atualizar status",
         description: error.message,
         variant: "destructive",
       });
+    },
+    onSettled: () => {
+      // Always refetch after error or success to ensure we have latest data
+      queryClient.invalidateQueries({ queryKey: ['/api/company/appointments'] });
     },
   });
 
@@ -512,13 +533,15 @@ export default function DashboardAppointments() {
     const { source, destination, draggableId } = result;
     
     // If dropped in the same position, do nothing
-    if (source.droppableId === destination.droppableId) return;
+    if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
     // Find the appointment being moved
     const appointmentId = parseInt(draggableId);
     const newStatus = destination.droppableId;
 
-    // Update the appointment status
+    console.log('🎯 Kanban: Moving appointment', appointmentId, 'from', source.droppableId, 'to', newStatus);
+
+    // Update the appointment status with optimistic update
     updateAppointmentStatusMutation.mutate({
       appointmentId,
       status: newStatus
