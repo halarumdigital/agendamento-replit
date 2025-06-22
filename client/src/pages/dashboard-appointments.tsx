@@ -605,27 +605,34 @@ export default function DashboardAppointments() {
   };
 
   const handleEditAppointment = async (appointment: Appointment) => {
+    console.log('✏️ Edit: handleEditAppointment called for appointment:', appointment.id);
+    
     try {
       // Fetch fresh appointment data from server
+      console.log('✏️ Edit: Fetching appointment data from server...');
       const response = await fetch(`/api/company/appointments/${appointment.id}`, {
         credentials: 'include'
       });
       
       if (!response.ok) {
+        console.error('✏️ Edit: Response not OK:', response.status, response.statusText);
         throw new Error('Erro ao buscar dados do agendamento');
       }
       
       const freshAppointment = await response.json();
+      console.log('✏️ Edit: Fresh appointment data received:', freshAppointment);
       setEditingAppointment(freshAppointment);
       
       // Find status ID by status name
       const statusObj = statuses.find(s => s.name.toLowerCase() === freshAppointment.status.toLowerCase());
+      console.log('✏️ Edit: Status object found:', statusObj);
       
       // Populate form with fresh appointment data
       // Extract date directly from ISO string to avoid timezone issues
       const appointmentDateString = freshAppointment.appointmentDate.split('T')[0];
+      console.log('✏️ Edit: Appointment date string:', appointmentDateString);
       
-      editForm.reset({
+      const formData = {
         clientId: undefined,
         serviceId: freshAppointment.serviceId,
         professionalId: freshAppointment.professionalId,
@@ -637,10 +644,15 @@ export default function DashboardAppointments() {
         appointmentTime: freshAppointment.appointmentTime,
         notes: freshAppointment.notes || "",
         confirmed: false,
-      });
+      };
       
+      console.log('✏️ Edit: Form data to populate:', formData);
+      editForm.reset(formData);
+      
+      console.log('✏️ Edit: Opening edit dialog...');
       setIsEditAppointmentOpen(true);
     } catch (error) {
+      console.error('✏️ Edit: Error in handleEditAppointment:', error);
       toast({
         title: "Erro",
         description: "Não foi possível carregar os dados do agendamento",
