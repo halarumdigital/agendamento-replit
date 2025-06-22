@@ -254,11 +254,6 @@ function PaymentForm({
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="mb-4 p-2 bg-blue-50 border border-blue-200 rounded text-xs">
-                Debug: Stripe={stripe ? 'OK' : 'ERRO'}, Elements={elements ? 'OK' : 'ERRO'}
-                <br />ClientSecret: {clientSecret ? 'OK' : 'ERRO'}
-              </div>
-              
               {clientSecret ? (
                 <div className="payment-element-container" style={{ minHeight: '200px' }}>
                   <PaymentElement
