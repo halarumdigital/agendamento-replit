@@ -71,7 +71,14 @@ export default function AdminTourConfig() {
         body: JSON.stringify(data)
       });
       if (!response.ok) throw new Error('Erro ao criar etapa');
-      return response.json();
+      
+      const text = await response.text();
+      try {
+        return text ? JSON.parse(text) : {};
+      } catch (e) {
+        console.error('JSON parse error:', e, 'Response text:', text);
+        return {};
+      }
     },
     onSuccess: () => {
       toast({ title: "Etapa criada com sucesso!" });
