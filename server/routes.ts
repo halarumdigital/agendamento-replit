@@ -5738,7 +5738,7 @@ const broadcastEvent = (eventData: any) => {
   });
 
   // Update tour step (admin only)
-  app.put('/api/admin/tour/steps/:id', requireAdminAuth, async (req, res) => {
+  app.put('/api/admin/tour/steps/:id', isAuthenticated, async (req, res) => {
     try {
       const stepId = parseInt(req.params.id);
       const { title, description, targetElement, placement, stepOrder, isActive } = req.body;
@@ -5760,7 +5760,7 @@ const broadcastEvent = (eventData: any) => {
   });
 
   // Delete tour step (admin only)
-  app.delete('/api/admin/tour/steps/:id', requireAdminAuth, async (req, res) => {
+  app.delete('/api/admin/tour/steps/:id', isAuthenticated, async (req, res) => {
     try {
       const stepId = parseInt(req.params.id);
       await (storage as any).deleteTourStep(stepId);
@@ -5772,7 +5772,7 @@ const broadcastEvent = (eventData: any) => {
   });
 
   // Get tour status for company
-  app.get('/api/company/tour/status', requireCompanyAuth, async (req: any, res) => {
+  app.get('/api/company/tour/status', isCompanyAuthenticated, async (req: any, res) => {
     try {
       const companyId = req.session.companyId;
       const progress = await (storage as any).getCompanyTourProgress(companyId);
@@ -5798,7 +5798,7 @@ const broadcastEvent = (eventData: any) => {
   });
 
   // Get active tour steps for company
-  app.get('/api/company/tour/steps', requireCompanyAuth, async (req, res) => {
+  app.get('/api/company/tour/steps', isCompanyAuthenticated, async (req, res) => {
     try {
       const steps = await (storage as any).getActiveTourSteps();
       res.json(steps);
@@ -5809,7 +5809,7 @@ const broadcastEvent = (eventData: any) => {
   });
 
   // Update tour progress
-  app.post('/api/company/tour/progress', requireCompanyAuth, async (req: any, res) => {
+  app.post('/api/company/tour/progress', isCompanyAuthenticated, async (req: any, res) => {
     try {
       const companyId = req.session.companyId;
       const { currentStep, completed } = req.body;
@@ -5842,7 +5842,7 @@ const broadcastEvent = (eventData: any) => {
   });
 
   // Mark tour as completed
-  app.post('/api/company/tour/complete', requireCompanyAuth, async (req: any, res) => {
+  app.post('/api/company/tour/complete', isCompanyAuthenticated, async (req: any, res) => {
     try {
       const companyId = req.session.companyId;
       
