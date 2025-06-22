@@ -62,6 +62,7 @@ export const companies = mysqlTable("companies", {
   resetTokenExpires: varchar("reset_token_expires", { length: 255 }),
   stripeCustomerId: varchar("stripe_customer_id", { length: 255 }),
   stripeSubscriptionId: varchar("stripe_subscription_id", { length: 255 }),
+  tourEnabled: int("tour_enabled").notNull().default(1),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
@@ -604,6 +605,7 @@ export const insertCompanySchema = createInsertSchema(companies).omit({
   updatedAt: true,
 }).extend({
   isActive: z.union([z.boolean(), z.number()]).transform(val => typeof val === 'boolean' ? (val ? 1 : 0) : val),
+  tourEnabled: z.union([z.boolean(), z.number()]).transform(val => typeof val === 'boolean' ? (val ? 1 : 0) : val).default(1),
 });
 
 export const insertPlanSchema = createInsertSchema(plans).omit({
