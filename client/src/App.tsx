@@ -63,6 +63,7 @@ function Router() {
       <Route path="/company/auth/login" component={CompanyLogin} />
       <Route path="/reset-password" component={ResetPassword} />
       <Route path="/cadastro" component={Register} />
+      <Route path="/assinatura" component={Subscription} />
       <Route path="/empresa/assinatura" component={CompanySubscription} />
       <Route path="/subscription-test" component={SubscriptionTest} />
       <Route path="/stripe-test" component={StripeTest} />
