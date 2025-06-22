@@ -1553,8 +1553,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         priceToUse = parseFloat(plan.annual_price);
       }
 
-      // For free plans or plans with free trial, return success without payment
-      if (priceToUse === 0 || plan.free_days > 0) {
+      // For completely free plans (price = 0), return success without payment
+      if (priceToUse === 0) {
         return res.json({
           success: true,
           message: 'Plano gratuito ativado com sucesso',
