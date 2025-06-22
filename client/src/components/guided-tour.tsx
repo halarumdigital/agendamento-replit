@@ -13,8 +13,7 @@ interface TourStep {
   stepOrder: number;
 }
 
-export function GuidedTour() {
-  const { showTour, closeTour, tourSteps = [], isLoading } = useGuidedTour();
+function TourContent({ tourSteps, closeTour }: { tourSteps: TourStep[], closeTour: () => void }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [highlightedElement, setHighlightedElement] = useState<HTMLElement | null>(null);
 
@@ -97,10 +96,6 @@ export function GuidedTour() {
     closeTour();
   };
 
-  if (isLoading) {
-    return null;
-  }
-
   if (tourSteps.length === 0) {
     return null;
   }
@@ -181,4 +176,14 @@ export function GuidedTour() {
       </Card>
     </div>
   );
+}
+
+export function GuidedTour() {
+  const { showTour, closeTour, tourSteps = [] } = useGuidedTour();
+
+  if (!showTour || tourSteps.length === 0) {
+    return null;
+  }
+
+  return <TourContent tourSteps={tourSteps} closeTour={closeTour} />;
 }
