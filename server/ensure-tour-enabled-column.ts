@@ -13,7 +13,8 @@ export async function ensureTourEnabledColumn() {
       AND COLUMN_NAME = 'tour_enabled'
     `);
     
-    if ((result as any).length === 0) {
+    const rows = (result as any)[0];
+    if (!rows || rows.length === 0) {
       // Add tour_enabled column if it doesn't exist
       await db.execute(`
         ALTER TABLE companies 
