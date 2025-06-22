@@ -134,11 +134,23 @@ function TourContent({ tourSteps, closeTour }: { tourSteps: TourStep[], closeTou
 
   const handleFinish = async () => {
     await updateProgress(tourSteps.length);
-    if (highlightedElement) {
+    
+    // Clean up all tour visual elements
+    if (highlightedElement && clickHandler) {
       highlightedElement.style.boxShadow = '';
       highlightedElement.style.position = '';
       highlightedElement.style.zIndex = '';
+      highlightedElement.style.animation = '';
+      highlightedElement.style.cursor = '';
+      highlightedElement.removeEventListener('click', clickHandler, true);
     }
+    
+    // Remove click indicator
+    const existingIndicator = document.getElementById('tour-click-indicator');
+    if (existingIndicator) {
+      existingIndicator.remove();
+    }
+    
     closeTour();
   };
 
@@ -173,9 +185,19 @@ function TourContent({ tourSteps, closeTour }: { tourSteps: TourStep[], closeTou
             <h3 className="font-medium text-lg mb-2">
               {currentTourStep.title}
             </h3>
-            <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+            <p className="text-gray-600 dark:text-gray-300 leading-relaxed mb-3">
               {currentTourStep.description}
             </p>
+            
+            {/* Clear instruction for user action */}
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+              <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                <span className="font-medium text-sm">
+                  👆 Clique no elemento destacado na tela para continuar
+                </span>
+              </div>
+            </div>
           </div>
 
           <div className="flex justify-between items-center pt-4">
