@@ -5890,6 +5890,48 @@ const broadcastEvent = (eventData: any) => {
     }
   });
 
+  // Reset tour progress to allow restart
+  app.post('/api/company/tour/reset', isCompanyAuthenticated, async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      console.log('🎯 Resetting tour progress for company:', companyId);
+      
+      const progress = await (storage as any).getCompanyTourProgress(companyId);
+      
+      if (!progress) {
+        // Create fresh progress if none exists
+        const newProgress = await (storage as any).createCompanyTourProgress({
+          companyId,
+          hasCompletedTour: false,
+          currentStep: 1,
+          completedAt: null
+        });
+        return res.json({ 
+          message: 'Tour iniciado com sucesso',
+          progress: newProgress,
+          shouldShowTour: true
+        });
+      }
+      
+      // Reset the tour progress to initial state
+      const resetProgress = await (storage as any).updateCompanyTourProgress(progress.id, {
+        hasCompletedTour: false,
+        currentStep: 1,
+        completedAt: null
+      });
+      
+      console.log('🎯 Tour progress reset successfully:', resetProgress);
+      res.json({ 
+        message: 'Tour reiniciado com sucesso',
+        progress: resetProgress,
+        shouldShowTour: true
+      });
+    } catch (error) {
+      console.error('Error resetting tour progress:', error);
+      res.status(500).json({ message: 'Erro ao reiniciar tour' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

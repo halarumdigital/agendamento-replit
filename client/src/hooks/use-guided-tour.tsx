@@ -66,10 +66,29 @@ export function useGuidedTour() {
     setShowTour(true);
   };
 
+  const resetTour = async () => {
+    try {
+      const response = await fetch('/api/company/tour/reset', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (response.ok) {
+        // Refetch tour status after reset
+        window.location.reload(); // Simple reload to refresh all tour state
+      }
+    } catch (error) {
+      console.error('Error resetting tour:', error);
+    }
+  };
+
   return {
     showTour,
     closeTour,
     startTour,
+    resetTour,
     tourProgress,
     tourSteps,
     isLoading: tourProgressLoading || tourStepsLoading,
