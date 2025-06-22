@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { format, addDays, startOfWeek, endOfWeek, addMonths, subMonths } from 'date-fns';
+import { format, addDays, startOfWeek, endOfWeek, addMonths, subMonths, startOfMonth, isSameDay, isSameMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
@@ -336,25 +336,25 @@ export default function DashboardAppointments() {
           <Button
             onClick={() => setIsNewClientOpen(true)}
             variant="outline"
-            className="w-full sm:w-auto text-xs sm:text-sm px-3 sm:px-4 py-2"
+            className="w-full sm:w-auto"
           >
-            <User className="h-3 w-3 sm:h-4 sm:w-4" />
+            <User className="h-4 w-4" />
             <span className="ml-2">Novo Cliente</span>
           </Button>
           <Button
             onClick={() => setIsNewAppointmentOpen(true)}
-            className="w-full sm:w-auto text-xs sm:text-sm px-3 sm:px-4 py-2"
+            className="w-full sm:w-auto"
           >
-            <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
+            <Plus className="h-4 w-4" />
             <span className="ml-2">Novo Agendamento</span>
           </Button>
         </div>
       </div>
 
       {/* Filtros e busca */}
-      <Card className="mb-4 sm:mb-6">
-        <CardContent className="p-3 sm:p-6">
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+      <Card className="mb-6">
+        <CardContent className="p-6">
+          <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -362,13 +362,13 @@ export default function DashboardAppointments() {
                   placeholder="Buscar por cliente, serviço ou profissional..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 text-sm"
+                  className="pl-10"
                 />
               </div>
             </div>
             <div className="w-full sm:w-48">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="text-sm">
+                <SelectTrigger>
                   <SelectValue placeholder="Filtrar por status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -386,19 +386,19 @@ export default function DashboardAppointments() {
       </Card>
 
       {/* Controles de visualização */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-0 mb-4 sm:mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-0 mb-6">
         <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as any)} className="w-full sm:w-auto">
           <TabsList className="grid w-full grid-cols-3 sm:w-auto">
-            <TabsTrigger value="calendar" className="flex items-center text-xs sm:text-sm">
-              <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
+            <TabsTrigger value="calendar" className="flex items-center">
+              <Calendar className="h-4 w-4" />
               <span className="hidden sm:inline ml-2">Calendário</span>
             </TabsTrigger>
-            <TabsTrigger value="list" className="flex items-center text-xs sm:text-sm">
-              <List className="h-3 w-3 sm:h-4 sm:w-4" />
+            <TabsTrigger value="list" className="flex items-center">
+              <List className="h-4 w-4" />
               <span className="hidden sm:inline ml-2">Lista</span>
             </TabsTrigger>
-            <TabsTrigger value="kanban" className="flex items-center text-xs sm:text-sm">
-              <Kanban className="h-3 w-3 sm:h-4 sm:w-4" />
+            <TabsTrigger value="kanban" className="flex items-center">
+              <Kanban className="h-4 w-4" />
               <span className="hidden sm:inline ml-2">Kanban</span>
             </TabsTrigger>
           </TabsList>
@@ -407,7 +407,7 @@ export default function DashboardAppointments() {
 
       {/* Conteúdo principal */}
       {viewMode === 'calendar' ? (
-        <Card className="mt-4">
+        <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-xl">
@@ -424,12 +424,37 @@ export default function DashboardAppointments() {
             </div>
           </CardHeader>
           <CardContent>
-            <CalendarComponent
-              mode="single"
-              selected={selectedDate}
-              onSelect={setSelectedDate}
-              className="rounded-md border"
-            />
+            <div className="grid grid-cols-7 gap-4 mb-4">
+              {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day) => (
+                <div key={day} className="text-center font-medium text-sm text-gray-600 p-2">
+                  {day}
+                </div>
+              ))}
+              {Array.from({ length: 35 }, (_, i) => {
+                const date = startOfMonth(currentDate);
+                const firstDay = startOfWeek(date);
+                const currentDay = addDays(firstDay, i);
+                const isCurrentMonth = isSameMonth(currentDay, currentDate);
+                const isToday = isSameDay(currentDay, new Date());
+                const isSelected = selectedDate && isSameDay(currentDay, selectedDate);
+                
+                return (
+                  <div
+                    key={i}
+                    className={`p-2 h-20 border rounded cursor-pointer transition-colors ${
+                      isCurrentMonth ? 'bg-white hover:bg-gray-50' : 'bg-gray-50'
+                    } ${isToday ? 'border-blue-500' : 'border-gray-200'} ${
+                      isSelected ? 'bg-blue-50 border-blue-500' : ''
+                    }`}
+                    onClick={() => setSelectedDate(currentDay)}
+                  >
+                    <div className={`text-sm ${isCurrentMonth ? 'text-gray-900' : 'text-gray-400'}`}>
+                      {format(currentDay, 'd')}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </CardContent>
         </Card>
       ) : viewMode === 'list' ? (
@@ -448,24 +473,24 @@ export default function DashboardAppointments() {
                     <div className="flex-1">
                       <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                         <div className="flex-1">
-                          <h3 className="font-medium text-sm sm:text-base">{appointment.clientName}</h3>
-                          <p className="text-xs sm:text-sm text-gray-600">{appointment.service.name}</p>
-                          <p className="text-xs sm:text-sm text-gray-500">{appointment.professional.name}</p>
+                          <h3 className="font-medium">{appointment.clientName}</h3>
+                          <p className="text-sm text-gray-600">{appointment.service.name}</p>
+                          <p className="text-sm text-gray-500">{appointment.professional.name}</p>
                         </div>
                         <div className="flex flex-col sm:items-end">
-                          <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
-                            <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <Calendar className="h-4 w-4" />
                             {format(new Date(appointment.appointmentDate), 'dd/MM/yyyy')}
                           </div>
-                          <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
-                            <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <Clock className="h-4 w-4" />
                             {appointment.appointmentTime}
                           </div>
                         </div>
                       </div>
                     </div>
                     <div className="flex items-center justify-between sm:justify-end gap-2">
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge variant="secondary">
                         {appointment.status}
                       </Badge>
                       <div className="flex gap-1">
@@ -475,7 +500,7 @@ export default function DashboardAppointments() {
                           onClick={() => handleEditAppointment(appointment)}
                           className="h-8 w-8 p-0"
                         >
-                          <Edit className="h-3 w-3" />
+                          <Edit className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
@@ -483,7 +508,7 @@ export default function DashboardAppointments() {
                           onClick={() => deleteAppointmentMutation.mutate(appointment.id)}
                           className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
                         >
-                          <Trash2 className="h-3 w-3" />
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
@@ -522,69 +547,96 @@ export default function DashboardAppointments() {
         </Card>
       ) : (
         <DragDropContext onDragEnd={handleDragEnd}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {statuses.map((status) => {
               const statusAppointments = appointments.filter((apt: Appointment) => {
-                return apt.status === status.name;
+                return apt.status === status.name &&
+                  (statusFilter === 'all' || apt.status === statusFilter) &&
+                  (searchTerm === '' || 
+                    apt.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    apt.service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    apt.professional.name.toLowerCase().includes(searchTerm.toLowerCase()));
               });
 
               return (
-                <Card key={status.id}>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium flex items-center justify-between">
-                      <span>{status.name}</span>
-                      <Badge variant="secondary" className="text-xs">
-                        {statusAppointments.length}
-                      </Badge>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <Droppable droppableId={status.name}>
-                      {(provided) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.droppableProps}
-                          className="space-y-2 min-h-[200px]"
-                        >
-                          {statusAppointments.map((appointment: Appointment, index: number) => (
-                            <Draggable
-                              key={appointment.id}
-                              draggableId={appointment.id.toString()}
-                              index={index}
-                            >
-                              {(provided) => (
-                                <div
-                                  ref={provided.innerRef}
-                                  {...provided.draggableProps}
-                                  {...provided.dragHandleProps}
-                                  className="p-3 bg-white border rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-                                  onClick={() => {
-                                    setSelectedAppointment(appointment);
-                                    setIsAppointmentDetailsOpen(true);
-                                  }}
-                                >
-                                  <div className="space-y-2">
-                                    <h4 className="font-medium text-sm">{appointment.clientName}</h4>
-                                    <p className="text-xs text-gray-600">{appointment.service.name}</p>
-                                    <div className="flex items-center gap-1 text-xs text-gray-500">
-                                      <Calendar className="h-3 w-3" />
+                <div key={status.id} className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-medium text-gray-900">
+                      {status.name}
+                    </h3>
+                    <Badge variant="secondary">
+                      {statusAppointments.length}
+                    </Badge>
+                  </div>
+
+                  <Droppable droppableId={status.name}>
+                    {(provided) => (
+                      <div
+                        {...provided.droppableProps}
+                        ref={provided.innerRef}
+                        className="space-y-3 min-h-[200px]"
+                      >
+                        {statusAppointments.map((appointment: Appointment, index: number) => (
+                          <Draggable
+                            key={appointment.id}
+                            draggableId={appointment.id.toString()}
+                            index={index}
+                          >
+                            {(provided) => (
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                                className="bg-white p-4 rounded-lg shadow-sm border hover:shadow-md transition-shadow"
+                              >
+                                <div className="flex flex-col gap-2">
+                                  <h4 className="font-medium text-gray-900">
+                                    {appointment.clientName}
+                                  </h4>
+                                  <p className="text-sm text-gray-600">
+                                    {appointment.service.name}
+                                  </p>
+                                  <p className="text-sm text-gray-500">
+                                    {appointment.professional.name}
+                                  </p>
+                                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-sm text-gray-500">
+                                    <div className="flex items-center gap-1">
+                                      <Calendar className="h-4 w-4" />
                                       {format(new Date(appointment.appointmentDate), 'dd/MM')}
                                     </div>
-                                    <div className="flex items-center gap-1 text-xs text-gray-500">
-                                      <Clock className="h-3 w-3" />
+                                    <div className="flex items-center gap-1">
+                                      <Clock className="h-4 w-4" />
                                       {appointment.appointmentTime}
                                     </div>
                                   </div>
+                                  <div className="flex justify-end gap-1 mt-2">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleEditAppointment(appointment)}
+                                      className="h-8 w-8 p-0"
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => deleteAppointmentMutation.mutate(appointment.id)}
+                                      className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
                                 </div>
-                              )}
-                            </Draggable>
-                          ))}
-                          {provided.placeholder}
-                        </div>
-                      )}
-                    </Droppable>
-                  </CardContent>
-                </Card>
+                              </div>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
+                </div>
               );
             })}
           </div>
