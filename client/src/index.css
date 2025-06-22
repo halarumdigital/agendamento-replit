@@ -13,15 +13,16 @@
   --card-foreground: hsl(222.2, 84%, 4.9%);
   --border: hsl(214.3, 31.8%, 91.4%);
   --input: hsl(214.3, 31.8%, 91.4%);
-  --primary: hsl(294, 72%, 54%);
+  --primary: hsl(221.2, 83.2%, 53.3%);
   --primary-foreground: hsl(0, 0%, 100%);
   --secondary: hsl(210, 40%, 96%);
   --secondary-foreground: hsl(222.2, 84%, 4.9%);
-  --accent: hsl(294, 72%, 96%);
-  --accent-foreground: hsl(294, 72%, 54%);
+  --accent: hsl(210, 40%, 96%);
+  --accent-foreground: hsl(222.2, 84%, 4.9%);
   --destructive: hsl(0, 84.2%, 60.2%);
   --destructive-foreground: hsl(210, 40%, 98%);
-  --ring: hsl(294, 72%, 54%);
+  --ring: hsl(221.2, 83.2%, 53.3%);
+  --tour-color: hsl(294, 72%, 54%);
   --radius: 0.5rem;
   --chart-1: hsl(294, 72%, 54%);
   --chart-2: hsl(173, 58%, 39%);
@@ -30,12 +31,12 @@
   --chart-5: hsl(27, 87%, 67%);
   --sidebar-background: hsl(0, 0%, 100%);
   --sidebar-foreground: hsl(222.2, 84%, 4.9%);
-  --sidebar-primary: hsl(294, 72%, 54%);
+  --sidebar-primary: hsl(221.2, 83.2%, 53.3%);
   --sidebar-primary-foreground: hsl(0, 0%, 100%);
-  --sidebar-accent: hsl(294, 72%, 96%);
-  --sidebar-accent-foreground: hsl(294, 72%, 54%);
+  --sidebar-accent: hsl(210, 40%, 96%);
+  --sidebar-accent-foreground: hsl(221.2, 83.2%, 53.3%);
   --sidebar-border: hsl(214.3, 31.8%, 91.4%);
-  --sidebar-ring: hsl(294, 72%, 54%);
+  --sidebar-ring: hsl(221.2, 83.2%, 53.3%);
 }
 
 .dark {
@@ -93,6 +94,23 @@
   .mobile-content {
     padding-top: 4rem; /* Account for mobile header */
   }
+}
+
+/* Tour color animation */
+@keyframes tour-color-blink {
+  0%, 100% {
+    box-shadow: 0 0 0 4px var(--tour-color), 0 0 20px var(--tour-color, 0.6);
+    outline-color: var(--tour-color);
+  }
+  50% {
+    box-shadow: 0 0 0 6px var(--tour-color), 0 0 30px var(--tour-color, 0.8);
+    outline-color: var(--tour-color);
+    transform: scale(1.02) translateY(-2px);
+  }
+}
+
+.tour-highlighted {
+  animation: tour-color-blink 1.2s infinite !important;
 }
 
 /* Custom color overrides for admin theme */

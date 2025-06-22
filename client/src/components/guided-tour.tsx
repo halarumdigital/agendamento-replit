@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useGuidedTour } from "@/hooks/use-guided-tour";
+import { useQuery } from "@tanstack/react-query";
 
 interface TourStep {
   id: number;
@@ -17,6 +18,14 @@ function TourContent({ tourSteps, closeTour }: { tourSteps: TourStep[], closeTou
   const [currentStep, setCurrentStep] = useState(0);
   const [highlightedElement, setHighlightedElement] = useState<HTMLElement | null>(null);
   const [clickHandler, setClickHandler] = useState<(() => void) | null>(null);
+
+  // Fetch public settings to get tour color
+  const { data: publicSettings } = useQuery({
+    queryKey: ["/api/public-settings"],
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  const tourColor = publicSettings?.tourColor || '#b845dc';
 
   // Update tour progress
   const updateProgress = async (stepIndex: number) => {
@@ -61,15 +70,18 @@ function TourContent({ tourSteps, closeTour }: { tourSteps: TourStep[], closeTou
           highlightedElement.removeEventListener('click', clickHandler, true);
         }
 
-        // Add strong color blinking highlight
-        element.style.setProperty('box-shadow', '0 0 0 4px hsl(294, 72%, 54%), 0 0 20px hsl(294, 72%, 54%, 0.6)', 'important');
+        // Set dynamic tour color in CSS variable
+        document.documentElement.style.setProperty('--tour-color', tourColor);
+        
+        // Add strong color blinking highlight using CSS variables
+        element.style.setProperty('box-shadow', `0 0 0 4px ${tourColor}, 0 0 20px ${tourColor}60`, 'important');
         element.style.setProperty('position', 'relative', 'important');
         element.style.setProperty('z-index', '9999', 'important');
         element.style.setProperty('transition', 'all 0.3s ease', 'important');
         element.style.setProperty('animation', 'tour-color-blink 1.2s infinite', 'important');
         element.style.setProperty('cursor', 'pointer', 'important');
         element.style.setProperty('border-radius', '6px', 'important');
-        element.style.setProperty('outline', '2px solid hsl(294, 72%, 54%)', 'important');
+        element.style.setProperty('outline', `2px solid ${tourColor}`, 'important');
         element.style.setProperty('outline-offset', '2px', 'important');
         
         // Add a CSS class for additional styling
