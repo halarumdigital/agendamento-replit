@@ -222,9 +222,11 @@ export default function Subscription() {
       description: "Sua assinatura foi ativada com sucesso!",
     });
     queryClient.invalidateQueries({ queryKey: ["/api/company/plan-info"] });
-    setStep('plans');
-    setSelectedPlan(null);
-    setClientSecret('');
+    
+    // Redirect to thank you page after successful payment
+    setTimeout(() => {
+      window.location.href = '/obrigado';
+    }, 1500);
   };
 
   const handlePaymentError = (error: string) => {
