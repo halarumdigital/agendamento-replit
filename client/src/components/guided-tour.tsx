@@ -61,14 +61,22 @@ function TourContent({ tourSteps, closeTour }: { tourSteps: TourStep[], closeTou
           highlightedElement.removeEventListener('click', clickHandler, true);
         }
 
-        // Add color blinking highlight with strong visual effects
-        element.style.setProperty('box-shadow', '0 0 0 2px hsl(var(--primary)), 0 0 10px hsl(var(--primary) / 0.3)', 'important');
+        // Add strong color blinking highlight
+        element.style.setProperty('box-shadow', '0 0 0 4px hsl(294, 72%, 54%), 0 0 20px hsl(294, 72%, 54%, 0.6)', 'important');
         element.style.setProperty('position', 'relative', 'important');
         element.style.setProperty('z-index', '9999', 'important');
         element.style.setProperty('transition', 'all 0.3s ease', 'important');
-        element.style.setProperty('animation', 'tour-color-blink 1.5s infinite', 'important');
+        element.style.setProperty('animation', 'tour-color-blink 1.2s infinite', 'important');
         element.style.setProperty('cursor', 'pointer', 'important');
-        element.style.setProperty('border-radius', '4px', 'important');
+        element.style.setProperty('border-radius', '6px', 'important');
+        element.style.setProperty('outline', '2px solid hsl(294, 72%, 54%)', 'important');
+        element.style.setProperty('outline-offset', '2px', 'important');
+        
+        // Add a CSS class for additional styling
+        element.classList.add('tour-highlighted');
+        
+        // Debug: Log when element is highlighted
+        console.log('🎯 Element highlighted:', step.targetElement, element);
         
         // Add click listener to detect clicks
         const handler = (e: Event) => handleElementClick(e);

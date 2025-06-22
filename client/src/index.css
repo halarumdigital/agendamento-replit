@@ -230,14 +230,34 @@
   0%, 100% {
     background-color: transparent !important;
     color: inherit !important;
-    box-shadow: 0 0 0 3px hsl(var(--primary)), 0 0 15px hsl(var(--primary) / 0.4) !important;
+    box-shadow: 0 0 0 4px hsl(294, 72%, 54%), 0 0 20px hsl(294, 72%, 54%, 0.6) !important;
   }
   50% {
-    background-color: hsl(var(--primary)) !important;
-    color: white !important;
-    box-shadow: 0 0 0 5px hsl(var(--primary)), 0 0 25px hsl(var(--primary) / 0.8) !important;
-    transform: scale(1.02) !important;
+    background-color: hsl(294, 72%, 54%) !important;
+    color: hsl(0, 0%, 100%) !important;
+    box-shadow: 0 0 0 6px hsl(294, 72%, 54%), 0 0 30px hsl(294, 72%, 54%, 0.9) !important;
+    transform: scale(1.03) !important;
   }
+}
+
+/* Tour highlighted class */
+.tour-highlighted {
+  position: relative !important;
+  z-index: 9999 !important;
+  animation: tour-color-blink 1.2s infinite !important;
+}
+
+.tour-highlighted::before {
+  content: '' !important;
+  position: absolute !important;
+  top: -8px !important;
+  left: -8px !important;
+  right: -8px !important;
+  bottom: -8px !important;
+  border: 3px solid hsl(294, 72%, 54%) !important;
+  border-radius: 8px !important;
+  z-index: -1 !important;
+  animation: tour-color-blink 1.2s infinite !important;
 }
 
 .tour-click-indicator {
