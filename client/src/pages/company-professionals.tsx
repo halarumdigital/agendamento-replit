@@ -426,22 +426,22 @@ export default function CompanyProfessionals() {
                         />
                       </div>
                     </div>
-                    <DialogFooter>
-                      <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                        Cancelar
-                      </Button>
-                      <Button 
-                        type="submit" 
-                        disabled={
-                          createMutation.isPending || 
-                          updateMutation.isPending || 
-                          (!editingProfessional && !canAddProfessional())
-                        }
-                        className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {editingProfessional ? 'Atualizar' : 'Cadastrar'}
-                      </Button>
-                    </DialogFooter>
+                  <DialogFooter>
+                    <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                      Cancelar
+                    </Button>
+                    <Button 
+                      type="submit" 
+                      disabled={
+                        createMutation.isPending || 
+                        updateMutation.isPending || 
+                        (!editingProfessional && !canAddProfessional())
+                      }
+                      className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {editingProfessional ? 'Atualizar' : 'Cadastrar'}
+                    </Button>
+                  </DialogFooter>
                   </form>
                 </TabsContent>
                 
