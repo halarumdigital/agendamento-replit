@@ -150,7 +150,7 @@ export const globalSettings = mysqlTable("global_settings", {
   secondaryColor: varchar("secondary_color", { length: 7 }).notNull().default("#64748b"),
   backgroundColor: varchar("background_color", { length: 7 }).notNull().default("#f8fafc"),
   textColor: varchar("text_color", { length: 7 }).notNull().default("#1e293b"),
-  tourColor: varchar("tour_color", { length: 7 }).notNull().default("#b845dc"),
+  // tourColor: varchar("tour_color", { length: 7 }).notNull().default("#b845dc"), // Temporarily disabled for schema sync
   evolutionApiUrl: varchar("evolution_api_url", { length: 500 }),
   evolutionApiGlobalKey: varchar("evolution_api_global_key", { length: 500 }),
   openaiApiKey: varchar("openai_api_key", { length: 500 }),

@@ -19,13 +19,8 @@ function TourContent({ tourSteps, closeTour }: { tourSteps: TourStep[], closeTou
   const [highlightedElement, setHighlightedElement] = useState<HTMLElement | null>(null);
   const [clickHandler, setClickHandler] = useState<(() => void) | null>(null);
 
-  // Fetch public settings to get tour color
-  const { data: publicSettings } = useQuery({
-    queryKey: ["/api/public-settings"],
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-
-  const tourColor = publicSettings?.tourColor || '#b845dc';
+  // Use default tour color for now - will be configurable once schema sync is complete
+  const tourColor = '#b845dc';
 
   // Update tour progress
   const updateProgress = async (stepIndex: number) => {
