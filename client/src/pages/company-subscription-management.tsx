@@ -59,11 +59,13 @@ interface AvailablePlan {
 function PaymentForm({ 
   selectedPlan, 
   billingPeriod, 
+  clientSecret,
   onSuccess, 
   onCancel 
 }: {
   selectedPlan: AvailablePlan;
   billingPeriod: 'monthly' | 'annual';
+  clientSecret: string;
   onSuccess: () => void;
   onCancel: () => void;
 }) {
@@ -538,6 +540,7 @@ export default function CompanySubscriptionManagement() {
               <PaymentForm
                 selectedPlan={availablePlans.find(p => p.id === selectedPlanId)!}
                 billingPeriod={billingPeriod}
+                clientSecret={clientSecret}
                 onSuccess={() => {
                   setShowPayment(false);
                   setClientSecret(null);
