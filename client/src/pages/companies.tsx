@@ -51,7 +51,8 @@ export default function Companies() {
       state: "",
       email: "",
       password: "",
-
+      planId: undefined,
+      isActive: true,
     },
   });
 
@@ -143,6 +144,8 @@ export default function Companies() {
   });
 
   const onSubmit = (data: CompanyFormData) => {
+    console.log('📝 Form submitted with data:', data);
+    console.log('📝 Form errors:', form.formState.errors);
     createMutation.mutate(data);
   };
 
@@ -595,7 +598,29 @@ export default function Companies() {
                 </div>
               </div>
 
-
+              <div className="space-y-2">
+                <Label htmlFor="planId">Plano</Label>
+                <Select 
+                  value={form.watch("planId")?.toString() || ""} 
+                  onValueChange={(value) => form.setValue("planId", parseInt(value))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um plano" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {plans.map((plan) => (
+                      <SelectItem key={plan.id} value={plan.id.toString()}>
+                        {plan.name} - R$ {plan.price}/mês
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {form.formState.errors.planId && (
+                  <p className="text-sm text-red-600">
+                    {form.formState.errors.planId.message}
+                  </p>
+                )}
+              </div>
 
               <div className="flex justify-end space-x-4">
                 <Button type="button" variant="outline" onClick={handleCancelEdit}>
