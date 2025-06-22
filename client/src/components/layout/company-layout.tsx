@@ -30,6 +30,7 @@ import type { GlobalSettings } from "@shared/schema";
 import { useSubscriptionStatus } from "@/hooks/useSubscriptionStatus";
 import SubscriptionBlocked from "@/components/subscription-blocked";
 import { CompanyAlerts } from "@/components/alerts/company-alerts";
+import { GuidedTour } from "@/components/guided-tour";
 
 interface CompanyLayoutProps {
   children: React.ReactNode;
@@ -281,6 +282,9 @@ export default function CompanyLayout({ children }: CompanyLayoutProps) {
         
         {/* Company Alerts */}
         {company && <CompanyAlerts />}
+        
+        {/* Guided Tour */}
+        {company && <GuidedTour />}
         
         {/* Footer */}
         <footer className="fixed bottom-0 left-0 right-0 lg:left-64 bg-white border-t border-gray-200 px-4 py-2 z-40">
