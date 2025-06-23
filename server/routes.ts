@@ -6772,14 +6772,34 @@ const broadcastEvent = (eventData: any) => {
     try {
       const professionalId = req.session.professionalId;
       const companyId = req.session.companyId;
-      
+      const { clientName, clientPhone, clientEmail, serviceId, appointmentDate, appointmentTime, notes } = req.body;
+
+      console.log('🔄 Professional creating appointment:', { clientName, serviceId, appointmentDate });
+
+      // Validate required fields
+      if (!clientName || !clientPhone || !serviceId || !appointmentDate || !appointmentTime) {
+        return res.status(400).json({ message: "Preencha todos os campos obrigatórios" });
+      }
+
+      // Create appointment with all required fields
       const appointmentData = {
-        ...req.body,
-        professionalId,
-        companyId
+        companyId,
+        professionalId: parseInt(professionalId),
+        serviceId: parseInt(serviceId),
+        clientName,
+        clientPhone,
+        clientEmail: clientEmail || null,
+        appointmentDate: new Date(appointmentDate),
+        appointmentTime,
+        duration: 60, // default duration
+        status: "Agendado", // default status
+        totalPrice: "0.00", // will be updated based on service
+        notes: notes || "",
+        reminderSent: 0
       };
 
       const appointment = await storage.createAppointment(appointmentData);
+      console.log('✅ Appointment created successfully by professional');
       res.status(201).json(appointment);
     } catch (error) {
       console.error("Error creating appointment:", error);

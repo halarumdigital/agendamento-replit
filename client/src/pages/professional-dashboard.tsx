@@ -41,6 +41,16 @@ export default function ProfessionalDashboard() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [editingAppointment, setEditingAppointment] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<any>({});
+  const [isNewAppointmentOpen, setIsNewAppointmentOpen] = useState(false);
+  const [newAppointmentForm, setNewAppointmentForm] = useState({
+    clientName: '',
+    clientPhone: '',
+    clientEmail: '',
+    serviceId: '',
+    appointmentDate: '',
+    appointmentTime: '',
+    notes: ''
+  });
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -104,6 +114,12 @@ export default function ProfessionalDashboard() {
     enabled: !!professional,
   });
 
+  // Buscar serviços da empresa para novo agendamento
+  const { data: services = [] } = useQuery({
+    queryKey: ["/api/professional/services"],
+    enabled: !!professional,
+  });
+
   // Mutation para logout
   const logoutMutation = useMutation({
     mutationFn: () => apiRequest("/api/auth/professional/logout", "POST"),
@@ -129,8 +145,47 @@ export default function ProfessionalDashboard() {
     }
   });
 
+  // Mutation para criar novo agendamento
+  const createAppointmentMutation = useMutation({
+    mutationFn: (data: any) => apiRequest("/api/professional/appointments", "POST", data),
+    onSuccess: () => {
+      toast({ title: "Agendamento criado com sucesso" });
+      setIsNewAppointmentOpen(false);
+      setNewAppointmentForm({
+        clientName: '',
+        clientPhone: '',
+        clientEmail: '',
+        serviceId: '',
+        appointmentDate: '',
+        appointmentTime: '',
+        notes: ''
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/professional/appointments"] });
+    },
+    onError: () => {
+      toast({ title: "Erro ao criar agendamento", variant: "destructive" });
+    }
+  });
+
   const handleLogout = () => {
     logoutMutation.mutate();
+  };
+
+  const handleCreateAppointment = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validação básica
+    if (!newAppointmentForm.clientName || !newAppointmentForm.clientPhone || 
+        !newAppointmentForm.serviceId || !newAppointmentForm.appointmentDate || 
+        !newAppointmentForm.appointmentTime) {
+      toast({ title: "Preencha todos os campos obrigatórios", variant: "destructive" });
+      return;
+    }
+
+    createAppointmentMutation.mutate({
+      ...newAppointmentForm,
+      serviceId: parseInt(newAppointmentForm.serviceId)
+    });
   };
 
   const formatDate = (dateString: string) => {
@@ -314,7 +369,7 @@ export default function ProfessionalDashboard() {
         {/* Botão Novo Agendamento */}
         <div className="mb-6">
           <button
-            onClick={() => setLocation("/profissional/novo-agendamento")}
+            onClick={() => setIsNewAppointmentOpen(true)}
             className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded inline-flex items-center"
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -544,6 +599,119 @@ export default function ProfessionalDashboard() {
                 Cancelar
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Novo Agendamento */}
+      {isNewAppointmentOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-semibold mb-4">Novo Agendamento</h3>
+            
+            <form onSubmit={handleCreateAppointment} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Nome do Cliente *</label>
+                <input
+                  type="text"
+                  value={newAppointmentForm.clientName}
+                  onChange={(e) => setNewAppointmentForm({...newAppointmentForm, clientName: e.target.value})}
+                  className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Nome do cliente"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Telefone *</label>
+                <input
+                  type="text"
+                  value={newAppointmentForm.clientPhone}
+                  onChange={(e) => setNewAppointmentForm({...newAppointmentForm, clientPhone: e.target.value})}
+                  className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Telefone"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Email</label>
+                <input
+                  type="email"
+                  value={newAppointmentForm.clientEmail}
+                  onChange={(e) => setNewAppointmentForm({...newAppointmentForm, clientEmail: e.target.value})}
+                  className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Email (opcional)"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Serviço *</label>
+                <select
+                  value={newAppointmentForm.serviceId}
+                  onChange={(e) => setNewAppointmentForm({...newAppointmentForm, serviceId: e.target.value})}
+                  className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="">Selecione um serviço</option>
+                  {services.map((service: any) => (
+                    <option key={service.id} value={service.id}>
+                      {service.name} - R$ {service.price}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Data *</label>
+                <input
+                  type="date"
+                  value={newAppointmentForm.appointmentDate}
+                  onChange={(e) => setNewAppointmentForm({...newAppointmentForm, appointmentDate: e.target.value})}
+                  className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Horário *</label>
+                <input
+                  type="time"
+                  value={newAppointmentForm.appointmentTime}
+                  onChange={(e) => setNewAppointmentForm({...newAppointmentForm, appointmentTime: e.target.value})}
+                  className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Observações</label>
+                <textarea
+                  value={newAppointmentForm.notes}
+                  onChange={(e) => setNewAppointmentForm({...newAppointmentForm, notes: e.target.value})}
+                  className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Observações (opcional)"
+                  rows={3}
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  disabled={createAppointmentMutation.isPending}
+                  className="flex-1 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:opacity-50"
+                >
+                  {createAppointmentMutation.isPending ? 'Criando...' : 'Criar Agendamento'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsNewAppointmentOpen(false)}
+                  className="flex-1 bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
