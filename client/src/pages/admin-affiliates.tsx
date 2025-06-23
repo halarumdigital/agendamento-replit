@@ -33,10 +33,7 @@ export default function AdminAffiliates() {
 
   const toggleStatusMutation = useMutation({
     mutationFn: async ({ affiliateId, newStatus }: { affiliateId: number; newStatus: boolean }) => {
-      return apiRequest(`/api/admin/affiliates/${affiliateId}/toggle-status`, {
-        method: 'PATCH',
-        body: JSON.stringify({ isActive: newStatus }),
-      });
+      return apiRequest(`/api/admin/affiliates/${affiliateId}/toggle-status`, 'PATCH', { isActive: newStatus });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/affiliates'] });
