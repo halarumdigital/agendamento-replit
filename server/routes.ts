@@ -6771,7 +6771,9 @@ const broadcastEvent = (eventData: any) => {
     try {
       const appointmentId = parseInt(req.params.id);
       const professionalId = req.session.professionalId;
-      const { clientName, clientPhone, notes, status } = req.body;
+      const { clientName, clientPhone, notes, status, appointmentDate, appointmentTime } = req.body;
+
+      console.log('🔄 Professional updating appointment:', appointmentId, 'with data:', req.body);
 
       // Verify appointment belongs to this professional
       const appointment = await storage.getAppointment(appointmentId);
@@ -6784,8 +6786,13 @@ const broadcastEvent = (eventData: any) => {
       if (clientPhone) updateData.clientPhone = clientPhone;
       if (notes !== undefined) updateData.notes = notes;
       if (status) updateData.status = status;
+      if (appointmentDate) updateData.appointmentDate = new Date(appointmentDate);
+      if (appointmentTime) updateData.appointmentTime = appointmentTime;
+
+      console.log('🔄 Update data prepared:', updateData);
 
       const updatedAppointment = await storage.updateAppointment(appointmentId, updateData);
+      console.log('✅ Appointment updated successfully');
       res.json(updatedAppointment);
     } catch (error) {
       console.error("Error updating appointment:", error);

@@ -147,7 +147,9 @@ export default function ProfessionalDashboard() {
       clientName: appointment.clientName,
       clientPhone: appointment.clientPhone,
       notes: appointment.notes || '',
-      status: appointment.statusName || appointment.status
+      status: appointment.statusName || appointment.status,
+      appointmentDate: appointment.appointmentDate,
+      appointmentTime: appointment.appointmentTime
     });
   };
 
@@ -405,108 +407,39 @@ export default function ProfessionalDashboard() {
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {appointments.map((appointment: Appointment) => (
                   <div key={appointment.id} className="bg-white border rounded-lg p-4 shadow-sm hover:shadow-md">
-                    {editingAppointment === appointment.id ? (
-                      /* Edit Mode */
-                      <div className="space-y-3">
-                        <input
-                          type="text"
-                          value={editForm.clientName}
-                          onChange={(e) => setEditForm({...editForm, clientName: e.target.value})}
-                          className="w-full p-2 border rounded"
-                          placeholder="Nome do cliente"
-                        />
-                        <input
-                          type="text"
-                          value={editForm.clientPhone}
-                          onChange={(e) => setEditForm({...editForm, clientPhone: e.target.value})}
-                          className="w-full p-2 border rounded"
-                          placeholder="Telefone"
-                        />
-                        <input
-                          type="date"
-                          value={editForm.appointmentDate || appointment.appointmentDate}
-                          onChange={(e) => setEditForm({...editForm, appointmentDate: e.target.value})}
-                          className="w-full p-2 border rounded"
-                        />
-                        <input
-                          type="time"
-                          value={editForm.appointmentTime || appointment.appointmentTime}
-                          onChange={(e) => setEditForm({...editForm, appointmentTime: e.target.value})}
-                          className="w-full p-2 border rounded"
-                        />
-                        <select
-                          value={editForm.status || appointment.statusName}
-                          onChange={(e) => setEditForm({...editForm, status: e.target.value})}
-                          className="w-full p-2 border rounded"
-                        >
-                          <option value="">Selecione o status</option>
-                          {appointmentStatuses.map((status: AppointmentStatus) => (
-                            <option key={status.id} value={status.name}>
-                              {status.name}
-                            </option>
-                          ))}
-                        </select>
-                        <textarea
-                          value={editForm.notes}
-                          onChange={(e) => setEditForm({...editForm, notes: e.target.value})}
-                          className="w-full p-2 border rounded"
-                          placeholder="Observações"
-                          rows={2}
-                        />
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={saveEdit}
-                            disabled={updateAppointmentMutation.isPending}
-                            className="flex-1 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded text-sm"
+                    <div>
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="font-semibold text-lg">{appointment.clientName}</h3>
+                        <div className="flex items-center space-x-2">
+                          <span 
+                            className="px-2 py-1 rounded text-white text-sm"
+                            style={{ backgroundColor: appointment.statusColor || "#6b7280" }}
                           >
-                            <Save className="w-4 h-4 inline mr-1" />
-                            Salvar
-                          </button>
+                            {appointment.statusName}
+                          </span>
                           <button
-                            onClick={cancelEdit}
-                            className="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded text-sm"
+                            onClick={() => startEditing(appointment)}
+                            className="p-1 hover:bg-gray-100 rounded"
                           >
-                            <X className="w-4 h-4 inline mr-1" />
-                            Cancelar
+                            <Edit className="w-4 h-4 text-gray-600" />
                           </button>
                         </div>
                       </div>
-                    ) : (
-                      /* View Mode */
-                      <>
-                        <div className="flex justify-between items-start mb-2">
-                          <h3 className="font-semibold text-lg">{appointment.clientName}</h3>
-                          <div className="flex items-center space-x-2">
-                            <span 
-                              className="px-2 py-1 rounded text-white text-sm"
-                              style={{ backgroundColor: appointment.statusColor || "#6b7280" }}
-                            >
-                              {appointment.statusName}
-                            </span>
-                            <button
-                              onClick={() => startEditing(appointment)}
-                              className="p-1 hover:bg-gray-100 rounded"
-                            >
-                              <Edit className="w-4 h-4 text-gray-600" />
-                            </button>
+                      
+                      <div className="space-y-2 text-sm text-gray-600">
+                        <div>📅 {formatDate(appointment.appointmentDate)}</div>
+                        <div>🕐 {formatTime(appointment.appointmentTime)}</div>
+                        <div>✂️ {appointment.serviceName} - R$ {appointment.price}</div>
+                        {appointment.clientPhone && (
+                          <div>📞 {appointment.clientPhone}</div>
+                        )}
+                        {appointment.notes && (
+                          <div className="mt-2 p-2 bg-gray-50 rounded text-xs">
+                            <strong>Observações:</strong> {appointment.notes}
                           </div>
-                        </div>
-                        
-                        <div className="space-y-2 text-sm text-gray-600">
-                          <div>📅 {formatDate(appointment.appointmentDate)}</div>
-                          <div>🕐 {formatTime(appointment.appointmentTime)}</div>
-                          <div>✂️ {appointment.serviceName} - R$ {appointment.price}</div>
-                          {appointment.clientPhone && (
-                            <div>📞 {appointment.clientPhone}</div>
-                          )}
-                          {appointment.notes && (
-                            <div className="mt-2 p-2 bg-gray-50 rounded text-xs">
-                              <strong>Observações:</strong> {appointment.notes}
-                            </div>
-                          )}
-                        </div>
-                      </>
-                    )}
+                        )}
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -514,6 +447,102 @@ export default function ProfessionalDashboard() {
           </div>
         )}
       </div>
+
+      {/* Modal de Edição */}
+      {editingAppointment && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-semibold mb-4">Editar Agendamento</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Nome do Cliente</label>
+                <input
+                  type="text"
+                  value={editForm.clientName || ''}
+                  onChange={(e) => setEditForm({...editForm, clientName: e.target.value})}
+                  className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Nome do cliente"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Telefone</label>
+                <input
+                  type="text"
+                  value={editForm.clientPhone || ''}
+                  onChange={(e) => setEditForm({...editForm, clientPhone: e.target.value})}
+                  className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Telefone"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Data</label>
+                <input
+                  type="date"
+                  value={editForm.appointmentDate || ''}
+                  onChange={(e) => setEditForm({...editForm, appointmentDate: e.target.value})}
+                  className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Horário</label>
+                <input
+                  type="time"
+                  value={editForm.appointmentTime || ''}
+                  onChange={(e) => setEditForm({...editForm, appointmentTime: e.target.value})}
+                  className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Status</label>
+                <select
+                  value={editForm.status || ''}
+                  onChange={(e) => setEditForm({...editForm, status: e.target.value})}
+                  className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Selecione o status</option>
+                  {appointmentStatuses.map((status: AppointmentStatus) => (
+                    <option key={status.id} value={status.name}>
+                      {status.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Observações</label>
+                <textarea
+                  value={editForm.notes || ''}
+                  onChange={(e) => setEditForm({...editForm, notes: e.target.value})}
+                  className="w-full p-2 border rounded resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows={3}
+                  placeholder="Observações"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={saveEdit}
+                disabled={updateAppointmentMutation.isPending}
+                className="flex-1 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:opacity-50"
+              >
+                {updateAppointmentMutation.isPending ? 'Salvando...' : 'Salvar'}
+              </button>
+              <button
+                onClick={cancelEdit}
+                className="flex-1 bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
