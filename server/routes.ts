@@ -7031,17 +7031,31 @@ const broadcastEvent = (eventData: any) => {
     try {
       const { email, password } = req.body;
 
+      console.log("Affiliate login attempt:", { email, passwordLength: password?.length });
+
       const affiliate = await storage.getAffiliateByEmail(email);
       if (!affiliate) {
+        console.log("Affiliate not found for email:", email);
         return res.status(401).json({ message: 'Email ou senha inválidos' });
       }
 
+      console.log("Affiliate found:", { 
+        id: affiliate.id, 
+        email: affiliate.email, 
+        isActive: affiliate.isActive,
+        hasPassword: !!affiliate.password,
+        passwordLength: affiliate.password?.length 
+      });
+
       const isValidPassword = await bcrypt.compare(password, affiliate.password);
+      console.log("Password validation result:", isValidPassword);
+      
       if (!isValidPassword) {
         return res.status(401).json({ message: 'Email ou senha inválidos' });
       }
 
       if (!affiliate.isActive) {
+        console.log("Affiliate account is inactive");
         return res.status(401).json({ message: 'Conta de afiliado inativa' });
       }
 

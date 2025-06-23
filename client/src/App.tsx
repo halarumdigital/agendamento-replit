@@ -86,6 +86,9 @@ function Router() {
       <Route path="/affiliate/register" component={AffiliateRegister} />
       <Route path="/affiliate/login" component={AffiliateLogin} />
       <Route path="/affiliate/dashboard" component={AffiliateDashboard} />
+      <Route path="/afiliado/registro" component={AffiliateRegister} />
+      <Route path="/afiliado/login" component={AffiliateLogin} />
+      <Route path="/afiliado/dashboard" component={AffiliateDashboard} />
       
       {/* Professional Routes */}
       <Route path="/profissional/login" component={ProfessionalLogin} />
