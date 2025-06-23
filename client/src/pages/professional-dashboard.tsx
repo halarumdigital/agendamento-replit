@@ -4,6 +4,8 @@ import { useLocation } from "wouter";
 import { Calendar, Clock, Phone, Plus, LogOut, Edit, Save, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useGlobalTheme } from "@/hooks/use-global-theme";
+import type { GlobalSettings } from "@shared/schema";
 
 interface Professional {
   id: number;
@@ -37,6 +39,16 @@ export default function ProfessionalDashboard() {
   const [, setLocation] = useLocation();
   const [professional, setProfessional] = useState<Professional | null>(null);
   const [activeTab, setActiveTab] = useState<'calendar' | 'appointments'>('appointments');
+  
+  // Busca configurações globais para logo e cores
+  const { data: globalSettings } = useQuery<GlobalSettings>({
+    queryKey: ["/api/public-settings"],
+    refetchOnWindowFocus: false,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+  
+  // Aplica tema global
+  useGlobalTheme();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [editingAppointment, setEditingAppointment] = useState<number | null>(null);
@@ -317,17 +329,34 @@ export default function ProfessionalDashboard() {
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <div className="bg-blue-600 text-white p-4">
+      <div 
+        className="text-white p-4"
+        style={{ 
+          backgroundColor: globalSettings?.primaryColor || '#2563eb',
+        }}
+      >
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold">Dashboard do Profissional</h1>
-              <p className="text-blue-100">Bem-vindo, {professional.name}</p>
+            <div className="flex items-center gap-4">
+              {globalSettings?.logoUrl && (
+                <img 
+                  src={globalSettings.logoUrl} 
+                  alt="Logo" 
+                  className="h-10 w-auto object-contain"
+                />
+              )}
+              <div>
+                <h1 className="text-2xl font-bold">Dashboard do Profissional</h1>
+                <p className="opacity-80">Bem-vindo, {professional.name}</p>
+              </div>
             </div>
             <button
               onClick={handleLogout}
               disabled={logoutMutation.isPending}
-              className="bg-blue-700 hover:bg-blue-800 px-4 py-2 rounded text-white"
+              className="px-4 py-2 rounded text-white transition-all duration-200 hover:opacity-80"
+              style={{ 
+                backgroundColor: 'rgba(0, 0, 0, 0.2)',
+              }}
             >
               {logoutMutation.isPending ? "Saindo..." : "Sair"}
             </button>
