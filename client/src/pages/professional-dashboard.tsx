@@ -241,7 +241,7 @@ export default function ProfessionalDashboard() {
                         <CardTitle className="text-lg">{appointment.clientName}</CardTitle>
                         <Badge 
                           style={{ 
-                            backgroundColor: getStatusColor(appointment.status.color),
+                            backgroundColor: getStatusColor(appointment.status?.color),
                             color: 'white'
                           }}
                         >
