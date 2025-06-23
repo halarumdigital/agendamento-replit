@@ -6766,6 +6766,33 @@ const broadcastEvent = (eventData: any) => {
     }
   });
 
+  // Update appointment (professional)
+  app.put('/api/professional/appointments/:id', isProfessionalAuthenticated, async (req: any, res) => {
+    try {
+      const appointmentId = parseInt(req.params.id);
+      const professionalId = req.session.professionalId;
+      const { clientName, clientPhone, notes, status } = req.body;
+
+      // Verify appointment belongs to this professional
+      const appointment = await storage.getAppointment(appointmentId);
+      if (!appointment || appointment.professionalId !== professionalId) {
+        return res.status(403).json({ message: "Acesso negado a este agendamento" });
+      }
+
+      const updateData: any = {};
+      if (clientName) updateData.clientName = clientName;
+      if (clientPhone) updateData.clientPhone = clientPhone;
+      if (notes !== undefined) updateData.notes = notes;
+      if (status) updateData.status = status;
+
+      const updatedAppointment = await storage.updateAppointment(appointmentId, updateData);
+      res.json(updatedAppointment);
+    } catch (error) {
+      console.error("Error updating appointment:", error);
+      res.status(500).json({ message: "Erro ao atualizar agendamento" });
+    }
+  });
+
   // Update appointment status (professional)
   app.patch('/api/professional/appointments/:id/status', isProfessionalAuthenticated, async (req: any, res) => {
     try {
