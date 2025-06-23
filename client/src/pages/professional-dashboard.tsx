@@ -55,6 +55,7 @@ export default function ProfessionalDashboard() {
   const [editForm, setEditForm] = useState<any>({});
   const [isNewAppointmentOpen, setIsNewAppointmentOpen] = useState(false);
   const [newAppointmentForm, setNewAppointmentForm] = useState({
+    clientId: '',
     clientName: '',
     clientPhone: '',
     clientEmail: '',
@@ -62,6 +63,12 @@ export default function ProfessionalDashboard() {
     appointmentDate: '',
     appointmentTime: '',
     notes: ''
+  });
+  const [isNewClientModalOpen, setIsNewClientModalOpen] = useState(false);
+  const [newClientForm, setNewClientForm] = useState({
+    name: '',
+    phone: '',
+    email: ''
   });
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -132,6 +139,12 @@ export default function ProfessionalDashboard() {
     enabled: !!professional,
   });
 
+  // Buscar clientes da empresa
+  const { data: clients = [] } = useQuery({
+    queryKey: ["/api/professional/clients"],
+    enabled: !!professional,
+  });
+
   // Mutation para logout
   const logoutMutation = useMutation({
     mutationFn: () => apiRequest("/api/auth/professional/logout", "POST"),
@@ -164,6 +177,7 @@ export default function ProfessionalDashboard() {
       toast({ title: "Agendamento criado com sucesso" });
       setIsNewAppointmentOpen(false);
       setNewAppointmentForm({
+        clientId: '',
         clientName: '',
         clientPhone: '',
         clientEmail: '',
@@ -176,6 +190,28 @@ export default function ProfessionalDashboard() {
     },
     onError: () => {
       toast({ title: "Erro ao criar agendamento", variant: "destructive" });
+    }
+  });
+
+  // Mutation para criar novo cliente
+  const createClientMutation = useMutation({
+    mutationFn: (data: any) => apiRequest("/api/professional/clients", "POST", data),
+    onSuccess: (newClient) => {
+      toast({ title: "Cliente criado com sucesso" });
+      setIsNewClientModalOpen(false);
+      setNewClientForm({ name: '', phone: '', email: '' });
+      // Seleciona o cliente recém-criado
+      setNewAppointmentForm(prev => ({
+        ...prev,
+        clientId: newClient.id.toString(),
+        clientName: newClient.name,
+        clientPhone: newClient.phone || '',
+        clientEmail: newClient.email || ''
+      }));
+      queryClient.invalidateQueries({ queryKey: ["/api/professional/clients"] });
+    },
+    onError: () => {
+      toast({ title: "Erro ao criar cliente", variant: "destructive" });
     }
   });
 
@@ -631,39 +667,61 @@ export default function ProfessionalDashboard() {
             
             <form onSubmit={handleCreateAppointment} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Nome do Cliente *</label>
-                <input
-                  type="text"
-                  value={newAppointmentForm.clientName}
-                  onChange={(e) => setNewAppointmentForm({...newAppointmentForm, clientName: e.target.value})}
-                  className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Nome do cliente"
-                  required
-                />
+                <label className="block text-sm font-medium mb-1">Cliente *</label>
+                <div className="flex gap-2">
+                  <select
+                    value={newAppointmentForm.clientId}
+                    onChange={(e) => {
+                      const selectedClient = clients.find((c: any) => c.id === parseInt(e.target.value));
+                      if (selectedClient) {
+                        setNewAppointmentForm({
+                          ...newAppointmentForm,
+                          clientId: e.target.value,
+                          clientName: selectedClient.name,
+                          clientPhone: selectedClient.phone || '',
+                          clientEmail: selectedClient.email || ''
+                        });
+                      } else {
+                        setNewAppointmentForm({
+                          ...newAppointmentForm,
+                          clientId: '',
+                          clientName: '',
+                          clientPhone: '',
+                          clientEmail: ''
+                        });
+                      }
+                    }}
+                    className="flex-1 p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  >
+                    <option value="">Selecione um cliente</option>
+                    {clients.map((client: any) => (
+                      <option key={client.id} value={client.id}>
+                        {client.name} {client.phone && `- ${client.phone}`}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => setIsNewClientModalOpen(true)}
+                    className="px-3 py-2 text-white rounded hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-opacity-50"
+                    style={{ backgroundColor: primaryColor, focusRingColor: primaryColor }}
+                    title="Adicionar novo cliente"
+                  >
+                    +
+                  </button>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-1">Telefone *</label>
-                <input
-                  type="text"
-                  value={newAppointmentForm.clientPhone}
-                  onChange={(e) => setNewAppointmentForm({...newAppointmentForm, clientPhone: e.target.value})}
-                  className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Telefone"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">Email</label>
-                <input
-                  type="email"
-                  value={newAppointmentForm.clientEmail}
-                  onChange={(e) => setNewAppointmentForm({...newAppointmentForm, clientEmail: e.target.value})}
-                  className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Email (opcional)"
-                />
-              </div>
+              {newAppointmentForm.clientId && (
+                <div className="bg-gray-50 p-3 rounded">
+                  <p className="text-sm text-gray-600">
+                    <strong>Cliente selecionado:</strong> {newAppointmentForm.clientName}
+                    {newAppointmentForm.clientPhone && <><br/><strong>Telefone:</strong> {newAppointmentForm.clientPhone}</>}
+                    {newAppointmentForm.clientEmail && <><br/><strong>Email:</strong> {newAppointmentForm.clientEmail}</>}
+                  </p>
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium mb-1">Serviço *</label>
@@ -726,6 +784,73 @@ export default function ProfessionalDashboard() {
                 <button
                   type="button"
                   onClick={() => setIsNewAppointmentOpen(false)}
+                  className="flex-1 bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Novo Cliente */}
+      {isNewClientModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold mb-4">Adicionar Novo Cliente</h3>
+            
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              if (newClientForm.name.trim()) {
+                createClientMutation.mutate(newClientForm);
+              }
+            }} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Nome *</label>
+                <input
+                  type="text"
+                  value={newClientForm.name}
+                  onChange={(e) => setNewClientForm({...newClientForm, name: e.target.value})}
+                  className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Nome do cliente"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Telefone</label>
+                <input
+                  type="text"
+                  value={newClientForm.phone}
+                  onChange={(e) => setNewClientForm({...newClientForm, phone: e.target.value})}
+                  className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Telefone (opcional)"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Email</label>
+                <input
+                  type="email"
+                  value={newClientForm.email}
+                  onChange={(e) => setNewClientForm({...newClientForm, email: e.target.value})}
+                  className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Email (opcional)"
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  disabled={createClientMutation.isPending}
+                  className="flex-1 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:opacity-50"
+                >
+                  {createClientMutation.isPending ? 'Criando...' : 'Criar Cliente'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsNewClientModalOpen(false)}
                   className="flex-1 bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
                 >
                   Cancelar

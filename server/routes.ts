@@ -6751,6 +6751,26 @@ const broadcastEvent = (eventData: any) => {
     }
   });
 
+  // Create new client (professional)
+  app.post('/api/professional/clients', isProfessionalAuthenticated, async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      
+      const clientData = {
+        ...req.body,
+        companyId,
+        email: req.body.email === '' ? null : req.body.email,
+        phone: req.body.phone === '' ? null : req.body.phone,
+      };
+
+      const client = await storage.createClient(clientData);
+      res.status(201).json(client);
+    } catch (error) {
+      console.error("Error creating client:", error);
+      res.status(500).json({ message: "Erro ao criar cliente" });
+    }
+  });
+
   // Get professional's company appointment statuses
   app.get('/api/professional/appointment-statuses', isProfessionalAuthenticated, async (req: any, res) => {
     try {
