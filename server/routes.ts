@@ -6746,6 +6746,27 @@ const broadcastEvent = (eventData: any) => {
     }
   });
 
+  // Get professional's company appointment statuses
+  app.get('/api/professional/appointment-statuses', isProfessionalAuthenticated, async (req: any, res) => {
+    try {
+      const professionalId = req.session.professionalId;
+      console.log('🔍 Professional requesting statuses, ID:', professionalId);
+      
+      if (!professionalId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      // Get all available status (they are global, not company-specific)
+      const statuses = await storage.getStatus();
+      console.log('📋 Found statuses:', statuses.length);
+      
+      res.json(statuses);
+    } catch (error) {
+      console.error("Error fetching appointment statuses:", error);
+      res.status(500).json({ message: "Erro ao buscar status de agendamentos" });
+    }
+  });
+
   // Create new appointment (professional)
   app.post('/api/professional/appointments', isProfessionalAuthenticated, async (req: any, res) => {
     try {

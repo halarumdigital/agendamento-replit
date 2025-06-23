@@ -100,7 +100,7 @@ export default function ProfessionalDashboard() {
 
   // Buscar status de agendamentos
   const { data: appointmentStatuses = [] } = useQuery({
-    queryKey: ["/api/company/appointment-statuses"],
+    queryKey: ["/api/professional/appointment-statuses"],
     enabled: !!professional,
   });
 
