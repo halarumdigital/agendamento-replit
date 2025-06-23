@@ -423,10 +423,11 @@ export default function ProfessionalDashboard() {
                           placeholder="Telefone"
                         />
                         <select
-                          value={editForm.status}
+                          value={editForm.status || appointment.statusName}
                           onChange={(e) => setEditForm({...editForm, status: e.target.value})}
                           className="w-full p-2 border rounded"
                         >
+                          <option value="">Selecione o status</option>
                           {appointmentStatuses.map((status: AppointmentStatus) => (
                             <option key={status.id} value={status.name}>
                               {status.name}
