@@ -3565,10 +3565,23 @@ Object.assign(storage, {
   async getAffiliateByEmail(email: string): Promise<any | undefined> {
     try {
       const [rows] = await pool.execute(
-        'SELECT * FROM affiliates WHERE email = ?',
+        'SELECT id, name, email, password, phone, affiliate_code, commission_rate, is_active, total_earnings, created_at, updated_at FROM affiliates WHERE email = ?',
         [email]
       );
-      return (rows as any[])[0];
+      const affiliate = (rows as any[])[0];
+      
+      if (affiliate) {
+        console.log("Raw affiliate data from DB:", affiliate);
+        // Map is_active to isActive for consistency
+        affiliate.isActive = affiliate.is_active;
+        affiliate.affiliateCode = affiliate.affiliate_code;
+        affiliate.commissionRate = affiliate.commission_rate;
+        affiliate.totalEarnings = affiliate.total_earnings;
+        affiliate.createdAt = affiliate.created_at;
+        affiliate.updatedAt = affiliate.updated_at;
+      }
+      
+      return affiliate;
     } catch (error) {
       console.error("Error getting affiliate by email:", error);
       throw error;
