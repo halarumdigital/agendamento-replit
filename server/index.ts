@@ -2,7 +2,7 @@ import 'dotenv/config';
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { ensureConversationTables, storage } from "./storage";
+import { ensureConversationTables, ensureProfessionalPasswordColumn, storage } from "./storage";
 import { ensureReviewTables } from "./create-reviews-tables";
 import { startCampaignScheduler } from "./campaign-scheduler";
 import { ensureSmtpColumns } from "./ensure-smtp-columns";
@@ -95,6 +95,9 @@ app.use((req, res, next) => {
   
   // Ensure tour_enabled column exists
   await ensureTourEnabledColumn();
+  
+  // Ensure professional password column exists
+  await ensureProfessionalPasswordColumn();
   
   // Start campaign scheduler
   startCampaignScheduler();

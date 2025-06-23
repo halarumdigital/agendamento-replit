@@ -6539,6 +6539,178 @@ const broadcastEvent = (eventData: any) => {
     }
   });
 
+  // ===== PROFESSIONAL AUTHENTICATION ROUTES =====
+  
+  // Professional login
+  app.post('/api/auth/professional/login', async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ message: "Email e senha são obrigatórios" });
+      }
+
+      // Find professional by email
+      const professional = await storage.getProfessionalByEmail(email);
+      
+      if (!professional) {
+        return res.status(401).json({ message: "Email ou senha incorretos" });
+      }
+
+      // Check if professional has a password set
+      if (!professional.password) {
+        return res.status(401).json({ message: "Acesso não configurado. Entre em contato com a empresa." });
+      }
+
+      // Verify password
+      const passwordMatch = await bcrypt.compare(password, professional.password);
+      
+      if (!passwordMatch) {
+        return res.status(401).json({ message: "Email ou senha incorretos" });
+      }
+
+      // Check if professional is active
+      if (!professional.active) {
+        return res.status(401).json({ message: "Profissional inativo" });
+      }
+
+      // Create session
+      req.session.professionalId = professional.id;
+      req.session.companyId = professional.companyId;
+      req.session.professionalName = professional.name;
+      req.session.professionalEmail = professional.email;
+
+      res.json({
+        message: "Login realizado com sucesso",
+        professional: {
+          id: professional.id,
+          name: professional.name,
+          email: professional.email,
+          companyId: professional.companyId
+        }
+      });
+    } catch (error) {
+      console.error("Error in professional login:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  // Professional logout
+  app.post('/api/auth/professional/logout', (req, res) => {
+    req.session.destroy((err) => {
+      if (err) {
+        console.error("Error destroying session:", err);
+        return res.status(500).json({ message: "Erro ao fazer logout" });
+      }
+      res.json({ message: "Logout realizado com sucesso" });
+    });
+  });
+
+  // Check professional authentication status
+  app.get('/api/auth/professional/status', (req: any, res) => {
+    if (req.session.professionalId) {
+      res.json({
+        isAuthenticated: true,
+        professional: {
+          id: req.session.professionalId,
+          name: req.session.professionalName,
+          email: req.session.professionalEmail,
+          companyId: req.session.companyId
+        }
+      });
+    } else {
+      res.json({ isAuthenticated: false });
+    }
+  });
+
+  // Middleware to check professional authentication
+  const isProfessionalAuthenticated = (req: any, res: any, next: any) => {
+    if (req.session.professionalId) {
+      next();
+    } else {
+      res.status(401).json({ message: "Acesso negado. Faça login como profissional." });
+    }
+  };
+
+  // ===== PROFESSIONAL DASHBOARD ROUTES =====
+
+  // Get professional's appointments
+  app.get('/api/professional/appointments', isProfessionalAuthenticated, async (req: any, res) => {
+    try {
+      const professionalId = req.session.professionalId;
+      const appointments = await storage.getAppointmentsByProfessional(professionalId);
+      res.json(appointments);
+    } catch (error) {
+      console.error("Error fetching professional appointments:", error);
+      res.status(500).json({ message: "Erro ao buscar agendamentos" });
+    }
+  });
+
+  // Get professional's company services
+  app.get('/api/professional/services', isProfessionalAuthenticated, async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      const services = await storage.getServicesByCompany(companyId);
+      res.json(services);
+    } catch (error) {
+      console.error("Error fetching services:", error);
+      res.status(500).json({ message: "Erro ao buscar serviços" });
+    }
+  });
+
+  // Get professional's company clients
+  app.get('/api/professional/clients', isProfessionalAuthenticated, async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      const clients = await storage.getClientsByCompany(companyId);
+      res.json(clients);
+    } catch (error) {
+      console.error("Error fetching clients:", error);
+      res.status(500).json({ message: "Erro ao buscar clientes" });
+    }
+  });
+
+  // Create new appointment (professional)
+  app.post('/api/professional/appointments', isProfessionalAuthenticated, async (req: any, res) => {
+    try {
+      const professionalId = req.session.professionalId;
+      const companyId = req.session.companyId;
+      
+      const appointmentData = {
+        ...req.body,
+        professionalId,
+        companyId
+      };
+
+      const appointment = await storage.createAppointment(appointmentData);
+      res.status(201).json(appointment);
+    } catch (error) {
+      console.error("Error creating appointment:", error);
+      res.status(500).json({ message: "Erro ao criar agendamento" });
+    }
+  });
+
+  // Update appointment status (professional)
+  app.patch('/api/professional/appointments/:id/status', isProfessionalAuthenticated, async (req: any, res) => {
+    try {
+      const appointmentId = parseInt(req.params.id);
+      const professionalId = req.session.professionalId;
+      const { statusId } = req.body;
+
+      // Verify appointment belongs to this professional
+      const appointment = await storage.getAppointment(appointmentId);
+      if (!appointment || appointment.professionalId !== professionalId) {
+        return res.status(403).json({ message: "Acesso negado a este agendamento" });
+      }
+
+      const updatedAppointment = await storage.updateAppointmentStatus(appointmentId, statusId);
+      res.json(updatedAppointment);
+    } catch (error) {
+      console.error("Error updating appointment status:", error);
+      res.status(500).json({ message: "Erro ao atualizar status do agendamento" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

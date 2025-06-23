@@ -231,6 +231,7 @@ export const professionals = mysqlTable("professionals", {
   companyId: int("company_id").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }),
+  password: varchar("password", { length: 255 }),
   phone: varchar("phone", { length: 50 }),
   specialties: json("specialties").$type<string[]>(),
   workDays: json("work_days"),

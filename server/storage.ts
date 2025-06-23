@@ -93,10 +93,39 @@ import { normalizePhone, validateBrazilianPhone, comparePhones } from "../shared
 // Add missing types for task reminders
 export type TaskReminder = typeof taskReminders.$inferSelect;
 export type InsertTaskReminder = typeof taskReminders.$inferInsert;
-import { db } from "./db";
+import { db, pool } from "./db";
 import { eq, desc, and, sql, gte, lte } from "drizzle-orm";
 
 // Helper function to create conversation and message tables
+// Ensure professional password column exists
+export async function ensureProfessionalPasswordColumn() {
+  try {
+    console.log('🔧 Checking professional password column...');
+    
+    const result = await pool.execute(`
+      SELECT COLUMN_NAME 
+      FROM INFORMATION_SCHEMA.COLUMNS 
+      WHERE TABLE_NAME = 'professionals' 
+      AND COLUMN_NAME = 'password'
+      AND TABLE_SCHEMA = DATABASE()
+    `);
+    
+    const columns = Array.isArray(result) ? result[0] : result;
+    
+    if (!columns || (Array.isArray(columns) && columns.length === 0)) {
+      await pool.execute(`
+        ALTER TABLE professionals 
+        ADD COLUMN password VARCHAR(255) AFTER email
+      `);
+      console.log('✅ Password column added to professionals table');
+    } else {
+      console.log('✅ Password column already exists in professionals table');
+    }
+  } catch (error) {
+    console.error('❌ Error ensuring password column:', error);
+  }
+}
+
 export async function ensureConversationTables() {
   try {
     await db.execute(sql`
@@ -3321,6 +3350,76 @@ Object.assign(storage, {
           type: error.name
         }
       };
+    }
+  },
+
+  // ===== PROFESSIONAL AUTHENTICATION FUNCTIONS =====
+
+  async getProfessionalByEmail(email: string) {
+    try {
+      const result = await db.select()
+        .from(professionals)
+        .where(eq(professionals.email, email))
+        .limit(1);
+      
+      return result.length > 0 ? result[0] : null;
+    } catch (error) {
+      console.error("Error getting professional by email:", error);
+      throw error;
+    }
+  },
+
+  async getAppointmentsByProfessional(professionalId: number) {
+    try {
+      const appointmentsData = await db.select({
+        id: appointments.id,
+        clientName: appointments.clientName,
+        clientPhone: appointments.clientPhone,
+        appointmentDate: appointments.appointmentDate,
+        appointmentTime: appointments.appointmentTime,
+        notes: appointments.notes,
+        statusId: appointments.statusId,
+        serviceId: appointments.serviceId,
+        professionalId: appointments.professionalId,
+        companyId: appointments.companyId,
+        createdAt: appointments.createdAt,
+        service: {
+          id: services.id,
+          name: services.name,
+          price: services.price,
+          duration: services.duration,
+          color: services.color
+        },
+        status: {
+          id: status.id,
+          name: status.name,
+          color: status.color,
+          description: status.description
+        }
+      })
+      .from(appointments)
+      .leftJoin(services, eq(appointments.serviceId, services.id))
+      .leftJoin(status, eq(appointments.statusId, status.id))
+      .where(eq(appointments.professionalId, professionalId))
+      .orderBy(desc(appointments.appointmentDate), desc(appointments.appointmentTime));
+
+      return appointmentsData;
+    } catch (error) {
+      console.error("Error getting appointments by professional:", error);
+      throw error;
+    }
+  },
+
+  async setProfessionalPassword(professionalId: number, hashedPassword: string) {
+    try {
+      await db.update(professionals)
+        .set({ password: hashedPassword })
+        .where(eq(professionals.id, professionalId));
+      
+      return true;
+    } catch (error) {
+      console.error("Error setting professional password:", error);
+      throw error;
     }
   }
 });

@@ -285,6 +285,19 @@ export default function CompanyLogin() {
                     </Button>
                   </div>
                 )}
+
+                <div className="text-center text-sm border-t pt-4 mt-4">
+                  <span className="text-muted-foreground">É um profissional? </span>
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="text-blue-600 hover:text-blue-800 p-0 h-auto font-medium"
+                    onClick={() => setLocation("/profissional/login")}
+                    disabled={loginMutation.isPending}
+                  >
+                    Acesso do Profissional
+                  </Button>
+                </div>
               </form>
             ) : (
               <form onSubmit={forgotPasswordForm.handleSubmit(onForgotPasswordSubmit)} className="space-y-4">

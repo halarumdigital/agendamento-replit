@@ -55,6 +55,8 @@ import StripeTest from "@/pages/stripe-test";
 import CompanySubscription from "@/pages/company-subscription";
 import ThankYou from "@/pages/thank-you";
 import EmbedPlans from "@/pages/embed-plans";
+import ProfessionalLogin from "@/pages/professional-login";
+import ProfessionalDashboard from "@/pages/professional-dashboard";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -75,6 +77,10 @@ function Router() {
       <Route path="/empresa/assinatura" component={CompanySubscription} />
       <Route path="/subscription-test" component={SubscriptionTest} />
       <Route path="/stripe-test" component={StripeTest} />
+      
+      {/* Professional Routes */}
+      <Route path="/profissional/login" component={ProfessionalLogin} />
+      <Route path="/profissional/dashboard" component={ProfessionalDashboard} />
       <Route path="/dashboard">
         <CompanyLayout>
           <CompanyDashboard />
