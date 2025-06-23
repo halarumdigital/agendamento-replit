@@ -99,8 +99,8 @@ export default function AffiliateDashboard() {
   const copyAffiliateLink = (planId?: number) => {
     const baseUrl = window.location.origin;
     const affiliateLink = planId 
-      ? `${baseUrl}/registro?ref=${affiliate?.affiliateCode}&plan=${planId}`
-      : `${baseUrl}/registro?ref=${affiliate?.affiliateCode}`;
+      ? `${baseUrl}/cadastro?ref=${affiliate?.affiliateCode}&plan=${planId}`
+      : `${baseUrl}/cadastro?ref=${affiliate?.affiliateCode}`;
     
     navigator.clipboard.writeText(affiliateLink);
     toast({

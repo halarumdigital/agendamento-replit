@@ -7104,6 +7104,105 @@ const broadcastEvent = (eventData: any) => {
     });
   });
 
+  // Public company registration endpoint
+  app.post('/api/public/register', async (req, res) => {
+    try {
+      const { 
+        fantasyName, 
+        document, 
+        email, 
+        password, 
+        address, 
+        phone, 
+        zipCode, 
+        number, 
+        neighborhood, 
+        city, 
+        state, 
+        affiliateCode 
+      } = req.body;
+
+      console.log('Public registration request:', { email, fantasyName, affiliateCode });
+
+      // Check if company already exists
+      const [existingCompany] = await pool.execute(
+        'SELECT id FROM companies WHERE email = ?',
+        [email]
+      );
+
+      if ((existingCompany as any[]).length > 0) {
+        return res.status(400).json({ message: 'Email já está em uso' });
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Get default plan (first active plan)
+      const [plans] = await pool.execute(
+        'SELECT id FROM plans WHERE is_active = 1 ORDER BY id ASC LIMIT 1'
+      );
+      
+      const defaultPlanId = plans && (plans as any[]).length > 0 ? (plans as any[])[0].id : 1;
+
+      // Create company
+      const [companyResult] = await pool.execute(`
+        INSERT INTO companies (
+          fantasy_name, document, email, password, address, phone, 
+          zip_code, number, neighborhood, city, state, plan_id, is_active
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+      `, [
+        fantasyName, document, email, hashedPassword, address, phone,
+        zipCode, number, neighborhood, city, state, defaultPlanId
+      ]);
+
+      const companyId = (companyResult as any).insertId;
+      console.log('Company created with ID:', companyId);
+
+      // Process affiliate referral if code provided
+      if (affiliateCode) {
+        console.log('Processing affiliate referral for code:', affiliateCode);
+        
+        // Find affiliate by code
+        const [affiliateRows] = await pool.execute(
+          'SELECT id FROM affiliates WHERE affiliate_code = ? AND is_active = 1',
+          [affiliateCode]
+        );
+
+        if ((affiliateRows as any[]).length > 0) {
+          const affiliateId = (affiliateRows as any[])[0].id;
+          
+          // Create affiliate referral record
+          const [referralResult] = await pool.execute(`
+            INSERT INTO affiliate_referrals (
+              affiliate_id, company_id, plan_id, status, referral_date
+            ) VALUES (?, ?, ?, 'pending', NOW())
+          `, [affiliateId, companyId, defaultPlanId]);
+
+          console.log('Affiliate referral created:', {
+            affiliateId,
+            companyId,
+            planId: defaultPlanId,
+            referralId: (referralResult as any).insertId
+          });
+        } else {
+          console.log('Invalid or inactive affiliate code:', affiliateCode);
+        }
+      }
+
+      res.json({ 
+        message: 'Empresa cadastrada com sucesso',
+        companyId 
+      });
+
+    } catch (error: any) {
+      console.error('Public registration error:', error);
+      res.status(500).json({ 
+        message: 'Erro ao cadastrar empresa',
+        error: error.message 
+      });
+    }
+  });
+
   // Temporary endpoint to fix affiliate password
   app.post('/api/affiliate/fix-password', async (req, res) => {
     try {

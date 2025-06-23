@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -49,6 +49,17 @@ export default function Register() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [affiliateCode, setAffiliateCode] = useState<string | null>(null);
+
+  // Capture affiliate code from URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const refCode = urlParams.get('ref');
+    if (refCode) {
+      setAffiliateCode(refCode);
+      console.log('Affiliate code captured:', refCode);
+    }
+  }, []);
 
   // Fetch available plans
   const { data: plans = [], isLoading: plansLoading } = useQuery<Plan[]>({
@@ -86,8 +97,14 @@ export default function Register() {
     try {
       const { confirmPassword, selectedPlan, ...registerData } = data;
       
+      // Include affiliate code if present
+      const registrationData = {
+        ...registerData,
+        ...(affiliateCode && { affiliateCode })
+      };
+      
       // Register company
-      const registerResponse = await apiRequest("POST", "/api/public/register", registerData);
+      const registerResponse = await apiRequest("POST", "/api/public/register", registrationData);
       
       if (registerResponse.ok) {
         // Auto-login after registration
