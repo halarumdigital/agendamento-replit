@@ -422,6 +422,18 @@ export default function ProfessionalDashboard() {
                           className="w-full p-2 border rounded"
                           placeholder="Telefone"
                         />
+                        <input
+                          type="date"
+                          value={editForm.appointmentDate || appointment.appointmentDate}
+                          onChange={(e) => setEditForm({...editForm, appointmentDate: e.target.value})}
+                          className="w-full p-2 border rounded"
+                        />
+                        <input
+                          type="time"
+                          value={editForm.appointmentTime || appointment.appointmentTime}
+                          onChange={(e) => setEditForm({...editForm, appointmentTime: e.target.value})}
+                          className="w-full p-2 border rounded"
+                        />
                         <select
                           value={editForm.status || appointment.statusName}
                           onChange={(e) => setEditForm({...editForm, status: e.target.value})}
