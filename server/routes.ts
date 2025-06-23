@@ -6700,7 +6700,12 @@ const broadcastEvent = (eventData: any) => {
 
   // Middleware to check professional authentication
   const isProfessionalAuthenticated = (req: any, res: any, next: any) => {
-    if (req.session.professionalId) {
+    console.log('🔐 Professional auth check:', { 
+      professionalId: req.session.professionalId, 
+      companyId: req.session.companyId 
+    });
+    
+    if (req.session.professionalId && req.session.companyId) {
       next();
     } else {
       res.status(401).json({ message: "Acesso negado. Faça login como profissional." });
