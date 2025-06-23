@@ -248,6 +248,7 @@ export interface IStorage {
   // Professionals operations
   getProfessionalsByCompany(companyId: number): Promise<Professional[]>;
   getProfessional(id: number): Promise<Professional | undefined>;
+  getProfessionalByEmail(email: string): Promise<Professional | null>;
   createProfessional(professional: InsertProfessional): Promise<Professional>;
   updateProfessional(id: number, professional: Partial<InsertProfessional>): Promise<Professional>;
   deleteProfessional(id: number): Promise<void>;
