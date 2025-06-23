@@ -6563,7 +6563,21 @@ const broadcastEvent = (eventData: any) => {
       }
 
       // Verify password
-      const passwordMatch = await bcrypt.compare(password, professional.password);
+      let passwordMatch = false;
+      
+      if (professional.password.startsWith('$2b$')) {
+        // Password is hashed, use bcrypt compare
+        passwordMatch = await bcrypt.compare(password, professional.password);
+      } else {
+        // Password is plain text, compare directly and then hash it
+        if (password === professional.password) {
+          passwordMatch = true;
+          // Hash the password for future use
+          const hashedPassword = await bcrypt.hash(password, 10);
+          await storage.updateProfessional(professional.id, { password: hashedPassword });
+          console.log(`Password hashed for professional: ${professional.email}`);
+        }
+      }
       
       if (!passwordMatch) {
         return res.status(401).json({ message: "Email ou senha incorretos" });
