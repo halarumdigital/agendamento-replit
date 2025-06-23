@@ -6652,7 +6652,8 @@ const broadcastEvent = (eventData: any) => {
   app.get('/api/professional/appointments', isProfessionalAuthenticated, async (req: any, res) => {
     try {
       const professionalId = req.session.professionalId;
-      const appointments = await storage.getAppointmentsByProfessional(professionalId);
+      const companyId = req.session.companyId;
+      const appointments = await storage.getAppointmentsByProfessional(professionalId, companyId);
       res.json(appointments);
     } catch (error) {
       console.error("Error fetching professional appointments:", error);

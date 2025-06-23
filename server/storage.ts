@@ -3384,46 +3384,7 @@ Object.assign(storage, {
     }
   },
 
-  async getAppointmentsByProfessional(professionalId: number) {
-    try {
-      const appointmentsData = await db.select({
-        id: appointments.id,
-        clientName: appointments.clientName,
-        clientPhone: appointments.clientPhone,
-        appointmentDate: appointments.appointmentDate,
-        appointmentTime: appointments.appointmentTime,
-        notes: appointments.notes,
-        statusId: appointments.statusId,
-        serviceId: appointments.serviceId,
-        professionalId: appointments.professionalId,
-        companyId: appointments.companyId,
-        createdAt: appointments.createdAt,
-        service: {
-          id: services.id,
-          name: services.name,
-          price: services.price,
-          duration: services.duration,
-          color: services.color
-        },
-        status: {
-          id: status.id,
-          name: status.name,
-          color: status.color,
-          description: status.description
-        }
-      })
-      .from(appointments)
-      .leftJoin(services, eq(appointments.serviceId, services.id))
-      .leftJoin(status, eq(appointments.statusId, status.id))
-      .where(eq(appointments.professionalId, professionalId))
-      .orderBy(desc(appointments.appointmentDate), desc(appointments.appointmentTime));
 
-      return appointmentsData;
-    } catch (error) {
-      console.error("Error getting appointments by professional:", error);
-      throw error;
-    }
-  },
 
   async setProfessionalPassword(professionalId: number, hashedPassword: string) {
     try {
