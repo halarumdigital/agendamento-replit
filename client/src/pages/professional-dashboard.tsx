@@ -337,18 +337,9 @@ export default function ProfessionalDashboard() {
       >
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-between items-center">
-            <div className="flex items-center gap-4">
-              {globalSettings?.logoUrl && (
-                <img 
-                  src={globalSettings.logoUrl} 
-                  alt="Logo" 
-                  className="h-10 w-auto object-contain"
-                />
-              )}
-              <div>
-                <h1 className="text-2xl font-bold">Dashboard do Profissional</h1>
-                <p className="opacity-80">Bem-vindo, {professional.name}</p>
-              </div>
+            <div>
+              <h1 className="text-2xl font-bold">Dashboard do Profissional</h1>
+              <p className="opacity-80">Bem-vindo, {professional.name}</p>
             </div>
             <button
               onClick={handleLogout}
