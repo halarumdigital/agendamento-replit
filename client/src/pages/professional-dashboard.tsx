@@ -179,16 +179,7 @@ export default function ProfessionalDashboard() {
     return appointments.filter((apt: Appointment) => apt.appointmentDate === dateStr);
   };
 
-  const formatTime = (time: string) => {
-    if (!time) return '';
-    // Se já está no formato HH:MM, retorna como está
-    if (time.includes(':')) return time;
-    // Se está no formato HHMM, adiciona os dois pontos
-    if (time.length === 4) {
-      return `${time.slice(0, 2)}:${time.slice(2)}`;
-    }
-    return time;
-  };
+
 
   const navigateMonth = (direction: 'prev' | 'next') => {
     setCurrentDate(prev => {
