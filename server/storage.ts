@@ -84,10 +84,19 @@ import {
   type InsertCoupon,
   tourSteps,
   companyTourProgress,
+  affiliates,
+  affiliateReferrals,
+  affiliateCommissions,
   type TourStep,
   type InsertTourStep,
   type CompanyTourProgress,
   type InsertCompanyTourProgress,
+  type Affiliate,
+  type InsertAffiliate,
+  type AffiliateReferral,
+  type InsertAffiliateReferral,
+  type AffiliateCommission,
+  type InsertAffiliateCommission,
 } from "@shared/schema";
 import { normalizePhone, validateBrazilianPhone, comparePhones } from "../shared/phone-utils";
 
@@ -3396,6 +3405,137 @@ Object.assign(storage, {
       return true;
     } catch (error) {
       console.error("Error setting professional password:", error);
+      throw error;
+    }
+  },
+
+  // ===== AFFILIATE METHODS =====
+  
+  async createAffiliate(data: InsertAffiliate): Promise<Affiliate> {
+    try {
+      const result = await db.insert(affiliates).values(data);
+      const [affiliate] = await db.select().from(affiliates).where(eq(affiliates.id, result.insertId));
+      return affiliate;
+    } catch (error) {
+      console.error("Error creating affiliate:", error);
+      throw error;
+    }
+  },
+
+  async getAffiliateByEmail(email: string): Promise<Affiliate | undefined> {
+    try {
+      const [affiliate] = await db.select().from(affiliates).where(eq(affiliates.email, email));
+      return affiliate;
+    } catch (error) {
+      console.error("Error getting affiliate by email:", error);
+      throw error;
+    }
+  },
+
+  async getAffiliateByCode(code: string): Promise<Affiliate | undefined> {
+    try {
+      const [affiliate] = await db.select().from(affiliates).where(eq(affiliates.affiliateCode, code));
+      return affiliate;
+    } catch (error) {
+      console.error("Error getting affiliate by code:", error);
+      throw error;
+    }
+  },
+
+  async getAffiliate(id: number): Promise<Affiliate | undefined> {
+    try {
+      const [affiliate] = await db.select().from(affiliates).where(eq(affiliates.id, id));
+      return affiliate;
+    } catch (error) {
+      console.error("Error getting affiliate:", error);
+      throw error;
+    }
+  },
+
+  async updateAffiliate(id: number, data: Partial<InsertAffiliate>): Promise<Affiliate> {
+    try {
+      await db.update(affiliates).set(data).where(eq(affiliates.id, id));
+      const [affiliate] = await db.select().from(affiliates).where(eq(affiliates.id, id));
+      return affiliate;
+    } catch (error) {
+      console.error("Error updating affiliate:", error);
+      throw error;
+    }
+  },
+
+  async createAffiliateReferral(data: InsertAffiliateReferral): Promise<AffiliateReferral> {
+    try {
+      const result = await db.insert(affiliateReferrals).values(data);
+      const [referral] = await db.select().from(affiliateReferrals).where(eq(affiliateReferrals.id, result.insertId));
+      return referral;
+    } catch (error) {
+      console.error("Error creating affiliate referral:", error);
+      throw error;
+    }
+  },
+
+  async getAffiliateReferrals(affiliateId: number): Promise<any[]> {
+    try {
+      const results = await db
+        .select({
+          id: affiliateReferrals.id,
+          companyId: affiliateReferrals.companyId,
+          planId: affiliateReferrals.planId,
+          status: affiliateReferrals.status,
+          commissionPaid: affiliateReferrals.commissionPaid,
+          monthlyCommission: affiliateReferrals.monthlyCommission,
+          referralDate: affiliateReferrals.referralDate,
+          activationDate: affiliateReferrals.activationDate,
+          lastPaymentDate: affiliateReferrals.lastPaymentDate,
+          companyName: companies.name,
+          planName: plans.name,
+          planPrice: plans.monthlyPrice,
+        })
+        .from(affiliateReferrals)
+        .leftJoin(companies, eq(affiliateReferrals.companyId, companies.id))
+        .leftJoin(plans, eq(affiliateReferrals.planId, plans.id))
+        .where(eq(affiliateReferrals.affiliateId, affiliateId));
+      
+      return results;
+    } catch (error) {
+      console.error("Error getting affiliate referrals:", error);
+      throw error;
+    }
+  },
+
+  async updateAffiliateReferral(id: number, data: Partial<InsertAffiliateReferral>): Promise<AffiliateReferral> {
+    try {
+      await db.update(affiliateReferrals).set(data).where(eq(affiliateReferrals.id, id));
+      const [referral] = await db.select().from(affiliateReferrals).where(eq(affiliateReferrals.id, id));
+      return referral;
+    } catch (error) {
+      console.error("Error updating affiliate referral:", error);
+      throw error;
+    }
+  },
+
+  async createAffiliateCommission(data: InsertAffiliateCommission): Promise<AffiliateCommission> {
+    try {
+      const result = await db.insert(affiliateCommissions).values(data);
+      const [commission] = await db.select().from(affiliateCommissions).where(eq(affiliateCommissions.id, result.insertId));
+      return commission;
+    } catch (error) {
+      console.error("Error creating affiliate commission:", error);
+      throw error;
+    }
+  },
+
+  async getAffiliateCommissions(affiliateId: number): Promise<AffiliateCommission[]> {
+    try {
+      const results = await db
+        .select()
+        .from(affiliateCommissions)
+        .where(eq(affiliateCommissions.affiliateId, affiliateId))
+        .orderBy(desc(affiliateCommissions.createdAt));
+      
+      return results;
+    } catch (error) {
+      console.error("Error getting affiliate commissions:", error);
       throw error;
     }
   }

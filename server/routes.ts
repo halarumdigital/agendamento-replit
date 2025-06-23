@@ -6887,6 +6887,243 @@ const broadcastEvent = (eventData: any) => {
     }
   });
 
+  // ===== AFFILIATE ROUTES =====
+
+  // Affiliate registration
+  app.post('/api/affiliate/register', async (req, res) => {
+    try {
+      const { name, email, password, phone } = req.body;
+
+      // Check if affiliate already exists
+      const existingAffiliate = await storage.getAffiliateByEmail(email);
+      if (existingAffiliate) {
+        return res.status(400).json({ message: 'Email já está em uso' });
+      }
+
+      // Generate unique affiliate code
+      const affiliateCode = `AF${Date.now()}${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Create affiliate
+      const newAffiliate = await storage.createAffiliate({
+        name,
+        email,
+        password: hashedPassword,
+        phone,
+        affiliateCode,
+        commissionRate: "10.00",
+        isActive: 1,
+        totalEarnings: "0.00"
+      });
+
+      res.status(201).json({
+        message: 'Afiliado criado com sucesso',
+        affiliate: {
+          id: newAffiliate.id,
+          name: newAffiliate.name,
+          email: newAffiliate.email,
+          affiliateCode: newAffiliate.affiliateCode
+        }
+      });
+    } catch (error) {
+      console.error('Error registering affiliate:', error);
+      res.status(500).json({ message: 'Erro interno do servidor' });
+    }
+  });
+
+  // Affiliate login
+  app.post('/api/affiliate/login', async (req, res) => {
+    try {
+      const { email, password } = req.body;
+
+      const affiliate = await storage.getAffiliateByEmail(email);
+      if (!affiliate) {
+        return res.status(401).json({ message: 'Email ou senha inválidos' });
+      }
+
+      const isValidPassword = await bcrypt.compare(password, affiliate.password);
+      if (!isValidPassword) {
+        return res.status(401).json({ message: 'Email ou senha inválidos' });
+      }
+
+      if (!affiliate.isActive) {
+        return res.status(401).json({ message: 'Conta de afiliado inativa' });
+      }
+
+      // Create session
+      req.session.affiliateId = affiliate.id;
+
+      res.json({
+        message: 'Login realizado com sucesso',
+        affiliate: {
+          id: affiliate.id,
+          name: affiliate.name,
+          email: affiliate.email,
+          affiliateCode: affiliate.affiliateCode,
+          totalEarnings: affiliate.totalEarnings
+        }
+      });
+    } catch (error) {
+      console.error('Error during affiliate login:', error);
+      res.status(500).json({ message: 'Erro interno do servidor' });
+    }
+  });
+
+  // Affiliate logout
+  app.post('/api/affiliate/logout', (req, res) => {
+    req.session.destroy((err) => {
+      if (err) {
+        console.error('Error destroying affiliate session:', err);
+        return res.status(500).json({ message: 'Erro ao fazer logout' });
+      }
+      res.json({ message: 'Logout realizado com sucesso' });
+    });
+  });
+
+  // Get affiliate profile (requires authentication)
+  app.get('/api/affiliate/profile', async (req, res) => {
+    try {
+      if (!req.session.affiliateId) {
+        return res.status(401).json({ message: 'Não autenticado' });
+      }
+
+      const affiliate = await storage.getAffiliate(req.session.affiliateId);
+      if (!affiliate) {
+        return res.status(404).json({ message: 'Afiliado não encontrado' });
+      }
+
+      res.json({
+        id: affiliate.id,
+        name: affiliate.name,
+        email: affiliate.email,
+        phone: affiliate.phone,
+        affiliateCode: affiliate.affiliateCode,
+        commissionRate: affiliate.commissionRate,
+        totalEarnings: affiliate.totalEarnings,
+        isActive: affiliate.isActive,
+        createdAt: affiliate.createdAt
+      });
+    } catch (error) {
+      console.error('Error fetching affiliate profile:', error);
+      res.status(500).json({ message: 'Erro interno do servidor' });
+    }
+  });
+
+  // Get affiliate referrals
+  app.get('/api/affiliate/referrals', async (req, res) => {
+    try {
+      if (!req.session.affiliateId) {
+        return res.status(401).json({ message: 'Não autenticado' });
+      }
+
+      const referrals = await storage.getAffiliateReferrals(req.session.affiliateId);
+      res.json(referrals);
+    } catch (error) {
+      console.error('Error fetching affiliate referrals:', error);
+      res.status(500).json({ message: 'Erro interno do servidor' });
+    }
+  });
+
+  // Get affiliate commissions
+  app.get('/api/affiliate/commissions', async (req, res) => {
+    try {
+      if (!req.session.affiliateId) {
+        return res.status(401).json({ message: 'Não autenticado' });
+      }
+
+      const commissions = await storage.getAffiliateCommissions(req.session.affiliateId);
+      res.json(commissions);
+    } catch (error) {
+      console.error('Error fetching affiliate commissions:', error);
+      res.status(500).json({ message: 'Erro interno do servidor' });
+    }
+  });
+
+  // Create affiliate referral (when company signs up with affiliate link)
+  app.post('/api/affiliate/referral', async (req, res) => {
+    try {
+      const { affiliateCode, companyId, planId } = req.body;
+
+      const affiliate = await storage.getAffiliateByCode(affiliateCode);
+      if (!affiliate) {
+        return res.status(404).json({ message: 'Código de afiliado inválido' });
+      }
+
+      // Calculate monthly commission based on plan and affiliate rate
+      const plan = await storage.getPlan(planId);
+      if (!plan) {
+        return res.status(404).json({ message: 'Plano não encontrado' });
+      }
+
+      const monthlyCommission = (parseFloat(plan.monthlyPrice) * parseFloat(affiliate.commissionRate)) / 100;
+
+      const referral = await storage.createAffiliateReferral({
+        affiliateId: affiliate.id,
+        companyId,
+        planId,
+        status: 'pending',
+        commissionPaid: "0.00",
+        monthlyCommission: monthlyCommission.toFixed(2)
+      });
+
+      res.status(201).json({
+        message: 'Referência criada com sucesso',
+        referral
+      });
+    } catch (error) {
+      console.error('Error creating affiliate referral:', error);
+      res.status(500).json({ message: 'Erro interno do servidor' });
+    }
+  });
+
+  // Get available plans for affiliate links
+  app.get('/api/affiliate/plans', async (req, res) => {
+    try {
+      const plans = await storage.getPlans();
+      res.json(plans.filter(plan => plan.isActive));
+    } catch (error) {
+      console.error('Error fetching plans for affiliate:', error);
+      res.status(500).json({ message: 'Erro interno do servidor' });
+    }
+  });
+
+  // Update affiliate profile
+  app.put('/api/affiliate/profile', async (req, res) => {
+    try {
+      if (!req.session.affiliateId) {
+        return res.status(401).json({ message: 'Não autenticado' });
+      }
+
+      const { name, phone } = req.body;
+      const updateData: any = {};
+      
+      if (name) updateData.name = name;
+      if (phone) updateData.phone = phone;
+
+      if (Object.keys(updateData).length === 0) {
+        return res.status(400).json({ message: 'Nenhum dado para atualizar' });
+      }
+
+      const updatedAffiliate = await storage.updateAffiliate(req.session.affiliateId, updateData);
+      
+      res.json({
+        message: 'Perfil atualizado com sucesso',
+        affiliate: {
+          id: updatedAffiliate.id,
+          name: updatedAffiliate.name,
+          email: updatedAffiliate.email,
+          phone: updatedAffiliate.phone,
+          affiliateCode: updatedAffiliate.affiliateCode
+        }
+      });
+    } catch (error) {
+      console.error('Error updating affiliate profile:', error);
+      res.status(500).json({ message: 'Erro interno do servidor' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

@@ -57,6 +57,9 @@ import ThankYou from "@/pages/thank-you";
 import EmbedPlans from "@/pages/embed-plans";
 import ProfessionalLogin from "@/pages/professional-login";
 import ProfessionalDashboard from "@/pages/professional-dashboard";
+import AffiliateRegister from "@/pages/affiliate-register";
+import AffiliateLogin from "@/pages/affiliate-login";
+import AffiliateDashboard from "@/pages/affiliate-dashboard";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -77,6 +80,11 @@ function Router() {
       <Route path="/empresa/assinatura" component={CompanySubscription} />
       <Route path="/subscription-test" component={SubscriptionTest} />
       <Route path="/stripe-test" component={StripeTest} />
+      
+      {/* Affiliate Routes */}
+      <Route path="/affiliate/register" component={AffiliateRegister} />
+      <Route path="/affiliate/login" component={AffiliateLogin} />
+      <Route path="/affiliate/dashboard" component={AffiliateDashboard} />
       
       {/* Professional Routes */}
       <Route path="/profissional/login" component={ProfessionalLogin} />

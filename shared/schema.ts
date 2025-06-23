@@ -303,6 +303,60 @@ export const birthdayMessageHistory = mysqlTable("birthday_message_history", {
   sentAt: timestamp("sent_at").defaultNow(),
 });
 
+// Affiliates table
+export const affiliates = mysqlTable("affiliates", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  email: varchar("email", { length: 255 }).notNull().unique(),
+  password: varchar("password", { length: 255 }).notNull(),
+  phone: varchar("phone", { length: 50 }),
+  affiliateCode: varchar("affiliate_code", { length: 50 }).notNull().unique(),
+  commissionRate: decimal("commission_rate", { precision: 5, scale: 2 }).default("10.00"),
+  isActive: int("is_active").default(1),
+  totalEarnings: decimal("total_earnings", { precision: 10, scale: 2 }).default("0.00"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+});
+
+// Affiliate referrals table
+export const affiliateReferrals = mysqlTable("affiliate_referrals", {
+  id: serial("id").primaryKey(),
+  affiliateId: int("affiliate_id").notNull(),
+  companyId: int("company_id").notNull(),
+  planId: int("plan_id").notNull(),
+  status: varchar("status", { length: 50 }).default("pending"), // pending, active, cancelled
+  commissionPaid: decimal("commission_paid", { precision: 10, scale: 2 }).default("0.00"),
+  monthlyCommission: decimal("monthly_commission", { precision: 10, scale: 2 }).default("0.00"),
+  referralDate: timestamp("referral_date").defaultNow(),
+  activationDate: timestamp("activation_date"),
+  lastPaymentDate: timestamp("last_payment_date"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+});
+
+// Affiliate commission payments table
+export const affiliateCommissions = mysqlTable("affiliate_commissions", {
+  id: serial("id").primaryKey(),
+  affiliateId: int("affiliate_id").notNull(),
+  referralId: int("referral_id").notNull(),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  paymentDate: timestamp("payment_date").defaultNow(),
+  paymentMethod: varchar("payment_method", { length: 50 }).default("bank_transfer"),
+  paymentStatus: varchar("payment_status", { length: 50 }).default("pending"), // pending, paid, failed
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Types for affiliates
+export type Affiliate = typeof affiliates.$inferSelect;
+export type InsertAffiliate = typeof affiliates.$inferInsert;
+
+export type AffiliateReferral = typeof affiliateReferrals.$inferSelect;
+export type InsertAffiliateReferral = typeof affiliateReferrals.$inferInsert;
+
+export type AffiliateCommission = typeof affiliateCommissions.$inferSelect;
+export type InsertAffiliateCommission = typeof affiliateCommissions.$inferInsert;
+
 // Reminder settings table
 export const reminderSettings = mysqlTable("reminder_settings", {
   id: serial("id").primaryKey(),
