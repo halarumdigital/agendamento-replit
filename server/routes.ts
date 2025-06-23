@@ -5131,6 +5131,91 @@ const broadcastEvent = (eventData: any) => {
     }
   });
 
+  // ===== ADMIN AFFILIATE ROUTES =====
+
+  // Admin route to list all affiliates
+  app.get('/api/admin/affiliates', isAuthenticated, async (req, res) => {
+    try {
+      const [affiliates] = await pool.execute(`
+        SELECT 
+          a.id, a.name, a.email, a.phone, a.affiliate_code as affiliateCode, 
+          a.commission_rate as commissionRate, a.is_active as isActive, 
+          a.total_earnings as totalEarnings, a.created_at as createdAt,
+          COUNT(ar.id) as referralCount
+        FROM affiliates a
+        LEFT JOIN affiliate_referrals ar ON a.id = ar.affiliate_id
+        GROUP BY a.id
+        ORDER BY a.created_at DESC
+      `);
+
+      res.json(affiliates);
+    } catch (error) {
+      console.error("Error fetching affiliates:", error);
+      res.status(500).json({ message: "Erro ao buscar afiliados" });
+    }
+  });
+
+  // Admin route to toggle affiliate status (activate/deactivate)
+  app.patch('/api/admin/affiliates/:id/toggle-status', isAuthenticated, async (req, res) => {
+    try {
+      const affiliateId = parseInt(req.params.id);
+      const { isActive } = req.body;
+
+      await pool.execute(
+        'UPDATE affiliates SET is_active = ?, updated_at = NOW() WHERE id = ?',
+        [isActive ? 1 : 0, affiliateId]
+      );
+
+      res.json({ 
+        message: isActive ? "Afiliado ativado com sucesso" : "Afiliado desativado com sucesso" 
+      });
+    } catch (error) {
+      console.error("Error toggling affiliate status:", error);
+      res.status(500).json({ message: "Erro ao atualizar status do afiliado" });
+    }
+  });
+
+  // Admin route to get affiliate details with referrals
+  app.get('/api/admin/affiliates/:id', isAuthenticated, async (req, res) => {
+    try {
+      const affiliateId = parseInt(req.params.id);
+
+      // Get affiliate details
+      const [affiliateRows] = await pool.execute(
+        'SELECT * FROM affiliates WHERE id = ?',
+        [affiliateId]
+      );
+
+      if (!Array.isArray(affiliateRows) || affiliateRows.length === 0) {
+        return res.status(404).json({ message: "Afiliado não encontrado" });
+      }
+
+      const affiliate = affiliateRows[0];
+
+      // Get referrals
+      const [referralRows] = await pool.execute(`
+        SELECT 
+          ar.id, ar.company_id as companyId, ar.plan_id as planId,
+          ar.monthly_commission as monthlyCommission, ar.status, ar.created_at as createdAt,
+          c.fantasy_name as companyName, c.email as companyEmail,
+          p.name as planName, p.monthly_price as planPrice
+        FROM affiliate_referrals ar
+        LEFT JOIN companies c ON ar.company_id = c.id
+        LEFT JOIN plans p ON ar.plan_id = p.id
+        WHERE ar.affiliate_id = ?
+        ORDER BY ar.created_at DESC
+      `, [affiliateId]);
+
+      res.json({
+        affiliate,
+        referrals: referralRows
+      });
+    } catch (error) {
+      console.error("Error fetching affiliate details:", error);
+      res.status(500).json({ message: "Erro ao buscar detalhes do afiliado" });
+    }
+  });
+
   app.put('/api/admin/support-tickets/:id', isAuthenticated, async (req, res) => {
     try {
       const ticketId = parseInt(req.params.id);

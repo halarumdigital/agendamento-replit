@@ -45,6 +45,7 @@ export default function Sidebar({ systemName = "AdminPro", logoUrl }: SidebarPro
     { name: "Cupons", href: "/administrador/cupons", icon: Ticket },
     { name: "Assinaturas", href: "/administrador/assinaturas", icon: CreditCard },
     { name: "Teste Assinaturas", href: "/administrador/subscriptions", icon: TestTube },
+    { name: "Afiliados", href: "/administrador/afiliados", icon: Users },
     { name: "Administradores", href: "/administrador/administradores", icon: Users },
     { name: "Alertas", href: "/administrador/alertas", icon: Bell },
     { name: "Suporte", href: "/administrador/suporte", icon: MessageSquare },
