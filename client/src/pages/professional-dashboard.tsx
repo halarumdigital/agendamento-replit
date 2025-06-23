@@ -42,6 +42,36 @@ export default function ProfessionalDashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Buscar configurações globais para aplicar as cores
+  const { data: settings } = useQuery({
+    queryKey: ["/api/public-settings"],
+    staleTime: 1000 * 60 * 5, // 5 minutos
+  });
+
+  // Aplicar cores globais
+  useEffect(() => {
+    if (settings?.primaryColor) {
+      const root = document.documentElement;
+      const primaryHsl = settings.primaryColor;
+      
+      // Definir a cor primária
+      root.style.setProperty('--primary', primaryHsl);
+      
+      // Extrair H, S, L para criar variações
+      const hslMatch = primaryHsl.match(/(\d+),\s*(\d+)%,\s*(\d+)%/);
+      if (hslMatch) {
+        const [, h, s, l] = hslMatch;
+        
+        // Criar cor primária mais clara para hover
+        root.style.setProperty('--primary-foreground', 'hsl(0, 0%, 100%)');
+        
+        // Definir cor de accent baseada na primária
+        root.style.setProperty('--accent', `hsl(${h}, ${s}%, 96%)`);
+        root.style.setProperty('--accent-foreground', `hsl(${primaryHsl})`);
+      }
+    }
+  }, [settings]);
+
   // Check authentication status
   useEffect(() => {
     const checkAuth = async () => {

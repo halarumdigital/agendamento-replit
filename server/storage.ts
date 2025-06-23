@@ -875,6 +875,12 @@ export class DatabaseStorage implements IStorage {
 
   async updateProfessional(id: number, professionalData: Partial<InsertProfessional>): Promise<Professional> {
     try {
+      // Hash password if provided
+      if (professionalData.password) {
+        const bcrypt = require('bcrypt');
+        professionalData.password = await bcrypt.hash(professionalData.password, 10);
+      }
+
       await db.update(professionals)
         .set({ ...professionalData, updatedAt: new Date() })
         .where(eq(professionals.id, id));
@@ -3357,7 +3363,16 @@ Object.assign(storage, {
 
   async getProfessionalByEmail(email: string) {
     try {
-      const result = await db.select()
+      const result = await db.select({
+        id: professionals.id,
+        name: professionals.name,
+        email: professionals.email,
+        companyId: professionals.companyId,
+        password: professionals.password,
+        active: professionals.active,
+        createdAt: professionals.createdAt,
+        updatedAt: professionals.updatedAt
+      })
         .from(professionals)
         .where(eq(professionals.email, email))
         .limit(1);

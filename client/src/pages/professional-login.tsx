@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +19,36 @@ export default function ProfessionalLogin() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const { toast } = useToast();
+
+  // Buscar configurações globais para aplicar as cores
+  const { data: settings } = useQuery({
+    queryKey: ["/api/public-settings"],
+    staleTime: 1000 * 60 * 5, // 5 minutos
+  });
+
+  // Aplicar cores globais
+  useEffect(() => {
+    if (settings?.primaryColor) {
+      const root = document.documentElement;
+      const primaryHsl = settings.primaryColor;
+      
+      // Definir a cor primária
+      root.style.setProperty('--primary', primaryHsl);
+      
+      // Extrair H, S, L para criar variações
+      const hslMatch = primaryHsl.match(/(\d+),\s*(\d+)%,\s*(\d+)%/);
+      if (hslMatch) {
+        const [, h, s, l] = hslMatch;
+        
+        // Criar cor primária mais clara para hover
+        root.style.setProperty('--primary-foreground', 'hsl(0, 0%, 100%)');
+        
+        // Definir cor de accent baseada na primária
+        root.style.setProperty('--accent', `hsl(${h}, ${s}%, 96%)`);
+        root.style.setProperty('--accent-foreground', `hsl(${primaryHsl})`);
+      }
+    }
+  }, [settings]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,9 +89,19 @@ export default function ProfessionalLogin() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1 text-center">
+        <CardHeader className="space-y-4 text-center">
+          {/* Logo Global */}
+          {settings?.logoUrl && (
+            <div className="flex justify-center mb-4">
+              <img 
+                src={settings.logoUrl} 
+                alt="Logo" 
+                className="h-16 w-auto object-contain"
+              />
+            </div>
+          )}
           <CardTitle className="text-2xl font-bold">Acesso do Profissional</CardTitle>
           <CardDescription>
             Entre com suas credenciais para acessar seus agendamentos
@@ -117,7 +158,7 @@ export default function ProfessionalLogin() {
 
             <Button
               type="submit"
-              className="w-full"
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
               disabled={isLoading}
             >
               {isLoading ? "Entrando..." : "Entrar"}
@@ -129,7 +170,7 @@ export default function ProfessionalLogin() {
               Não consegue acessar?{" "}
               <button
                 onClick={() => setLocation("/empresa/login")}
-                className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                className="text-primary hover:text-primary/80 font-medium"
               >
                 Entre em contato com sua empresa
               </button>
