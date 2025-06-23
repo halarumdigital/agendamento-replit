@@ -84,19 +84,11 @@ import {
   type InsertCoupon,
   tourSteps,
   companyTourProgress,
-  affiliates,
-  affiliateReferrals,
-  affiliateCommissions,
+
   type TourStep,
   type InsertTourStep,
   type CompanyTourProgress,
   type InsertCompanyTourProgress,
-  type Affiliate,
-  type InsertAffiliate,
-  type AffiliateReferral,
-  type InsertAffiliateReferral,
-  type AffiliateCommission,
-  type InsertAffiliateCommission,
 } from "@shared/schema";
 import { normalizePhone, validateBrazilianPhone, comparePhones } from "../shared/phone-utils";
 
@@ -306,6 +298,16 @@ export interface IStorage {
   createCoupon(coupon: InsertCoupon): Promise<Coupon>;
   updateCoupon(id: number, coupon: Partial<InsertCoupon>): Promise<Coupon>;
   deleteCoupon(id: number): Promise<void>;
+
+  // Affiliate operations
+  getAffiliate(id: number): Promise<any | undefined>;
+  getAffiliateByEmail(email: string): Promise<any | undefined>;
+  getAffiliateByCode(code: string): Promise<any | undefined>;
+  createAffiliate(affiliate: any): Promise<any>;
+  updateAffiliate(id: number, affiliate: any): Promise<any>;
+  getAffiliateReferrals(affiliateId: number): Promise<any[]>;
+  getAffiliateCommissions(affiliateId: number): Promise<any[]>;
+  createAffiliateReferral(referral: any): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -3409,13 +3411,34 @@ Object.assign(storage, {
     }
   },
 
-  // ===== AFFILIATE METHODS =====
+  // ===== AFFILIATE METHODS (using direct SQL) =====
   
-  async createAffiliate(data: InsertAffiliate): Promise<Affiliate> {
+  async createAffiliate(data: any): Promise<any> {
     try {
-      const result = await db.insert(affiliates).values(data);
-      const [affiliate] = await db.select().from(affiliates).where(eq(affiliates.id, result.insertId));
-      return affiliate;
+      // Generate unique affiliate code
+      const affiliateCode = 'AFF' + Date.now().toString().slice(-6);
+      
+      const [result] = await pool.execute(
+        `INSERT INTO affiliates (name, email, password, phone, affiliate_code, commission_rate, is_active, total_earnings, created_at, updated_at) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+        [
+          data.name,
+          data.email,
+          data.password,
+          data.phone,
+          affiliateCode,
+          data.commissionRate || 10.00,
+          1,
+          0.00
+        ]
+      );
+      
+      const insertId = (result as any).insertId;
+      const [rows] = await pool.execute(
+        'SELECT * FROM affiliates WHERE id = ?',
+        [insertId]
+      );
+      return (rows as any[])[0];
     } catch (error) {
       console.error("Error creating affiliate:", error);
       throw error;
@@ -3525,17 +3548,150 @@ Object.assign(storage, {
     }
   },
 
-  async getAffiliateCommissions(affiliateId: number): Promise<AffiliateCommission[]> {
+  // Affiliate operations using direct SQL queries
+  async getAffiliate(id: number): Promise<any | undefined> {
     try {
-      const results = await db
-        .select()
-        .from(affiliateCommissions)
-        .where(eq(affiliateCommissions.affiliateId, affiliateId))
-        .orderBy(desc(affiliateCommissions.createdAt));
+      const [rows] = await pool.execute(
+        'SELECT * FROM affiliates WHERE id = ?',
+        [id]
+      );
+      return (rows as any[])[0];
+    } catch (error) {
+      console.error("Error getting affiliate:", error);
+      throw error;
+    }
+  },
+
+  async getAffiliateByEmail(email: string): Promise<any | undefined> {
+    try {
+      const [rows] = await pool.execute(
+        'SELECT * FROM affiliates WHERE email = ?',
+        [email]
+      );
+      return (rows as any[])[0];
+    } catch (error) {
+      console.error("Error getting affiliate by email:", error);
+      throw error;
+    }
+  },
+
+  async getAffiliateByCode(code: string): Promise<any | undefined> {
+    try {
+      const [rows] = await pool.execute(
+        'SELECT * FROM affiliates WHERE affiliate_code = ?',
+        [code]
+      );
+      return (rows as any[])[0];
+    } catch (error) {
+      console.error("Error getting affiliate by code:", error);
+      throw error;
+    }
+  },
+
+  async createAffiliate(affiliateData: any): Promise<any> {
+    try {
+      // Generate unique affiliate code
+      const affiliateCode = 'AFF' + Date.now().toString().slice(-6);
       
-      return results;
+      const [result] = await pool.execute(
+        `INSERT INTO affiliates (name, email, password, phone, affiliate_code, commission_rate, is_active, total_earnings, created_at, updated_at) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+        [
+          affiliateData.name,
+          affiliateData.email,
+          affiliateData.password,
+          affiliateData.phone,
+          affiliateCode,
+          affiliateData.commissionRate || 10.00,
+          1,
+          0.00
+        ]
+      );
+      
+      const insertId = (result as any).insertId;
+      const [rows] = await pool.execute(
+        'SELECT * FROM affiliates WHERE id = ?',
+        [insertId]
+      );
+      return (rows as any[])[0];
+    } catch (error) {
+      console.error("Error creating affiliate:", error);
+      throw error;
+    }
+  },
+
+  async updateAffiliate(id: number, affiliateData: any): Promise<any> {
+    try {
+      await pool.execute(
+        'UPDATE affiliates SET name = ?, email = ?, phone = ?, updated_at = NOW() WHERE id = ?',
+        [affiliateData.name, affiliateData.email, affiliateData.phone, id]
+      );
+      
+      const [rows] = await pool.execute(
+        'SELECT * FROM affiliates WHERE id = ?',
+        [id]
+      );
+      return (rows as any[])[0];
+    } catch (error) {
+      console.error("Error updating affiliate:", error);
+      throw error;
+    }
+  },
+
+  async getAffiliateReferrals(affiliateId: number): Promise<any[]> {
+    try {
+      const [rows] = await pool.execute(
+        `SELECT ar.*, c.fantasy_name as companyName, p.name as planName, p.price as planPrice
+         FROM affiliate_referrals ar
+         LEFT JOIN companies c ON ar.company_id = c.id
+         LEFT JOIN plans p ON ar.plan_id = p.id
+         WHERE ar.affiliate_id = ?
+         ORDER BY ar.created_at DESC`,
+        [affiliateId]
+      );
+      return rows as any[];
+    } catch (error) {
+      console.error("Error getting affiliate referrals:", error);
+      throw error;
+    }
+  },
+
+  async getAffiliateCommissions(affiliateId: number): Promise<any[]> {
+    try {
+      const [rows] = await pool.execute(
+        'SELECT * FROM affiliate_commissions WHERE affiliate_id = ? ORDER BY created_at DESC',
+        [affiliateId]
+      );
+      return rows as any[];
     } catch (error) {
       console.error("Error getting affiliate commissions:", error);
+      throw error;
+    }
+  },
+
+  async createAffiliateReferral(referralData: any): Promise<any> {
+    try {
+      const [result] = await pool.execute(
+        `INSERT INTO affiliate_referrals (affiliate_id, company_id, plan_id, status, commission_paid, monthly_commission, referral_date, created_at, updated_at) 
+         VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW(), NOW())`,
+        [
+          referralData.affiliateId,
+          referralData.companyId,
+          referralData.planId,
+          referralData.status || 'pending',
+          referralData.commissionPaid || 0.00,
+          referralData.monthlyCommission || 0.00
+        ]
+      );
+      
+      const insertId = (result as any).insertId;
+      const [rows] = await pool.execute(
+        'SELECT * FROM affiliate_referrals WHERE id = ?',
+        [insertId]
+      );
+      return (rows as any[])[0];
+    } catch (error) {
+      console.error("Error creating affiliate referral:", error);
       throw error;
     }
   }

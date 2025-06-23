@@ -20,12 +20,89 @@ export default function AffiliateRegister() {
     phone: ""
   });
 
+  const formatPhone = (value: string) => {
+    // Remove all non-digit characters
+    const cleanValue = value.replace(/\D/g, '');
+    
+    // Apply formatting
+    if (cleanValue.length <= 2) {
+      return cleanValue;
+    } else if (cleanValue.length <= 7) {
+      return `(${cleanValue.slice(0, 2)}) ${cleanValue.slice(2)}`;
+    } else {
+      return `(${cleanValue.slice(0, 2)}) ${cleanValue.slice(2, 7)}-${cleanValue.slice(7, 11)}`;
+    }
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    
+    if (name === 'phone') {
+      // Format phone number automatically
+      const formattedPhone = formatPhone(value);
+      setFormData(prev => ({
+        ...prev,
+        [name]: formattedPhone
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
+  };
+
+  const validatePhone = (phone: string) => {
+    // Remove all non-digit characters
+    const cleanPhone = phone.replace(/\D/g, '');
+    
+    // Check if it has 11 digits (DDD + 9 digits)
+    if (cleanPhone.length !== 11) {
+      return false;
+    }
+    
+    // Valid DDD codes in Brazil
+    const validDDDs = [
+      11, 12, 13, 14, 15, 16, 17, 18, 19, // São Paulo
+      21, 22, 24, // Rio de Janeiro
+      27, 28, // Espírito Santo
+      31, 32, 33, 34, 35, 37, 38, // Minas Gerais
+      41, 42, 43, 44, 45, 46, // Paraná
+      47, 48, 49, // Santa Catarina
+      51, 53, 54, 55, // Rio Grande do Sul
+      61, // Distrito Federal
+      62, 64, // Goiás
+      63, // Tocantins
+      65, 66, // Mato Grosso
+      67, // Mato Grosso do Sul
+      68, // Acre
+      69, // Rondônia
+      71, 73, 74, 75, 77, // Bahia
+      79, // Sergipe
+      81, 87, // Pernambuco
+      82, // Alagoas
+      83, // Paraíba
+      84, // Rio Grande do Norte
+      85, 88, // Ceará
+      86, 89, // Piauí
+      91, 93, 94, // Pará
+      92, 97, // Amazonas
+      95, // Roraima
+      96, // Amapá
+      98, 99  // Maranhão
+    ];
+    
+    const ddd = parseInt(cleanPhone.substring(0, 2));
+    if (!validDDDs.includes(ddd)) {
+      return false;
+    }
+    
+    // Check if the first digit after DDD is 9 (mobile)
+    if (cleanPhone[2] !== '9') {
+      return false;
+    }
+    
+    return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -34,10 +111,20 @@ export default function AffiliateRegister() {
 
     try {
       // Validate form
-      if (!formData.name || !formData.email || !formData.password) {
+      if (!formData.name || !formData.email || !formData.password || !formData.phone) {
         toast({
           title: "Erro",
-          description: "Por favor, preencha todos os campos obrigatórios.",
+          description: "Por favor, preencha todos os campos obrigatórios, incluindo o telefone.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validate phone with DDD
+      if (!validatePhone(formData.phone)) {
+        toast({
+          title: "Erro",
+          description: "Por favor, informe um telefone válido com DDD (ex: 11999999999).",
           variant: "destructive",
         });
         return;
@@ -142,7 +229,7 @@ export default function AffiliateRegister() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone">Telefone</Label>
+              <Label htmlFor="phone">Telefone *</Label>
               <Input
                 id="phone"
                 name="phone"
@@ -150,7 +237,9 @@ export default function AffiliateRegister() {
                 placeholder="(11) 99999-9999"
                 value={formData.phone}
                 onChange={handleInputChange}
+                required
               />
+              <p className="text-sm text-gray-600">Informe um número válido com DDD (ex: 11999999999)</p>
             </div>
 
             <div className="space-y-2">
