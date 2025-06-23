@@ -6546,6 +6546,8 @@ const broadcastEvent = (eventData: any) => {
     try {
       const { email, password } = req.body;
       
+      console.log(`🔐 Professional login attempt for: ${email}`);
+      
       if (!email || !password) {
         return res.status(400).json({ message: "Email e senha são obrigatórios" });
       }
@@ -6554,11 +6556,17 @@ const broadcastEvent = (eventData: any) => {
       const professional = await storage.getProfessionalByEmail(email);
       
       if (!professional) {
+        console.log(`❌ Professional not found: ${email}`);
         return res.status(401).json({ message: "Email ou senha incorretos" });
       }
 
+      console.log(`👤 Found professional: ${professional.name} (ID: ${professional.id})`);
+      console.log(`🔑 Password in DB: ${professional.password ? 'Set' : 'Not set'}`);
+      console.log(`🔑 Password type: ${professional.password && professional.password.startsWith('$2b$') ? 'Hashed' : 'Plain text'}`);
+
       // Check if professional has a password set
       if (!professional.password) {
+        console.log(`❌ No password set for professional: ${email}`);
         return res.status(401).json({ message: "Acesso não configurado. Entre em contato com a empresa." });
       }
 
@@ -6567,9 +6575,14 @@ const broadcastEvent = (eventData: any) => {
       
       if (professional.password.startsWith('$2b$')) {
         // Password is hashed, use bcrypt compare
+        console.log(`🔐 Comparing hashed password for: ${email}`);
         passwordMatch = await bcrypt.compare(password, professional.password);
+        console.log(`🔐 Password match result: ${passwordMatch}`);
       } else {
         // Password is plain text, compare directly and then hash it
+        console.log(`🔐 Comparing plain text password for: ${email}`);
+        console.log(`🔐 Input password: "${password}"`);
+        console.log(`🔐 Stored password: "${professional.password}"`);
         if (password === professional.password) {
           passwordMatch = true;
           // Hash the password for future use
@@ -6580,6 +6593,7 @@ const broadcastEvent = (eventData: any) => {
       }
       
       if (!passwordMatch) {
+        console.log(`❌ Password mismatch for: ${email}`);
         return res.status(401).json({ message: "Email ou senha incorretos" });
       }
 
