@@ -33,7 +33,21 @@ export default function AdminAffiliates() {
 
   const toggleStatusMutation = useMutation({
     mutationFn: async ({ affiliateId, newStatus }: { affiliateId: number; newStatus: boolean }) => {
-      return apiRequest(`/api/admin/affiliates/${affiliateId}/toggle-status`, 'PATCH', { isActive: newStatus });
+      const response = await fetch(`/api/admin/affiliates/${affiliateId}/toggle-status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ isActive: newStatus }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Erro desconhecido' }));
+        throw new Error(errorData.message || `Erro ${response.status}`);
+      }
+
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/affiliates'] });
