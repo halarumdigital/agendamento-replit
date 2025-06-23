@@ -178,7 +178,11 @@ export default function ProfessionalDashboard() {
 
   const getAppointmentsForDate = (date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
-    return appointments.filter((apt: Appointment) => apt.appointmentDate === dateStr);
+    return appointments.filter((apt: Appointment) => {
+      // Extract date part from appointment date (handles both ISO and simple date formats)
+      const aptDateStr = apt.appointmentDate.split('T')[0];
+      return aptDateStr === dateStr;
+    });
   };
 
 
