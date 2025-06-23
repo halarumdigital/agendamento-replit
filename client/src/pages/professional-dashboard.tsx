@@ -22,18 +22,11 @@ interface Appointment {
   appointmentDate: string;
   appointmentTime: string;
   notes?: string;
-  service: {
-    id: number;
-    name: string;
-    price: string;
-    duration: number;
-    color: string;
-  };
-  status: {
-    id: number;
-    name: string;
-    color: string;
-  };
+  price: number;
+  serviceName: string;
+  professionalName: string;
+  statusName: string;
+  statusColor: string;
 }
 
 export default function ProfessionalDashboard() {
@@ -241,11 +234,11 @@ export default function ProfessionalDashboard() {
                         <CardTitle className="text-lg">{appointment.clientName}</CardTitle>
                         <Badge 
                           style={{ 
-                            backgroundColor: getStatusColor(appointment.status?.color),
+                            backgroundColor: getStatusColor(appointment.statusColor),
                             color: 'white'
                           }}
                         >
-                          {appointment.status.name}
+                          {appointment.statusName}
                         </Badge>
                       </div>
                       <CardDescription className="flex items-center gap-4">
@@ -263,10 +256,10 @@ export default function ProfessionalDashboard() {
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
                           <div 
-                            className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: appointment.service.color }}
+                            className="w-3 h-3 rounded-full bg-blue-500"
                           ></div>
-                          <span className="font-medium">{appointment.service.name}</span>
+                          <span className="font-medium">{appointment.serviceName}</span>
+                          <span className="text-sm text-gray-500">R$ {appointment.price}</span>
                         </div>
                         
                         {appointment.clientPhone && (
@@ -275,10 +268,6 @@ export default function ProfessionalDashboard() {
                             {appointment.clientPhone}
                           </div>
                         )}
-                        
-                        <div className="text-sm text-gray-600 dark:text-gray-400">
-                          Duração: {appointment.service.duration} min
-                        </div>
                         
                         {appointment.notes && (
                           <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">
