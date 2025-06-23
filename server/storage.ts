@@ -3552,10 +3552,22 @@ Object.assign(storage, {
   async getAffiliate(id: number): Promise<any | undefined> {
     try {
       const [rows] = await pool.execute(
-        'SELECT * FROM affiliates WHERE id = ?',
+        'SELECT id, name, email, password, phone, affiliate_code, commission_rate, is_active, total_earnings, created_at, updated_at FROM affiliates WHERE id = ?',
         [id]
       );
-      return (rows as any[])[0];
+      const affiliate = (rows as any[])[0];
+      
+      if (affiliate) {
+        // Map database column names to expected frontend field names
+        affiliate.isActive = affiliate.is_active;
+        affiliate.affiliateCode = affiliate.affiliate_code;
+        affiliate.commissionRate = affiliate.commission_rate;
+        affiliate.totalEarnings = affiliate.total_earnings;
+        affiliate.createdAt = affiliate.created_at;
+        affiliate.updatedAt = affiliate.updated_at;
+      }
+      
+      return affiliate;
     } catch (error) {
       console.error("Error getting affiliate:", error);
       throw error;
