@@ -5161,10 +5161,18 @@ const broadcastEvent = (eventData: any) => {
       const affiliateId = parseInt(req.params.id);
       const { isActive } = req.body;
 
-      await pool.execute(
+      console.log("Toggle affiliate status request:", { affiliateId, isActive, body: req.body });
+
+      if (isNaN(affiliateId)) {
+        return res.status(400).json({ message: "ID do afiliado inválido" });
+      }
+
+      const [result] = await pool.execute(
         'UPDATE affiliates SET is_active = ?, updated_at = NOW() WHERE id = ?',
         [isActive ? 1 : 0, affiliateId]
       );
+
+      console.log("Update result:", result);
 
       res.json({ 
         message: isActive ? "Afiliado ativado com sucesso" : "Afiliado desativado com sucesso" 
