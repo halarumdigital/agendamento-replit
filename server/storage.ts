@@ -1,3 +1,4 @@
+import bcrypt from 'bcrypt';
 import {
   admins,
   companies,
@@ -877,7 +878,6 @@ export class DatabaseStorage implements IStorage {
     try {
       // Hash password if provided
       if (professionalData.password) {
-        const bcrypt = require('bcrypt');
         professionalData.password = await bcrypt.hash(professionalData.password, 10);
       }
 
