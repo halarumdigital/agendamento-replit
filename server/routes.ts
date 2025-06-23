@@ -5183,6 +5183,46 @@ const broadcastEvent = (eventData: any) => {
     }
   });
 
+  // Admin route to configure affiliate commission rate
+  app.post('/api/admin/affiliate-commission-rate', isAuthenticated, async (req, res) => {
+    try {
+      const { commissionRate } = req.body;
+
+      if (!commissionRate || parseFloat(commissionRate) < 0 || parseFloat(commissionRate) > 100) {
+        return res.status(400).json({ message: "Porcentagem deve estar entre 0 e 100" });
+      }
+
+      // First, ensure the column exists
+      try {
+        await pool.execute(`
+          ALTER TABLE global_settings 
+          ADD COLUMN affiliate_commission_rate DECIMAL(5,2) DEFAULT 10.00
+        `);
+        console.log("affiliate_commission_rate column added");
+      } catch (alterError: any) {
+        if (alterError.code !== 'ER_DUP_FIELDNAME') {
+          console.log("Column may already exist or other error:", alterError.code);
+        }
+      }
+
+      // Update global settings with affiliate commission rate
+      const [result] = await pool.execute(
+        'UPDATE global_settings SET affiliate_commission_rate = ? WHERE id = 1',
+        [parseFloat(commissionRate)]
+      );
+
+      console.log("Commission rate update result:", result);
+
+      res.json({ 
+        message: "Taxa de comissão atualizada com sucesso",
+        commissionRate: parseFloat(commissionRate)
+      });
+    } catch (error) {
+      console.error("Error updating affiliate commission rate:", error);
+      res.status(500).json({ message: "Erro ao atualizar taxa de comissão" });
+    }
+  });
+
   // Admin route to get affiliate details with referrals
   app.get('/api/admin/affiliates/:id', isAuthenticated, async (req, res) => {
     try {

@@ -26,9 +26,55 @@ export default function AdminAffiliates() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
+  const [commissionRate, setCommissionRate] = useState("");
 
   const { data: affiliates = [], isLoading } = useQuery({
     queryKey: ['/api/admin/affiliates'],
+  });
+
+  const { data: settings } = useQuery({
+    queryKey: ['/api/settings'],
+  });
+
+  // Load current commission rate from settings
+  useEffect(() => {
+    if (settings?.affiliateCommissionRate) {
+      setCommissionRate(settings.affiliateCommissionRate);
+    }
+  }, [settings]);
+
+  const updateCommissionMutation = useMutation({
+    mutationFn: async (newRate: string) => {
+      const response = await fetch('/api/admin/affiliate-commission-rate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ commissionRate: newRate }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Erro desconhecido' }));
+        throw new Error(errorData.message || `Erro ${response.status}`);
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/settings'] });
+      toast({
+        title: "Taxa atualizada",
+        description: "Taxa de comissão dos afiliados foi atualizada com sucesso.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar taxa de comissão.",
+        variant: "destructive",
+      });
+    },
   });
 
   const toggleStatusMutation = useMutation({
@@ -73,6 +119,18 @@ export default function AdminAffiliates() {
 
   const handleToggleStatus = (affiliateId: number, currentStatus: boolean) => {
     toggleStatusMutation.mutate({ affiliateId, newStatus: !currentStatus });
+  };
+
+  const handleSaveCommissionRate = () => {
+    if (!commissionRate || parseFloat(commissionRate) < 0 || parseFloat(commissionRate) > 100) {
+      toast({
+        title: "Erro",
+        description: "Digite uma porcentagem válida entre 0 e 100.",
+        variant: "destructive",
+      });
+      return;
+    }
+    updateCommissionMutation.mutate(commissionRate);
   };
 
   const formatCurrency = (value: string) => {
@@ -120,6 +178,45 @@ export default function AdminAffiliates() {
                 className="w-full"
               />
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Configuração de Comissão */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <DollarSign className="w-5 h-5" />
+            Configuração de Comissão
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-4 items-end">
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Porcentagem de Comissão (%)
+              </label>
+              <Input
+                type="number"
+                placeholder="Ex: 10"
+                value={commissionRate}
+                onChange={(e) => setCommissionRate(e.target.value)}
+                className="w-full"
+                min="0"
+                max="100"
+                step="0.1"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Porcentagem aplicada a todos os afiliados para novos cadastros
+              </p>
+            </div>
+            <Button 
+              onClick={handleSaveCommissionRate}
+              disabled={updateCommissionMutation.isPending}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {updateCommissionMutation.isPending ? 'Salvando...' : 'Salvar'}
+            </Button>
           </div>
         </CardContent>
       </Card>
