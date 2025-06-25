@@ -61,7 +61,7 @@ import ProfessionalDashboard from "@/pages/professional-dashboard";
 import AffiliateRegister from "@/pages/affiliate-register";
 import AffiliateLogin from "@/pages/affiliate-login";
 import AffiliateDashboard from "@/pages/affiliate-dashboard";
-import NotFound from "@/pages/not-found";
+import NotFound from "@/pages/NotFound";
 
 function Router() {
   const { isAuthenticated: isAdminAuthenticated, isLoading: isAdminLoading } = useAuth();
