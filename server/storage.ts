@@ -332,16 +332,30 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createAdmin(adminData: InsertAdmin): Promise<Admin> {
-    await db.insert(admins).values(adminData);
+    // Hash password before storing
+    const hashedPassword = await bcrypt.hash(adminData.password, 12);
+    const adminWithHashedPassword = {
+      ...adminData,
+      password: hashedPassword
+    };
+    
+    await db.insert(admins).values(adminWithHashedPassword);
     const [admin] = await db.select().from(admins).where(eq(admins.username, adminData.username));
     return admin;
   }
 
   async updateAdmin(id: number, adminData: Partial<InsertAdmin>): Promise<Admin> {
-    await db.update(admins).set({
+    const updateData: any = {
       ...adminData,
       updatedAt: new Date()
-    }).where(eq(admins.id, id));
+    };
+    
+    // Hash password if provided
+    if (adminData.password) {
+      updateData.password = await bcrypt.hash(adminData.password, 12);
+    }
+    
+    await db.update(admins).set(updateData).where(eq(admins.id, id));
     const [admin] = await db.select().from(admins).where(eq(admins.id, id));
     return admin;
   }
