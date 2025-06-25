@@ -2087,13 +2087,13 @@ Obrigado pela preferência! 🙏`;
       }
 
       console.log('=== SENDING REVIEW INVITATION DEBUG ===');
-      console.log('Evolution API URL:', evolutionApiUrl);
+      console.log('Evolution API URL:', evolutionApiUrl ? '[CONFIGURED]' : 'not configured');
       console.log('Instance Name:', whatsappInstance.instanceName);
       console.log('Formatted Phone:', formattedPhone);
       console.log('API Key configured:', !!apiKey);
-      console.log('Global settings evolutionApiUrl:', settings?.evolutionApiUrl);
+      console.log('Global settings evolutionApiUrl:', settings?.evolutionApiUrl ? '[CONFIGURED]' : 'not configured');
       console.log('Global settings apiKey:', !!settings?.evolutionApiGlobalKey);
-      console.log('WhatsApp instance apiUrl:', whatsappInstance.apiUrl);
+      console.log('WhatsApp instance apiUrl:', whatsappInstance.apiUrl ? '[CONFIGURED]' : 'not configured');
       console.log('WhatsApp instance apiKey:', !!whatsappInstance.apiKey);
 
       // Evolution API URL should NOT include /api/ prefix for message endpoints
@@ -2101,12 +2101,12 @@ Obrigado pela preferência! 🙏`;
       const whatsappApiUrl = `${baseUrl}/message/sendText/${whatsappInstance.instanceName}`;
       
       console.log('=== EVOLUTION API URL DETAILS ===');
-      console.log('Original URL:', evolutionApiUrl);
-      console.log('Base URL:', baseUrl);
-      console.log('Full WhatsApp URL:', whatsappApiUrl);
+      console.log('Original URL:', evolutionApiUrl ? '[HIDDEN]' : 'not configured');
+      console.log('Base URL:', '[HIDDEN]');
+      console.log('Full WhatsApp URL:', '[HIDDEN]');
 
       console.log('📡 Sending WhatsApp message...');
-      console.log('URL:', whatsappApiUrl);
+      console.log('URL:', '[HIDDEN]');
       console.log('Headers:', {
         'Content-Type': 'application/json',
         'apikey': apiKey ? 'configured' : 'missing'
@@ -3286,7 +3286,7 @@ Object.assign(storage, {
       const correctedApiUrl = settings.evolutionApiUrl?.replace(/\/api\/?$/, '').replace(/\/$/, '');
 
       console.log(`🌐 Making API call to Evolution API`);
-      console.log(`📡 URL: ${correctedApiUrl}/message/sendText/${whatsappInstance.instanceName}`);
+      console.log(`📡 URL: [HIDDEN]/message/sendText/${whatsappInstance.instanceName}`);
       console.log(`📱 Instance: ${whatsappInstance.instanceName}`);
       console.log(`📞 Test phone: ${testPhone}`);
 

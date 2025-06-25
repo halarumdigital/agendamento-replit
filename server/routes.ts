@@ -5044,9 +5044,9 @@ const broadcastEvent = (eventData: any) => {
       const correctedApiUrl = ensureEvolutionApiEndpoint(settings.evolutionApiUrl);
       const testUrl = `${correctedApiUrl}/manager/findInstances`;
       
-      console.log('Original URL:', settings.evolutionApiUrl);
-      console.log('Corrected URL:', correctedApiUrl);
-      console.log('Testing Evolution API:', testUrl);
+      console.log('Original URL:', settings.evolutionApiUrl ? '[CONFIGURED]' : 'not configured');
+      console.log('Corrected URL:', '[CONFIGURED]');
+      console.log('Testing Evolution API:', '[CONFIGURED]');
       
       const response = await fetch(testUrl, {
         method: 'GET',
