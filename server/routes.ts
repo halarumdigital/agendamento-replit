@@ -1825,16 +1825,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Usuário e senha são obrigatórios" });
       }
 
-      // Check hardcoded admin credentials
-      if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
-        req.session.adminId = ADMIN_CREDENTIALS.id;
-        req.session.adminUsername = ADMIN_CREDENTIALS.username;
-        
-        const { password: _, ...adminData } = ADMIN_CREDENTIALS;
-        res.json({ message: "Login realizado com sucesso", admin: adminData });
-      } else {
-        res.status(401).json({ message: "Credenciais inválidas" });
+      // Check admin credentials from database
+      const admin = await storage.getAdminByUsername(username);
+      if (!admin) {
+        return res.status(401).json({ message: "Credenciais inválidas" });
       }
+
+      // Verify password with bcrypt
+      const isValidPassword = await bcrypt.compare(password, admin.password);
+      if (!isValidPassword) {
+        return res.status(401).json({ message: "Credenciais inválidas" });
+      }
+
+      // Check if admin is active
+      if (!admin.isActive) {
+        return res.status(401).json({ message: "Usuário inativo" });
+      }
+
+      req.session.adminId = admin.id;
+      req.session.adminUsername = admin.username;
+      
+      const { password: _, ...adminData } = admin;
+      res.json({ message: "Login realizado com sucesso", admin: adminData });
     } catch (error) {
       console.error("Error during admin login:", error);
       res.status(500).json({ message: "Erro interno do servidor" });
@@ -1848,7 +1860,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Não autenticado" });
       }
 
-      const { password: _, ...adminData } = ADMIN_CREDENTIALS;
+      const admin = await storage.getAdmin(adminId);
+      if (!admin) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const { password: _, ...adminData } = admin;
       res.json(adminData);
     } catch (error) {
       console.error("Error fetching admin user:", error);
