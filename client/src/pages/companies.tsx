@@ -78,7 +78,7 @@ export default function Companies() {
 
   const createMutation = useMutation({
     mutationFn: async (data: CompanyFormData) => {
-      await apiRequest("POST", "/api/companies", data);
+      await apiRequest("/api/companies", "POST", data);
     },
     onSuccess: () => {
       toast({
@@ -104,7 +104,7 @@ export default function Companies() {
       if (payload.isActive !== undefined) {
         (payload as any).isActive = payload.isActive ? 1 : 0;
       }
-      await apiRequest("PUT", `/api/companies/${id}`, payload);
+      await apiRequest(`/api/companies/${id}`, "PUT", payload);
     },
     onSuccess: () => {
       toast({
@@ -127,7 +127,7 @@ export default function Companies() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      await apiRequest("DELETE", `/api/companies/${id}`);
+      await apiRequest(`/api/companies/${id}`, "DELETE");
     },
     onSuccess: () => {
       toast({
