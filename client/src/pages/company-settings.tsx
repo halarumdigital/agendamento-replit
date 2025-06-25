@@ -211,7 +211,7 @@ export default function CompanySettings() {
 
   const deleteInstanceMutation = useMutation({
     mutationFn: async (instanceId: number) => {
-      await apiRequest("DELETE", `/api/company/whatsapp/instances/${instanceId}`);
+      await apiRequest(`/api/company/whatsapp/instances/${instanceId}`, "DELETE");
     },
     onSuccess: () => {
       toast({
@@ -231,7 +231,7 @@ export default function CompanySettings() {
 
   const updateAiAgentMutation = useMutation({
     mutationFn: async (data: CompanyAiAgentData) => {
-      await apiRequest("PUT", "/api/company/ai-agent", data);
+      await apiRequest("/api/company/ai-agent", "PUT", data);
     },
     onSuccess: () => {
       toast({
@@ -263,7 +263,7 @@ export default function CompanySettings() {
 
   const configureWebhookMutation = useMutation({
     mutationFn: async (instanceId: number) => {
-      const response = await apiRequest("POST", `/api/company/whatsapp/instances/${instanceId}/configure-webhook`);
+      const response = await apiRequest(`/api/company/whatsapp/instances/${instanceId}/configure-webhook`, "POST");
       return response;
     },
     onSuccess: (data: any) => {
@@ -482,7 +482,7 @@ export default function CompanySettings() {
 
   const disconnectInstanceMutation = useMutation({
     mutationFn: async (instanceName: string) => {
-      const response = await apiRequest("POST", `/api/company/whatsapp/instances/${instanceName}/disconnect`);
+      const response = await apiRequest(`/api/company/whatsapp/instances/${instanceName}/disconnect`, "POST");
       return await response.json();
     },
     onSuccess: (data: any) => {
@@ -594,7 +594,7 @@ export default function CompanySettings() {
 
   const sendBirthdayMessageMutation = useMutation({
     mutationFn: async (clientId: number) => {
-      const response = await apiRequest("POST", `/api/company/send-birthday-message/${clientId}`);
+      const response = await apiRequest(`/api/company/send-birthday-message/${clientId}`, "POST");
       return await response.json();
     },
     onSuccess: (data: any) => {
@@ -668,7 +668,7 @@ export default function CompanySettings() {
   // Reminder mutations
   const updateReminderSettingsMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<ReminderSettings> }) => {
-      const response = await apiRequest("PUT", `/api/company/reminder-settings/${id}`, data);
+      const response = await apiRequest(`/api/company/reminder-settings/${id}`, "PUT", data);
       return response;
     },
     onSuccess: () => {

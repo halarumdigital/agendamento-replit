@@ -128,7 +128,7 @@ export default function AdminSubscriptions() {
 
   const cancelMutation = useMutation({
     mutationFn: async (subscriptionId: string) => {
-      const response = await apiRequest("POST", `/api/admin/stripe/subscriptions/${subscriptionId}/cancel`);
+      const response = await apiRequest(`/api/admin/stripe/subscriptions/${subscriptionId}/cancel`, "POST");
       return response.json();
     },
     onSuccess: () => {
@@ -150,7 +150,7 @@ export default function AdminSubscriptions() {
 
   const reactivateMutation = useMutation({
     mutationFn: async (subscriptionId: string) => {
-      const response = await apiRequest("POST", `/api/admin/stripe/subscriptions/${subscriptionId}/reactivate`);
+      const response = await apiRequest(`/api/admin/stripe/subscriptions/${subscriptionId}/reactivate`, "POST");
       return response.json();
     },
     onSuccess: () => {

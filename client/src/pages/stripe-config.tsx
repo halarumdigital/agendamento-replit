@@ -43,7 +43,7 @@ export default function StripeConfig() {
 
   const updatePlanMutation = useMutation({
     mutationFn: async (data: { id: number; stripePriceId: string }) => {
-      return apiRequest("PUT", `/api/admin/plans/${data.id}/stripe`, {
+      return apiRequest(`/api/admin/plans/${data.id}/stripe`, "PUT", {
         stripePriceId: data.stripePriceId,
       });
     },

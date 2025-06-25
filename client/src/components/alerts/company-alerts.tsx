@@ -20,7 +20,7 @@ export function CompanyAlerts() {
   const { data: alerts } = useQuery({
     queryKey: ["/api/company/alerts"],
     queryFn: async () => {
-      return await apiRequest("GET", "/api/company/alerts");
+      return await apiRequest("/api/company/alerts", "GET");
     },
   });
 

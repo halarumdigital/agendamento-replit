@@ -15,7 +15,7 @@ export default function AdminTestSubscription() {
   const simulatePaymentFailure = async () => {
     setIsLoading(true);
     try {
-      const response = await apiRequest("POST", "/api/test/simulate-payment-failure");
+      const response = await apiRequest("/api/test/simulate-payment-failure", "POST");
       const result = await response.json();
       
       setTestResult({
@@ -43,7 +43,7 @@ export default function AdminTestSubscription() {
   const simulatePaymentSuccess = async () => {
     setIsLoading(true);
     try {
-      const response = await apiRequest("POST", "/api/test/simulate-payment-success");
+      const response = await apiRequest("/api/test/simulate-payment-success", "POST");
       const result = await response.json();
       
       setTestResult({

@@ -194,7 +194,7 @@ export default function CompanyTasks() {
   });
 
   const sendReminderMutation = useMutation({
-    mutationFn: (taskId: number) => apiRequest("POST", `/api/company/tasks/${taskId}/send-reminder`),
+    mutationFn: (taskId: number) => apiRequest(`/api/company/tasks/${taskId}/send-reminder`, "POST"),
     onSuccess: () => {
       toast({
         title: "Sucesso",

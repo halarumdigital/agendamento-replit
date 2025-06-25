@@ -119,7 +119,7 @@ export default function CompanySubscription() {
   // Mutation para criar assinatura
   const createSubscriptionMutation = useMutation({
     mutationFn: async (planId: number) => {
-      return await apiRequest("POST", "/api/company/create-subscription", {
+      return await apiRequest("/api/company/create-subscription", "POST", {
         planId,
       });
     },

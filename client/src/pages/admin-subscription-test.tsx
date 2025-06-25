@@ -26,7 +26,7 @@ export default function AdminSubscriptionTest() {
 
   const simulateFailureMutation = useMutation({
     mutationFn: async (companyId: number) => {
-      return await apiRequest("POST", "/api/test/simulate-payment-failure", {
+      return await apiRequest("/api/test/simulate-payment-failure", "POST", {
         companyId,
       });
     },
@@ -49,7 +49,7 @@ export default function AdminSubscriptionTest() {
 
   const simulateSuccessMutation = useMutation({
     mutationFn: async (companyId: number) => {
-      return await apiRequest("POST", "/api/test/simulate-payment-success", {
+      return await apiRequest("/api/test/simulate-payment-success", "POST", {
         companyId,
       });
     },

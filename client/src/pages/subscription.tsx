@@ -179,7 +179,7 @@ export default function Subscription() {
 
   const createSubscriptionMutation = useMutation({
     mutationFn: async ({ planId, isAnnual, installments }: { planId: number; isAnnual: boolean; installments?: number }) => {
-      return await apiRequest("POST", "/api/create-subscription", { planId, isAnnual, installments });
+      return await apiRequest("/api/create-subscription", "POST", { planId, isAnnual, installments });
     },
     onSuccess: (data) => {
       if (data.clientSecret) {

@@ -95,7 +95,7 @@ export default function AdminAlerts() {
   // Atualizar alerta
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: AlertFormData }) => {
-      return await apiRequest("PUT", `/api/admin/alerts/${id}`, data);
+      return await apiRequest(`/api/admin/alerts/${id}`, "PUT", data);
     },
     onSuccess: () => {
       toast({ title: "Alerta atualizado com sucesso!" });
@@ -116,7 +116,7 @@ export default function AdminAlerts() {
   // Deletar alerta
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      return await apiRequest("DELETE", `/api/admin/alerts/${id}`);
+      return await apiRequest(`/api/admin/alerts/${id}`, "DELETE");
     },
     onSuccess: () => {
       toast({ title: "Alerta removido com sucesso!" });

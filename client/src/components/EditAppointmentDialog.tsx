@@ -116,19 +116,16 @@ export function EditAppointmentDialog({ appointment, isOpen, onOpenChange }: Edi
       
       console.log('📝 EditAppointmentDialog: Submitting data:', data);
       
-      return apiRequest(`/api/company/appointments/${appointment.id}`, {
-        method: 'PUT',
-        body: JSON.stringify({
-          serviceId: data.serviceId,
-          professionalId: data.professionalId,
-          clientName: data.clientName,
-          clientEmail: data.clientEmail || null,
-          clientPhone: data.clientPhone,
-          appointmentDate: data.appointmentDate,
-          appointmentTime: data.appointmentTime,
-          notes: data.notes || null,
-          statusId: data.statusId,
-        }),
+      return apiRequest(`/api/company/appointments/${appointment.id}`, "PUT", {
+        serviceId: data.serviceId,
+        professionalId: data.professionalId,
+        clientName: data.clientName,
+        clientEmail: data.clientEmail || null,
+        clientPhone: data.clientPhone,
+        appointmentDate: data.appointmentDate,
+        appointmentTime: data.appointmentTime,
+        notes: data.notes || null,
+        statusId: data.statusId,
       });
     },
     onSuccess: () => {

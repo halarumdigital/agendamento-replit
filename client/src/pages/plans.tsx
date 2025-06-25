@@ -45,7 +45,7 @@ export default function Plans() {
 
   const createMutation = useMutation({
     mutationFn: async (data: PlanFormData) => {
-      await apiRequest("POST", "/api/plans", {
+      await apiRequest("/api/plans", "POST", {
         ...data,
         price: parseFloat(data.price).toFixed(2),
         annualPrice: data.annualPrice ? parseFloat(data.annualPrice).toFixed(2) : null,
@@ -82,7 +82,7 @@ export default function Plans() {
       if (payload.isActive !== undefined) {
         (payload as any).isActive = payload.isActive ? 1 : 0;
       }
-      await apiRequest("PUT", `/api/plans/${id}`, payload);
+      await apiRequest(`/api/plans/${id}`, "PUT", payload);
     },
     onSuccess: () => {
       toast({
@@ -105,7 +105,7 @@ export default function Plans() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      await apiRequest("DELETE", `/api/plans/${id}`);
+      await apiRequest(`/api/plans/${id}`, "DELETE");
     },
     onSuccess: () => {
       toast({

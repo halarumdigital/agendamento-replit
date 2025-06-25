@@ -249,7 +249,7 @@ export default function SettingsPage() {
 
   const updateMutation = useMutation({
     mutationFn: async (data: SettingsFormData) => {
-      return await apiRequest("PUT", "/api/settings", data);
+      return await apiRequest("/api/settings", "PUT", data);
     },
     onSuccess: () => {
       toast({
