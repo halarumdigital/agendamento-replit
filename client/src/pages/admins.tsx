@@ -43,11 +43,13 @@ import {
 // Schema para criação (com senha obrigatória)
 const createAdminSchema = insertAdminSchema.extend({
   password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
+  isActive: z.union([z.boolean(), z.number()]).transform(val => typeof val === 'boolean' ? (val ? 1 : 0) : val),
 });
 
 // Schema para edição (senha opcional)
 const editAdminSchema = insertAdminSchema.extend({
   password: z.string().optional(),
+  isActive: z.union([z.boolean(), z.number()]).transform(val => typeof val === 'boolean' ? (val ? 1 : 0) : val),
 }).omit({ id: true });
 
 type CreateAdminForm = z.infer<typeof createAdminSchema>;
@@ -154,22 +156,14 @@ export default function AdminsPage() {
   });
 
   const handleCreate = (data: CreateAdminForm) => {
-    // Convert boolean to number for isActive field
-    const submitData = {
-      ...data,
-      isActive: data.isActive ? 1 : 0
-    };
-    createMutation.mutate(submitData);
+    createMutation.mutate(data);
   };
 
   const handleEdit = (data: EditAdminForm) => {
     if (!editingAdmin) return;
     
-    // Remove password if empty and convert boolean to number for isActive
-    const updateData = { 
-      ...data,
-      isActive: data.isActive ? 1 : 0
-    };
+    // Remove password if empty
+    const updateData = { ...data };
     if (!updateData.password) {
       delete updateData.password;
     }
