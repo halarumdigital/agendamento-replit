@@ -1874,6 +1874,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin CRUD endpoints
+  app.get('/api/admins', isAuthenticated, async (req, res) => {
+    try {
+      const admins = await storage.getAdmins();
+      res.json(admins);
+    } catch (error) {
+      console.error("Error fetching admins:", error);
+      res.status(500).json({ message: "Erro ao buscar administradores" });
+    }
+  });
+
+  app.post('/api/admins', isAuthenticated, async (req, res) => {
+    try {
+      const adminData = req.body;
+      const newAdmin = await storage.createAdmin(adminData);
+      res.status(201).json(newAdmin);
+    } catch (error) {
+      console.error("Error creating admin:", error);
+      res.status(500).json({ message: "Erro ao criar administrador" });
+    }
+  });
+
+  app.put('/api/admins/:id', isAuthenticated, async (req, res) => {
+    try {
+      const adminId = parseInt(req.params.id);
+      const updateData = req.body;
+      const updatedAdmin = await storage.updateAdmin(adminId, updateData);
+      res.json(updatedAdmin);
+    } catch (error) {
+      console.error("Error updating admin:", error);
+      res.status(500).json({ message: "Erro ao atualizar administrador" });
+    }
+  });
+
+  app.delete('/api/admins/:id', isAuthenticated, async (req, res) => {
+    try {
+      const adminId = parseInt(req.params.id);
+      await storage.deleteAdmin(adminId);
+      res.json({ message: "Administrador removido com sucesso" });
+    } catch (error) {
+      console.error("Error deleting admin:", error);
+      res.status(500).json({ message: "Erro ao remover administrador" });
+    }
+  });
+
   // Temporary password reset route
   app.post('/api/temp-reset-password', async (req: any, res) => {
     try {
