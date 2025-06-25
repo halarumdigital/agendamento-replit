@@ -279,7 +279,15 @@ export default function SettingsPage() {
   });
 
   const onSubmit = async (data: SettingsFormData) => {
-    console.log("Form submission started with data:", data);
+    // Mask sensitive data for console logging
+    const maskedData = {
+      ...data,
+      evolutionApiUrl: data.evolutionApiUrl ? '[CONFIGURED]' : '',
+      evolutionApiGlobalKey: data.evolutionApiGlobalKey ? '[HIDDEN]' : '',
+      openaiApiKey: data.openaiApiKey ? '[HIDDEN]' : '',
+      smtpPassword: data.smtpPassword ? '[HIDDEN]' : ''
+    };
+    console.log("Form submission started with data:", maskedData);
     console.log("Form errors:", form.formState.errors);
     
     try {

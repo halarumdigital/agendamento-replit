@@ -242,16 +242,10 @@ export default function CompanyProfessionals() {
   });
 
   const onSubmit = (data: ProfessionalFormData) => {
-    console.log('🔧 Form submitted with data:', data);
-    console.log('🔧 Editing professional:', editingProfessional);
-    console.log('🔧 Form validation state:', form.formState.isValid);
-    console.log('🔧 Form errors:', form.formState.errors);
     
     if (editingProfessional) {
-      console.log('🔧 Calling update mutation for professional ID:', editingProfessional.id);
       updateMutation.mutate(data);
     } else {
-      console.log('🔧 Calling create mutation');
       createMutation.mutate(data);
     }
   };

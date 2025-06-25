@@ -86,8 +86,6 @@ export function EditAppointmentDialog({ appointment, isOpen, onOpenChange }: Edi
   // Reset form when appointment changes
   useEffect(() => {
     if (appointment && isOpen) {
-      console.log('🔄 EditAppointmentDialog: Setting form data for appointment:', appointment.id);
-      
       const statusObj = status.find(s => s.name === appointment.status);
       const appointmentDateString = appointment.appointmentDate.toString().split('T')[0];
       
@@ -105,7 +103,6 @@ export function EditAppointmentDialog({ appointment, isOpen, onOpenChange }: Edi
         confirmed: false,
       };
 
-      console.log('🔄 EditAppointmentDialog: Form data:', formData);
       form.reset(formData);
     }
   }, [appointment, isOpen, status, form]);
@@ -113,8 +110,6 @@ export function EditAppointmentDialog({ appointment, isOpen, onOpenChange }: Edi
   const editMutation = useMutation({
     mutationFn: async (data: AppointmentFormData) => {
       if (!appointment) throw new Error('No appointment selected');
-      
-      console.log('📝 EditAppointmentDialog: Submitting data:', data);
       
       return apiRequest(`/api/company/appointments/${appointment.id}`, "PUT", {
         serviceId: data.serviceId,
@@ -152,7 +147,6 @@ export function EditAppointmentDialog({ appointment, isOpen, onOpenChange }: Edi
   });
 
   const onSubmit = (data: AppointmentFormData) => {
-    console.log('🚀 EditAppointmentDialog: Form submitted with data:', data);
     editMutation.mutate(data);
   };
 
