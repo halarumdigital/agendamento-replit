@@ -154,14 +154,22 @@ export default function AdminsPage() {
   });
 
   const handleCreate = (data: CreateAdminForm) => {
-    createMutation.mutate(data);
+    // Convert boolean to number for isActive field
+    const submitData = {
+      ...data,
+      isActive: data.isActive ? 1 : 0
+    };
+    createMutation.mutate(submitData);
   };
 
   const handleEdit = (data: EditAdminForm) => {
     if (!editingAdmin) return;
     
-    // Remove password if empty
-    const updateData = { ...data };
+    // Remove password if empty and convert boolean to number for isActive
+    const updateData = { 
+      ...data,
+      isActive: data.isActive ? 1 : 0
+    };
     if (!updateData.password) {
       delete updateData.password;
     }
