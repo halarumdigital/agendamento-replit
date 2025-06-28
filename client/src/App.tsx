@@ -48,6 +48,7 @@ import Subscription from "@/pages/subscription";
 import PublicReview from "@/pages/public-review";
 import EmbedPlans from "@/pages/embed-plans";
 import ProfessionalDashboard from "@/pages/professional-dashboard";
+import ProfessionalLogin from "@/pages/professional-login";
 import AffiliateRegister from "@/pages/affiliate-register";
 import AffiliateLogin from "@/pages/affiliate-login";
 import AffiliateDashboard from "@/pages/affiliate-dashboard";
@@ -74,6 +75,7 @@ function Router() {
       <Route path="/afiliado/dashboard" component={AffiliateDashboard} />
       
       {/* Professional Routes */}
+      <Route path="/profissional/login" component={ProfessionalLogin} />
       <Route path="/profissional/dashboard" component={ProfessionalDashboard} />
       
       {/* Registration Routes */}
