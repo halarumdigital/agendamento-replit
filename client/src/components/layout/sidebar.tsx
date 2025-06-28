@@ -20,9 +20,11 @@ import {
   MessageSquare,
   MapPin,
   Code,
-  TrendingUp
+  TrendingUp,
+  ChevronDown,
+  ChevronRight
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface SidebarProps {
   systemName?: string;
@@ -33,6 +35,7 @@ export default function Sidebar({ systemName = "AdminPro", logoUrl }: SidebarPro
   const [location] = useLocation();
   const { user } = useAuth();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isSubscriptionsOpen, setIsSubscriptionsOpen] = useState(false);
   
   // Aplica tema global dinamicamente
   useGlobalTheme();
@@ -42,11 +45,7 @@ export default function Sidebar({ systemName = "AdminPro", logoUrl }: SidebarPro
     { name: "Analytics", href: "/administrador/analytics", icon: TrendingUp },
     { name: "Empresas", href: "/administrador/empresas", icon: Building },
     { name: "Planos", href: "/administrador/planos", icon: Tags },
-    { name: "Embed de Planos", href: "/administrador/embed-planos", icon: Code },
-    { name: "Stripe Planos", href: "/administrador/stripe-planos", icon: CreditCard },
     { name: "Cupons", href: "/administrador/cupons", icon: Ticket },
-    { name: "Assinaturas", href: "/administrador/assinaturas", icon: CreditCard },
-    { name: "Teste Assinaturas", href: "/administrador/subscriptions", icon: TestTube },
     { name: "Afiliados", href: "/administrador/afiliados", icon: Users },
     { name: "Administradores", href: "/administrador/administradores", icon: Users },
     { name: "Alertas", href: "/administrador/alertas", icon: Bell },
@@ -56,12 +55,30 @@ export default function Sidebar({ systemName = "AdminPro", logoUrl }: SidebarPro
     { name: "Configurações", href: "/administrador/configuracoes", icon: Settings },
   ];
 
+  const subscriptionSubmenu = [
+    { name: "Stripe Planos", href: "/administrador/stripe-planos", icon: CreditCard },
+    { name: "Assinaturas", href: "/administrador/assinaturas", icon: CreditCard },
+    { name: "Teste de Assinatura", href: "/administrador/subscriptions", icon: TestTube },
+    { name: "Embed Planos", href: "/administrador/embed-planos", icon: Code },
+  ];
+
   const isActive = (href: string) => {
     if (href === "/administrador") {
       return location === "/administrador";
     }
     return location.startsWith(href);
   };
+
+  const isSubscriptionActive = () => {
+    return subscriptionSubmenu.some(item => location.startsWith(item.href));
+  };
+
+  // Abre automaticamente o submenu se estiver numa página do submenu
+  useEffect(() => {
+    if (isSubscriptionActive()) {
+      setIsSubscriptionsOpen(true);
+    }
+  }, [location]);
 
   const handleLogout = async () => {
     try {
@@ -153,6 +170,55 @@ export default function Sidebar({ systemName = "AdminPro", logoUrl }: SidebarPro
                 </Link>
               );
             })}
+            
+            {/* Menu Assinaturas com submenu */}
+            <div>
+              <button
+                onClick={() => setIsSubscriptionsOpen(!isSubscriptionsOpen)}
+                className={`
+                  w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors
+                  ${isSubscriptionActive() 
+                    ? 'text-white bg-[var(--primary-color)]' 
+                    : 'text-slate-600 hover:text-slate-800 hover:bg-slate-100'
+                  }
+                `}
+              >
+                <CreditCard className="w-5 h-5 mr-3" />
+                Assinaturas
+                {isSubscriptionsOpen ? (
+                  <ChevronDown className="w-4 h-4 ml-auto" />
+                ) : (
+                  <ChevronRight className="w-4 h-4 ml-auto" />
+                )}
+              </button>
+              
+              {isSubscriptionsOpen && (
+                <div className="mt-1 ml-6 space-y-1">
+                  {subscriptionSubmenu.map((item) => {
+                    const Icon = item.icon;
+                    const active = isActive(item.href);
+                    
+                    return (
+                      <Link 
+                        key={item.name} 
+                        href={item.href}
+                        onClick={() => setIsMobileOpen(false)}
+                        className={`
+                          flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors
+                          ${active 
+                            ? 'text-white bg-[var(--primary-color)]' 
+                            : 'text-slate-600 hover:text-slate-800 hover:bg-slate-100'
+                          }
+                        `}
+                      >
+                        <Icon className="w-4 h-4 mr-3" />
+                        {item.name}
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
           
           <div className="mt-8 pt-6 border-t border-slate-200">
