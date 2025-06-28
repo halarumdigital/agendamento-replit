@@ -920,10 +920,10 @@ Responda APENAS em formato JSON válido ou "DADOS_INCOMPLETOS":
 }`;
 
     const extraction = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model: globalSettings.openaiModel || "gpt-4o",
       messages: [{ role: "user", content: extractionPrompt }],
-      temperature: 0,
-      max_tokens: 500
+      temperature: parseFloat(globalSettings.openaiTemperature?.toString() || '0.7'),
+      max_tokens: parseInt(globalSettings.openaiMaxTokens?.toString() || '500')
     });
 
     const extractedData = extraction.choices[0]?.message?.content?.trim();
@@ -1300,7 +1300,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const company = await storage.createCompany({
         ...validatedData,
         password: hashedPassword,
-        aiPrompt: defaultAiPrompt, // Apply default AI prompt from admin settings
+        aiAgentPrompt: defaultAiPrompt, // Apply default AI prompt from admin settings
       });
       
       res.status(201).json(company);
@@ -4607,10 +4607,10 @@ Responda APENAS em formato JSON válido ou "DADOS_INCOMPLETOS":
 }`;
 
     const extraction = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model: globalSettings.openaiModel || "gpt-4o",
       messages: [{ role: "user", content: extractionPrompt }],
-      temperature: 0,
-      max_tokens: 500
+      temperature: parseFloat(globalSettings.openaiTemperature?.toString() || '0.7'),
+      max_tokens: parseInt(globalSettings.openaiMaxTokens?.toString() || '500')
     });
 
     const extractedData = extraction.choices[0]?.message?.content?.trim();

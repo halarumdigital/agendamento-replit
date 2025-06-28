@@ -142,6 +142,7 @@ This is a comprehensive business management system built with Express.js and MyS
 ## Changelog
 ```
 Changelog:
+- June 28, 2025. COMPLETED: Configurações OpenAI totalmente respeitadas - corrigidas todas as chamadas para API da OpenAI para usar temperatura, modelo e max_tokens configurados pelo administrador nas configurações globais, eliminando valores hardcoded (temperatura 0, modelo gpt-3.5-turbo) em funções de extração de dados de agendamentos, sistema agora usa consistentemente as configurações definidas pelo admin em todas as interações com IA
 - June 28, 2025. COMPLETED: Erro no botão "Fazer Upgrade" corrigido - corrigida ordem de parâmetros apiRequest em company-subscription-management.tsx de apiRequest('POST', '/api/subscription/upgrade', data) para apiRequest('/api/subscription/upgrade', 'POST', data), botão de upgrade de assinatura agora funciona corretamente sem erro de HTTP method
 - June 28, 2025. COMPLETED: Login de empresa corrigido completamente - corrigido endpoint de "/api/auth/company-login" para "/api/company/auth/login" e ordem de parâmetros apiRequest, login funcionando com senha alterada via painel administrativo (12345678), empresa consegue acessar dashboard normalmente
 - June 28, 2025. COMPLETED: Campo de senha para edição de empresa - adicionado campo opcional "Nova Senha" no modal de edição de empresa no painel administrativo, permite alterar senha da empresa durante edição (campo vazio mantém senha atual), validação mínima de 6 caracteres, senha automaticamente criptografada com bcrypt no backend
