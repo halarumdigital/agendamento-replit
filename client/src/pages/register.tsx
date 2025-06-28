@@ -93,6 +93,7 @@ export default function Register() {
   };
 
   const onSubmit = async (data: RegisterFormData) => {
+    console.log("Form submitted with data:", data);
     setIsLoading(true);
     try {
       const { confirmPassword, selectedPlan, ...registerData } = data;
@@ -103,10 +104,16 @@ export default function Register() {
         ...(affiliateCode && { affiliateCode })
       };
       
+      console.log("Sending registration data:", registrationData);
+      
       // Register company
-      const registerResponse = await apiRequest("POST", "/api/public/register", registrationData);
+      const registerResponse = await apiRequest("/api/public/register", "POST", registrationData);
+      console.log("Registration response:", registerResponse);
       
       if (registerResponse.ok) {
+        const result = await registerResponse.json();
+        console.log("Registration successful:", result);
+        
         toast({
           title: "Cadastro realizado com sucesso!",
           description: "Empresa cadastrada com sucesso!",
@@ -114,8 +121,18 @@ export default function Register() {
         
         // Redirect to thank you page
         setLocation("/obrigado");
+      } else {
+        const errorResult = await registerResponse.json();
+        console.error("Registration failed:", errorResult);
+        
+        toast({
+          title: "Erro no cadastro",
+          description: errorResult.message || "Falha ao realizar cadastro",
+          variant: "destructive",
+        });
       }
     } catch (error: any) {
+      console.error("Registration error:", error);
       toast({
         title: "Erro no cadastro",
         description: error.message || "Falha ao realizar cadastro",
