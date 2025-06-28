@@ -57,29 +57,53 @@ async function getMigrationFiles() {
   }
 }
 
+async function ensureMigrationsTable(connection) {
+  try {
+    await connection.execute(`
+      CREATE TABLE IF NOT EXISTS migrations (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        filename VARCHAR(255) NOT NULL UNIQUE,
+        executed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_filename (filename)
+      ) ENGINE=InnoDB CHARSET=utf8mb4
+    `);
+    console.log('✅ Tabela migrations verificada/criada');
+  } catch (error) {
+    console.error('❌ Erro ao criar tabela migrations:', error.message);
+    throw error;
+  }
+}
+
 async function getExecutedMigrations(connection) {
   try {
-    // Verificar se a tabela migrations existe
-    const [tables] = await connection.execute(
-      "SHOW TABLES LIKE 'migrations'"
-    );
-    
-    if (tables.length === 0) {
-      console.log('📋 Tabela migrations não existe, será criada');
-      return [];
-    }
+    // Garantir que a tabela migrations existe
+    await ensureMigrationsTable(connection);
     
     const [rows] = await connection.execute(
       'SELECT filename FROM migrations ORDER BY filename'
     );
     
     const executedMigrations = rows.map(row => row.filename);
-    console.log(`✅ ${executedMigrations.length} migrations já executadas`);
+    if (executedMigrations.length > 0) {
+      console.log(`✅ ${executedMigrations.length} migrations já executadas`);
+    }
     
     return executedMigrations;
   } catch (error) {
     console.error('❌ Erro ao buscar migrations executadas:', error.message);
     return [];
+  }
+}
+
+async function recordMigration(connection, filename) {
+  try {
+    await connection.execute(
+      'INSERT INTO migrations (filename) VALUES (?)',
+      [filename]
+    );
+  } catch (error) {
+    console.error(`❌ Erro ao registrar migration ${filename}:`, error.message);
+    throw error;
   }
 }
 
@@ -140,6 +164,8 @@ async function runMigrations() {
     for (const migration of pendingMigrations) {
       const success = await executeMigration(connection, migration);
       if (success) {
+        // Registrar migration como executada
+        await recordMigration(connection, migration);
         successCount++;
       } else {
         console.error(`❌ Parando execução devido ao erro na migration: ${migration}`);
