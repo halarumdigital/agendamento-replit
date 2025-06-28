@@ -19,7 +19,8 @@ import {
   Ticket,
   MessageSquare,
   MapPin,
-  Code
+  Code,
+  TrendingUp
 } from "lucide-react";
 import { useState } from "react";
 
@@ -38,6 +39,7 @@ export default function Sidebar({ systemName = "AdminPro", logoUrl }: SidebarPro
 
   const navigation = [
     { name: "Dashboard", href: "/administrador", icon: BarChart3 },
+    { name: "Analytics", href: "/administrador/analytics", icon: TrendingUp },
     { name: "Empresas", href: "/administrador/empresas", icon: Building },
     { name: "Planos", href: "/administrador/planos", icon: Tags },
     { name: "Embed de Planos", href: "/administrador/embed-planos", icon: Code },

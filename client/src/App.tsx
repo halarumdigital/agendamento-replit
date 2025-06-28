@@ -44,6 +44,7 @@ import AdminSupport from "@/pages/admin-support";
 import AdminAffiliates from "@/pages/admin-affiliates";
 import AdminTourConfig from "@/pages/admin-tour-config";
 import AdminPlanEmbed from "@/pages/admin-plan-embed";
+import AdminAnalytics from "@/pages/admin-analytics";
 import Subscription from "@/pages/subscription";
 import PublicReview from "@/pages/public-review";
 import EmbedPlans from "@/pages/embed-plans";
@@ -332,6 +333,16 @@ function Router() {
       <Route path="/administrador/embed-planos">
         <AdminLayout>
           <AdminPlanEmbed />
+        </AdminLayout>
+      </Route>
+      <Route path="/admin/analytics">
+        <AdminLayout>
+          <AdminAnalytics />
+        </AdminLayout>
+      </Route>
+      <Route path="/administrador/analytics">
+        <AdminLayout>
+          <AdminAnalytics />
         </AdminLayout>
       </Route>
       

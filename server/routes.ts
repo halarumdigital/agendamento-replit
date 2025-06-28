@@ -2056,6 +2056,127 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin Analytics endpoint
+  app.get('/api/admin/analytics', isAuthenticated, async (req, res) => {
+    try {
+      const { company } = req.query;
+      
+      // Build company filter for SQL queries
+      const companyFilter = company && company !== 'all' ? `WHERE c.id = ${pool.escape(company)}` : '';
+      const appointmentCompanyFilter = company && company !== 'all' ? `WHERE a.company_id = ${pool.escape(company)}` : '';
+      
+      // Top companies by appointments
+      const topCompaniesResult = await db.execute(sql`
+        SELECT 
+          c.id,
+          c.fantasy_name as name,
+          COUNT(a.id) as totalAppointments,
+          COUNT(DISTINCT a.client_phone) as activeClients
+        FROM companies c
+        LEFT JOIN appointments a ON c.id = a.company_id
+        ${company && company !== 'all' ? sql`WHERE c.id = ${company}` : sql``}
+        GROUP BY c.id, c.fantasy_name
+        ORDER BY totalAppointments DESC
+        LIMIT 10
+      `);
+
+      // Top professionals by appointments  
+      const topProfessionalsResult = await db.execute(sql`
+        SELECT 
+          p.id,
+          p.name,
+          c.fantasy_name as companyName,
+          COUNT(a.id) as totalAppointments
+        FROM professionals p
+        JOIN companies c ON p.company_id = c.id
+        LEFT JOIN appointments a ON p.id = a.professional_id
+        ${company && company !== 'all' ? sql`WHERE c.id = ${company}` : sql``}
+        GROUP BY p.id, p.name, c.fantasy_name
+        HAVING totalAppointments > 0
+        ORDER BY totalAppointments DESC
+        LIMIT 10
+      `);
+
+      // Top clients by appointments
+      const topClientsResult = await db.execute(sql`
+        SELECT 
+          a.client_name as name,
+          a.client_phone as phone,
+          c.fantasy_name as companyName,
+          COUNT(a.id) as totalAppointments
+        FROM appointments a
+        JOIN companies c ON a.company_id = c.id
+        ${company && company !== 'all' ? sql`WHERE a.company_id = ${company}` : sql``}
+        GROUP BY a.client_name, a.client_phone, c.fantasy_name
+        ORDER BY totalAppointments DESC
+        LIMIT 10
+      `);
+
+      // Company details 
+      const companyDetailsResult = await db.execute(sql`
+        SELECT 
+          c.id,
+          c.fantasy_name as name,
+          COUNT(DISTINCT a.id) as totalAppointments,
+          COUNT(DISTINCT a.client_phone) as activeClients
+        FROM companies c
+        LEFT JOIN appointments a ON c.id = a.company_id
+        ${company && company !== 'all' ? sql`WHERE c.id = ${company}` : sql``}
+        GROUP BY c.id, c.fantasy_name
+        ORDER BY totalAppointments DESC
+      `);
+
+      // Get top professional and client for each company
+      const companiesWithDetails = [];
+      const companyDetailsArray = Array.isArray(companyDetailsResult) ? companyDetailsResult : [companyDetailsResult];
+      
+      for (const companyDetail of companyDetailsArray as any[]) {
+        if (!companyDetail || !companyDetail.id) continue;
+        
+        // Top professional for this company
+        const topProfResult = await db.execute(sql`
+          SELECT 
+            p.name,
+            COUNT(a.id) as appointments
+          FROM professionals p
+          LEFT JOIN appointments a ON p.id = a.professional_id
+          WHERE p.company_id = ${companyDetail.id}
+          GROUP BY p.id, p.name
+          ORDER BY appointments DESC
+          LIMIT 1
+        `);
+
+        // Top client for this company
+        const topClientResult = await db.execute(sql`
+          SELECT 
+            a.client_name as name,
+            COUNT(a.id) as appointments
+          FROM appointments a
+          WHERE a.company_id = ${companyDetail.id}
+          GROUP BY a.client_name, a.client_phone
+          ORDER BY appointments DESC
+          LIMIT 1
+        `);
+
+        companiesWithDetails.push({
+          ...companyDetail,
+          topProfessional: Array.isArray(topProfResult) && topProfResult.length > 0 ? topProfResult[0] : null,
+          topClient: Array.isArray(topClientResult) && topClientResult.length > 0 ? topClientResult[0] : null
+        });
+      }
+
+      res.json({
+        topCompanies: Array.isArray(topCompaniesResult) ? topCompaniesResult : [topCompaniesResult],
+        topProfessionals: Array.isArray(topProfessionalsResult) ? topProfessionalsResult : [topProfessionalsResult],
+        topClients: Array.isArray(topClientsResult) ? topClientsResult : [topClientsResult],
+        companyDetails: companiesWithDetails
+      });
+    } catch (error) {
+      console.error('Error fetching analytics:', error);
+      res.status(500).json({ error: 'Failed to fetch analytics' });
+    }
+  });
+
   // Admin Dashboard stats
   app.get('/api/dashboard/stats', isAuthenticated, async (req, res) => {
     try {
