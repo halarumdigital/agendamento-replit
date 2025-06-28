@@ -139,9 +139,42 @@ This is a comprehensive business management system built with Express.js and MyS
 - File upload handling with static serving
 - Background job processing for notifications
 
+## Database Management
+
+### Migration System
+O projeto conta com um sistema robusto de migrations SQL para gerenciar a estrutura do banco de dados:
+
+#### Estrutura das Migrations
+- **migrations/001_initial_setup.sql** - Configurações globais e tabela de sessões
+- **migrations/002_admin_system.sql** - Sistema de administradores e configurações avançadas
+- **migrations/003_plans_system.sql** - Sistema de planos, produtos e cupons
+- **migrations/004_company_system.sql** - Sistema de empresas e configurações corporativas
+- **migrations/005_appointment_system.sql** - Sistema de agendamentos, profissionais e serviços
+- **migrations/006_communication_system.sql** - Sistema de comunicação WhatsApp
+- **migrations/007_additional_systems.sql** - Sistemas de afiliados, suporte, tour e avaliações
+
+#### Comandos de Migration
+```bash
+# Executar todas as migrations pendentes
+node scripts/migrate.js
+
+# Verificar status das migrations
+node scripts/migration-status.js
+
+# Criar nova migration
+node scripts/create-migration.js nome-da-migration
+```
+
+#### Sistema de Controle
+- Tabela `migrations` rastreia quais migrations já foram executadas
+- Execução sequencial garantindo ordem correta
+- Proteção contra re-execução de migrations já aplicadas
+- Sistema de rollback manual quando necessário
+
 ## Changelog
 ```
 Changelog:
+- June 28, 2025. COMPLETED: Sistema completo de migrations implementado - criado sistema robusto de gestão de banco de dados com 7 migrations organizadas (configurações globais, administradores, planos, empresas, agendamentos, comunicação e sistemas adicionais), script automatizado de execução, controle de versões com tabela migrations, execução sequencial com proteção contra re-execução, todas as 46+ tabelas do sistema organizadas em estrutura modular para fácil manutenção e evolução do banco de dados
 - June 28, 2025. COMPLETED: Configurações OpenAI totalmente respeitadas - corrigidas todas as chamadas para API da OpenAI para usar temperatura, modelo e max_tokens configurados pelo administrador nas configurações globais, eliminando valores hardcoded (temperatura 0, modelo gpt-3.5-turbo) em funções de extração de dados de agendamentos, sistema agora usa consistentemente as configurações definidas pelo admin em todas as interações com IA
 - June 28, 2025. COMPLETED: Erro no botão "Fazer Upgrade" corrigido - corrigida ordem de parâmetros apiRequest em company-subscription-management.tsx de apiRequest('POST', '/api/subscription/upgrade', data) para apiRequest('/api/subscription/upgrade', 'POST', data), botão de upgrade de assinatura agora funciona corretamente sem erro de HTTP method
 - June 28, 2025. COMPLETED: Login de empresa corrigido completamente - corrigido endpoint de "/api/auth/company-login" para "/api/company/auth/login" e ordem de parâmetros apiRequest, login funcionando com senha alterada via painel administrativo (12345678), empresa consegue acessar dashboard normalmente
