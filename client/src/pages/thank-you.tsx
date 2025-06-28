@@ -45,15 +45,12 @@ export default function ThankYou() {
             <CheckCircle className="w-8 h-8 text-primary" />
           </div>
           <CardTitle className="text-2xl font-bold text-primary">
-            Pagamento Confirmado!
+            Sua conta foi criada com sucesso!
           </CardTitle>
         </CardHeader>
         
         <CardContent className="text-center space-y-6">
           <div className="space-y-2">
-            <p className="text-lg font-medium">
-              Sua assinatura foi ativada com sucesso!
-            </p>
             <p className="text-muted-foreground">
               Agora você já pode fazer login em seu painel e configurar os dados do seu negócio.
             </p>
