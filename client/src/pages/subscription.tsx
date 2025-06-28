@@ -263,14 +263,6 @@ export default function Subscription() {
 
   return (
     <div className="container mx-auto py-8 px-4">
-      <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold mb-4">
-          Escolha seu plano no {settings?.systemName || "Sistema"}
-        </h1>
-        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Selecione o plano ideal para o seu negócio e comece a usar todas as funcionalidades
-        </p>
-      </div>
 
       {step === 'plans' && (
         <>
