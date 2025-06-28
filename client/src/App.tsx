@@ -3,14 +3,11 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useAuth } from "@/hooks/useAuth";
-import { useCompanyAuth } from "@/hooks/useCompanyAuth";
 import { useEffect } from "react";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { registerSW, optimizeViewport, preventIOSBehaviors } from "@/utils/pwa";
 import AdminLayout from "@/components/layout/admin-layout";
 import CompanyLayout from "./components/layout/company-layout";
-import Landing from "@/pages/landing";
 import Login from "@/pages/login";
 import CompanyLogin from "@/pages/company-login";
 import CompanyDashboard from "@/pages/company-dashboard-new";
@@ -34,29 +31,22 @@ import DashboardAppointments from "@/pages/dashboard-appointments";
 import Dashboard from "@/pages/dashboard";
 import Companies from "@/pages/companies";
 import Plans from "@/pages/plans";
+import Status from "@/pages/status";
+import SettingsPage from "@/pages/settings";
 import Admins from "@/pages/admins";
+import AdminAlerts from "@/pages/admin-alerts";
 import AdminStripePlans from "@/pages/admin-stripe-plans";
+import AdminCoupons from "@/pages/admin-coupons";
 import AdminTestSubscription from "@/pages/admin-test-subscription";
 import AdminSubscriptions from "@/pages/admin-subscriptions";
 import AdminSubscriptionTest from "@/pages/admin-subscription-test";
-import AdminAlerts from "@/pages/admin-alerts";
-import AdminCoupons from "@/pages/admin-coupons";
 import AdminSupport from "@/pages/admin-support";
+import AdminAffiliates from "@/pages/admin-affiliates";
 import AdminTourConfig from "@/pages/admin-tour-config";
 import AdminPlanEmbed from "@/pages/admin-plan-embed";
-import AdminAffiliates from "@/pages/admin-affiliates";
-import SettingsPage from "@/pages/settings";
-import Status from "@/pages/status";
-import PublicReview from "@/pages/public-review";
-import ResetPassword from "@/pages/reset-password";
-import Register from "@/pages/register";
 import Subscription from "@/pages/subscription";
-import SubscriptionTest from "@/pages/subscription-test";
-import StripeTest from "@/pages/stripe-test";
-import CompanySubscription from "@/pages/company-subscription";
-import ThankYou from "@/pages/thank-you";
+import PublicReview from "@/pages/public-review";
 import EmbedPlans from "@/pages/embed-plans";
-import ProfessionalLogin from "@/pages/professional-login";
 import ProfessionalDashboard from "@/pages/professional-dashboard";
 import AffiliateRegister from "@/pages/affiliate-register";
 import AffiliateLogin from "@/pages/affiliate-login";
@@ -64,8 +54,6 @@ import AffiliateDashboard from "@/pages/affiliate-dashboard";
 import NotFound from "@/pages/NotFound";
 
 function Router() {
-  const { isAuthenticated: isAdminAuthenticated, isLoading: isAdminLoading } = useAuth();
-
   return (
     <Switch>
       {/* Company Routes */}
@@ -74,13 +62,6 @@ function Router() {
       <Route path="/company-login" component={CompanyLogin} />
       <Route path="/company/login" component={CompanyLogin} />
       <Route path="/company/auth/login" component={CompanyLogin} />
-      <Route path="/reset-password" component={ResetPassword} />
-      <Route path="/cadastro" component={Register} />
-      <Route path="/assinatura" component={Subscription} />
-      <Route path="/obrigado" component={ThankYou} />
-      <Route path="/empresa/assinatura" component={CompanySubscription} />
-      <Route path="/subscription-test" component={SubscriptionTest} />
-      <Route path="/stripe-test" component={StripeTest} />
       
       {/* Affiliate Routes */}
       <Route path="/affiliate/register" component={AffiliateRegister} />
@@ -91,8 +72,9 @@ function Router() {
       <Route path="/afiliado/dashboard" component={AffiliateDashboard} />
       
       {/* Professional Routes */}
-      <Route path="/profissional/login" component={ProfessionalLogin} />
       <Route path="/profissional/dashboard" component={ProfessionalDashboard} />
+      
+      {/* Company Dashboard Routes */}
       <Route path="/dashboard">
         <CompanyLayout>
           <CompanyDashboard />
@@ -143,17 +125,17 @@ function Router() {
           <CompanyTasks />
         </CompanyLayout>
       </Route>
-      <Route path="/company/points-program">
+      <Route path="/company/points">
         <CompanyLayout>
           <CompanyPointsProgram />
         </CompanyLayout>
       </Route>
-      <Route path="/company/fidelidade">
+      <Route path="/company/loyalty">
         <CompanyLayout>
           <CompanyLoyalty />
         </CompanyLayout>
       </Route>
-      <Route path="/company/estoque">
+      <Route path="/company/inventory">
         <CompanyLayout>
           <CompanyInventory />
         </CompanyLayout>
@@ -163,7 +145,7 @@ function Router() {
           <CompanyMessages />
         </CompanyLayout>
       </Route>
-      <Route path="/company/cupons">
+      <Route path="/company/coupons">
         <CompanyLayout>
           <CompanyCoupons />
         </CompanyLayout>
@@ -173,7 +155,7 @@ function Router() {
           <CompanyFinancial />
         </CompanyLayout>
       </Route>
-      <Route path="/company/relatorios">
+      <Route path="/company/reports">
         <CompanyLayout>
           <CompanyReports />
         </CompanyLayout>
@@ -189,186 +171,159 @@ function Router() {
         </CompanyLayout>
       </Route>
 
-      
-      {/* Public Routes (no authentication required) */}
+      {/* Public Routes */}
       <Route path="/assinatura" component={Subscription} />
       <Route path="/review/:token" component={PublicReview} />
       <Route path="/embed/plans" component={EmbedPlans} />
       
-      {/* Admin Login Routes */}
+      {/* Admin Routes */}
       <Route path="/login" component={Login} />
-      <Route path="/administrador">
-        {isAdminLoading ? (
-          <div className="min-h-screen flex items-center justify-center">
-            <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-          </div>
-        ) : isAdminAuthenticated ? (
-          <AdminLayout><Dashboard /></AdminLayout>
-        ) : (
-          <Login />
-        )}
+      <Route path="/administrador" component={Login} />
+      <Route path="/admin" component={Login} />
+      <Route path="/admin/login" component={Login} />
+      <Route path="/administrador/login" component={Login} />
+      
+      <Route path="/admin/dashboard">
+        <AdminLayout>
+          <Dashboard />
+        </AdminLayout>
+      </Route>
+      <Route path="/administrador/dashboard">
+        <AdminLayout>
+          <Dashboard />
+        </AdminLayout>
+      </Route>
+      <Route path="/admin/companies">
+        <AdminLayout>
+          <Companies />
+        </AdminLayout>
+      </Route>
+      <Route path="/administrador/empresas">
+        <AdminLayout>
+          <Companies />
+        </AdminLayout>
+      </Route>
+      <Route path="/admin/plans">
+        <AdminLayout>
+          <Plans />
+        </AdminLayout>
+      </Route>
+      <Route path="/administrador/planos">
+        <AdminLayout>
+          <Plans />
+        </AdminLayout>
+      </Route>
+      <Route path="/admin/status">
+        <AdminLayout>
+          <Status />
+        </AdminLayout>
+      </Route>
+      <Route path="/administrador/status">
+        <AdminLayout>
+          <Status />
+        </AdminLayout>
+      </Route>
+      <Route path="/admin/settings">
+        <AdminLayout>
+          <SettingsPage />
+        </AdminLayout>
+      </Route>
+      <Route path="/administrador/configuracoes">
+        <AdminLayout>
+          <SettingsPage />
+        </AdminLayout>
+      </Route>
+      <Route path="/admin/admins">
+        <AdminLayout>
+          <Admins />
+        </AdminLayout>
+      </Route>
+      <Route path="/administrador/administradores">
+        <AdminLayout>
+          <Admins />
+        </AdminLayout>
+      </Route>
+      <Route path="/admin/alerts">
+        <AdminLayout>
+          <AdminAlerts />
+        </AdminLayout>
+      </Route>
+      <Route path="/administrador/alertas">
+        <AdminLayout>
+          <AdminAlerts />
+        </AdminLayout>
+      </Route>
+      <Route path="/admin/stripe-plans">
+        <AdminLayout>
+          <AdminStripePlans />
+        </AdminLayout>
+      </Route>
+      <Route path="/administrador/stripe-planos">
+        <AdminLayout>
+          <AdminStripePlans />
+        </AdminLayout>
+      </Route>
+      <Route path="/admin/coupons">
+        <AdminLayout>
+          <AdminCoupons />
+        </AdminLayout>
+      </Route>
+      <Route path="/administrador/cupons">
+        <AdminLayout>
+          <AdminCoupons />
+        </AdminLayout>
+      </Route>
+      <Route path="/admin/subscriptions">
+        <AdminLayout>
+          <AdminSubscriptions />
+        </AdminLayout>
+      </Route>
+      <Route path="/administrador/assinaturas">
+        <AdminLayout>
+          <AdminSubscriptions />
+        </AdminLayout>
+      </Route>
+      <Route path="/admin/support">
+        <AdminLayout>
+          <AdminSupport />
+        </AdminLayout>
+      </Route>
+      <Route path="/administrador/suporte">
+        <AdminLayout>
+          <AdminSupport />
+        </AdminLayout>
+      </Route>
+      <Route path="/administrador/teste-assinatura">
+        <AdminLayout>
+          <AdminTestSubscription />
+        </AdminLayout>
+      </Route>
+      <Route path="/administrador/subscriptions">
+        <AdminLayout>
+          <AdminSubscriptionTest />
+        </AdminLayout>
+      </Route>
+      <Route path="/administrador/afiliados">
+        <AdminLayout>
+          <AdminAffiliates />
+        </AdminLayout>
+      </Route>
+      <Route path="/administrador/tour-config">
+        <AdminLayout>
+          <AdminTourConfig />
+        </AdminLayout>
+      </Route>
+      <Route path="/administrador/tour">
+        <AdminLayout>
+          <AdminTourConfig />
+        </AdminLayout>
+      </Route>
+      <Route path="/administrador/embed-planos">
+        <AdminLayout>
+          <AdminPlanEmbed />
+        </AdminLayout>
       </Route>
       
-      {/* Protected Admin Routes */}
-      {!isAdminLoading && (
-        <>
-          <Route path="/admin/companies">
-            <AdminLayout>
-              <Companies />
-            </AdminLayout>
-          </Route>
-          <Route path="/administrador/empresas">
-            <AdminLayout>
-              <Companies />
-            </AdminLayout>
-          </Route>
-          <Route path="/admin/plans">
-            <AdminLayout>
-              <Plans />
-            </AdminLayout>
-          </Route>
-          <Route path="/administrador/planos">
-            <AdminLayout>
-              <Plans />
-            </AdminLayout>
-          </Route>
-          <Route path="/admin/status">
-            <AdminLayout>
-              <Status />
-            </AdminLayout>
-          </Route>
-          <Route path="/administrador/status">
-            <AdminLayout>
-              <Status />
-            </AdminLayout>
-          </Route>
-          <Route path="/admin/settings">
-            <AdminLayout>
-              <SettingsPage />
-            </AdminLayout>
-          </Route>
-          <Route path="/administrador/configuracoes">
-            <AdminLayout>
-              <SettingsPage />
-            </AdminLayout>
-          </Route>
-          <Route path="/admin/admins">
-            <AdminLayout>
-              <Admins />
-            </AdminLayout>
-          </Route>
-          <Route path="/administrador/administradores">
-            <AdminLayout>
-              <Admins />
-            </AdminLayout>
-          </Route>
-          <Route path="/admin/alerts">
-            <AdminLayout>
-              <AdminAlerts />
-            </AdminLayout>
-          </Route>
-          <Route path="/administrador/alertas">
-            <AdminLayout>
-              <AdminAlerts />
-            </AdminLayout>
-          </Route>
-          <Route path="/admin/stripe-plans">
-            <AdminLayout>
-              <AdminStripePlans />
-            </AdminLayout>
-          </Route>
-          <Route path="/administrador/stripe-planos">
-            {isAdminAuthenticated ? (
-              <AdminLayout>
-                <AdminStripePlans />
-              </AdminLayout>
-            ) : (
-              <Login />
-            )}
-          </Route>
-          <Route path="/administrador/cupons">
-            {isAdminAuthenticated ? (
-              <AdminLayout>
-                <AdminCoupons />
-              </AdminLayout>
-            ) : (
-              <Login />
-            )}
-          </Route>
-          <Route path="/administrador/teste-assinatura">
-            {isAdminAuthenticated ? (
-              <AdminLayout>
-                <AdminTestSubscription />
-              </AdminLayout>
-            ) : (
-              <Login />
-            )}
-          </Route>
-          <Route path="/administrador/assinaturas">
-            {isAdminAuthenticated ? (
-              <AdminLayout>
-                <AdminSubscriptions />
-              </AdminLayout>
-            ) : (
-              <Login />
-            )}
-          </Route>
-          <Route path="/administrador/subscriptions">
-            {isAdminAuthenticated ? (
-              <AdminLayout>
-                <AdminSubscriptionTest />
-              </AdminLayout>
-            ) : (
-              <Login />
-            )}
-          </Route>
-          <Route path="/administrador/suporte">
-            {isAdminAuthenticated ? (
-              <AdminLayout>
-                <AdminSupport />
-              </AdminLayout>
-            ) : (
-              <Login />
-            )}
-          </Route>
-          <Route path="/administrador/afiliados">
-            {isAdminAuthenticated ? (
-              <AdminLayout>
-                <AdminAffiliates />
-              </AdminLayout>
-            ) : (
-              <Login />
-            )}
-          </Route>
-          <Route path="/administrador/tour-config">
-            {isAdminAuthenticated ? (
-              <AdminLayout>
-                <AdminTourConfig />
-              </AdminLayout>
-            ) : (
-              <Login />
-            )}
-          </Route>
-          <Route path="/administrador/tour">
-            {isAdminAuthenticated ? (
-              <AdminLayout>
-                <AdminTourConfig />
-              </AdminLayout>
-            ) : (
-              <Login />
-            )}
-          </Route>
-          <Route path="/administrador/embed-planos">
-            {isAdminAuthenticated ? (
-              <AdminLayout>
-                <AdminPlanEmbed />
-              </AdminLayout>
-            ) : (
-              <Login />
-            )}
-          </Route>
-        </>
-      )}
       <Route component={NotFound} />
     </Switch>
   );
