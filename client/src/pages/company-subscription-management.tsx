@@ -108,8 +108,8 @@ function PaymentForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Modo demonstração - simular pagamento
-    if (clientSecret === 'demo_client_secret') {
+    // Modo demonstração - quando não há clientSecret (Stripe não configurado)
+    if (!clientSecret) {
       setIsProcessing(true);
       
       // Simular tempo de processamento
@@ -278,81 +278,75 @@ function PaymentForm({
           ) : (
             <div className="space-y-4">
               {clientSecret ? (
-                clientSecret === 'demo_client_secret' ? (
-                  // Interface de demonstração
-                  <div className="space-y-4">
-                    <div className="bg-yellow-50 border border-yellow-200 rounded p-4">
-                      <div className="flex items-center space-x-2">
-                        <AlertCircle className="h-4 w-4 text-yellow-600" />
-                        <p className="text-sm font-medium text-yellow-800">Modo Demonstração</p>
-                      </div>
-                      <p className="text-xs text-yellow-700 mt-1">
-                        Configure as chaves Stripe para processar pagamentos reais
-                      </p>
+                <div className="payment-element-container" style={{ minHeight: '200px' }}>
+                  <PaymentElement
+                    options={{}}
+                    onReady={() => {
+                      console.log('✅ PaymentElement ready and mounted');
+                    }}
+                    onLoadError={(error) => {
+                      console.error('❌ PaymentElement load error:', error);
+                    }}
+                    onChange={(event) => {
+                      console.log('🔄 PaymentElement change:', event);
+                    }}
+                  />
+                </div>
+              ) : (
+                // Interface de demonstração quando não há clientSecret
+                <div className="space-y-4">
+                  <div className="bg-yellow-50 border border-yellow-200 rounded p-4">
+                    <div className="flex items-center space-x-2">
+                      <AlertCircle className="h-4 w-4 text-yellow-600" />
+                      <p className="text-sm font-medium text-yellow-800">Modo Demonstração</p>
+                    </div>
+                    <p className="text-xs text-yellow-700 mt-1">
+                      Configure as chaves Stripe para processar pagamentos reais
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-4 border rounded p-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Número do cartão</label>
+                      <input 
+                        type="text" 
+                        placeholder="4242 4242 4242 4242" 
+                        className="w-full p-2 border rounded"
+                        disabled
+                      />
                     </div>
                     
-                    <div className="space-y-4 border rounded p-4">
+                    <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">Número do cartão</label>
+                        <label className="text-sm font-medium">Validade</label>
                         <input 
                           type="text" 
-                          placeholder="4242 4242 4242 4242" 
+                          placeholder="MM/AA" 
                           className="w-full p-2 border rounded"
                           disabled
                         />
                       </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">Validade</label>
-                          <input 
-                            type="text" 
-                            placeholder="MM/AA" 
-                            className="w-full p-2 border rounded"
-                            disabled
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">CVC</label>
-                          <input 
-                            type="text" 
-                            placeholder="123" 
-                            className="w-full p-2 border rounded"
-                            disabled
-                          />
-                        </div>
-                      </div>
-                      
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">Nome no cartão</label>
+                        <label className="text-sm font-medium">CVC</label>
                         <input 
                           type="text" 
-                          placeholder="Nome Completo" 
+                          placeholder="123" 
                           className="w-full p-2 border rounded"
                           disabled
                         />
                       </div>
                     </div>
+                    
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Nome no cartão</label>
+                      <input 
+                        type="text" 
+                        placeholder="Nome Completo" 
+                        className="w-full p-2 border rounded"
+                        disabled
+                      />
+                    </div>
                   </div>
-                ) : (
-                  <div className="payment-element-container" style={{ minHeight: '200px' }}>
-                    <PaymentElement
-                      options={{}}
-                      onReady={() => {
-                        console.log('✅ PaymentElement ready and mounted');
-                      }}
-                      onLoadError={(error) => {
-                        console.error('❌ PaymentElement load error:', error);
-                      }}
-                      onChange={(event) => {
-                        console.log('🔄 PaymentElement change:', event);
-                      }}
-                    />
-                  </div>
-                )
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground">Aguardando dados de pagamento...</p>
                 </div>
               )}
             </div>
@@ -447,9 +441,8 @@ export default function CompanySubscriptionManagement() {
         setClientSecret(data.clientSecret);
         setShowPayment(true);
       } else if (data.demoMode) {
-        console.log('🎭 Demo mode detected - showing payment modal');
-        // Para modo demonstração, criar um clientSecret fictício e mostrar o modal
-        setClientSecret('demo_client_secret');
+        console.log('🎭 Demo mode detected - showing demo payment modal');
+        // Para modo demonstração, não usar Stripe - apenas mostrar modal sem clientSecret
         setShowPayment(true);
         toast({
           title: "Modo Demonstração",
