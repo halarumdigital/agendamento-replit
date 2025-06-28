@@ -105,8 +105,16 @@ export default function CompanyLogin() {
 
   const loginMutation = useMutation({
     mutationFn: async (data: CompanyLoginFormData) => {
-      const response = await apiRequest("/api/company/auth/login", "POST", data);
-      return response;
+      console.log("Sending login request with data:", data);
+      console.log("Using endpoint: /api/company/auth/login");
+      try {
+        const response = await apiRequest("/api/company/auth/login", "POST", data);
+        console.log("Login response:", response);
+        return response;
+      } catch (error) {
+        console.error("API Request failed:", error);
+        throw error;
+      }
     },
     onSuccess: (data) => {
       toast({
@@ -116,6 +124,10 @@ export default function CompanyLogin() {
       setLocation("/dashboard");
     },
     onError: (error: any) => {
+      console.error("Login error details:", error);
+      console.error("Error status:", error.status);
+      console.error("Error message:", error.message);
+      
       let errorMessage = "Email ou senha errada";
       let errorTitle = "Erro no login";
       
@@ -137,7 +149,7 @@ export default function CompanyLogin() {
 
   const forgotPasswordMutation = useMutation({
     mutationFn: async (data: ForgotPasswordFormData) => {
-      const response = await apiRequest("POST", "/api/auth/forgot-password", data);
+      const response = await apiRequest("/api/auth/forgot-password", "POST", data);
       return response;
     },
     onSuccess: () => {
