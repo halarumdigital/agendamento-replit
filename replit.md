@@ -142,6 +142,8 @@ This is a comprehensive business management system built with Express.js and MyS
 ## Changelog
 ```
 Changelog:
+- June 28, 2025. COMPLETED: Erro no botão "Fazer Upgrade" corrigido - corrigida ordem de parâmetros apiRequest em company-subscription-management.tsx de apiRequest('POST', '/api/subscription/upgrade', data) para apiRequest('/api/subscription/upgrade', 'POST', data), botão de upgrade de assinatura agora funciona corretamente sem erro de HTTP method
+- June 28, 2025. COMPLETED: Login de empresa corrigido completamente - corrigido endpoint de "/api/auth/company-login" para "/api/company/auth/login" e ordem de parâmetros apiRequest, login funcionando com senha alterada via painel administrativo (12345678), empresa consegue acessar dashboard normalmente
 - June 28, 2025. COMPLETED: Campo de senha para edição de empresa - adicionado campo opcional "Nova Senha" no modal de edição de empresa no painel administrativo, permite alterar senha da empresa durante edição (campo vazio mantém senha atual), validação mínima de 6 caracteres, senha automaticamente criptografada com bcrypt no backend
 - June 28, 2025. COMPLETED: Limpeza da página de assinatura - removido cabeçalho com título "Escolha seu plano no Sistema" e subtítulo, página agora vai direto aos planos sem texto introdutório desnecessário
 - June 28, 2025. COMPLETED: Correção da exibição do número de profissionais nos planos - removido texto genérico "Até X profissionais" e implementado exibição específica do número real de profissionais por plano (1, 3, 10), incluindo correção do endpoint /api/public-plans para retornar campo maxProfessionals corretamente

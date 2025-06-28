@@ -339,7 +339,7 @@ export default function CompanySubscriptionManagement() {
   // Upgrade subscription mutation
   const upgradeMutation = useMutation({
     mutationFn: async (data: { planId: number; billingPeriod: 'monthly' | 'annual'; installments?: number }) => {
-      const response = await apiRequest('POST', '/api/subscription/upgrade', data);
+      const response = await apiRequest('/api/subscription/upgrade', 'POST', data);
       return response;
     },
     onSuccess: (data) => {
