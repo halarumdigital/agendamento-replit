@@ -311,7 +311,7 @@ export default function DashboardAppointments() {
       console.log('🎯 Kanban API Call: Updating appointment', appointmentId, 'to status', status);
       
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
       
       try {
         const response = await fetch(`/api/company/appointments/${appointmentId}/status`, {
@@ -341,6 +341,11 @@ export default function DashboardAppointments() {
         if (error.name === 'AbortError') {
           console.error('🎯 Kanban API Timeout');
           throw new Error('Timeout ao atualizar status - tente novamente');
+        }
+        
+        // Network or connection errors
+        if (!navigator.onLine) {
+          throw new Error('Sem conexão com a internet - verifique sua conexão');
         }
         throw error;
       }

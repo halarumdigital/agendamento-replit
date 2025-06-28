@@ -3285,14 +3285,21 @@ INSTRUÇÕES OBRIGATÓRIAS:
         return res.status(400).json({ message: "Status é obrigatório" });
       }
 
-      // Direct database update for speed
-      const result = await pool.execute(
-        'UPDATE appointments SET status = ?, updated_at = ? WHERE id = ?',
-        [status, new Date(), id]
-      );
+      // Verify appointment belongs to company
+      const appointment = await storage.getAppointment(id);
+      if (!appointment || appointment.companyId !== companyId) {
+        return res.status(404).json({ message: "Agendamento não encontrado" });
+      }
+
+      // Use storage interface for consistent error handling and retry logic
+      const updatedAppointment = await storage.updateAppointment(id, { status });
       
       console.log('🎯 Kanban: Status updated successfully');
-      res.json({ id, status, success: true });
+      res.json({ 
+        id: updatedAppointment.id, 
+        status: updatedAppointment.status, 
+        success: true 
+      });
       
     } catch (error) {
       console.error("🎯 Kanban: Error updating status:", error);
