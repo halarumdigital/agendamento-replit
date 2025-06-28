@@ -2108,9 +2108,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         JOIN companies c ON a.company_id = c.id
         ${company && company !== 'all' ? sql`WHERE a.company_id = ${company}` : sql``}
         GROUP BY a.client_name, a.client_phone, c.fantasy_name
+        HAVING totalAppointments > 0
         ORDER BY totalAppointments DESC
         LIMIT 10
       `);
+      
+      console.log('Top clients result structure:', JSON.stringify(topClientsResult, null, 2));
 
       // Company details 
       const companyDetailsResult = await db.execute(sql`
@@ -2165,10 +2168,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Extract results from Drizzle's nested array format
+      const topCompanies = Array.isArray(topCompaniesResult) && Array.isArray(topCompaniesResult[0]) 
+        ? topCompaniesResult[0] 
+        : topCompaniesResult;
+      
+      const topProfessionals = Array.isArray(topProfessionalsResult) && Array.isArray(topProfessionalsResult[0])
+        ? topProfessionalsResult[0]
+        : topProfessionalsResult;
+        
+      const topClients = Array.isArray(topClientsResult) && Array.isArray(topClientsResult[0])
+        ? topClientsResult[0]
+        : topClientsResult;
+
       res.json({
-        topCompanies: Array.isArray(topCompaniesResult) ? topCompaniesResult : [topCompaniesResult],
-        topProfessionals: Array.isArray(topProfessionalsResult) ? topProfessionalsResult : [topProfessionalsResult],
-        topClients: Array.isArray(topClientsResult) ? topClientsResult : [topClientsResult],
+        topCompanies: Array.isArray(topCompanies) ? topCompanies : [topCompanies],
+        topProfessionals: Array.isArray(topProfessionals) ? topProfessionals : [topProfessionals],
+        topClients: Array.isArray(topClients) ? topClients : [topClients],
         companyDetails: companiesWithDetails
       });
     } catch (error) {
