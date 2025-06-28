@@ -94,6 +94,8 @@ export default function Register() {
 
   const onSubmit = async (data: RegisterFormData) => {
     console.log("Form submitted with data:", data);
+    console.log("Form errors:", form.formState.errors);
+    console.log("Form is valid:", form.formState.isValid);
     setIsLoading(true);
     try {
       const { confirmPassword, selectedPlan, ...registerData } = data;
@@ -205,6 +207,59 @@ export default function Register() {
                     )}
                   </div>
                 </div>
+              </div>
+
+              {/* Seleção de Plano */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-4">
+                  <Star className="w-5 h-5 text-blue-600" />
+                  <h3 className="text-lg font-semibold text-gray-900">Escolha seu Plano</h3>
+                </div>
+                
+                {plansLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto"></div>
+                    <p className="text-gray-600 mt-2">Carregando planos...</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {plans.map((plan) => {
+                      const Icon = getPlanIcon(plan.name);
+                      return (
+                        <div
+                          key={plan.id}
+                          className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
+                            form.watch("selectedPlan") === plan.id.toString()
+                              ? "border-blue-600 bg-blue-50"
+                              : "border-gray-200 hover:border-blue-300"
+                          }`}
+                          onClick={() => form.setValue("selectedPlan", plan.id.toString())}
+                        >
+                          <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mx-auto mb-3">
+                            <Icon className="w-6 h-6 text-blue-600" />
+                          </div>
+                          <h4 className="text-lg font-semibold text-center mb-2">{plan.name}</h4>
+                          <p className="text-2xl font-bold text-center text-blue-600 mb-2">
+                            R$ {plan.price}
+                          </p>
+                          <p className="text-sm text-gray-600 text-center mb-3">
+                            Até {plan.maxProfessionals} profissionais
+                          </p>
+                          {plan.freeDays > 0 && (
+                            <div className="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded text-center">
+                              {plan.freeDays} dias grátis
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                {form.formState.errors.selectedPlan && (
+                  <p className="text-sm text-red-600 text-center">
+                    {form.formState.errors.selectedPlan.message}
+                  </p>
+                )}
               </div>
 
               {/* Endereço */}
