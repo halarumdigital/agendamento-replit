@@ -343,18 +343,31 @@ export default function CompanyLogin() {
             )}
           </CardContent>
           
-          {/* Link para Acesso do Profissional - sempre visível */}
+          {/* Links para Acesso do Profissional e Afiliado - sempre visível */}
           <div className="px-6 pb-6">
-            <div className="text-center text-sm border-t pt-4">
-              <span className="text-muted-foreground">É um profissional? </span>
-              <Button
-                type="button"
-                variant="link"
-                className="text-blue-600 hover:text-blue-800 p-0 h-auto font-medium"
-                onClick={() => setLocation("/profissional/login")}
-              >
-                Acesso do Profissional
-              </Button>
+            <div className="text-center text-sm border-t pt-4 space-y-2">
+              <div>
+                <span className="text-muted-foreground">É um profissional? </span>
+                <Button
+                  type="button"
+                  variant="link"
+                  className="text-blue-600 hover:text-blue-800 p-0 h-auto font-medium"
+                  onClick={() => setLocation("/profissional/login")}
+                >
+                  Acesso do Profissional
+                </Button>
+              </div>
+              <div>
+                <span className="text-muted-foreground">É um afiliado? </span>
+                <Button
+                  type="button"
+                  variant="link"
+                  className="text-green-600 hover:text-green-800 p-0 h-auto font-medium"
+                  onClick={() => setLocation("/afiliado/login")}
+                >
+                  Acesso do Afiliado
+                </Button>
+              </div>
             </div>
           </div>
         </Card>
