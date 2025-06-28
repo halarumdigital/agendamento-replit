@@ -96,30 +96,16 @@ export default function Register() {
       console.log("Sending registration data:", registrationData);
       
       // Register company
-      const registerResponse = await apiRequest("/api/public/register", "POST", registrationData);
-      console.log("Registration response:", registerResponse);
+      const result = await apiRequest("/api/public/register", "POST", registrationData);
+      console.log("Registration successful:", result);
       
-      if (registerResponse.ok) {
-        const result = await registerResponse.json();
-        console.log("Registration successful:", result);
-        
-        toast({
-          title: "Cadastro realizado com sucesso!",
-          description: "Empresa cadastrada com sucesso!",
-        });
-        
-        // Redirect to thank you page
-        setLocation("/obrigado");
-      } else {
-        const errorResult = await registerResponse.json();
-        console.error("Registration failed:", errorResult);
-        
-        toast({
-          title: "Erro no cadastro",
-          description: errorResult.message || "Falha ao realizar cadastro",
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Cadastro realizado com sucesso!",
+        description: "Empresa cadastrada com sucesso!",
+      });
+      
+      // Redirect to thank you page
+      setLocation("/obrigado");
     } catch (error: any) {
       console.error("Registration error:", error);
       toast({
