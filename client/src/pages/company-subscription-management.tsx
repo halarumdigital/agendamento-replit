@@ -4,8 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { AlertCircle, CheckCircle, CreditCard, Calendar, Users, ArrowUpRight, ArrowLeft } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { AlertCircle, CheckCircle, CreditCard, Calendar, Users, ArrowUpRight, ArrowLeft, Check } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -391,6 +391,7 @@ export default function CompanySubscriptionManagement() {
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>('monthly');
   const [showPayment, setShowPayment] = useState(false);
+  const [showPlanSelection, setShowPlanSelection] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -688,28 +689,16 @@ export default function CompanySubscriptionManagement() {
               })}
             </div>
 
-            {selectedPlanId && selectedPlanId !== subscriptionStatus?.planId && !showPayment && (
-              <div className="mt-6 text-center">
-                <Button 
-                  onClick={handleUpgrade}
-                  disabled={upgradeMutation.isPending}
-                  size="lg"
-                  className="w-full md:w-auto"
-                >
-                  {upgradeMutation.isPending ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Processando...
-                    </>
-                  ) : (
-                    <>
-                      <CreditCard className="h-4 w-4 mr-2" />
-                      Fazer Upgrade
-                    </>
-                  )}
-                </Button>
-              </div>
-            )}
+            <div className="mt-6 text-center">
+              <Button 
+                onClick={() => setShowPlanSelection(true)}
+                size="lg"
+                className="w-full md:w-auto bg-purple-600 hover:bg-purple-700"
+              >
+                <ArrowUpRight className="h-4 w-4 mr-2" />
+                Fazer Upgrade
+              </Button>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -775,6 +764,173 @@ export default function CompanySubscriptionManagement() {
               />
             )
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Plan Selection Modal */}
+      <Dialog open={showPlanSelection} onOpenChange={setShowPlanSelection}>
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ArrowUpRight className="h-5 w-5" />
+              Escolha seu Plano
+            </DialogTitle>
+            <DialogDescription>
+              Selecione o plano que melhor atende às necessidades do seu negócio
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+            {availablePlans
+              .filter(plan => plan.id !== subscriptionStatus?.planId)
+              .map((plan) => {
+                // Para availablePlans, não temos permissions, então vamos usar valores padrão
+                const permissions = {
+                  appointments: true,
+                  clients: true,
+                  services: true,
+                  professionals: plan.id > 1,
+                  messages: plan.id > 1,
+                  reports: plan.id > 1,
+                  coupons: plan.id > 2,
+                  financial: plan.id > 2,
+                  settings: plan.id > 1
+                };
+
+                const isCurrentPlan = plan.id === subscriptionStatus?.planId;
+                const isRecommended = plan.id === 2; // Plano Profissional como recomendado
+
+                return (
+                  <div key={plan.id} className={`
+                    relative border rounded-lg p-6 hover:shadow-lg transition-all cursor-pointer
+                    ${isRecommended ? 'border-purple-500 shadow-md' : 'border-gray-200'}
+                    ${selectedPlanId === plan.id ? 'ring-2 ring-purple-500 bg-purple-50' : ''}
+                  `}>
+                    {isRecommended && (
+                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                        <span className="bg-purple-500 text-white px-3 py-1 rounded-full text-xs font-medium">
+                          Recomendado
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="text-center mb-4">
+                      <h3 className="text-xl font-bold text-gray-900">{plan.name}</h3>
+                      <div className="mt-2">
+                        <div className="flex items-center justify-center gap-2">
+                          <span className="text-2xl font-bold text-purple-600">
+                            R$ {plan.price}
+                          </span>
+                          <span className="text-gray-500">/mês</span>
+                        </div>
+                        
+                        {plan.annualPrice && (
+                          <div className="mt-1">
+                            <span className="text-lg font-semibold text-green-600">
+                              R$ {plan.annualPrice}
+                            </span>
+                            <span className="text-gray-500 text-sm">/ano</span>
+                            <div className="text-xs text-green-600 font-medium">
+                              Economize {Math.round((1 - (parseFloat(plan.annualPrice) / 12) / parseFloat(plan.price)) * 100)}%
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="text-sm text-gray-600 mt-2">
+                        Até {plan.maxProfessionals} {plan.maxProfessionals === 1 ? 'profissional' : 'profissionais'}
+                      </div>
+                    </div>
+
+                    <div className="space-y-3 mb-6">
+                      <div className="flex items-center gap-2">
+                        <Check className="h-4 w-4 text-green-500" />
+                        <span className="text-sm">Agendamentos {permissions.appointments ? 'ilimitados' : 'básicos'}</span>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <Check className="h-4 w-4 text-green-500" />
+                        <span className="text-sm">Gestão de clientes {permissions.clients ? 'completa' : 'básica'}</span>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <Check className="h-4 w-4 text-green-500" />
+                        <span className="text-sm">Catálogo de serviços {permissions.services ? 'avançado' : 'básico'}</span>
+                      </div>
+                      
+                      {permissions.professionals && (
+                        <div className="flex items-center gap-2">
+                          <Check className="h-4 w-4 text-green-500" />
+                          <span className="text-sm">Gestão de profissionais</span>
+                        </div>
+                      )}
+                      
+                      {permissions.messages && (
+                        <div className="flex items-center gap-2">
+                          <Check className="h-4 w-4 text-green-500" />
+                          <span className="text-sm">WhatsApp integrado</span>
+                        </div>
+                      )}
+                      
+                      {permissions.reports && (
+                        <div className="flex items-center gap-2">
+                          <Check className="h-4 w-4 text-green-500" />
+                          <span className="text-sm">Relatórios avançados</span>
+                        </div>
+                      )}
+                      
+                      {permissions.coupons && (
+                        <div className="flex items-center gap-2">
+                          <Check className="h-4 w-4 text-green-500" />
+                          <span className="text-sm">Sistema de cupons</span>
+                        </div>
+                      )}
+                      
+                      {permissions.financial && (
+                        <div className="flex items-center gap-2">
+                          <Check className="h-4 w-4 text-green-500" />
+                          <span className="text-sm">Gestão financeira</span>
+                        </div>
+                      )}
+                      
+                      {permissions.settings && (
+                        <div className="flex items-center gap-2">
+                          <Check className="h-4 w-4 text-green-500" />
+                          <span className="text-sm">Configurações avançadas</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <Button
+                      onClick={() => {
+                        setSelectedPlanId(plan.id);
+                        setShowPlanSelection(false);
+                        handleUpgrade();
+                      }}
+                      className={`w-full ${
+                        isRecommended 
+                          ? 'bg-purple-600 hover:bg-purple-700' 
+                          : 'bg-gray-600 hover:bg-gray-700'
+                      }`}
+                    >
+                      Escolher {plan.name}
+                    </Button>
+                  </div>
+                );
+              })}
+          </div>
+
+          <div className="mt-6 flex justify-between items-center">
+            <div className="text-sm text-gray-500">
+              Todos os planos incluem período de teste gratuito
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => setShowPlanSelection(false)}
+            >
+              Cancelar
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
