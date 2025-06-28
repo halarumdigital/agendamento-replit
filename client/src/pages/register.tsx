@@ -12,17 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Link, useLocation } from "wouter";
 import { formatDocument } from "@/lib/validations";
-import { Building2, MapPin, Mail, Lock, User, Phone, Check, Star, Zap, Crown } from "lucide-react";
-
-interface Plan {
-  id: number;
-  name: string;
-  freeDays: number;
-  price: string;
-  maxProfessionals: number;
-  isActive: boolean;
-  permissions: Record<string, boolean>;
-}
+import { Building2, MapPin, Mail, Lock, User, Phone } from "lucide-react";
 
 const registerSchema = z.object({
   fantasyName: z.string().min(2, "Nome fantasia deve ter pelo menos 2 caracteres"),
@@ -37,7 +27,7 @@ const registerSchema = z.object({
   neighborhood: z.string().min(1, "Bairro é obrigatório"),
   city: z.string().min(1, "Cidade é obrigatória"),
   state: z.string().min(1, "Estado é obrigatório"),
-  selectedPlan: z.string().min(1, "Selecione um plano"),
+
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Senhas não coincidem",
   path: ["confirmPassword"],
@@ -61,10 +51,7 @@ export default function Register() {
     }
   }, []);
 
-  // Fetch available plans
-  const { data: plans = [], isLoading: plansLoading } = useQuery<Plan[]>({
-    queryKey: ["/api/public-plans"],
-  });
+
 
   const form = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
@@ -82,7 +69,7 @@ export default function Register() {
       neighborhood: "",
       city: "",
       state: "",
-      selectedPlan: "",
+
     },
   });
 
@@ -98,7 +85,7 @@ export default function Register() {
     console.log("Form is valid:", form.formState.isValid);
     setIsLoading(true);
     try {
-      const { confirmPassword, selectedPlan, ...registerData } = data;
+      const { confirmPassword, ...registerData } = data;
       
       // Include affiliate code if present
       const registrationData = {
@@ -145,12 +132,7 @@ export default function Register() {
     }
   };
 
-  const getPlanIcon = (planName: string) => {
-    if (planName.toLowerCase().includes('básico')) return Star;
-    if (planName.toLowerCase().includes('profissional')) return Zap;
-    if (planName.toLowerCase().includes('premium')) return Crown;
-    return Star;
-  };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
@@ -207,59 +189,6 @@ export default function Register() {
                     )}
                   </div>
                 </div>
-              </div>
-
-              {/* Seleção de Plano */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 mb-4">
-                  <Star className="w-5 h-5 text-blue-600" />
-                  <h3 className="text-lg font-semibold text-gray-900">Escolha seu Plano</h3>
-                </div>
-                
-                {plansLoading ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto"></div>
-                    <p className="text-gray-600 mt-2">Carregando planos...</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {plans.map((plan) => {
-                      const Icon = getPlanIcon(plan.name);
-                      return (
-                        <div
-                          key={plan.id}
-                          className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
-                            form.watch("selectedPlan") === plan.id.toString()
-                              ? "border-blue-600 bg-blue-50"
-                              : "border-gray-200 hover:border-blue-300"
-                          }`}
-                          onClick={() => form.setValue("selectedPlan", plan.id.toString())}
-                        >
-                          <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mx-auto mb-3">
-                            <Icon className="w-6 h-6 text-blue-600" />
-                          </div>
-                          <h4 className="text-lg font-semibold text-center mb-2">{plan.name}</h4>
-                          <p className="text-2xl font-bold text-center text-blue-600 mb-2">
-                            R$ {plan.price}
-                          </p>
-                          <p className="text-sm text-gray-600 text-center mb-3">
-                            Até {plan.maxProfessionals} profissionais
-                          </p>
-                          {plan.freeDays > 0 && (
-                            <div className="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded text-center">
-                              {plan.freeDays} dias grátis
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-                {form.formState.errors.selectedPlan && (
-                  <p className="text-sm text-red-600 text-center">
-                    {form.formState.errors.selectedPlan.message}
-                  </p>
-                )}
               </div>
 
               {/* Endereço */}
