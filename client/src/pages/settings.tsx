@@ -829,7 +829,7 @@ export default function SettingsPage() {
                           />
                         </FormControl>
                         <FormDescription>
-                          Esta mensagem será aplicada como padrão para todas as novas empresas. Use {NOME} para o nome do cliente e {EMPRESA} para o nome da empresa.
+                          Esta mensagem será aplicada como padrão para todas as novas empresas. Use <code className="bg-gray-100 px-1 rounded">{"{NOME}"}</code> para o nome do cliente e <code className="bg-gray-100 px-1 rounded">{"{EMPRESA}"}</code> para o nome da empresa.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
