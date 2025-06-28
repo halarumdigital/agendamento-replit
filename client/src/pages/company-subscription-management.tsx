@@ -724,23 +724,43 @@ export default function CompanySubscriptionManagement() {
             </DialogTitle>
           </DialogHeader>
           
-          {clientSecret && selectedPlanId && (
-            <Elements 
-              stripe={stripePromise} 
-              options={{ 
-                clientSecret,
-                appearance: {
-                  theme: 'stripe',
-                  variables: {
-                    colorPrimary: '#8b5cf6',
+          {selectedPlanId && (
+            clientSecret ? (
+              <Elements 
+                stripe={stripePromise} 
+                options={{ 
+                  clientSecret,
+                  appearance: {
+                    theme: 'stripe',
+                    variables: {
+                      colorPrimary: '#8b5cf6',
+                    }
                   }
-                }
-              }}
-            >
+                }}
+              >
+                <PaymentForm
+                  selectedPlan={availablePlans.find(p => p.id === selectedPlanId)!}
+                  billingPeriod={billingPeriod}
+                  clientSecret={clientSecret}
+                  onSuccess={() => {
+                    setShowPayment(false);
+                    setClientSecret(null);
+                    setSelectedPlanId(null);
+                    queryClient.invalidateQueries({ queryKey: ['/api/subscription/status'] });
+                  }}
+                  onCancel={() => {
+                    setShowPayment(false);
+                    setClientSecret(null);
+                    setSelectedPlanId(null);
+                  }}
+                />
+              </Elements>
+            ) : (
+              // Modo demonstração sem Stripe
               <PaymentForm
                 selectedPlan={availablePlans.find(p => p.id === selectedPlanId)!}
                 billingPeriod={billingPeriod}
-                clientSecret={clientSecret}
+                clientSecret={null}
                 onSuccess={() => {
                   setShowPayment(false);
                   setClientSecret(null);
@@ -750,9 +770,10 @@ export default function CompanySubscriptionManagement() {
                 onCancel={() => {
                   setShowPayment(false);
                   setClientSecret(null);
+                  setSelectedPlanId(null);
                 }}
               />
-            </Elements>
+            )
           )}
         </DialogContent>
       </Dialog>
