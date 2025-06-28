@@ -709,7 +709,7 @@ export default function CompanySubscriptionManagement() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CreditCard className="h-5 w-5" />
-              Finalizar Pagamento
+              {clientSecret ? "Finalizar Pagamento" : "Modo Demonstração"}
             </DialogTitle>
           </DialogHeader>
           
@@ -745,23 +745,66 @@ export default function CompanySubscriptionManagement() {
                 />
               </Elements>
             ) : (
-              // Modo demonstração sem Stripe
-              <PaymentForm
-                selectedPlan={availablePlans.find(p => p.id === selectedPlanId)!}
-                billingPeriod={billingPeriod}
-                clientSecret={null}
-                onSuccess={() => {
-                  setShowPayment(false);
-                  setClientSecret(null);
-                  setSelectedPlanId(null);
-                  queryClient.invalidateQueries({ queryKey: ['/api/subscription/status'] });
-                }}
-                onCancel={() => {
-                  setShowPayment(false);
-                  setClientSecret(null);
-                  setSelectedPlanId(null);
-                }}
-              />
+              // Modo demonstração - interface simplificada
+              <div className="space-y-4">
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Sistema em modo demonstração. O pagamento real requer configuração do Stripe.
+                  </AlertDescription>
+                </Alert>
+                
+                {(() => {
+                  const selectedPlan = availablePlans.find(p => p.id === selectedPlanId);
+                  if (!selectedPlan) return null;
+                  
+                  const price = billingPeriod === 'annual' && selectedPlan.annualPrice 
+                    ? selectedPlan.annualPrice 
+                    : selectedPlan.price;
+                  
+                  return (
+                    <div className="p-4 border rounded-lg">
+                      <h3 className="font-semibold">{selectedPlan.name}</h3>
+                      <p className="text-2xl font-bold text-primary">
+                        R$ {price}
+                        <span className="text-sm font-normal text-muted-foreground">
+                          /{billingPeriod === 'monthly' ? 'mês' : 'ano'}
+                        </span>
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Até {selectedPlan.maxProfessionals} profissionais
+                      </p>
+                    </div>
+                  );
+                })()}
+                
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => {
+                      setShowPayment(false);
+                      setClientSecret(null);
+                      setSelectedPlanId(null);
+                      toast({
+                        title: "Upgrade simulado",
+                        description: "Em modo demonstração, o upgrade seria processado aqui.",
+                      });
+                    }}
+                    className="flex-1"
+                  >
+                    Simular Upgrade
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowPayment(false);
+                      setClientSecret(null);
+                      setSelectedPlanId(null);
+                    }}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
             )
           )}
         </DialogContent>
