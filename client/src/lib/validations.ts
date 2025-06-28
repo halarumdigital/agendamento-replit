@@ -124,6 +124,7 @@ export const settingsSchema = z.object({
   openaiModel: z.string().optional(),
   openaiTemperature: z.string().optional(),
   openaiMaxTokens: z.string().optional(),
+  defaultAiPrompt: z.string().optional(),
   smtpHost: z.string().optional(),
   smtpPort: z.string().optional(),
   smtpUser: z.string().optional(),

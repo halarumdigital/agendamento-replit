@@ -208,6 +208,7 @@ export default function SettingsPage() {
       openaiModel: "gpt-4o",
       openaiTemperature: "0.7",
       openaiMaxTokens: "4000",
+      defaultAiPrompt: "",
       smtpHost: "",
       smtpPort: "",
       smtpUser: "",
@@ -234,6 +235,7 @@ export default function SettingsPage() {
       openaiModel: (settings as any).openaiModel || "gpt-4o",
       openaiTemperature: (settings as any).openaiTemperature?.toString() || "0.7",
       openaiMaxTokens: (settings as any).openaiMaxTokens?.toString() || "4000",
+      defaultAiPrompt: (settings as any).defaultAiPrompt || "",
       smtpHost: (settings as any).smtpHost || "",
       smtpPort: (settings as any).smtpPort || "",
       smtpUser: (settings as any).smtpUser || "",
@@ -993,6 +995,27 @@ export default function SettingsPage() {
                             onChange={(e) => field.onChange(e.target.value)}
                           />
                         </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="defaultAiPrompt"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Prompt Padrão para Novas Empresas</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Digite o prompt padrão que será usado para o agente de IA das novas empresas. Este prompt será automaticamente preenchido quando uma nova empresa for criada, mas poderá ser modificado pela empresa posteriormente."
+                            className="min-h-[120px]"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Este prompt será automaticamente aplicado às novas empresas na criação. As empresas podem modificar este prompt posteriormente em suas configurações.
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}

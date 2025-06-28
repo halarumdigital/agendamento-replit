@@ -1293,9 +1293,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Hash password
       const hashedPassword = await bcrypt.hash(validatedData.password, 12);
       
+      // Get global settings to apply default AI prompt
+      const globalSettings = await storage.getGlobalSettings();
+      const defaultAiPrompt = globalSettings?.defaultAiPrompt || "";
+      
       const company = await storage.createCompany({
         ...validatedData,
         password: hashedPassword,
+        aiPrompt: defaultAiPrompt, // Apply default AI prompt from admin settings
       });
       
       res.status(201).json(company);

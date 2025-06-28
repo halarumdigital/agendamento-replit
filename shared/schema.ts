@@ -157,6 +157,7 @@ export const globalSettings = mysqlTable("global_settings", {
   openaiModel: varchar("openai_model", { length: 100 }).notNull().default("gpt-4o"),
   openaiTemperature: varchar("openai_temperature", { length: 10 }).notNull().default("0.70"),
   openaiMaxTokens: varchar("openai_max_tokens", { length: 10 }).notNull().default("4000"),
+  defaultAiPrompt: text("default_ai_prompt"),
   // SMTP Configuration
   smtpHost: varchar("smtp_host", { length: 255 }),
   smtpPort: varchar("smtp_port", { length: 10 }),
