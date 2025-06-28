@@ -162,21 +162,21 @@ export default function Companies() {
     }
   };
 
-  const handleEdit = (company: Company) => {
+  const handleEdit = (company: any) => {
     setEditingCompany(company);
     editForm.reset({
-      fantasyName: company.fantasyName,
-      document: company.document,
-      address: company.address,
+      fantasyName: company.fantasyName || company.fantasy_name || "",
+      document: company.document || "",
+      address: company.address || "",
       phone: company.phone || "",
-      zipCode: company.zipCode || "",
+      zipCode: company.zipCode || company.zip_code || "",
       number: company.number || "",
       neighborhood: company.neighborhood || "",
       city: company.city || "",
       state: company.state || "",
-      email: company.email,
-      planId: company.planId || null,
-      isActive: Boolean(company.isActive),
+      email: company.email || "",
+      planId: company.planId || company.plan_id || null,
+      isActive: Boolean(company.isActive || company.is_active),
     });
     setIsModalOpen(true);
   };
@@ -195,9 +195,9 @@ export default function Companies() {
   };
 
   const filteredCompanies = companies.filter(company =>
-    company.fantasyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    company.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    company.document.includes(searchTerm)
+    (company.fantasyName || company.fantasy_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (company.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (company.document || '').includes(searchTerm)
   );
 
   const handleDocumentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
