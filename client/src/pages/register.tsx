@@ -107,27 +107,13 @@ export default function Register() {
       const registerResponse = await apiRequest("POST", "/api/public/register", registrationData);
       
       if (registerResponse.ok) {
-        // Auto-login after registration
-        const loginResponse = await apiRequest("POST", "/api/company/login", {
-          email: data.email,
-          password: data.password
+        toast({
+          title: "Cadastro realizado com sucesso!",
+          description: "Empresa cadastrada com sucesso!",
         });
-
-        if (loginResponse.ok) {
-          toast({
-            title: "Cadastro realizado com sucesso!",
-            description: "Redirecionando para finalizar assinatura...",
-          });
-          
-          // Redirect to subscription page
-          setLocation("/assinatura");
-        } else {
-          toast({
-            title: "Cadastro realizado!",
-            description: "Faça login para continuar com a assinatura.",
-          });
-          setLocation("/company/login");
-        }
+        
+        // Redirect to thank you page
+        setLocation("/obrigado");
       }
     } catch (error: any) {
       toast({

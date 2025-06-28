@@ -7285,12 +7285,12 @@ const broadcastEvent = (eventData: any) => {
       
       const defaultPlanId = plans && (plans as any[]).length > 0 ? (plans as any[])[0].id : 1;
 
-      // Create company
+      // Create company with active status
       const [companyResult] = await pool.execute(`
         INSERT INTO companies (
           fantasy_name, document, email, password, address, phone, 
-          zip_code, number, neighborhood, city, state, plan_id, is_active
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+          zip_code, number, neighborhood, city, state, plan_id, is_active, plan_status
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 'active')
       `, [
         fantasyName, document, email, hashedPassword, address, phone,
         zipCode, number, neighborhood, city, state, defaultPlanId
@@ -7298,6 +7298,36 @@ const broadcastEvent = (eventData: any) => {
 
       const companyId = (companyResult as any).insertId;
       console.log('Company created with ID:', companyId);
+
+      // Set default birthday message and AI prompt from admin settings
+      try {
+        const [globalSettings] = await pool.execute(
+          'SELECT default_birthday_message, default_ai_prompt FROM global_settings LIMIT 1'
+        );
+        
+        if ((globalSettings as any[]).length > 0) {
+          const settings = (globalSettings as any[])[0];
+          
+          if (settings.default_birthday_message) {
+            await pool.execute(
+              'UPDATE companies SET birthday_message = ? WHERE id = ?',
+              [settings.default_birthday_message, companyId]
+            );
+          }
+          
+          if (settings.default_ai_prompt) {
+            await pool.execute(
+              'UPDATE companies SET ai_agent_prompt = ? WHERE id = ?',
+              [settings.default_ai_prompt, companyId]
+            );
+          }
+          
+          console.log('Default settings applied to new company:', companyId);
+        }
+      } catch (settingsError) {
+        console.error('Error applying default settings:', settingsError);
+        // Continue with registration even if default settings fail
+      }
 
       // Process affiliate referral if code provided
       if (affiliateCode) {
