@@ -339,8 +339,16 @@ export default function CompanySubscriptionManagement() {
   // Upgrade subscription mutation
   const upgradeMutation = useMutation({
     mutationFn: async (data: { planId: number; billingPeriod: 'monthly' | 'annual'; installments?: number }) => {
-      const response = await apiRequest('/api/subscription/upgrade', 'POST', data);
-      return response;
+      console.log('🚀 Initiating upgrade request with data:', data);
+      console.log('📡 Making API request to:', '/api/subscription/upgrade');
+      try {
+        const response = await apiRequest('/api/subscription/upgrade', 'POST', data);
+        console.log('✅ Upgrade response received:', response);
+        return response;
+      } catch (error) {
+        console.error('❌ Upgrade request failed:', error);
+        throw error;
+      }
     },
     onSuccess: (data) => {
       if (data.clientSecret) {

@@ -35,10 +35,17 @@ export const isAuthenticated: RequestHandler = async (req: any, res, next) => {
 
 export const isCompanyAuthenticated: RequestHandler = async (req: any, res, next) => {
   try {
+    console.log('🔍 Company auth check - Session ID:', req.sessionID);
+    console.log('🔍 Company auth check - Session data:', JSON.stringify(req.session, null, 2));
+    console.log('🔍 Company auth check - Company ID:', req.session.companyId);
+    
     const companyId = req.session.companyId;
     if (!companyId) {
+      console.log('❌ No company ID in session - authentication failed');
       return res.status(401).json({ message: "Não autenticado" });
     }
+    
+    console.log('✅ Company authenticated successfully:', companyId);
     next();
   } catch (error) {
     console.error("Company authentication error:", error);
