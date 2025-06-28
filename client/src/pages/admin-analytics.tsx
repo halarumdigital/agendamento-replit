@@ -111,7 +111,7 @@ export default function AdminAnalytics() {
             <Building2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data?.companyDetails?.length || 0}</div>
+            <div className="text-2xl font-bold">{data?.topCompanies?.length || 0}</div>
             <p className="text-xs text-muted-foreground">Empresas ativas na plataforma</p>
           </CardContent>
         </Card>
@@ -123,7 +123,7 @@ export default function AdminAnalytics() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {data?.companyDetails?.reduce((sum, company) => sum + company.totalAppointments, 0) || 0}
+              {data?.topCompanies?.reduce((sum, company) => sum + company.totalAppointments, 0) || 0}
             </div>
             <p className="text-xs text-muted-foreground">Agendamentos realizados</p>
           </CardContent>
