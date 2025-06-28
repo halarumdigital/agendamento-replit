@@ -142,6 +142,7 @@ This is a comprehensive business management system built with Express.js and MyS
 ## Changelog
 ```
 Changelog:
+- June 28, 2025. COMPLETED: Campo de senha para edição de empresa - adicionado campo opcional "Nova Senha" no modal de edição de empresa no painel administrativo, permite alterar senha da empresa durante edição (campo vazio mantém senha atual), validação mínima de 6 caracteres, senha automaticamente criptografada com bcrypt no backend
 - June 28, 2025. COMPLETED: Limpeza da página de assinatura - removido cabeçalho com título "Escolha seu plano no Sistema" e subtítulo, página agora vai direto aos planos sem texto introdutório desnecessário
 - June 28, 2025. COMPLETED: Correção da exibição do número de profissionais nos planos - removido texto genérico "Até X profissionais" e implementado exibição específica do número real de profissionais por plano (1, 3, 10), incluindo correção do endpoint /api/public-plans para retornar campo maxProfessionals corretamente
 - June 25, 2025. COMPLETED: Segurança aprimorada - mascaramento completo de dados sensíveis nos logs do frontend - removidos console.log que expunham credenciais Evolution API, senhas SMTP, chaves OpenAI e dados de formulários em settings.tsx, EditAppointmentDialog.tsx e company-professionals.tsx, agora todos os dados sensíveis são mascarados como [HIDDEN] ou [CONFIGURED] nos logs do navegador para máxima segurança

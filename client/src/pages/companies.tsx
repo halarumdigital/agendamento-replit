@@ -386,29 +386,44 @@ export default function Companies() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="planId">Plano</Label>
-                  <Select 
-                    value={editForm.watch("planId")?.toString() || "none"} 
-                    onValueChange={(value) => editForm.setValue("planId", value === "none" ? null : parseInt(value))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione um plano" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Nenhum plano</SelectItem>
-                      {plans.map((plan) => (
-                        <SelectItem key={plan.id} value={plan.id.toString()}>
-                          {plan.name} - R$ {parseFloat(plan.price).toFixed(2).replace('.', ',')}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {editForm.formState.errors.planId && (
+                  <Label htmlFor="password">Nova Senha (opcional)</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    {...editForm.register("password")}
+                    placeholder="Digite uma nova senha (deixe vazio para manter atual)"
+                  />
+                  {editForm.formState.errors.password && (
                     <p className="text-sm text-red-600">
-                      {editForm.formState.errors.planId.message}
+                      {editForm.formState.errors.password.message}
                     </p>
                   )}
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="planId">Plano</Label>
+                <Select 
+                  value={editForm.watch("planId")?.toString() || "none"} 
+                  onValueChange={(value) => editForm.setValue("planId", value === "none" ? null : parseInt(value))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um plano" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Nenhum plano</SelectItem>
+                    {plans.map((plan) => (
+                      <SelectItem key={plan.id} value={plan.id.toString()}>
+                        {plan.name} - R$ {parseFloat(plan.price).toFixed(2).replace('.', ',')}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {editForm.formState.errors.planId && (
+                  <p className="text-sm text-red-600">
+                    {editForm.formState.errors.planId.message}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-4">

@@ -1316,9 +1316,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertCompanySchema.partial().parse(req.body);
       console.log('Validated data:', validatedData);
       
-      // Hash password if provided
-      if (validatedData.password) {
+      // Hash password if provided and not empty
+      if (validatedData.password && validatedData.password.trim() !== '') {
         validatedData.password = await bcrypt.hash(validatedData.password, 12);
+      } else {
+        // Remove password field if empty to avoid updating with empty value
+        delete validatedData.password;
       }
       
       // Convert isActive to number if it's a boolean
