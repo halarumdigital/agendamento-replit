@@ -1442,7 +1442,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/public-plans', async (req, res) => {
     try {
       // Primeiro, verifica se existem planos na tabela
-      const [result] = await db.execute(sql`SELECT * FROM plans LIMIT 5`);
+      const [result] = await db.execute(sql`
+        SELECT id, name, price, annual_price, free_days, permissions, max_professionals, is_active, stripe_price_id 
+        FROM plans 
+        WHERE is_active = 1 
+        ORDER BY price ASC 
+        LIMIT 5
+      `);
       
       let plans = Array.isArray(result) ? result : (result ? [result] : []);
       
@@ -1504,6 +1510,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           name: plan.name,
           price: plan.price,
           annualPrice: plan.annual_price,
+          maxProfessionals: plan.max_professionals || 1,
           stripePriceId: plan.stripe_price_id || `price_${plan.name.toLowerCase()}`,
           freeDays: plan.free_days,
           description: `Plano ${plan.name} - Ideal para seu negócio`,
