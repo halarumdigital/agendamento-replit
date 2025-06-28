@@ -1064,6 +1064,58 @@ const broadcastEvent = (eventData: any) => {
 
 export async function registerRoutes(app: Express): Promise<Server> {
 
+  // Ensure trial columns exist in companies table
+  try {
+    console.log('🔧 Verificando colunas de trial na tabela companies...');
+    
+    // Check if trial_expires_at column exists
+    const [columns] = await pool.execute(`
+      SELECT COLUMN_NAME 
+      FROM INFORMATION_SCHEMA.COLUMNS 
+      WHERE TABLE_SCHEMA = DATABASE() 
+      AND TABLE_NAME = 'companies' 
+      AND COLUMN_NAME = 'trial_expires_at'
+    `);
+    
+    if ((columns as any[]).length === 0) {
+      console.log('➕ Adicionando coluna trial_expires_at...');
+      
+      // Add trial_expires_at column only
+      await pool.execute(`
+        ALTER TABLE companies 
+        ADD COLUMN trial_expires_at DATETIME NULL
+      `);
+      
+      console.log('✅ Coluna trial_expires_at adicionada!');
+      
+      // Update existing companies with trial expiration dates
+      const [companies] = await pool.execute(`
+        SELECT c.id, c.created_at, IFNULL(p.free_days, 30) as free_days
+        FROM companies c 
+        LEFT JOIN plans p ON c.plan_id = p.id 
+        WHERE c.trial_expires_at IS NULL
+      `);
+      
+      for (const company of (companies as any[])) {
+        const freeDays = company.free_days || 30;
+        const createdAt = new Date(company.created_at);
+        const trialExpiresAt = new Date(createdAt.getTime() + (freeDays * 24 * 60 * 60 * 1000));
+        
+        await pool.execute(`
+          UPDATE companies 
+          SET trial_expires_at = ?, subscription_status = 'trial' 
+          WHERE id = ?
+        `, [trialExpiresAt, company.id]);
+      }
+      
+      console.log(`✅ ${(companies as any[]).length} empresas atualizadas com datas de trial`);
+    } else {
+      console.log('✅ Colunas de trial já existem');
+    }
+  } catch (error) {
+    console.error('❌ Erro ao verificar/criar colunas de trial:', error);
+  }
+
   // Test endpoint to check appointments in MySQL
   app.get('/api/test/appointments-count', async (req, res) => {
     try {
