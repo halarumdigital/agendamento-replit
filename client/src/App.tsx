@@ -52,6 +52,7 @@ import AffiliateRegister from "@/pages/affiliate-register";
 import AffiliateLogin from "@/pages/affiliate-login";
 import AffiliateDashboard from "@/pages/affiliate-dashboard";
 import Register from "@/pages/register";
+import ThankYou from "@/pages/thank-you";
 import NotFound from "@/pages/NotFound";
 
 function Router() {
@@ -78,6 +79,9 @@ function Router() {
       {/* Registration Routes */}
       <Route path="/cadastro" component={Register} />
       <Route path="/register" component={Register} />
+      
+      {/* Thank You Page */}
+      <Route path="/obrigado" component={ThankYou} />
       
       {/* Company Dashboard Routes */}
       <Route path="/dashboard">
