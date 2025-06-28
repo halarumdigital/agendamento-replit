@@ -815,6 +815,27 @@ export default function SettingsPage() {
                     )}
                   />
 
+                  <FormField
+                    control={form.control}
+                    name="defaultBirthdayMessage"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Mensagem Padrão de Aniversário</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="🎉 Parabéns, {NOME}! A {EMPRESA} deseja um feliz aniversário e muito sucesso! 🎂"
+                            className="min-h-[100px]"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Esta mensagem será aplicada como padrão para todas as novas empresas. Use {NOME} para o nome do cliente e {EMPRESA} para o nome da empresa.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
                     <h4 className="font-medium text-blue-900 mb-2">Como configurar:</h4>
                     <ul className="text-sm text-blue-800 space-y-1">

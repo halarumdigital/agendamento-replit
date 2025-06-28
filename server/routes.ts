@@ -1293,14 +1293,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Hash password
       const hashedPassword = await bcrypt.hash(validatedData.password, 12);
       
-      // Get global settings to apply default AI prompt
+      // Get global settings to apply default AI prompt and birthday message
       const globalSettings = await storage.getGlobalSettings();
       const defaultAiPrompt = globalSettings?.defaultAiPrompt || "";
+      const defaultBirthdayMessage = globalSettings?.defaultBirthdayMessage || "";
       
       const company = await storage.createCompany({
         ...validatedData,
         password: hashedPassword,
         aiAgentPrompt: defaultAiPrompt, // Apply default AI prompt from admin settings
+        birthdayMessage: defaultBirthdayMessage, // Apply default birthday message from admin settings
       });
       
       res.status(201).json(company);
@@ -2276,6 +2278,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Error updating AI agent config:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  // Company settings update endpoint
+  app.put('/api/company/settings-update', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const { birthdayMessage, aiAgentPrompt } = req.body;
+
+      await storage.updateCompany(companyId, {
+        birthdayMessage,
+        aiAgentPrompt
+      });
+
+      res.json({ message: "Configurações atualizadas com sucesso" });
+    } catch (error) {
+      console.error("Error updating company settings:", error);
       res.status(500).json({ message: "Erro interno do servidor" });
     }
   });

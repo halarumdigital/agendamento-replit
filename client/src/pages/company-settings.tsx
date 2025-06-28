@@ -17,7 +17,7 @@ import { Settings, Building2, Lock, User, MessageSquare, Trash2, Plus, Smartphon
 import { apiRequest } from "@/lib/queryClient";
 import { useCompanyAuth } from "@/hooks/useCompanyAuth";
 import { z } from "zod";
-import { formatDocument, companyProfileSchema, companyPasswordSchema, companyAiAgentSchema, whatsappInstanceSchema, webhookConfigSchema } from "@/lib/validations";
+import { formatDocument, companyProfileSchema, companyPasswordSchema, companyAiAgentSchema, whatsappInstanceSchema, webhookConfigSchema, companySettingsSchema } from "@/lib/validations";
 
 const birthdayMessageSchema = z.object({
   messageTemplate: z.string().min(10, "A mensagem deve ter pelo menos 10 caracteres"),
@@ -58,6 +58,7 @@ type CompanyAiAgentData = z.infer<typeof companyAiAgentSchema>;
 type WhatsappInstanceData = z.infer<typeof whatsappInstanceSchema>;
 type WebhookConfigData = z.infer<typeof webhookConfigSchema>;
 type BirthdayMessageData = z.infer<typeof birthdayMessageSchema>;
+type CompanySettingsData = z.infer<typeof companySettingsSchema>;
 
 export default function CompanySettings() {
   const { toast } = useToast();
@@ -115,6 +116,18 @@ export default function CompanySettings() {
       apiUrl: "",
       apiKey: "",
     },
+  });
+
+  const companySettingsForm = useForm<CompanySettingsData>({
+    resolver: zodResolver(companySettingsSchema),
+    defaultValues: {
+      birthdayMessage: "",
+      aiAgentPrompt: "",
+    },
+    values: company ? {
+      birthdayMessage: company.birthdayMessage || "",
+      aiAgentPrompt: company.aiAgentPrompt || "",
+    } : undefined,
   });
 
   // Update form when company data loads
@@ -186,6 +199,10 @@ export default function CompanySettings() {
 
   const onPasswordSubmit = (data: CompanyPasswordData) => {
     updatePasswordMutation.mutate(data);
+  };
+
+  const onCompanySettingsSubmit = (data: CompanySettingsData) => {
+    updateCompanySettingsMutation.mutate(data);
   };
 
   const createInstanceMutation = useMutation({
@@ -712,6 +729,26 @@ export default function CompanySettings() {
     },
   });
 
+  const updateCompanySettingsMutation = useMutation({
+    mutationFn: async (data: CompanySettingsData) => {
+      return await apiRequest("/api/company/settings-update", "PUT", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/company/auth/profile"] });
+      toast({
+        title: "Sucesso",
+        description: "Configurações atualizadas com sucesso.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar configurações.",
+        variant: "destructive",
+      });
+    },
+  });
+
   if (!company) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -739,17 +776,17 @@ export default function CompanySettings() {
               <Smartphone className="w-4 h-4" />
               WhatsApp
             </TabsTrigger>
-            <TabsTrigger value="ai-agent" className="flex items-center gap-2">
-              <Bot className="w-4 h-4" />
-              IA
+            <TabsTrigger value="company-settings" className="flex items-center gap-2">
+              <Settings className="w-4 h-4" />
+              Configurações
             </TabsTrigger>
             <TabsTrigger value="reminders" className="flex items-center gap-2">
               <Bell className="w-4 h-4" />
               Lembretes
             </TabsTrigger>
-            <TabsTrigger value="birthdays" className="flex items-center gap-2">
-              <Gift className="w-4 h-4" />
-              Aniversários
+            <TabsTrigger value="ai-agent" className="flex items-center gap-2">
+              <Bot className="w-4 h-4" />
+              IA
             </TabsTrigger>
           </TabsList>
 
@@ -1177,6 +1214,88 @@ export default function CompanySettings() {
                   </p>
                 </div>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="company-settings" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Gift className="w-5 h-5" />
+                Mensagem de Aniversário
+              </CardTitle>
+              <CardDescription>
+                Configure a mensagem personalizada que será enviada aos seus clientes no aniversário deles
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...companySettingsForm}>
+                <form onSubmit={companySettingsForm.handleSubmit(onCompanySettingsSubmit)} className="space-y-6">
+                  <FormField
+                    control={companySettingsForm.control}
+                    name="birthdayMessage"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Mensagem de Aniversário</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Exemplo: Olá {NOME}! A equipe da {EMPRESA} deseja um feliz aniversário! 🎉🎂 Que este novo ano de vida seja repleto de alegrias e conquistas!"
+                            className="min-h-[120px] resize-none"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                        <div className="text-sm text-gray-500">
+                          <p>• Use <code className="bg-gray-100 px-1 rounded">{"{NOME}"}</code> para inserir o nome do cliente</p>
+                          <p>• Use <code className="bg-gray-100 px-1 rounded">{"{EMPRESA}"}</code> para inserir o nome da sua empresa</p>
+                          <p>• A mensagem será enviada automaticamente via WhatsApp no aniversário</p>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={companySettingsForm.control}
+                    name="aiAgentPrompt"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Prompt do Agente IA</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Exemplo: Você é um assistente virtual especializado em atendimento ao cliente para uma empresa de tecnologia. Sempre seja educado, profissional e forneça respostas precisas sobre nossos produtos e serviços..."
+                            className="min-h-[200px] resize-none"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                        <div className="text-sm text-gray-500">
+                          <p>• O prompt deve descrever como o agente IA deve se comportar</p>
+                          <p>• Inclua informações sobre sua empresa, produtos ou serviços</p>
+                          <p>• Defina o tom de voz e estilo de comunicação desejado</p>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="flex justify-end">
+                    <Button 
+                      type="submit" 
+                      disabled={updateCompanySettingsMutation.isPending}
+                      className="min-w-[140px]"
+                    >
+                      {updateCompanySettingsMutation.isPending ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                          Salvando...
+                        </>
+                      ) : (
+                        "Salvar Configurações"
+                      )}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
             </CardContent>
           </Card>
         </TabsContent>

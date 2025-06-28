@@ -58,6 +58,7 @@ export const companies = mysqlTable("companies", {
   planStatus: varchar("plan_status", { length: 50 }).default("inactive"),
   isActive: int("is_active").notNull().default(1),
   aiAgentPrompt: text("ai_agent_prompt"),
+  birthdayMessage: text("birthday_message"),
   resetToken: varchar("reset_token", { length: 255 }),
   resetTokenExpires: varchar("reset_token_expires", { length: 255 }),
   stripeCustomerId: varchar("stripe_customer_id", { length: 255 }),
@@ -153,6 +154,7 @@ export const globalSettings = mysqlTable("global_settings", {
   // tourColor: varchar("tour_color", { length: 7 }).notNull().default("#b845dc"), // Temporarily disabled for schema sync
   evolutionApiUrl: varchar("evolution_api_url", { length: 500 }),
   evolutionApiGlobalKey: varchar("evolution_api_global_key", { length: 500 }),
+  defaultBirthdayMessage: text("default_birthday_message"),
   openaiApiKey: varchar("openai_api_key", { length: 500 }),
   openaiModel: varchar("openai_model", { length: 100 }).notNull().default("gpt-4o"),
   openaiTemperature: varchar("openai_temperature", { length: 10 }).notNull().default("0.70"),

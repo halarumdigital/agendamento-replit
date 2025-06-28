@@ -109,6 +109,11 @@ export const planSchema = z.object({
   permissions: z.record(z.boolean()).default({}),
 });
 
+export const companySettingsSchema = z.object({
+  birthdayMessage: z.string().optional(),
+  aiAgentPrompt: z.string().optional(),
+});
+
 export const settingsSchema = z.object({
   systemName: z.string().optional(),
   logoUrl: z.string().optional(),
@@ -120,6 +125,7 @@ export const settingsSchema = z.object({
   tourColor: z.string().min(4, "Cor do tour guiado é obrigatória"),
   evolutionApiUrl: z.string().optional(),
   evolutionApiGlobalKey: z.string().optional(),
+  defaultBirthdayMessage: z.string().optional(),
   openaiApiKey: z.string().optional(),
   openaiModel: z.string().optional(),
   openaiTemperature: z.string().optional(),
