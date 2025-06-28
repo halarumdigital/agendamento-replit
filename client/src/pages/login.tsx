@@ -84,7 +84,7 @@ export default function Login() {
       });
       
       // Redirect to admin dashboard
-      window.location.href = "/administrador";
+      window.location.href = "/administrador/dashboard";
     } catch (error: any) {
       toast({
         title: "Erro",
