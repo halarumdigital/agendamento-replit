@@ -343,7 +343,7 @@ export default function Subscription() {
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <Check className="w-4 h-4 text-green-600" />
-                      <span className="text-sm">Até {plan.maxProfessionals} profissionais</span>
+                      <span className="text-sm">{plan.maxProfessionals} profissionais</span>
                     </div>
                     {Object.entries(plan.permissions).map(([key, enabled]) => {
                       if (!enabled) return null;
