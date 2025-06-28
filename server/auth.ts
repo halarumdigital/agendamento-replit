@@ -12,7 +12,7 @@ export function getSession() {
       maxAge: 7 * 24 * 60 * 60 * 1000,
       sameSite: 'lax',
     },
-    name: 'app.session',
+    name: 'connect.sid',
   });
 }
 

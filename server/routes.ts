@@ -3269,7 +3269,7 @@ INSTRUÇÕES OBRIGATÓRIAS:
   });
 
   // Dedicated endpoint for status updates (lightweight for Kanban)
-  app.patch('/api/company/appointments/:id/status', async (req: any, res) => {
+  app.patch('/api/company/appointments/:id/status', isCompanyAuthenticated, async (req: any, res) => {
     try {
       const companyId = req.session.companyId;
       if (!companyId) {
