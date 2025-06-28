@@ -51,6 +51,7 @@ import ProfessionalDashboard from "@/pages/professional-dashboard";
 import AffiliateRegister from "@/pages/affiliate-register";
 import AffiliateLogin from "@/pages/affiliate-login";
 import AffiliateDashboard from "@/pages/affiliate-dashboard";
+import Register from "@/pages/register";
 import NotFound from "@/pages/NotFound";
 
 function Router() {
@@ -73,6 +74,10 @@ function Router() {
       
       {/* Professional Routes */}
       <Route path="/profissional/dashboard" component={ProfessionalDashboard} />
+      
+      {/* Registration Routes */}
+      <Route path="/cadastro" component={Register} />
+      <Route path="/register" component={Register} />
       
       {/* Company Dashboard Routes */}
       <Route path="/dashboard">
