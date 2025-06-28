@@ -1,163 +1,175 @@
-import { RequestHandler } from "express";
-import { db } from "./db";
-import { sql } from "drizzle-orm";
-import { stripeService } from "./services/stripe";
+import { Request, Response, NextFunction } from 'express';
+import { storage } from './storage';
+import { pool } from './db';
 
-export interface SubscriptionStatus {
-  isActive: boolean;
-  message?: string;
-  subscriptionStatus?: string;
-  paymentStatus?: string;
+interface CompanySession extends Request {
+  session: {
+    companyId?: number;
+    [key: string]: any;
+  };
 }
 
-export const checkSubscriptionStatus: RequestHandler = async (req: any, res, next) => {
+// Middleware para verificar status da assinatura e gerar alertas
+export const checkSubscriptionStatus = async (req: CompanySession, res: Response, next: NextFunction) => {
   try {
-    // Skip subscription check for admin routes and public endpoints
-    if (req.path.startsWith('/api/admin') || req.path.startsWith('/api/auth') || req.path.startsWith('/api/public-settings') || req.path === '/api/plans') {
-      return next();
-    }
-
-    // Get company from session
-    const companyId = req.session.companyId;
+    const companyId = req.session?.companyId;
+    
     if (!companyId) {
-      return next(); // Let other middleware handle authentication
+      return next(); // Não é sessão de empresa
     }
 
-    // Get company subscription info
-    const result = await db.execute(sql`
-      SELECT stripe_customer_id, stripe_subscription_id, is_active as status, plan_id
-      FROM companies 
-      WHERE id = ${companyId}
-    `);
+    // Verificar status da empresa
+    const [companyRows] = await pool.execute(`
+      SELECT c.*, p.free_days, p.name as plan_name
+      FROM companies c 
+      LEFT JOIN plans p ON c.plan_id = p.id 
+      WHERE c.id = ?
+    `, [companyId]);
 
-    const companies = Array.isArray(result[0]) ? result[0] : result as any[];
-
-    if (!companies || companies.length === 0) {
-      return res.status(401).json({ 
-        message: "Empresa não encontrada",
-        blocked: true 
-      });
+    if (!(companyRows as any[]).length) {
+      return res.status(401).json({ message: 'Empresa não encontrada' });
     }
 
-    const company = companies[0];
+    const company = (companyRows as any[])[0];
+    const now = new Date();
+    const trialExpiresAt = new Date(company.trial_expires_at);
 
-    // Check if company is marked as inactive in database first
-    if (company.status === 0) {
-      return res.status(402).json({
-        message: "Acesso Bloqueado - Assinatura Suspensa",
-        blocked: true,
-        reason: "company_inactive"
-      });
-    }
-
-    // If no Stripe subscription, allow access (free trial or manual management)
-    if (!company.stripe_subscription_id) {
+    // Se tem assinatura ativa, permitir acesso
+    if (company.stripe_subscription_id && company.subscription_status === 'active') {
       return next();
     }
 
-    // Check subscription status with Stripe
-    try {
-      const subscription = await stripeService.retrieveSubscription(company.stripe_subscription_id, ['latest_invoice.payment_intent']);
-      
-      const isActive = subscription.status === 'active' || subscription.status === 'trialing';
-      let hasValidPayment = subscription.status === 'trialing';
-      
-      if (subscription.latest_invoice && typeof subscription.latest_invoice === 'object') {
-        const paymentIntent = subscription.latest_invoice.payment_intent;
-        if (paymentIntent && typeof paymentIntent === 'object') {
-          hasValidPayment = paymentIntent.status === 'succeeded' || subscription.status === 'trialing';
-        }
-      }
-
-      if (!isActive || !hasValidPayment) {
-        // Update company status in database
-        await db.execute(sql`
-          UPDATE companies 
-          SET is_active = 0, plan_status = 'suspended'
-          WHERE id = ${companyId}
-        `);
-
-        return res.status(402).json({
-          message: "Acesso Bloqueado, entre em contato com o suporte",
-          blocked: true,
-          reason: "payment_failed",
-          subscriptionStatus: subscription.status,
-          paymentStatus: subscription.latest_invoice && typeof subscription.latest_invoice === 'object' && 
-                        subscription.latest_invoice.payment_intent && typeof subscription.latest_invoice.payment_intent === 'object' ? 
-                        subscription.latest_invoice.payment_intent.status : 'unknown'
-        });
-      }
-
-      // Ensure company status is active if payment is good
-      if (company.status === 0) {
-        await db.execute(sql`
-          UPDATE companies 
-          SET is_active = 1, plan_status = 'active'
-          WHERE id = ${companyId}
-        `);
-      }
-
-      next();
-    } catch (stripeError) {
-      console.error('Erro ao verificar assinatura no Stripe:', stripeError);
-      // If Stripe is down, allow access but log the error
-      next();
+    // Se empresa está bloqueada, negar acesso
+    if (company.subscription_status === 'blocked') {
+      return res.status(403).json({ 
+        message: 'Acesso bloqueado. Sua conta foi suspensa por falta de pagamento.',
+        status: 'blocked',
+        needsPayment: true 
+      });
     }
 
+    // Verificar se período gratuito expirou
+    if (trialExpiresAt <= now && !company.stripe_subscription_id) {
+      // Bloquear empresa
+      await pool.execute(`
+        UPDATE companies 
+        SET subscription_status = 'blocked', is_active = 0 
+        WHERE id = ?
+      `, [companyId]);
+
+      return res.status(403).json({ 
+        message: 'Seu período gratuito expirou. Para continuar usando o sistema, escolha um plano e efetue o pagamento.',
+        status: 'expired',
+        needsPayment: true,
+        trialExpiredAt: trialExpiresAt
+      });
+    }
+
+    // Calcular dias restantes
+    const daysRemaining = Math.ceil((trialExpiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    
+    // Verificar se deve mostrar alerta (5, 4, 3, 2, 1 dias)
+    if (daysRemaining <= 5 && daysRemaining > 0) {
+      await generatePaymentAlert(companyId, daysRemaining);
+    }
+
+    // Adicionar informações de trial ao request para uso nas páginas
+    (req as any).trialInfo = {
+      daysRemaining,
+      trialExpiresAt,
+      planName: company.plan_name,
+      showAlert: daysRemaining <= 5
+    };
+
+    next();
   } catch (error) {
-    console.error('Erro no middleware de assinatura:', error);
+    console.error('Erro ao verificar status da assinatura:', error);
+    next(); // Continuar mesmo com erro para não quebrar o sistema
+  }
+};
+
+// Função para gerar alertas de pagamento
+async function generatePaymentAlert(companyId: number, daysRemaining: number) {
+  try {
+    const alertType = `${daysRemaining}_day${daysRemaining > 1 ? 's' : ''}`;
+    
+    // Verificar se alerta já foi criado
+    const [existingAlert] = await pool.execute(`
+      SELECT id FROM payment_alerts 
+      WHERE company_id = ? AND alert_type = ? AND DATE(created_at) = CURDATE()
+    `, [companyId, alertType]);
+
+    if (!(existingAlert as any[]).length) {
+      // Criar novo alerta
+      await pool.execute(`
+        INSERT INTO payment_alerts (company_id, alert_type, is_shown) 
+        VALUES (?, ?, FALSE)
+      `, [companyId, alertType]);
+    }
+  } catch (error) {
+    console.error('Erro ao gerar alerta de pagamento:', error);
+  }
+}
+
+// Middleware para verificar se empresa está bloqueada (para rotas administrativas)
+export const checkCompanyBlocked = async (req: CompanySession, res: Response, next: NextFunction) => {
+  try {
+    const companyId = req.session?.companyId;
+    
+    if (!companyId) {
+      return next();
+    }
+
+    const [companyRows] = await pool.execute(`
+      SELECT subscription_status, is_active FROM companies WHERE id = ?
+    `, [companyId]);
+
+    if (!(companyRows as any[]).length) {
+      return res.status(401).json({ message: 'Empresa não encontrada' });
+    }
+
+    const company = (companyRows as any[])[0];
+
+    if (company.subscription_status === 'blocked' || company.is_active === 0) {
+      return res.status(403).json({ 
+        message: 'Acesso negado. Empresa bloqueada.',
+        status: 'blocked',
+        needsPayment: true 
+      });
+    }
+
+    next();
+  } catch (error) {
+    console.error('Erro ao verificar se empresa está bloqueada:', error);
     next();
   }
 };
 
-export async function getCompanySubscriptionStatus(companyId: number): Promise<SubscriptionStatus> {
+// Função para obter alertas de pagamento de uma empresa
+export async function getCompanyPaymentAlerts(companyId: number) {
   try {
-    const result = await db.execute(sql`
-      SELECT stripe_customer_id, stripe_subscription_id, is_active as status
-      FROM companies 
-      WHERE id = ${companyId}
-    `);
+    const [alertRows] = await pool.execute(`
+      SELECT * FROM payment_alerts 
+      WHERE company_id = ? AND is_shown = FALSE 
+      ORDER BY created_at DESC
+    `, [companyId]);
 
-    const companies = Array.isArray(result[0]) ? result[0] : result as any[];
-    
-    if (!companies || companies.length === 0) {
-      return { isActive: false, message: "Empresa não encontrada" };
-    }
-
-    const company = companies[0];
-
-    // If no Stripe subscription, consider active (free trial or manual management)
-    if (!company.stripe_subscription_id) {
-      return { isActive: true, message: "Sem assinatura Stripe configurada" };
-    }
-
-    try {
-      const subscription = await stripeService.retrieveSubscription(company.stripe_subscription_id, ['latest_invoice.payment_intent']);
-      
-      const isActive = subscription.status === 'active' || subscription.status === 'trialing';
-      let hasValidPayment = subscription.status === 'trialing';
-      
-      if (subscription.latest_invoice && typeof subscription.latest_invoice === 'object') {
-        const paymentIntent = subscription.latest_invoice.payment_intent;
-        if (paymentIntent && typeof paymentIntent === 'object') {
-          hasValidPayment = paymentIntent.status === 'succeeded' || subscription.status === 'trialing';
-        }
-      }
-
-      return {
-        isActive: isActive && hasValidPayment,
-        message: isActive && hasValidPayment ? "Assinatura ativa" : "Pagamento pendente ou falhou",
-        subscriptionStatus: subscription.status,
-        paymentStatus: subscription.latest_invoice && typeof subscription.latest_invoice === 'object' && 
-                      subscription.latest_invoice.payment_intent && typeof subscription.latest_invoice.payment_intent === 'object' ? 
-                      subscription.latest_invoice.payment_intent.status : 'unknown'
-      };
-    } catch (stripeError) {
-      console.error('Erro ao buscar dados do Stripe:', stripeError);
-      return { isActive: true, message: "Erro ao verificar Stripe - acesso liberado temporariamente" };
-    }
+    return alertRows as any[];
   } catch (error) {
-    console.error('Erro ao verificar status da assinatura:', error);
-    return { isActive: true, message: "Erro ao verificar - acesso liberado temporariamente" };
+    console.error('Erro ao buscar alertas de pagamento:', error);
+    return [];
+  }
+}
+
+// Função para marcar alerta como visualizado
+export async function markAlertAsShown(alertId: number) {
+  try {
+    await pool.execute(`
+      UPDATE payment_alerts 
+      SET is_shown = TRUE, shown_at = NOW() 
+      WHERE id = ?
+    `, [alertId]);
+  } catch (error) {
+    console.error('Erro ao marcar alerta como visualizado:', error);
   }
 }

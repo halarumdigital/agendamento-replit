@@ -723,26 +723,41 @@ export default function Companies() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredCompanies.map((company) => (
-                    <TableRow key={company.id}>
+                  {filteredCompanies.map((company: any) => (
+                    <TableRow 
+                      key={company.id}
+                      className={company.is_blocked ? "bg-red-50 border-red-200" : ""}
+                    >
                       <TableCell>
                         <div>
-                          <div className="font-medium text-slate-900">
-                            {company.fantasyName}
+                          <div className={`font-medium ${company.is_blocked ? "text-red-900" : "text-slate-900"}`}>
+                            {company.fantasy_name}
+                            {company.is_blocked && (
+                              <span className="ml-2 text-xs text-red-600 font-normal">
+                                (BLOQUEADA)
+                              </span>
+                            )}
                           </div>
-                          <div className="text-sm text-slate-500">
-                            {company.address}
+                          <div className={`text-sm ${company.is_blocked ? "text-red-600" : "text-slate-500"}`}>
+                            {company.address && company.address}
+                            {company.days_remaining && company.days_remaining > 0 && (
+                              <span className="ml-2 text-orange-600 font-medium">
+                                ({company.days_remaining} dias restantes)
+                              </span>
+                            )}
                           </div>
                         </div>
                       </TableCell>
                       <TableCell className="font-mono text-sm">
                         {company.document}
                       </TableCell>
-                      <TableCell>{company.email}</TableCell>
+                      <TableCell className={company.is_blocked ? "text-red-700" : ""}>
+                        {company.email}
+                      </TableCell>
                       <TableCell>
-                        {company.planId ? (
-                          <Badge variant="default">
-                            {plans.find(p => p.id === company.planId)?.name || 'Plano não encontrado'}
+                        {company.plan_name ? (
+                          <Badge variant={company.is_blocked ? "destructive" : "default"}>
+                            {company.plan_name}
                           </Badge>
                         ) : (
                           <Badge variant="outline">Sem plano</Badge>
@@ -750,10 +765,14 @@ export default function Companies() {
                       </TableCell>
                       <TableCell>
                         <Badge 
-                          variant={company.isActive ? "default" : "secondary"} 
-                          className={company.isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}
+                          variant={company.is_blocked ? "destructive" : (company.is_active ? "default" : "secondary")} 
+                          className={
+                            company.is_blocked 
+                              ? "bg-red-100 text-red-800" 
+                              : (company.is_active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800")
+                          }
                         >
-                          {company.isActive ? "Ativo" : "Inativo"}
+                          {company.is_blocked ? "Bloqueada" : (company.is_active ? "Ativo" : "Inativo")}
                         </Badge>
                       </TableCell>
                       <TableCell>

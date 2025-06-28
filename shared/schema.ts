@@ -64,8 +64,21 @@ export const companies = mysqlTable("companies", {
   stripeCustomerId: varchar("stripe_customer_id", { length: 255 }),
   stripeSubscriptionId: varchar("stripe_subscription_id", { length: 255 }),
   tourEnabled: int("tour_enabled").notNull().default(1),
+  trialExpiresAt: timestamp("trial_expires_at"),
+  trialAlertShown: int("trial_alert_shown").notNull().default(0),
+  subscriptionStatus: varchar("subscription_status", { length: 20 }).default("trial"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+});
+
+// Payment alerts table
+export const paymentAlerts = mysqlTable("payment_alerts", {
+  id: serial("id").primaryKey(),
+  companyId: int("company_id").notNull(),
+  alertType: varchar("alert_type", { length: 20 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  shownAt: timestamp("shown_at"),
+  isShown: boolean("is_shown").default(false),
 });
 
 // Subscription plans table
@@ -784,6 +797,12 @@ export const insertCompanyAlertViewSchema = createInsertSchema(companyAlertViews
   viewedAt: true,
 });
 
+export const insertPaymentAlertSchema = createInsertSchema(paymentAlerts).omit({
+  id: true,
+  createdAt: true,
+  shownAt: true,
+});
+
 
 
 // Type exports
@@ -845,6 +864,8 @@ export type AdminAlert = typeof adminAlerts.$inferSelect;
 export type InsertAdminAlert = z.infer<typeof insertAdminAlertSchema>;
 export type CompanyAlertView = typeof companyAlertViews.$inferSelect;
 export type InsertCompanyAlertView = z.infer<typeof insertCompanyAlertViewSchema>;
+export type PaymentAlert = typeof paymentAlerts.$inferSelect;
+export type InsertPaymentAlert = z.infer<typeof insertPaymentAlertSchema>;
 
 // Support ticket types table
 export const supportTicketTypes = mysqlTable("support_ticket_types", {

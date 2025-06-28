@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { setupAuth, isAuthenticated, isCompanyAuthenticated } from "./auth";
 import { db, pool } from "./db";
 import { loadCompanyPlan, requirePermission, checkProfessionalsLimit, RequestWithPlan } from "./plan-middleware";
-import { checkSubscriptionStatus, getCompanySubscriptionStatus } from "./subscription-middleware";
+import { checkSubscriptionStatus, getCompanyPaymentAlerts, markAlertAsShown } from "./subscription-middleware";
 import { insertCompanySchema, insertPlanSchema, insertGlobalSettingsSchema, insertAdminSchema, financialCategories, paymentMethods, financialTransactions, companies, adminAlerts, companyAlertViews, insertCouponSchema, supportTickets, supportTicketTypes, supportTicketStatuses } from "@shared/schema";
 import bcrypt from "bcrypt";
 import { z } from "zod";
@@ -1254,10 +1254,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   };
 
   // Company routes
-  app.get('/api/companies', isAuthenticated, checkSubscriptionStatus, async (req, res) => {
+  app.get('/api/companies', isAuthenticated, async (req, res) => {
     try {
-      const companies = await storage.getCompanies();
-      res.json(companies);
+      const [companyRows] = await pool.execute(`
+        SELECT c.*, p.name as plan_name, p.free_days,
+               CASE 
+                 WHEN c.subscription_status = 'blocked' OR 
+                      (c.trial_expires_at <= NOW() AND c.stripe_subscription_id IS NULL) 
+                 THEN true 
+                 ELSE false 
+               END as is_blocked,
+               CASE 
+                 WHEN c.trial_expires_at > NOW() AND c.stripe_subscription_id IS NULL 
+                 THEN DATEDIFF(c.trial_expires_at, NOW()) 
+                 ELSE NULL 
+               END as days_remaining
+        FROM companies c 
+        LEFT JOIN plans p ON c.plan_id = p.id 
+        ORDER BY 
+          CASE WHEN c.subscription_status = 'blocked' THEN 0 ELSE 1 END,
+          c.fantasy_name
+      `);
+      
+      res.json(companyRows);
     } catch (error) {
       console.error("Error fetching companies:", error);
       res.status(500).json({ message: "Falha ao buscar empresas" });
@@ -2276,6 +2295,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Company login error:", error);
       res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  // Payment alerts endpoints
+  app.get('/api/company/payment-alerts', isCompanyAuthenticated, async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const alerts = await getCompanyPaymentAlerts(companyId);
+      res.json(alerts);
+    } catch (error) {
+      console.error("Error fetching payment alerts:", error);
+      res.status(500).json({ message: "Erro ao buscar alertas de pagamento" });
+    }
+  });
+
+  app.post('/api/company/payment-alerts/:id/mark-shown', isCompanyAuthenticated, async (req: any, res) => {
+    try {
+      const alertId = parseInt(req.params.id);
+      await markAlertAsShown(alertId);
+      res.json({ message: "Alerta marcado como visualizado" });
+    } catch (error) {
+      console.error("Error marking alert as shown:", error);
+      res.status(500).json({ message: "Erro ao marcar alerta como visualizado" });
+    }
+  });
+
+  // Trial information endpoint
+  app.get('/api/company/trial-info', isCompanyAuthenticated, checkSubscriptionStatus, async (req: any, res) => {
+    try {
+      const trialInfo = (req as any).trialInfo;
+      res.json(trialInfo || {});
+    } catch (error) {
+      console.error("Error fetching trial info:", error);
+      res.status(500).json({ message: "Erro ao buscar informações do período de teste" });
     }
   });
 
@@ -7423,13 +7480,22 @@ const broadcastEvent = (eventData: any) => {
       
       const defaultPlanId = plans && (plans as any[]).length > 0 ? (plans as any[])[0].id : 1;
 
-      // Create company with active status (address fields set to NULL)
+      // Get plan free days to calculate trial expiration
+      const [planDetails] = await pool.execute(
+        'SELECT free_days FROM plans WHERE id = ?',
+        [defaultPlanId]
+      );
+      
+      const freeDays = planDetails && (planDetails as any[]).length > 0 ? (planDetails as any[])[0].free_days : 7;
+      
+      // Create company with trial status and expiration date
       const [companyResult] = await pool.execute(`
         INSERT INTO companies (
-          fantasy_name, document, email, password, phone, plan_id, is_active, plan_status
-        ) VALUES (?, ?, ?, ?, ?, ?, 1, 'active')
+          fantasy_name, document, email, password, phone, plan_id, is_active, 
+          plan_status, subscription_status, trial_expires_at
+        ) VALUES (?, ?, ?, ?, ?, ?, 1, 'trial', 'trial', DATE_ADD(NOW(), INTERVAL ? DAY))
       `, [
-        fantasyName, document, email, hashedPassword, phone, defaultPlanId
+        fantasyName, document, email, hashedPassword, phone, defaultPlanId, freeDays
       ]);
 
       const companyId = (companyResult as any).insertId;

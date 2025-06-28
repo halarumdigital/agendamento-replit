@@ -2,6 +2,7 @@ import { Building2, Users, Calendar, CreditCard, Settings, FileText, User, Messa
 import { useCompanyAuth } from "@/hooks/useCompanyAuth";
 import { useGuidedTour } from "@/hooks/use-guided-tour";
 import { GuidedTour } from "@/components/guided-tour";
+import { PaymentAlerts } from "@/components/PaymentAlerts";
 import { Button } from "@/components/ui/button";
 
 export default function CompanyDashboard() {
@@ -65,6 +66,9 @@ export default function CompanyDashboard() {
           Reiniciar Tour
         </Button>
       </div>
+
+      {/* Payment Alerts */}
+      <PaymentAlerts />
 
       {/* Company Info Card */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
