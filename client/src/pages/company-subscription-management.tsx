@@ -401,6 +401,15 @@ export default function CompanySubscriptionManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Debug logs para rastrear mudanças de estado
+  useEffect(() => {
+    console.log('🔄 showPayment state changed:', showPayment);
+  }, [showPayment]);
+
+  useEffect(() => {
+    console.log('🔄 clientSecret state changed:', clientSecret);
+  }, [clientSecret]);
+
   // Fetch current subscription status
   const { data: subscriptionStatus, isLoading: statusLoading } = useQuery<SubscriptionStatus>({
     queryKey: ['/api/subscription/status']
@@ -432,10 +441,13 @@ export default function CompanySubscriptionManagement() {
       }
     },
     onSuccess: (data) => {
+      console.log('🔄 Upgrade response:', data);
       if (data.clientSecret) {
+        console.log('✅ Real Stripe client secret received');
         setClientSecret(data.clientSecret);
         setShowPayment(true);
       } else if (data.demoMode) {
+        console.log('🎭 Demo mode detected - showing payment modal');
         // Para modo demonstração, criar um clientSecret fictício e mostrar o modal
         setClientSecret('demo_client_secret');
         setShowPayment(true);
@@ -445,8 +457,10 @@ export default function CompanySubscriptionManagement() {
           variant: "default",
         });
       } else if (data.redirectUrl) {
+        console.log('🔗 Redirect URL received:', data.redirectUrl);
         window.location.href = data.redirectUrl;
       } else {
+        console.log('❓ Unknown response format');
         toast({
           title: "Upgrade iniciado",
           description: "Redirecionando para pagamento...",
