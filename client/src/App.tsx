@@ -190,7 +190,11 @@ function Router() {
       
       {/* Admin Routes */}
       <Route path="/login" component={Login} />
-      <Route path="/administrador" component={Login} />
+      <Route path="/administrador">
+        <AdminLayout>
+          <Dashboard />
+        </AdminLayout>
+      </Route>
       <Route path="/admin" component={Login} />
       <Route path="/admin/login" component={Login} />
       <Route path="/administrador/login" component={Login} />
