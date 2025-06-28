@@ -7253,13 +7253,7 @@ const broadcastEvent = (eventData: any) => {
         document, 
         email, 
         password, 
-        address, 
         phone, 
-        zipCode, 
-        number, 
-        neighborhood, 
-        city, 
-        state, 
         affiliateCode 
       } = req.body;
 
@@ -7285,15 +7279,13 @@ const broadcastEvent = (eventData: any) => {
       
       const defaultPlanId = plans && (plans as any[]).length > 0 ? (plans as any[])[0].id : 1;
 
-      // Create company with active status
+      // Create company with active status (address fields set to NULL)
       const [companyResult] = await pool.execute(`
         INSERT INTO companies (
-          fantasy_name, document, email, password, address, phone, 
-          zip_code, number, neighborhood, city, state, plan_id, is_active, plan_status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 'active')
+          fantasy_name, document, email, password, phone, plan_id, is_active, plan_status
+        ) VALUES (?, ?, ?, ?, ?, ?, 1, 'active')
       `, [
-        fantasyName, document, email, hashedPassword, address, phone,
-        zipCode, number, neighborhood, city, state, defaultPlanId
+        fantasyName, document, email, hashedPassword, phone, defaultPlanId
       ]);
 
       const companyId = (companyResult as any).insertId;

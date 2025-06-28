@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Link, useLocation } from "wouter";
 import { formatDocument } from "@/lib/validations";
-import { Building2, MapPin, Mail, Lock, User, Phone } from "lucide-react";
+import { Building2, Mail, Lock, User, Phone } from "lucide-react";
 
 const registerSchema = z.object({
   fantasyName: z.string().min(2, "Nome fantasia deve ter pelo menos 2 caracteres"),
@@ -20,14 +20,7 @@ const registerSchema = z.object({
   email: z.string().email("E-mail inválido"),
   password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
   confirmPassword: z.string(),
-  address: z.string().min(5, "Endereço é obrigatório"),
-  phone: z.string().min(1, "Celular é obrigatório"),
-  zipCode: z.string().min(1, "CEP é obrigatório"),
-  number: z.string().min(1, "Número é obrigatório"),
-  neighborhood: z.string().min(1, "Bairro é obrigatório"),
-  city: z.string().min(1, "Cidade é obrigatória"),
-  state: z.string().min(1, "Estado é obrigatório"),
-
+  phone: z.string().min(1, "Telefone é obrigatório"),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Senhas não coincidem",
   path: ["confirmPassword"],
@@ -145,7 +138,7 @@ export default function Register() {
                   <h3 className="text-lg font-semibold text-gray-900">Dados da Empresa</h3>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="fantasyName">Nome Fantasia *</Label>
                     <Input
@@ -174,33 +167,9 @@ export default function Register() {
                       </p>
                     )}
                   </div>
-                </div>
-              </div>
 
-              {/* Endereço */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 mb-4">
-                  <MapPin className="w-5 h-5 text-blue-600" />
-                  <h3 className="text-lg font-semibold text-gray-900">Endereço</h3>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="address">Endereço Completo *</Label>
-                  <Input
-                    id="address"
-                    {...form.register("address")}
-                    placeholder="Digite o endereço completo"
-                  />
-                  {form.formState.errors.address && (
-                    <p className="text-sm text-red-600">
-                      {form.formState.errors.address.message}
-                    </p>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Celular *</Label>
+                    <Label htmlFor="phone">Telefone *</Label>
                     <Input
                       id="phone"
                       {...form.register("phone")}
@@ -212,81 +181,10 @@ export default function Register() {
                       </p>
                     )}
                   </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="zipCode">CEP *</Label>
-                    <Input
-                      id="zipCode"
-                      {...form.register("zipCode")}
-                      placeholder="00000-000"
-                    />
-                    {form.formState.errors.zipCode && (
-                      <p className="text-sm text-red-600">
-                        {form.formState.errors.zipCode.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="number">Número *</Label>
-                    <Input
-                      id="number"
-                      {...form.register("number")}
-                      placeholder="123"
-                    />
-                    {form.formState.errors.number && (
-                      <p className="text-sm text-red-600">
-                        {form.formState.errors.number.message}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="neighborhood">Bairro *</Label>
-                    <Input
-                      id="neighborhood"
-                      {...form.register("neighborhood")}
-                      placeholder="Centro"
-                    />
-                    {form.formState.errors.neighborhood && (
-                      <p className="text-sm text-red-600">
-                        {form.formState.errors.neighborhood.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="city">Cidade *</Label>
-                    <Input
-                      id="city"
-                      {...form.register("city")}
-                      placeholder="São Paulo"
-                    />
-                    {form.formState.errors.city && (
-                      <p className="text-sm text-red-600">
-                        {form.formState.errors.city.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="state">Estado *</Label>
-                    <Input
-                      id="state"
-                      {...form.register("state")}
-                      placeholder="SP"
-                      maxLength={2}
-                    />
-                    {form.formState.errors.state && (
-                      <p className="text-sm text-red-600">
-                        {form.formState.errors.state.message}
-                      </p>
-                    )}
-                  </div>
                 </div>
               </div>
+
+
 
               {/* Dados de Acesso */}
               <div className="space-y-4">
