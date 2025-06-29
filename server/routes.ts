@@ -1068,19 +1068,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   try {
     console.log('🔧 Verificando colunas de trial na tabela companies...');
     
-    // Check if trial_expires_at column exists
-    const [columns] = await pool.execute(`
+    // Check if trial columns exist
+    const [trialColumns] = await pool.execute(`
       SELECT COLUMN_NAME 
       FROM INFORMATION_SCHEMA.COLUMNS 
       WHERE TABLE_SCHEMA = DATABASE() 
       AND TABLE_NAME = 'companies' 
-      AND COLUMN_NAME = 'trial_expires_at'
+      AND COLUMN_NAME IN ('trial_expires_at', 'trial_alert_shown')
     `);
     
-    if ((columns as any[]).length === 0) {
+    const existingColumns = (trialColumns as any[]).map(col => col.COLUMN_NAME);
+    
+    // Add trial_expires_at if missing
+    if (!existingColumns.includes('trial_expires_at')) {
       console.log('➕ Adicionando coluna trial_expires_at...');
       
-      // Add trial_expires_at column only
       await pool.execute(`
         ALTER TABLE companies 
         ADD COLUMN trial_expires_at DATETIME NULL
@@ -1109,9 +1111,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       console.log(`✅ ${(companies as any[]).length} empresas atualizadas com datas de trial`);
-    } else {
-      console.log('✅ Colunas de trial já existem');
     }
+    
+    // Add trial_alert_shown if missing
+    if (!existingColumns.includes('trial_alert_shown')) {
+      console.log('➕ Adicionando coluna trial_alert_shown...');
+      
+      await pool.execute(`
+        ALTER TABLE companies 
+        ADD COLUMN trial_alert_shown INT NOT NULL DEFAULT 0
+      `);
+      
+      console.log('✅ Coluna trial_alert_shown adicionada!');
+    }
+    
+    console.log('✅ Todas as colunas de trial verificadas');
   } catch (error) {
     console.error('❌ Erro ao verificar/criar colunas de trial:', error);
   }
