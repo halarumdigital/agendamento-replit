@@ -97,8 +97,22 @@ async function generatePaymentLinkForAppointment(companyId: number, conversation
         const whatsappInstance = await storage.getWhatsappInstance(conversation.whatsappInstanceId);
         console.log('📱 WhatsApp instance:', whatsappInstance ? `Status: ${whatsappInstance.status}` : 'NOT FOUND');
         if (whatsappInstance && whatsappInstance.status === 'connected') {
-          const paymentMessage = `Vou te enviar um link do mercado pago para realizar o pagamento do serviço online, pode confiar que é seguro, para que seu agendamento seja confirmado faça o pagamento pelo link.\n\n💳 Link de Pagamento: ${paymentLink}\n\n💰 Valor: R$ ${service.price}\n🏪 Empresa: ${company.fantasyName || company.companyName}\n📋 Serviço: ${service.name}\n📅 Data/Hora: ${appointmentDate.toLocaleDateString()} às ${appointmentTime}`;
-          
+          // Enviar mensagem de instrução primeiro
+          const instructionMessage = `Vou te enviar um link do mercado pago para realizar o pagamento do serviço online, pode confiar que é seguro, para que seu agendamento seja confirmado faça o pagamento pelo link.`;
+          await fetch(`${whatsappInstance.apiUrl}/message/sendText/${whatsappInstance.instanceName}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': whatsappInstance.apiKey
+            },
+            body: JSON.stringify({
+              number: phoneNumber.replace(/\D/g, ''),
+              text: instructionMessage
+            })
+          });
+
+          // Em seguida, envie o link de pagamento com os detalhes
+          const paymentMessage = `💳 Link de Pagamento: ${paymentLink}\n\n💰 Valor: R$ ${service.price}\n🏪 Empresa: ${company.fantasyName || company.companyName}\n📋 Serviço: ${service.name}\n📅 Data/Hora: ${appointmentDate.toLocaleDateString()} às ${appointmentTime}`;
           const whatsappResponse = await fetch(`${whatsappInstance.apiUrl}/message/sendText/${whatsappInstance.instanceName}`, {
             method: 'POST',
             headers: {
@@ -811,6 +825,18 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
     });
     
     console.log(`✅ Appointment created from AI confirmation: ${extractedName} - ${service.name} - ${appointmentDate.toLocaleDateString()} ${formattedTime}`);
+    
+    // Enviar link de pagamento Mercado Pago via WhatsApp
+    await generatePaymentLinkForAppointment(
+      companyId,
+      conversationId,
+      appointment,
+      service,
+      extractedName,
+      phoneNumber,
+      appointmentDate,
+      formattedTime
+    );
     
     // Force immediate refresh of appointments list
     console.log('📡 Broadcasting new appointment notification...');
