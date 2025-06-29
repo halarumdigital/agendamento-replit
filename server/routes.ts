@@ -1087,11 +1087,6 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
     
     console.log(`✅ Appointment created from AI confirmation: ${extractedName} - ${service.name} - ${appointmentDate.toLocaleDateString()} ${formattedTime}`);
     
-    // Return appointment ID here for immediate payment link generation
-    if (appointment?.id) {
-      return appointment.id;
-    }
-    
     // Enviar link de pagamento Mercado Pago via WhatsApp
     await generatePaymentLinkForAppointment(
       companyId,
@@ -4175,27 +4170,9 @@ INSTRUÇÕES OBRIGATÓRIAS:
                     if (hasAiConfirmation) {
                       console.log('✅ Encontrada conversa com confirmação da IA');
                       
-                      // FIRST: Create appointment to get the ID
-                      console.log('📅 Criando agendamento para obter ID...');
-                      const appointmentId = await createAppointmentFromAIConfirmation(conv.id, company.id, aiResponse, phoneNumber);
-                      
-                      if (appointmentId) {
-                        // THEN: Send payment link immediately after SIM/OK confirmation
-                        try {
-                          console.log('💳 Enviando link de pagamento após confirmação SIM/OK...');
-                          console.log('🔍 DADOS CRÍTICOS:', { 
-                            conversationId: conv.id, 
-                            companyId: company.id, 
-                            phoneNumber,
-                            appointmentId,
-                            companyMercadoPago: !!company.mercadopagoAccessToken 
-                          });
-                          await generatePaymentLinkFromConversation(conv.id, company.id, phoneNumber);
-                        } catch (paymentError) {
-                          console.error('❌ Erro ao enviar link de pagamento:', paymentError);
-                        }
-                      }
-                      
+                      // Create appointment after AI confirmation
+                      console.log('📅 Criando agendamento após confirmação da IA...');
+                      await createAppointmentFromAIConfirmation(conv.id, company.id, aiResponse, phoneNumber);
                       appointmentCreated = true;
                       break;
                     }
