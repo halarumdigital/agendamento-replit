@@ -710,7 +710,7 @@ export default function CompanySettings() {
 
   const testReminderMutation = useMutation({
     mutationFn: async (phoneNumber?: string) => {
-      const response = await apiRequest("POST", "/api/company/test-reminder", { 
+      const response = await apiRequest("/api/company/test-reminder", "POST", { 
         testPhone: phoneNumber 
       });
       return response;
