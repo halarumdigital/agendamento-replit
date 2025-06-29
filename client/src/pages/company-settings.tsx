@@ -355,7 +355,7 @@ export default function CompanySettings() {
   // Function to refresh instance status from database
   const refreshInstanceStatus = async (instanceName: string) => {
     try {
-      const response = await apiRequest("GET", `/api/company/whatsapp/instances/${instanceName}/refresh-status`);
+      const response = await apiRequest(`/api/company/whatsapp/instances/${instanceName}/refresh-status`, "GET");
       if (response.ok) {
         const statusData = await response.json();
         // Refresh the instances list to update UI
@@ -372,7 +372,7 @@ export default function CompanySettings() {
     mutationFn: async (instanceName: string) => {
       console.log(`🚀 Connecting instance: ${instanceName}`);
       // Trigger connection in Evolution API
-      const result = await apiRequest("GET", `/api/company/whatsapp/instances/${instanceName}/connect`);
+      const result = await apiRequest(`/api/company/whatsapp/instances/${instanceName}/connect`, "GET");
       console.log("📱 Connect API Response:", result);
       return result;
     },
@@ -520,7 +520,7 @@ export default function CompanySettings() {
 
   const getQrCodeMutation = useMutation({
     mutationFn: async (instanceName: string) => {
-      const response = await apiRequest("GET", `/api/company/whatsapp/instances/${instanceName}/qrcode`);
+      const response = await apiRequest(`/api/company/whatsapp/instances/${instanceName}/qrcode`, "GET");
       return response;
     },
     onSuccess: (data: any) => {
