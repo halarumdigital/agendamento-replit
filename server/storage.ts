@@ -1269,14 +1269,11 @@ export class DatabaseStorage implements IStorage {
     try {
       console.log('📅 Creating appointment with data:', JSON.stringify(appointmentData, null, 2));
       
-      await db.insert(appointments).values(appointmentData);
+      const [insertResult] = await db.insert(appointments).values(appointmentData);
+      
+      // Get the inserted appointment using MySQL LAST_INSERT_ID()
       const [appointment] = await db.select().from(appointments).where(
-        and(
-          eq(appointments.companyId, appointmentData.companyId),
-          eq(appointments.clientPhone, appointmentData.clientPhone),
-          eq(appointments.appointmentDate, appointmentData.appointmentDate),
-          eq(appointments.appointmentTime, appointmentData.appointmentTime)
-        )
+        sql`id = LAST_INSERT_ID()`
       );
 
       // Send confirmation reminder after creating appointment

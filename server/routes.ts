@@ -116,8 +116,8 @@ async function generatePaymentLinkFromConversation(conversationId: number, compa
       appointmentTime
     };
     
-    if (!extractedData) {
-      console.log('❌ Could not extract appointment data for payment link');
+    if (!extractedData.serviceId || !extractedData.professionalId) {
+      console.log('❌ Could not extract service or professional for payment link');
       return;
     }
     
@@ -134,6 +134,15 @@ async function generatePaymentLinkFromConversation(conversationId: number, compa
     }
     
     // Create a temporary appointment to get the ID for external_reference
+    console.log('🔨 Creating temporary appointment with data:', {
+      companyId,
+      professionalId: extractedData.professionalId,
+      serviceId: extractedData.serviceId,
+      clientName: extractedData.clientName,
+      clientPhone: phoneNumber,
+      servicePrice: service.price
+    });
+    
     const tempAppointment = await storage.createAppointment({
       companyId,
       professionalId: extractedData.professionalId,
@@ -150,6 +159,8 @@ async function generatePaymentLinkFromConversation(conversationId: number, compa
       createdAt: new Date(),
       updatedAt: new Date()
     });
+    
+    console.log('🎯 Temporary appointment created:', tempAppointment);
     
     // Generate payment preference
     const preference = {
@@ -4157,6 +4168,12 @@ INSTRUÇÕES OBRIGATÓRIAS:
                       // FIRST: Send payment link immediately after SIM/OK confirmation
                       try {
                         console.log('💳 Enviando link de pagamento após confirmação SIM/OK...');
+                        console.log('🔍 DADOS CRÍTICOS:', { 
+                          conversationId: conv.id, 
+                          companyId: company.id, 
+                          phoneNumber,
+                          companyMercadoPago: !!company.mercadopagoAccessToken 
+                        });
                         await generatePaymentLinkFromConversation(conv.id, company.id, phoneNumber);
                       } catch (paymentError) {
                         console.error('❌ Erro ao enviar link de pagamento:', paymentError);
