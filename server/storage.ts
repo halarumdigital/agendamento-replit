@@ -1542,11 +1542,19 @@ export class DatabaseStorage implements IStorage {
 
       // Send WhatsApp message
       try {
-        const evolutionApiUrl = whatsappInstance.apiUrl || process.env.EVOLUTION_API_URL;
-        const apiKey = whatsappInstance.apiKey || process.env.EVOLUTION_API_KEY;
+        // Get global Evolution API settings
+        const globalSettings = await this.getGlobalSettings();
+        const evolutionApiUrl = globalSettings?.evolutionApiUrl || whatsappInstance.apiUrl || process.env.EVOLUTION_API_URL;
+        const apiKey = globalSettings?.evolutionApiGlobalKey || whatsappInstance.apiKey || process.env.EVOLUTION_API_KEY;
 
         if (!evolutionApiUrl || !apiKey) {
           console.error("Missing Evolution API configuration");
+          console.log('Available settings:', { 
+            globalUrl: globalSettings?.evolutionApiUrl, 
+            globalKey: globalSettings?.evolutionApiGlobalKey ? '[CONFIGURED]' : '[NOT SET]',
+            instanceUrl: whatsappInstance.apiUrl,
+            instanceKey: whatsappInstance.apiKey ? '[CONFIGURED]' : '[NOT SET]'
+          });
           return;
         }
 
