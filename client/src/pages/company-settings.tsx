@@ -573,6 +573,7 @@ export default function CompanySettings() {
   
   // State for birthday message testing
   const [testPhoneNumber, setTestPhoneNumber] = useState("");
+  const [isTestingPayment, setIsTestingPayment] = useState(false);
 
   // Birthday messaging form
   const birthdayForm = useForm<BirthdayMessageData>({
@@ -790,6 +791,47 @@ export default function CompanySettings() {
       });
     },
   });
+
+  // Test Mercado Pago payment function
+  const handleTestPayment = async () => {
+    if (!mercadoPagoForm.watch("mercadopagoAccessToken")) {
+      toast({
+        title: "Erro",
+        description: "Configure o Access Token do Mercado Pago primeiro.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsTestingPayment(true);
+    try {
+      const response = await apiRequest("/api/mercadopago/test-payment", "POST", {});
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        toast({
+          title: "Sucesso!",
+          description: "Link de pagamento criado com sucesso!",
+        });
+        
+        // Open payment link in new tab
+        if (data.payment_link) {
+          window.open(data.payment_link, '_blank');
+        }
+      } else {
+        throw new Error(data.message || "Erro ao criar link de pagamento");
+      }
+    } catch (error: any) {
+      console.error("Error testing payment:", error);
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao testar pagamento",
+        variant: "destructive",
+      });
+    } finally {
+      setIsTestingPayment(false);
+    }
+  };
 
   const configureWhatsappMutation = useMutation({
     mutationFn: async (instanceName: string) => {
@@ -2263,7 +2305,24 @@ export default function CompanySettings() {
                     </ul>
                   </div>
 
-                  <div className="flex justify-end">
+                  <div className="flex justify-between gap-4">
+                    <Button 
+                      type="button"
+                      variant="outline"
+                      onClick={handleTestPayment}
+                      disabled={isTestingPayment || !mercadoPagoForm.watch("mercadopagoAccessToken")}
+                      className="min-w-[140px]"
+                    >
+                      {isTestingPayment ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                          Testando...
+                        </>
+                      ) : (
+                        "Testar Pagamento"
+                      )}
+                    </Button>
+                    
                     <Button 
                       type="submit" 
                       disabled={updateMercadoPagoMutation.isPending}

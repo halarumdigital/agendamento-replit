@@ -2817,6 +2817,146 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create Mercado Pago payment preference
+  app.post('/api/mercadopago/create-preference', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const company = await storage.getCompanyById(companyId);
+      if (!company || !company.mercadopagoAccessToken) {
+        return res.status(400).json({ message: "Credenciais do Mercado Pago não configuradas" });
+      }
+
+      const {
+        title,
+        price,
+        clientEmail,
+        clientName,
+        appointmentId,
+        appointmentDate,
+        appointmentTime
+      } = req.body;
+
+      // Create preference payload
+      const preference = {
+        items: [
+          {
+            title: title,
+            quantity: 1,
+            unit_price: parseFloat(price)
+          }
+        ],
+        payer: {
+          name: clientName,
+          email: clientEmail || 'cliente@exemplo.com'
+        },
+        payment_methods: {
+          excluded_payment_types: [],
+          excluded_payment_methods: [],
+          installments: 12
+        },
+        back_urls: {
+          success: `${process.env.SYSTEM_URL || 'http://localhost:5000'}/pagamento/sucesso`,
+          failure: `${process.env.SYSTEM_URL || 'http://localhost:5000'}/pagamento/erro`,
+          pending: `${process.env.SYSTEM_URL || 'http://localhost:5000'}/pagamento/pendente`
+        },
+        auto_return: "approved",
+        external_reference: appointmentId?.toString() || Date.now().toString(),
+        notification_url: `${process.env.SYSTEM_URL || 'http://localhost:5000'}/api/webhook/mercadopago`,
+        statement_descriptor: company.fantasyName || "Agendamento"
+      };
+
+      console.log('🔄 Creating Mercado Pago preference:', JSON.stringify(preference, null, 2));
+
+      // Make request to Mercado Pago API
+      const response = await fetch('https://api.mercadopago.com/checkout/preferences', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${company.mercadopagoAccessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(preference)
+      });
+
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        console.error('❌ Mercado Pago API error:', responseData);
+        return res.status(400).json({ 
+          message: "Erro ao criar preferência de pagamento",
+          error: responseData
+        });
+      }
+
+      console.log('✅ Mercado Pago preference created:', responseData.id);
+
+      res.json({
+        preference_id: responseData.id,
+        init_point: responseData.init_point,
+        sandbox_init_point: responseData.sandbox_init_point
+      });
+
+    } catch (error) {
+      console.error('❌ Error creating Mercado Pago preference:', error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  // Test Mercado Pago payment creation
+  app.post('/api/mercadopago/test-payment', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      console.log('🧪 Testing Mercado Pago payment creation...');
+
+      // Create a test payment preference
+      const testPaymentRes = await fetch(`http://localhost:5000/api/mercadopago/create-preference`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cookie': req.headers.cookie || ''
+        },
+        body: JSON.stringify({
+          title: 'Teste de Pagamento - Corte de Cabelo',
+          price: 50.00,
+          clientEmail: 'teste@exemplo.com',
+          clientName: 'Cliente Teste',
+          appointmentId: 999,
+          appointmentDate: '2025-07-01',
+          appointmentTime: '14:00'
+        })
+      });
+
+      const paymentData = await testPaymentRes.json();
+
+      if (!testPaymentRes.ok) {
+        return res.status(400).json({
+          message: "Erro no teste de pagamento",
+          error: paymentData
+        });
+      }
+
+      console.log('✅ Test payment link created successfully!');
+
+      res.json({
+        success: true,
+        message: "Link de pagamento de teste criado com sucesso!",
+        payment_link: paymentData.sandbox_init_point || paymentData.init_point,
+        preference_id: paymentData.preference_id
+      });
+
+    } catch (error) {
+      console.error('❌ Error testing payment:', error);
+      res.status(500).json({ message: "Erro no teste de pagamento" });
+    }
+  });
+
   // Payment details endpoint for success page
   app.get('/api/payment/details/:paymentId', async (req: any, res) => {
     try {
