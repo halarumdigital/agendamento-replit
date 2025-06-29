@@ -30,13 +30,8 @@ import { formatBrazilianPhone, validateBrazilianPhone, normalizePhone } from "..
 function ensureEvolutionApiEndpoint(baseUrl: string): string {
   if (!baseUrl) return baseUrl;
   
-  // Remove trailing slash
-  const cleanUrl = baseUrl.replace(/\/$/, '');
-  
-  // If URL doesn't contain /api/, add it
-  if (!cleanUrl.includes('/api/')) {
-    return `${cleanUrl}/api`;
-  }
+  // Remove trailing slash and /api/ prefix for v2.3.0 compatibility
+  const cleanUrl = baseUrl.replace(/\/$/, '').replace(/\/api\/?$/, '');
   
   return cleanUrl;
 }
