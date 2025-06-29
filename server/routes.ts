@@ -85,7 +85,10 @@ async function generatePaymentLinkForAppointment(companyId: number, conversation
       console.log('✅ Payment link generated:', paymentLink);
       
       // Send payment message via WhatsApp
-      const conversation = await storage.getConversationById(conversationId);
+      // Get all conversations for the company and find the one with this conversation ID
+      const conversations = await storage.getConversationsByCompany(companyId);
+      const conversation = conversations.find(conv => conv.id === conversationId);
+      
       if (conversation && conversation.whatsappInstanceId) {
         const whatsappInstance = await storage.getWhatsappInstance(conversation.whatsappInstanceId);
         if (whatsappInstance && whatsappInstance.status === 'connected') {
