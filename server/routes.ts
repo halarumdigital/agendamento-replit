@@ -2537,6 +2537,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Company AI agent test endpoint
+  app.post('/api/company/ai-agent/test', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const { message } = req.body;
+      
+      if (!message || !message.trim()) {
+        return res.status(400).json({ message: "Mensagem de teste é obrigatória" });
+      }
+
+      // Get company with AI prompt
+      const company = await storage.getCompany(companyId);
+      if (!company?.aiAgentPrompt) {
+        return res.status(400).json({ message: "Agente IA não configurado para esta empresa" });
+      }
+
+      // Get global settings for OpenAI configuration
+      const settings = await storage.getSettings();
+      if (!settings?.openaiApiKey) {
+        return res.status(400).json({ message: "Configuração OpenAI não encontrada" });
+      }
+
+      // Create AI response using the same logic as WhatsApp webhook
+      const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${settings.openaiApiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: settings.openaiModel || 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'system',
+              content: company.aiAgentPrompt
+            },
+            {
+              role: 'user',
+              content: message.trim()
+            }
+          ],
+          temperature: settings.openaiTemperature || 0.7,
+          max_tokens: settings.openaiMaxTokens || 500
+        })
+      });
+
+      if (!openaiResponse.ok) {
+        throw new Error(`OpenAI API error: ${openaiResponse.statusText}`);
+      }
+
+      const openaiData = await openaiResponse.json();
+      const aiResponse = openaiData.choices[0]?.message?.content;
+
+      if (!aiResponse) {
+        throw new Error('Resposta vazia da OpenAI API');
+      }
+
+      res.json({ 
+        response: aiResponse,
+        message: "Teste realizado com sucesso"
+      });
+
+    } catch (error: any) {
+      console.error("Error testing AI agent:", error);
+      res.status(500).json({ 
+        message: error.message || "Erro ao testar agente IA"
+      });
+    }
+  });
+
   // Company settings update endpoint
   app.put('/api/company/settings-update', async (req: any, res) => {
     try {

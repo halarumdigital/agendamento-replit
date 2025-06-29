@@ -661,10 +661,10 @@ export default function CompanySettings() {
 
   const testAgentMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/company/ai-agent/test", {
+      const response = await apiRequest("/api/company/ai-agent/test", "POST", {
         message: testMessage
       });
-      return await response.json();
+      return response;
     },
     onSuccess: (data: any) => {
       setAgentResponse(data.response);
