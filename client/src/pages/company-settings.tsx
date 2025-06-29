@@ -207,7 +207,7 @@ export default function CompanySettings() {
 
   const createInstanceMutation = useMutation({
     mutationFn: async (data: WhatsappInstanceData) => {
-      return await apiRequest("POST", "/api/company/whatsapp/instances", data);
+      return await apiRequest("/api/company/whatsapp/instances", "POST", data);
     },
     onSuccess: () => {
       toast({
