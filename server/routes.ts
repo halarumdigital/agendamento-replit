@@ -86,11 +86,16 @@ async function generatePaymentLinkForAppointment(companyId: number, conversation
       
       // Send payment message via WhatsApp
       // Get all conversations for the company and find the one with this conversation ID
+      console.log('🔍 Looking for conversation ID:', conversationId, 'in company:', companyId);
       const conversations = await storage.getConversationsByCompany(companyId);
+      console.log('📋 Found conversations:', conversations.length);
       const conversation = conversations.find(conv => conv.id === conversationId);
+      console.log('🎯 Found matching conversation:', conversation ? 'YES' : 'NO');
       
       if (conversation && conversation.whatsappInstanceId) {
+        console.log('🔍 Found conversation with WhatsApp instance ID:', conversation.whatsappInstanceId);
         const whatsappInstance = await storage.getWhatsappInstance(conversation.whatsappInstanceId);
+        console.log('📱 WhatsApp instance:', whatsappInstance ? `Status: ${whatsappInstance.status}` : 'NOT FOUND');
         if (whatsappInstance && whatsappInstance.status === 'connected') {
           const paymentMessage = `Vou te enviar um link do mercado pago para realizar o pagamento do serviço online, pode confiar que é seguro, para que seu agendamento seja confirmado faça o pagamento pelo link.\n\n💳 Link de Pagamento: ${paymentLink}\n\n💰 Valor: R$ ${service.price}\n🏪 Empresa: ${company.fantasyName || company.companyName}\n📋 Serviço: ${service.name}\n📅 Data/Hora: ${appointmentDate.toLocaleDateString()} às ${appointmentTime}`;
           
