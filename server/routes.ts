@@ -3137,7 +3137,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
               // Generate AI response with conversation context
               const OpenAI = (await import('openai')).default;
-              const openai = new OpenAI({ apiKey: globalSettings.openaiApiKey });
+              
+              // Force fresh fetch of global settings to ensure we have the latest API key
+              const freshSettings = await storage.getGlobalSettings();
+              console.log('🔑 OpenAI API Key status:', freshSettings?.openaiApiKey ? `Key found (${freshSettings.openaiApiKey.substring(0, 10)}...)` : 'No key found');
+              
+              const openai = new OpenAI({ apiKey: freshSettings?.openaiApiKey || globalSettings.openaiApiKey });
 
               // Add current date context for accurate AI responses
               const today = new Date();
