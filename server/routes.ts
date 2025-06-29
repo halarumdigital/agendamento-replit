@@ -162,6 +162,11 @@ async function generatePaymentLinkFromConversation(conversationId: number, compa
     
     console.log('🎯 Temporary appointment created:', tempAppointment);
     
+    if (!tempAppointment || !tempAppointment.id) {
+      console.error('❌ Failed to create temporary appointment or get ID');
+      return;
+    }
+    
     // Generate payment preference
     const preference = {
       items: [
@@ -186,7 +191,7 @@ async function generatePaymentLinkFromConversation(conversationId: number, compa
         failure: `${process.env.SYSTEM_URL || 'http://localhost:5000'}/pagamento/erro`,
         pending: `${process.env.SYSTEM_URL || 'http://localhost:5000'}/pagamento/pendente`
       },
-      external_reference: tempAppointment.id?.toString() || Date.now().toString(),
+      external_reference: tempAppointment.id.toString(),
       notification_url: `${process.env.SYSTEM_URL || 'http://localhost:5000'}/api/webhook/mercadopago`,
       statement_descriptor: company.fantasyName || company.companyName || "Agendamento"
     };
@@ -1081,6 +1086,11 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
     });
     
     console.log(`✅ Appointment created from AI confirmation: ${extractedName} - ${service.name} - ${appointmentDate.toLocaleDateString()} ${formattedTime}`);
+    
+    // Return appointment ID here for immediate payment link generation
+    if (appointment?.id) {
+      return appointment.id;
+    }
     
     // Enviar link de pagamento Mercado Pago via WhatsApp
     await generatePaymentLinkForAppointment(
@@ -4165,23 +4175,27 @@ INSTRUÇÕES OBRIGATÓRIAS:
                     if (hasAiConfirmation) {
                       console.log('✅ Encontrada conversa com confirmação da IA');
                       
-                      // FIRST: Send payment link immediately after SIM/OK confirmation
-                      try {
-                        console.log('💳 Enviando link de pagamento após confirmação SIM/OK...');
-                        console.log('🔍 DADOS CRÍTICOS:', { 
-                          conversationId: conv.id, 
-                          companyId: company.id, 
-                          phoneNumber,
-                          companyMercadoPago: !!company.mercadopagoAccessToken 
-                        });
-                        await generatePaymentLinkFromConversation(conv.id, company.id, phoneNumber);
-                      } catch (paymentError) {
-                        console.error('❌ Erro ao enviar link de pagamento:', paymentError);
+                      // FIRST: Create appointment to get the ID
+                      console.log('📅 Criando agendamento para obter ID...');
+                      const appointmentId = await createAppointmentFromAIConfirmation(conv.id, company.id, aiResponse, phoneNumber);
+                      
+                      if (appointmentId) {
+                        // THEN: Send payment link immediately after SIM/OK confirmation
+                        try {
+                          console.log('💳 Enviando link de pagamento após confirmação SIM/OK...');
+                          console.log('🔍 DADOS CRÍTICOS:', { 
+                            conversationId: conv.id, 
+                            companyId: company.id, 
+                            phoneNumber,
+                            appointmentId,
+                            companyMercadoPago: !!company.mercadopagoAccessToken 
+                          });
+                          await generatePaymentLinkFromConversation(conv.id, company.id, phoneNumber);
+                        } catch (paymentError) {
+                          console.error('❌ Erro ao enviar link de pagamento:', paymentError);
+                        }
                       }
                       
-                      // THEN: Create appointment (but don't send confirmation yet - that's for webhook)
-                      console.log('📅 Criando agendamento após envio do link...');
-                      await createAppointmentFromAIConfirmation(conv.id, company.id, aiResponse, phoneNumber);
                       appointmentCreated = true;
                       break;
                     }
