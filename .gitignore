@@ -8,3 +8,7 @@ vite.config.ts.*
 
 # Arquivos de ambiente
 *.env
+.env
+.env.local
+.env.production
+.env.development
