@@ -114,6 +114,12 @@ export const companySettingsSchema = z.object({
   aiAgentPrompt: z.string().optional(),
 });
 
+export const mercadoPagoConfigSchema = z.object({
+  mercadopagoAccessToken: z.string().optional(),
+  mercadopagoPublicKey: z.string().optional(),
+  mercadopagoWebhookUrl: z.string().optional(),
+});
+
 export const settingsSchema = z.object({
   systemName: z.string().optional(),
   logoUrl: z.string().optional(),

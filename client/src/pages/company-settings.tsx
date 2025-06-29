@@ -17,7 +17,7 @@ import { Settings, Building2, Lock, User, MessageSquare, Trash2, Plus, Smartphon
 import { apiRequest } from "@/lib/queryClient";
 import { useCompanyAuth } from "@/hooks/useCompanyAuth";
 import { z } from "zod";
-import { formatDocument, companyProfileSchema, companyPasswordSchema, companyAiAgentSchema, whatsappInstanceSchema, webhookConfigSchema, companySettingsSchema } from "@/lib/validations";
+import { formatDocument, companyProfileSchema, companyPasswordSchema, companyAiAgentSchema, whatsappInstanceSchema, webhookConfigSchema, companySettingsSchema, mercadoPagoConfigSchema } from "@/lib/validations";
 
 const birthdayMessageSchema = z.object({
   messageTemplate: z.string().min(10, "A mensagem deve ter pelo menos 10 caracteres"),
@@ -59,6 +59,7 @@ type WhatsappInstanceData = z.infer<typeof whatsappInstanceSchema>;
 type WebhookConfigData = z.infer<typeof webhookConfigSchema>;
 type BirthdayMessageData = z.infer<typeof birthdayMessageSchema>;
 type CompanySettingsData = z.infer<typeof companySettingsSchema>;
+type MercadoPagoConfigData = z.infer<typeof mercadoPagoConfigSchema>;
 
 export default function CompanySettings() {
   const { toast } = useToast();
@@ -127,6 +128,20 @@ export default function CompanySettings() {
     values: company ? {
       birthdayMessage: company.birthdayMessage || "",
       aiAgentPrompt: company.aiAgentPrompt || "",
+    } : undefined,
+  });
+
+  const mercadoPagoForm = useForm<MercadoPagoConfigData>({
+    resolver: zodResolver(mercadoPagoConfigSchema),
+    defaultValues: {
+      mercadopagoAccessToken: "",
+      mercadopagoPublicKey: "",
+      mercadopagoWebhookUrl: "",
+    },
+    values: company ? {
+      mercadopagoAccessToken: company.mercadopagoAccessToken || "",
+      mercadopagoPublicKey: company.mercadopagoPublicKey || "",
+      mercadopagoWebhookUrl: company.mercadopagoWebhookUrl || "",
     } : undefined,
   });
 
@@ -203,6 +218,10 @@ export default function CompanySettings() {
 
   const onCompanySettingsSubmit = (data: CompanySettingsData) => {
     updateCompanySettingsMutation.mutate(data);
+  };
+
+  const onMercadoPagoSubmit = (data: MercadoPagoConfigData) => {
+    updateMercadoPagoMutation.mutate(data);
   };
 
   const createInstanceMutation = useMutation({
@@ -752,6 +771,26 @@ export default function CompanySettings() {
     },
   });
 
+  const updateMercadoPagoMutation = useMutation({
+    mutationFn: async (data: MercadoPagoConfigData) => {
+      return await apiRequest("/api/company/mercadopago-config", "PUT", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/company/auth/profile"] });
+      toast({
+        title: "Sucesso",
+        description: "Configurações do Mercado Pago atualizadas com sucesso.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar configurações do Mercado Pago.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const configureWhatsappMutation = useMutation({
     mutationFn: async (instanceName: string) => {
       const settingsPayload = {
@@ -800,7 +839,7 @@ export default function CompanySettings() {
         </div>
 
         <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <Building2 className="w-4 h-4" />
               Empresa
@@ -812,6 +851,10 @@ export default function CompanySettings() {
             <TabsTrigger value="company-settings" className="flex items-center gap-2">
               <Settings className="w-4 h-4" />
               Configurações
+            </TabsTrigger>
+            <TabsTrigger value="mercadopago" className="flex items-center gap-2">
+              <Key className="w-4 h-4" />
+              Mercado Pago
             </TabsTrigger>
             <TabsTrigger value="reminders" className="flex items-center gap-2">
               <Bell className="w-4 h-4" />
@@ -2128,6 +2171,116 @@ export default function CompanySettings() {
                   </p>
                 </div>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="mercadopago" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Key className="w-5 h-5" />
+                Configurações do Mercado Pago
+              </CardTitle>
+              <CardDescription>
+                Configure suas credenciais do Mercado Pago para processar pagamentos dos agendamentos
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...mercadoPagoForm}>
+                <form onSubmit={mercadoPagoForm.handleSubmit(onMercadoPagoSubmit)} className="space-y-6">
+                  <div className="grid gap-6">
+                    <FormField
+                      control={mercadoPagoForm.control}
+                      name="mercadopagoAccessToken"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Access Token</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="password"
+                              placeholder="APP_USR-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                          <div className="text-sm text-gray-500">
+                            Token de acesso para autenticação na API do Mercado Pago
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={mercadoPagoForm.control}
+                      name="mercadopagoPublicKey"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Public Key</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="APP_USR-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                          <div className="text-sm text-gray-500">
+                            Chave pública para identificação da aplicação
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={mercadoPagoForm.control}
+                      name="mercadopagoWebhookUrl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>URL do Webhook (Opcional)</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="https://seudominio.com/webhook/mercadopago"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                          <div className="text-sm text-gray-500">
+                            URL para receber notificações sobre status dos pagamentos
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                    <h4 className="font-semibold text-blue-900 mb-2">Como obter suas credenciais</h4>
+                    <ul className="text-sm text-blue-800 space-y-1">
+                      <li>1. Acesse o <a href="https://www.mercadopago.com.br/developers" target="_blank" className="underline">Portal de Desenvolvedores do Mercado Pago</a></li>
+                      <li>2. Faça login na sua conta</li>
+                      <li>3. Vá em "Minhas aplicações" e selecione sua aplicação</li>
+                      <li>4. Na seção "Credenciais", copie o Access Token e Public Key</li>
+                      <li>5. Configure a URL do webhook se desejar receber notificações automáticas</li>
+                    </ul>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <Button 
+                      type="submit" 
+                      disabled={updateMercadoPagoMutation.isPending}
+                      className="min-w-[140px]"
+                    >
+                      {updateMercadoPagoMutation.isPending ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                          Salvando...
+                        </>
+                      ) : (
+                        "Salvar Configurações"
+                      )}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
             </CardContent>
           </Card>
         </TabsContent>

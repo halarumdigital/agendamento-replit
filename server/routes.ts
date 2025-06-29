@@ -2765,6 +2765,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Mercado Pago configuration endpoint
+  app.put('/api/company/mercadopago-config', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const { mercadopagoAccessToken, mercadopagoPublicKey, mercadopagoWebhookUrl } = req.body;
+
+      await storage.updateCompany(companyId, {
+        mercadopagoAccessToken,
+        mercadopagoPublicKey,
+        mercadopagoWebhookUrl
+      });
+
+      res.json({ message: "Configurações do Mercado Pago atualizadas com sucesso" });
+    } catch (error) {
+      console.error("Error updating Mercado Pago settings:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
   // Test endpoint para diagnosticar problema do agendamento Gilliard
   app.post('/api/test/gilliard-appointment', async (req: any, res) => {
     try {

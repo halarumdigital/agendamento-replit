@@ -67,6 +67,9 @@ export const companies = mysqlTable("companies", {
   trialExpiresAt: timestamp("trial_expires_at"),
   trialAlertShown: int("trial_alert_shown").notNull().default(0),
   subscriptionStatus: varchar("subscription_status", { length: 20 }).default("trial"),
+  mercadopagoAccessToken: varchar("mercadopago_access_token", { length: 500 }),
+  mercadopagoPublicKey: varchar("mercadopago_public_key", { length: 255 }),
+  mercadopagoWebhookUrl: varchar("mercadopago_webhook_url", { length: 500 }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
