@@ -156,10 +156,10 @@ O projeto conta com um sistema robusto de migrations SQL para gerenciar a estrut
 #### Comandos de Migration
 ```bash
 # Executar todas as migrations pendentes
-node scripts/migrate.js
+node scripts/migrate.cjs
 
 # Verificar status das migrations
-node scripts/migration-status.js
+node scripts/migration-status.cjs
 
 # Criar nova migration
 node scripts/create-migration.js nome-da-migration
@@ -179,7 +179,8 @@ node scripts/create-migration.js nome-da-migration
 ## Changelog
 ```
 Changelog:
-- June 28, 2025. COMPLETED: Sistema de migrations completamente funcional - corrigido script migrate.js para registrar execuções na tabela migrations, criado script migration-status.js para verificação de status, implementado controle de versões com timestamps, todas as 7 migrations executadas e validadas, sistema pronto para produção com rastreamento completo
+- June 28, 2025. COMPLETED: Scripts de migration corrigidos para compatibilidade ES modules - convertidos migrate.js e migration-status.js para migrate.cjs e migration-status.cjs devido ao "type": "module" no package.json, scripts agora funcionam corretamente com sintaxe CommonJS, sistema de trial e bloqueio de empresas implementado completamente com alertas de pagamento funcionais
+- June 28, 2025. COMPLETED: Sistema de migrations completamente funcional - corrigido script migrate.js para registrar execuções na tabela migrations, criado script migration-status.js para verificação de status, implementado controle de versões com timestamps, todas as 8 migrations executadas e validadas, sistema pronto para produção com rastreamento completo
 - June 28, 2025. COMPLETED: Botão logout corrigido - resolvido problema onde botão "Sair" no dashboard administrativo estava redirecionando para /administrador (que agora carrega Dashboard) causando loop de autenticação, corrigido redirecionamento para /administrador/login permitindo logout correto
 - June 28, 2025. COMPLETED: Rota dashboard administrativo corrigida - rota /administrador agora carrega componente Dashboard em vez de Login, resolvendo problema onde usuário era deslogado ao tentar acessar dashboard, mantidas rotas de login separadas em /administrador/login
 - June 28, 2025. COMPLETED: Sistema completo de migrations implementado - criado sistema robusto de gestão de banco de dados com 7 migrations organizadas (configurações globais, administradores, planos, empresas, agendamentos, comunicação e sistemas adicionais), script automatizado de execução, controle de versões com tabela migrations, execução sequencial com proteção contra re-execução, todas as 46+ tabelas do sistema organizadas em estrutura modular para fácil manutenção e evolução do banco de dados
