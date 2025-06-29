@@ -179,6 +179,7 @@ node scripts/create-migration.js nome-da-migration
 ## Changelog
 ```
 Changelog:
+- June 29, 2025. COMPLETED: Sistema WhatsApp completamente funcional - corrigidos todos os problemas de ordem de parâmetros apiRequest, criação de instâncias, geração de QR Code e conexão funcionando perfeitamente, coluna trial_alert_shown criada automaticamente, instâncias conectam com sucesso (status "open")
 - June 28, 2025. COMPLETED: Scripts de migration corrigidos para compatibilidade ES modules - convertidos migrate.js e migration-status.js para migrate.cjs e migration-status.cjs devido ao "type": "module" no package.json, scripts agora funcionam corretamente com sintaxe CommonJS, sistema de trial e bloqueio de empresas implementado completamente com alertas de pagamento funcionais
 - June 28, 2025. COMPLETED: Sistema de migrations completamente funcional - corrigido script migrate.js para registrar execuções na tabela migrations, criado script migration-status.js para verificação de status, implementado controle de versões com timestamps, todas as 8 migrations executadas e validadas, sistema pronto para produção com rastreamento completo
 - June 28, 2025. COMPLETED: Botão logout corrigido - resolvido problema onde botão "Sair" no dashboard administrativo estava redirecionando para /administrador (que agora carrega Dashboard) causando loop de autenticação, corrigido redirecionamento para /administrador/login permitindo logout correto
