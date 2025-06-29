@@ -805,10 +805,9 @@ export default function CompanySettings() {
 
     setIsTestingPayment(true);
     try {
-      const response = await apiRequest("/api/mercadopago/test-payment", "POST", {});
-      const data = await response.json();
+      const data = await apiRequest("/api/mercadopago/test-payment", "POST", {});
 
-      if (response.ok && data.success) {
+      if (data.success) {
         toast({
           title: "Sucesso!",
           description: "Link de pagamento criado com sucesso!",
