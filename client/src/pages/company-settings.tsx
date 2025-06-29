@@ -661,9 +661,11 @@ export default function CompanySettings() {
 
   const testAgentMutation = useMutation({
     mutationFn: async () => {
+      console.log("Testing AI agent with message:", testMessage);
       const response = await apiRequest("/api/company/ai-agent/test", "POST", {
         message: testMessage
       });
+      console.log("AI test response:", response);
       return response;
     },
     onSuccess: (data: any) => {
@@ -674,6 +676,7 @@ export default function CompanySettings() {
       });
     },
     onError: (error: any) => {
+      console.error("AI Test Error:", error);
       toast({
         title: "Erro no teste",
         description: error.message || "Erro ao testar o agente IA",
