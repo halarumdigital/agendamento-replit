@@ -1164,85 +1164,90 @@ export default function CompanySettings() {
                               Status: {instance.status || 'desconhecido'} | Última atualização: {instance.updatedAt ? new Date(instance.updatedAt).toLocaleString('pt-BR') : 'N/A'}
                             </p>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => refreshInstanceStatus(instance.instanceName)}
-                              className="flex items-center gap-2"
-                            >
-                              <RefreshCw className="w-4 h-4" />
-                              Verificar
-                            </Button>
+                          <div className="flex flex-col gap-2 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => refreshInstanceStatus(instance.instanceName)}
+                                className="flex items-center gap-2"
+                              >
+                                <RefreshCw className="w-4 h-4" />
+                                Verificar
+                              </Button>
+                              
+                              {!isConnected && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedInstance(instance);
+                                    getQrCodeMutation.mutate(instance.instanceName);
+                                  }}
+                                  disabled={getQrCodeMutation.isPending}
+                                  className="flex items-center gap-2"
+                                >
+                                  <QrCode className="w-4 h-4" />
+                                  {getQrCodeMutation.isPending ? "Gerando..." : "Gerar QR Code"}
+                                </Button>
+                              )}
+                              
+                              {isConnected && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    // Add disconnect functionality
+                                    fetch(`/api/company/whatsapp/instances/${instance.instanceName}/disconnect`, {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' }
+                                    }).then(() => {
+                                      queryClient.invalidateQueries({ queryKey: ['/api/company/whatsapp/instances'] });
+                                      refreshInstanceStatus(instance.instanceName);
+                                    });
+                                  }}
+                                  className="flex items-center gap-2 text-red-600 hover:text-red-700"
+                                >
+                                  <LogOut className="w-4 h-4" />
+                                  Desconectar
+                                </Button>
+                              )}
+                            </div>
                             
-                            {!isConnected && (
+                            <div className="flex items-center gap-2 flex-wrap">
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => {
                                   setSelectedInstance(instance);
-                                  getQrCodeMutation.mutate(instance.instanceName);
+                                  setShowWebhookDialog(true);
                                 }}
-                                disabled={getQrCodeMutation.isPending}
                                 className="flex items-center gap-2"
                               >
-                                <QrCode className="w-4 h-4" />
-                                {getQrCodeMutation.isPending ? "Gerando..." : "Gerar QR Code"}
+                                <Bot className="w-4 h-4" />
+                                Configurar IA
                               </Button>
-                            )}
-                            
-                            {isConnected && (
+                              
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => {
-                                  // Add disconnect functionality
-                                  fetch(`/api/company/whatsapp/instances/${instance.instanceName}/disconnect`, {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' }
-                                  }).then(() => {
-                                    queryClient.invalidateQueries({ queryKey: ['/api/company/whatsapp/instances'] });
-                                    refreshInstanceStatus(instance.instanceName);
-                                  });
-                                }}
-                                className="flex items-center gap-2 text-red-600 hover:text-red-700"
+                                onClick={() => configureWhatsappMutation.mutate(instance.instanceName)}
+                                disabled={configureWhatsappMutation.isPending}
+                                className="flex items-center gap-2"
                               >
-                                <LogOut className="w-4 h-4" />
-                                Desconectar
+                                <Settings className="w-4 h-4" />
+                                {configureWhatsappMutation.isPending ? "Configurando..." : "Configurar WhatsApp"}
                               </Button>
-                            )}
-                            
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedInstance(instance);
-                                setShowWebhookDialog(true);
-                              }}
-                              className="flex items-center gap-2"
-                            >
-                              <Bot className="w-4 h-4" />
-                              Configurar IA
-                            </Button>
-                            
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => configureWhatsappMutation.mutate(instance.instanceName)}
-                              disabled={configureWhatsappMutation.isPending}
-                              className="flex items-center gap-2"
-                            >
-                              <Settings className="w-4 h-4" />
-                              {configureWhatsappMutation.isPending ? "Configurando..." : "Configurar WhatsApp"}
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => deleteInstanceMutation.mutate(instance.id)}
-                              disabled={deleteInstanceMutation.isPending}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                              
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => deleteInstanceMutation.mutate(instance.id)}
+                                disabled={deleteInstanceMutation.isPending}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       </div>
