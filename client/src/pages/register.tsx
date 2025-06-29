@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -12,7 +12,8 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Link, useLocation } from "wouter";
 import { formatDocument } from "@/lib/validations";
-import { Building2, Mail, Lock, User, Phone } from "lucide-react";
+import { Building2, Mail, Lock, User, Phone, Shield } from "lucide-react";
+import ReCAPTCHA from "react-google-recaptcha";
 
 const registerSchema = z.object({
   fantasyName: z.string().min(2, "Nome fantasia deve ter pelo menos 2 caracteres"),
@@ -21,6 +22,7 @@ const registerSchema = z.object({
   password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
   confirmPassword: z.string(),
   phone: z.string().min(1, "Telefone é obrigatório"),
+  captchaToken: z.string().min(1, "Verificação de segurança é obrigatória"),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Senhas não coincidem",
   path: ["confirmPassword"],
@@ -33,6 +35,8 @@ export default function Register() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [affiliateCode, setAffiliateCode] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const recaptchaRef = useRef<ReCAPTCHA>(null);
 
   // Capture affiliate code from URL
   useEffect(() => {
@@ -55,14 +59,8 @@ export default function Register() {
       email: "",
       password: "",
       confirmPassword: "",
-      address: "",
       phone: "",
-      zipCode: "",
-      number: "",
-      neighborhood: "",
-      city: "",
-      state: "",
-
+      captchaToken: "",
     },
   });
 
@@ -72,25 +70,39 @@ export default function Register() {
     form.setValue("document", formatted);
   };
 
+  const handleCaptchaChange = (token: string | null) => {
+    setCaptchaToken(token);
+    if (token) {
+      form.setValue("captchaToken", token);
+      form.clearErrors("captchaToken");
+    } else {
+      form.setValue("captchaToken", "");
+    }
+  };
+
   const onSubmit = async (data: RegisterFormData) => {
-    console.log("Form submitted with data:", data);
-    console.log("Form errors:", form.formState.errors);
-    console.log("Form is valid:", form.formState.isValid);
+    if (!captchaToken) {
+      toast({
+        title: "Erro no cadastro",
+        description: "Por favor, complete a verificação de segurança",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const { confirmPassword, ...registerData } = data;
+      const { confirmPassword, captchaToken: _, ...registerData } = data;
       
-      // Include affiliate code if present
+      // Include affiliate code and captcha token if present
       const registrationData = {
         ...registerData,
+        captchaToken,
         ...(affiliateCode && { affiliateCode })
       };
       
-      console.log("Sending registration data:", registrationData);
-      
       // Register company
       const result = await apiRequest("/api/public/register", "POST", registrationData);
-      console.log("Registration successful:", result);
       
       toast({
         title: "Cadastro realizado com sucesso!",
@@ -100,12 +112,18 @@ export default function Register() {
       // Redirect to thank you page
       setLocation("/obrigado");
     } catch (error: any) {
-      console.error("Registration error:", error);
       toast({
         title: "Erro no cadastro",
         description: error.message || "Falha ao realizar cadastro",
         variant: "destructive",
       });
+      
+      // Reset captcha on error
+      if (recaptchaRef.current) {
+        recaptchaRef.current.reset();
+        setCaptchaToken(null);
+        form.setValue("captchaToken", "");
+      }
     } finally {
       setIsLoading(false);
     }

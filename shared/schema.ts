@@ -184,6 +184,8 @@ export const globalSettings = mysqlTable("global_settings", {
   customHtml: text("custom_html"),
   customDomainUrl: varchar("custom_domain_url", { length: 500 }),
   systemUrl: varchar("system_url", { length: 500 }),
+  recaptchaSiteKey: varchar("recaptcha_site_key", { length: 500 }),
+  recaptchaSecretKey: varchar("recaptcha_secret_key", { length: 500 }),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
 

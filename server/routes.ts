@@ -26,6 +26,36 @@ import {
 } from "./storage";
 import { formatBrazilianPhone, validateBrazilianPhone, normalizePhone } from "../shared/phone-utils";
 
+// Function to verify reCAPTCHA token
+async function verifyRecaptcha(token: string): Promise<boolean> {
+  try {
+    const [settingsRows] = await pool.execute(
+      'SELECT recaptcha_secret_key FROM global_settings LIMIT 1'
+    );
+    
+    if (!(settingsRows as any[]).length || !(settingsRows as any[])[0].recaptcha_secret_key) {
+      console.log('reCAPTCHA not configured, skipping verification');
+      return true; // Allow registration if reCAPTCHA is not configured
+    }
+    
+    const secretKey = (settingsRows as any[])[0].recaptcha_secret_key;
+    
+    const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: `secret=${secretKey}&response=${token}`,
+    });
+    
+    const data = await response.json();
+    return data.success === true;
+  } catch (error) {
+    console.error('Error verifying reCAPTCHA:', error);
+    return false;
+  }
+}
+
 // Utility function to ensure Evolution API URLs have proper /api/ endpoint
 function ensureEvolutionApiEndpoint(baseUrl: string): string {
   if (!baseUrl) return baseUrl;
@@ -7810,6 +7840,22 @@ const broadcastEvent = (eventData: any) => {
     });
   });
 
+  // Public endpoint to get reCAPTCHA site key
+  app.get('/api/public/recaptcha-config', async (req, res) => {
+    try {
+      const [settingsRows] = await pool.execute(
+        'SELECT recaptcha_site_key FROM global_settings LIMIT 1'
+      );
+      
+      const siteKey = (settingsRows as any[]).length > 0 ? (settingsRows as any[])[0].recaptcha_site_key : null;
+      
+      res.json({ siteKey });
+    } catch (error) {
+      console.error('Error fetching reCAPTCHA config:', error);
+      res.status(500).json({ message: 'Erro interno do servidor' });
+    }
+  });
+
   // Public company registration endpoint
   app.post('/api/public/register', async (req, res) => {
     try {
@@ -7819,8 +7865,17 @@ const broadcastEvent = (eventData: any) => {
         email, 
         password, 
         phone, 
-        affiliateCode 
+        affiliateCode,
+        captchaToken 
       } = req.body;
+
+      // Verify reCAPTCHA if token provided
+      if (captchaToken) {
+        const isValidCaptcha = await verifyRecaptcha(captchaToken);
+        if (!isValidCaptcha) {
+          return res.status(400).json({ message: 'Verificação de segurança falhou. Tente novamente.' });
+        }
+      }
 
       console.log('Public registration request:', { email, fantasyName, affiliateCode });
 

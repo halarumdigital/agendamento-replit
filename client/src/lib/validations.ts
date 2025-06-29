@@ -141,4 +141,6 @@ export const settingsSchema = z.object({
   customHtml: z.string().optional(),
   customDomainUrl: z.string().optional(),
   systemUrl: z.string().optional(),
+  recaptchaSiteKey: z.string().optional(),
+  recaptchaSecretKey: z.string().optional(),
 });

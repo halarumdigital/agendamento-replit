@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { Settings, Palette, MessageSquare, Globe, Brain, Upload, X, Image } from "lucide-react";
+import { Settings, Palette, MessageSquare, Globe, Brain, Upload, X, Image, Shield } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { settingsSchema } from "@/lib/validations";
 import type { GlobalSettings } from "@shared/schema";
@@ -388,7 +388,7 @@ export default function SettingsPage() {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <Tabs defaultValue="general" className="w-full">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="general" className="flex items-center gap-2">
                 <Settings className="w-4 h-4" />
                 Geral
@@ -408,6 +408,10 @@ export default function SettingsPage() {
               <TabsTrigger value="smtp" className="flex items-center gap-2">
                 <Globe className="w-4 h-4" />
                 SMTP
+              </TabsTrigger>
+              <TabsTrigger value="recaptcha" className="flex items-center gap-2">
+                <Shield className="w-4 h-4" />
+                reCAPTCHA
               </TabsTrigger>
             </TabsList>
 
@@ -1261,6 +1265,135 @@ export default function SettingsPage() {
                       <li>• <strong>TLS (587):</strong> Mais seguro e recomendado para a maioria dos provedores</li>
                       <li>• <strong>SSL (465):</strong> Para provedores que requerem SSL exclusivo</li>
                     </ul>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="security" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Settings className="w-5 h-5" />
+                    Configurações de Segurança
+                  </CardTitle>
+                  <CardDescription>
+                    Configure as ferramentas de segurança do sistema para prevenir spam e bots.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="recaptchaSiteKey"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Google reCAPTCHA - Site Key (Pública)</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="6LcXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Chave pública do Google reCAPTCHA v2. Esta chave é segura para ser exibida publicamente.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="recaptchaSecretKey"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Google reCAPTCHA - Secret Key (Privada)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="password"
+                            placeholder="6LcXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Chave secreta do Google reCAPTCHA v2. Esta chave deve ser mantida confidencial.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+                    <h4 className="font-medium text-blue-900 mb-2">Como configurar o Google reCAPTCHA:</h4>
+                    <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+                      <li>Acesse o <a href="https://www.google.com/recaptcha/admin" target="_blank" rel="noopener noreferrer" className="underline hover:text-blue-600">Google reCAPTCHA Admin Console</a></li>
+                      <li>Clique em "+" para adicionar um novo site</li>
+                      <li>Escolha reCAPTCHA v2 com "Caixa de seleção I'm not a robot"</li>
+                      <li>Adicione seu domínio (ex: agenday.gilliard.dev)</li>
+                      <li>Copie as chaves Site Key e Secret Key para os campos acima</li>
+                      <li>O reCAPTCHA será automaticamente aplicado na página de cadastro</li>
+                    </ol>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="recaptcha" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Shield className="w-5 h-5" />
+                    Configurações do Google reCAPTCHA
+                  </CardTitle>
+                  <CardDescription>
+                    Configure o Google reCAPTCHA v2 para proteção contra bots na página de cadastro.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="recaptchaSiteKey"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Site Key (Chave Pública)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="6LdXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          Chave pública do reCAPTCHA que é visível no frontend
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="recaptchaSecretKey"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Secret Key (Chave Secreta)</FormLabel>
+                        <FormControl>
+                          <Input type="password" placeholder="6LdXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          Chave secreta do reCAPTCHA usada para verificação no servidor
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                    <h4 className="font-semibold text-sm mb-2">Como configurar o Google reCAPTCHA:</h4>
+                    <ol className="text-sm text-gray-600 dark:text-gray-300 space-y-1 list-decimal list-inside">
+                      <li>Acesse <a href="https://www.google.com/recaptcha/admin/create" target="_blank" className="text-blue-600 underline">Google reCAPTCHA Console</a></li>
+                      <li>Clique em "+" para adicionar um novo site</li>
+                      <li>Escolha reCAPTCHA v2 com "Caixa de seleção I'm not a robot"</li>
+                      <li>Adicione seu domínio (ex: agenday.gilliard.dev)</li>
+                      <li>Copie as chaves Site Key e Secret Key para os campos acima</li>
+                      <li>O reCAPTCHA será automaticamente aplicado na página de cadastro</li>
+                    </ol>
                   </div>
                 </CardContent>
               </Card>
