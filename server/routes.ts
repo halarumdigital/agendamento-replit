@@ -5243,6 +5243,9 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
     
     console.log(`✅ Appointment created from AI confirmation: ${extractedName} - ${service.name} - ${appointmentDate.toLocaleDateString()} ${formattedTime}`);
     
+    // Generate and send payment link
+    await generatePaymentLinkForAppointment(companyId, conversationId, appointment, service, extractedName, phoneNumber, appointmentDate, formattedTime);
+    
     // Force immediate refresh of appointments list
     console.log('📡 Broadcasting new appointment notification...');
     
