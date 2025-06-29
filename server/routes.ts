@@ -26,6 +26,148 @@ import {
 } from "./storage";
 import { formatBrazilianPhone, validateBrazilianPhone, normalizePhone } from "../shared/phone-utils";
 
+// Function to generate payment link from conversation context and send immediately after SIM/OK
+async function generatePaymentLinkFromConversation(conversationId: number, companyId: number, phoneNumber: string) {
+  try {
+    console.log('💳 Generating payment link from conversation context...');
+    
+    // Extract appointment data from AI conversation
+    const { services, professionals } = await getAIResponseData(conversationId, companyId);
+    const extractedData = await extractAppointmentDataFromConversation(conversationId, companyId);
+    
+    if (!extractedData) {
+      console.log('❌ Could not extract appointment data for payment link');
+      return;
+    }
+    
+    const company = await storage.getCompanyById(companyId);
+    if (!company || !company.mercadopagoAccessToken) {
+      console.log('ℹ️ Skipping payment link - no Mercado Pago token configured');
+      return;
+    }
+    
+    const service = services.find(s => s.id === extractedData.serviceId);
+    if (!service || !service.price || service.price <= 0) {
+      console.log('ℹ️ Skipping payment link - service has no price');
+      return;
+    }
+    
+    // Create a temporary appointment to get the ID for external_reference
+    const tempAppointment = await storage.createAppointment({
+      companyId,
+      professionalId: extractedData.professionalId,
+      serviceId: extractedData.serviceId,
+      clientName: extractedData.clientName,
+      clientPhone: phoneNumber,
+      clientEmail: null,
+      appointmentDate: extractedData.appointmentDate,
+      appointmentTime: extractedData.appointmentTime,
+      duration: service.duration || 30,
+      totalPrice: service.price || 0,
+      status: 'Pendente',
+      notes: `Agendamento via WhatsApp - Conversa ID: ${conversationId}`,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+    
+    // Generate payment preference
+    const preference = {
+      items: [
+        {
+          title: `${service.name} - ${company.fantasyName || company.companyName}`,
+          description: service.description || service.name,
+          quantity: 1,
+          unit_price: parseFloat(service.price.toString())
+        }
+      ],
+      payer: {
+        name: extractedData.clientName,
+        email: 'cliente@exemplo.com'
+      },
+      payment_methods: {
+        excluded_payment_types: [],
+        excluded_payment_methods: [],
+        installments: 12
+      },
+      back_urls: {
+        success: `${process.env.SYSTEM_URL || 'http://localhost:5000'}/pagamento/sucesso`,
+        failure: `${process.env.SYSTEM_URL || 'http://localhost:5000'}/pagamento/erro`,
+        pending: `${process.env.SYSTEM_URL || 'http://localhost:5000'}/pagamento/pendente`
+      },
+      external_reference: tempAppointment.id?.toString() || Date.now().toString(),
+      notification_url: `${process.env.SYSTEM_URL || 'http://localhost:5000'}/api/webhook/mercadopago`,
+      statement_descriptor: company.fantasyName || company.companyName || "Agendamento"
+    };
+    
+    const response = await fetch('https://api.mercadopago.com/checkout/preferences', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${company.mercadopagoAccessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(preference)
+    });
+    
+    const responseData = await response.json();
+    if (!response.ok) {
+      console.error('❌ Mercado Pago API error:', responseData);
+      return;
+    }
+    
+    const paymentLink = responseData.init_point;
+    console.log('✅ Payment link generated:', paymentLink);
+    
+    // Send payment link via WhatsApp
+    const conversation = await storage.getConversationById(conversationId);
+    if (conversation && conversation.whatsappInstanceId) {
+      let whatsappInstance = await storage.getWhatsappInstance(conversation.whatsappInstanceId);
+      
+      if (whatsappInstance && !whatsappInstance.apiUrl) {
+        const globalSettings = await storage.getGlobalSettings();
+        if (globalSettings?.evolutionApiUrl) {
+          await storage.updateWhatsappInstance(whatsappInstance.id, {
+            apiUrl: globalSettings.evolutionApiUrl
+          });
+          whatsappInstance = await storage.getWhatsappInstance(conversation.whatsappInstanceId);
+        }
+      }
+      
+      if (whatsappInstance && (whatsappInstance.status === 'connected' || whatsappInstance.status === 'open') && whatsappInstance.apiUrl) {
+        const instructionMessage = `Vou te enviar um link do mercado pago para realizar o pagamento do serviço online, pode confiar que é seguro, para que seu agendamento seja confirmado faça o pagamento pelo link.`;
+        await fetch(`${whatsappInstance.apiUrl}/message/sendText/${whatsappInstance.instanceName}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': whatsappInstance.apiKey
+          },
+          body: JSON.stringify({
+            number: phoneNumber.replace(/\D/g, ''),
+            text: instructionMessage
+          })
+        });
+
+        const paymentMessage = `💳 Link de Pagamento: ${paymentLink}\n\n💰 Valor: R$ ${service.price}\n🏪 Empresa: ${company.fantasyName || company.companyName}\n📋 Serviço: ${service.name}\n📅 Data/Hora: ${extractedData.appointmentDate.toLocaleDateString()} às ${extractedData.appointmentTime}`;
+        await fetch(`${whatsappInstance.apiUrl}/message/sendText/${whatsappInstance.instanceName}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': whatsappInstance.apiKey
+          },
+          body: JSON.stringify({
+            number: phoneNumber.replace(/\D/g, ''),
+            text: paymentMessage
+          })
+        });
+        
+        console.log('💬 Payment link sent via WhatsApp successfully');
+      }
+    }
+    
+  } catch (error) {
+    console.error('❌ Error generating payment link from conversation:', error);
+  }
+}
+
 // Function to generate and send Mercado Pago payment link via WhatsApp
 async function generatePaymentLinkForAppointment(companyId: number, conversationId: number, appointment: any, service: any, clientName: string, phoneNumber: string, appointmentDate: Date, appointmentTime: string) {
   try {
@@ -3912,7 +4054,7 @@ INSTRUÇÕES OBRIGATÓRIAS:
                 const isConfirmationResponse = /\b(sim|ok|confirmo)\b/i.test(messageText.toLowerCase().trim());
                 
                 if (isConfirmationResponse) {
-                  console.log('🎯 Confirmação SIM/OK detectada! Buscando agendamento para criar...');
+                  console.log('🎯 Confirmação SIM/OK detectada! Enviando link de pagamento primeiro...');
                   
                   // Look for any recent conversation with appointment data for this phone
                   const allConversations = await storage.getConversationsByCompany(company.id);
@@ -3929,7 +4071,18 @@ INSTRUÇÕES OBRIGATÓRIAS:
                     );
                     
                     if (hasAiConfirmation) {
-                      console.log('✅ Encontrada conversa com confirmação da IA, criando agendamento...');
+                      console.log('✅ Encontrada conversa com confirmação da IA');
+                      
+                      // FIRST: Send payment link immediately after SIM/OK confirmation
+                      try {
+                        console.log('💳 Enviando link de pagamento após confirmação SIM/OK...');
+                        await generatePaymentLinkFromConversation(conv.id, company.id, phoneNumber);
+                      } catch (paymentError) {
+                        console.error('❌ Erro ao enviar link de pagamento:', paymentError);
+                      }
+                      
+                      // THEN: Create appointment (but don't send confirmation yet - that's for webhook)
+                      console.log('📅 Criando agendamento após envio do link...');
                       await createAppointmentFromAIConfirmation(conv.id, company.id, aiResponse, phoneNumber);
                       appointmentCreated = true;
                       break;
@@ -5398,9 +5551,6 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
     });
     
     console.log(`✅ Appointment created from AI confirmation: ${extractedName} - ${service.name} - ${appointmentDate.toLocaleDateString()} ${formattedTime}`);
-    
-    // Generate and send payment link ONLY (without confirmation message)
-    await generatePaymentLinkForAppointment(companyId, conversationId, appointment, service, extractedName, phoneNumber, appointmentDate, formattedTime);
     
     // Force immediate refresh of appointments list
     console.log('📡 Broadcasting new appointment notification...');
