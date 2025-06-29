@@ -2589,8 +2589,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               content: message.trim()
             }
           ],
-          temperature: settings.openaiTemperature || 0.7,
-          max_tokens: settings.openaiMaxTokens || 500
+          temperature: parseFloat(settings.openaiTemperature) || 0.7,
+          max_tokens: parseInt(settings.openaiMaxTokens) || 500
         })
       });
 
