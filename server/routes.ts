@@ -2952,13 +2952,108 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const paymentId = data.id;
         console.log('💰 Payment notification received:', paymentId);
         
-        // Process payment notification
-        // Here you would:
-        // 1. Verify payment status with Mercado Pago API
-        // 2. Update appointment status
-        // 3. Send WhatsApp confirmation
+        // Get payment details from Mercado Pago API
+        try {
+          // Find company by checking all companies' MP tokens until we find the right one
+          const companies = await storage.getAllCompanies();
+          let paymentData = null;
+          let paymentCompany = null;
+          
+          for (const company of companies) {
+            if (company.mercadopagoAccessToken) {
+              try {
+                const response = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+                  headers: {
+                    'Authorization': `Bearer ${company.mercadopagoAccessToken}`
+                  }
+                });
+                
+                if (response.ok) {
+                  paymentData = await response.json();
+                  paymentCompany = company;
+                  break;
+                }
+              } catch (err) {
+                // Try next company
+                continue;
+              }
+            }
+          }
+          
+          if (paymentData && paymentCompany && paymentData.status === 'approved') {
+            console.log('✅ Payment approved:', paymentData);
+            
+            // Find appointment by external_reference
+            const appointmentId = parseInt(paymentData.external_reference);
+            if (appointmentId) {
+              const appointments = await storage.getAppointmentsByCompany(paymentCompany.id);
+              const appointment = appointments.find(apt => apt.id === appointmentId);
+              
+              if (appointment) {
+                // Update appointment status to confirmed
+                await storage.updateAppointment(appointmentId, { status: 'Confirmado' });
+                console.log('✅ Appointment status updated to Confirmado');
+                
+                // Send WhatsApp confirmation message
+                const conversationMatch = appointment.notes?.match(/Conversa ID: (\d+)/);
+                if (conversationMatch) {
+                  const conversationId = parseInt(conversationMatch[1]);
+                  const conversations = await storage.getConversationsByCompany(paymentCompany.id);
+                  const conversation = conversations.find(conv => conv.id === conversationId);
+                  
+                  if (conversation && conversation.whatsappInstanceId) {
+                    let whatsappInstance = await storage.getWhatsappInstance(conversation.whatsappInstanceId);
+                    
+                    // Auto-repair apiUrl if needed
+                    if (whatsappInstance && !whatsappInstance.apiUrl) {
+                      const globalSettings = await storage.getGlobalSettings();
+                      if (globalSettings?.evolutionApiUrl) {
+                        await storage.updateWhatsappInstance(whatsappInstance.id, {
+                          apiUrl: globalSettings.evolutionApiUrl
+                        });
+                        whatsappInstance = await storage.getWhatsappInstance(conversation.whatsappInstanceId);
+                      }
+                    }
+                    
+                    if (whatsappInstance && (whatsappInstance.status === 'connected' || whatsappInstance.status === 'open') && whatsappInstance.apiUrl) {
+                      // Get service and professional info
+                      const services = await storage.getServicesByCompany(paymentCompany.id);
+                      const professionals = await storage.getProfessionalsByCompany(paymentCompany.id);
+                      const service = services.find(s => s.id === appointment.serviceId);
+                      const professional = professionals.find(p => p.id === appointment.professionalId);
+                      
+                      const confirmationMessage = `✅ Pagamento aprovado! Seu agendamento foi confirmado com sucesso!\n\n` +
+                        `📋 Detalhes do Agendamento:\n` +
+                        `👤 Cliente: ${appointment.clientName}\n` +
+                        `💼 Profissional: ${professional?.name || 'Profissional'}\n` +
+                        `🛍️ Serviço: ${service?.name || 'Serviço'}\n` +
+                        `📅 Data: ${new Date(appointment.appointmentDate).toLocaleDateString('pt-BR')}\n` +
+                        `🕐 Horário: ${appointment.appointmentTime}\n\n` +
+                        `Obrigado por escolher nossos serviços! Aguardamos você na data marcada.`;
+                      
+                      await fetch(`${whatsappInstance.apiUrl}/message/sendText/${whatsappInstance.instanceName}`, {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'apikey': whatsappInstance.apiKey
+                        },
+                        body: JSON.stringify({
+                          number: conversation.phoneNumber.replace(/\D/g, ''),
+                          text: confirmationMessage
+                        })
+                      });
+                      
+                      console.log('💬 WhatsApp confirmation message sent');
+                    }
+                  }
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.error('❌ Error processing payment verification:', error);
+        }
         
-        // For now, just acknowledge receipt
         res.status(200).json({ message: 'Webhook received successfully' });
       } else {
         console.log('ℹ️ Other webhook type received:', type);
@@ -5304,7 +5399,7 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
     
     console.log(`✅ Appointment created from AI confirmation: ${extractedName} - ${service.name} - ${appointmentDate.toLocaleDateString()} ${formattedTime}`);
     
-    // Generate and send payment link
+    // Generate and send payment link ONLY (without confirmation message)
     await generatePaymentLinkForAppointment(companyId, conversationId, appointment, service, extractedName, phoneNumber, appointmentDate, formattedTime);
     
     // Force immediate refresh of appointments list
