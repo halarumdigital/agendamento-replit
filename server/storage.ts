@@ -410,9 +410,29 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateCompany(id: number, companyData: Partial<InsertCompany>): Promise<Company> {
-    await db.update(companies).set(companyData).where(eq(companies.id, id));
-    const [company] = await db.select().from(companies).where(eq(companies.id, id));
-    return company;
+    try {
+      console.log('Storage updateCompany - ID:', id, 'Data:', companyData);
+      
+      // Remove undefined values to prevent database errors
+      const cleanData = Object.fromEntries(
+        Object.entries(companyData).filter(([_, v]) => v !== undefined)
+      );
+      
+      console.log('Clean data for update:', cleanData);
+      
+      await db.update(companies).set(cleanData).where(eq(companies.id, id));
+      const [company] = await db.select().from(companies).where(eq(companies.id, id));
+      
+      if (!company) {
+        throw new Error(`Company with ID ${id} not found after update`);
+      }
+      
+      console.log('Successfully updated company:', company.id);
+      return company;
+    } catch (error) {
+      console.error('Error in updateCompany storage function:', error);
+      throw error;
+    }
   }
 
   async deleteCompany(id: number): Promise<void> {
