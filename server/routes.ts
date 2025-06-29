@@ -32,8 +32,89 @@ async function generatePaymentLinkFromConversation(conversationId: number, compa
     console.log('💳 Generating payment link from conversation context...');
     
     // Extract appointment data from AI conversation
-    const { services, professionals } = await getAIResponseData(conversationId, companyId);
-    const extractedData = await extractAppointmentDataFromConversation(conversationId, companyId);
+    const services = await storage.getServicesByCompany(companyId);
+    const professionals = await storage.getProfessionalsByCompany(companyId);
+    
+    // Get conversation data to extract appointment details
+    const messages = await storage.getMessagesByConversation(conversationId);
+    
+    if (!messages || messages.length === 0) {
+      console.log('❌ No conversation data found for payment link');
+      return;
+    }
+    
+    // Extract data from recent messages
+    const recentMessages = messages.slice(-10);
+    const conversationText = recentMessages.map(m => m.content).join(' ').toLowerCase();
+    
+    // Find service by name in conversation
+    const serviceNames = services.map(s => s.name.toLowerCase());
+    let selectedService = null;
+    for (const service of services) {
+      if (conversationText.includes(service.name.toLowerCase())) {
+        selectedService = service;
+        break;
+      }
+    }
+    
+    // Find professional by name in conversation
+    const professionalNames = professionals.map(p => p.name.toLowerCase());
+    let selectedProfessional = null;
+    for (const professional of professionals) {
+      if (conversationText.includes(professional.name.toLowerCase())) {
+        selectedProfessional = professional;
+        break;
+      }
+    }
+    
+    // Extract client name from recent AI responses
+    let clientName = 'Cliente';
+    const aiMessages = recentMessages.filter(m => m.role === 'assistant');
+    for (const msg of aiMessages) {
+      const nameMatch = msg.content.match(/nome:\s*([^,\n]+)/i);
+      if (nameMatch) {
+        clientName = nameMatch[1].trim();
+        break;
+      }
+    }
+    
+    // Extract date and time from conversation
+    const dateMatch = conversationText.match(/(\d{1,2}\/\d{1,2}\/\d{4})/);
+    const timeMatch = conversationText.match(/(\d{1,2}:\d{2})/);
+    
+    let appointmentDate = new Date();
+    let appointmentTime = '09:00';
+    
+    if (dateMatch) {
+      const [day, month, year] = dateMatch[1].split('/');
+      appointmentDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    } else {
+      // Try to find day of week
+      const dayMatch = conversationText.match(/(segunda|terça|quarta|quinta|sexta|sábado|domingo)/i);
+      if (dayMatch) {
+        const dayName = dayMatch[1].toLowerCase();
+        const daysOfWeek = {
+          'domingo': 0, 'segunda': 1, 'terça': 2, 'quarta': 3,
+          'quinta': 4, 'sexta': 5, 'sábado': 6
+        };
+        const targetDay = daysOfWeek[dayName];
+        const today = new Date();
+        const daysUntilTarget = (targetDay - today.getDay() + 7) % 7;
+        appointmentDate = new Date(today.getTime() + daysUntilTarget * 24 * 60 * 60 * 1000);
+      }
+    }
+    
+    if (timeMatch) {
+      appointmentTime = timeMatch[1];
+    }
+    
+    const extractedData = {
+      serviceId: selectedService?.id,
+      professionalId: selectedProfessional?.id,
+      clientName,
+      appointmentDate,
+      appointmentTime
+    };
     
     if (!extractedData) {
       console.log('❌ Could not extract appointment data for payment link');
@@ -118,9 +199,9 @@ async function generatePaymentLinkFromConversation(conversationId: number, compa
     console.log('✅ Payment link generated:', paymentLink);
     
     // Send payment link via WhatsApp
-    const conversation = await storage.getConversationById(conversationId);
-    if (conversation && conversation.whatsappInstanceId) {
-      let whatsappInstance = await storage.getWhatsappInstance(conversation.whatsappInstanceId);
+    const conversationForWhatsApp = await storage.getConversationById(conversationId);
+    if (conversationForWhatsApp && conversationForWhatsApp.whatsappInstanceId) {
+      let whatsappInstance = await storage.getWhatsappInstance(conversationForWhatsApp.whatsappInstanceId);
       
       if (whatsappInstance && !whatsappInstance.apiUrl) {
         const globalSettings = await storage.getGlobalSettings();
