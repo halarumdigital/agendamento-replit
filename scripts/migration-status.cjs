@@ -1,11 +1,7 @@
-import mysql from 'mysql2/promise';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import dotenv from 'dotenv';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const mysql = require('mysql2/promise');
+const fs = require('fs');
+const path = require('path');
+const dotenv = require('dotenv');
 
 // Carregar variáveis de ambiente
 dotenv.config({ path: path.join(__dirname, '..', '.env') });

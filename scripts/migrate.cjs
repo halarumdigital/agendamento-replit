@@ -5,15 +5,12 @@
  * Executa todas as migrations SQL em ordem sequencial
  */
 
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-import { readdir, readFile } from 'fs/promises';
-import mysql from 'mysql2/promise';
-import dotenv from 'dotenv';
+const { join } = require('path');
+const { readdir, readFile } = require('fs/promises');
+const mysql = require('mysql2/promise');
+const dotenv = require('dotenv');
 
-// Configurar __dirname para ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+// __dirname já está disponível em CommonJS
 
 // Carregar variáveis de ambiente
 dotenv.config({ path: join(__dirname, '..', '.env') });
@@ -184,6 +181,6 @@ async function runMigrations() {
 }
 
 // Executar apenas se chamado diretamente
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (require.main === module) {
   runMigrations().catch(console.error);
 }
