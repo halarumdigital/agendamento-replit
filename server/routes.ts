@@ -3368,8 +3368,66 @@ INSTRUÇÕES OBRIGATÓRIAS:
                 });
               }
 
-            } catch (aiError) {
+            } catch (aiError: any) {
               console.error('Error generating AI response:', aiError);
+              
+              // Send fallback response when AI is not available
+              let fallbackMessage = `Olá! 👋
+
+Para agendar seus horários, temos as seguintes opções:
+
+📞 *Telefone:* Entre em contato diretamente
+🏢 *Presencial:* Visite nosso estabelecimento
+💻 *Online:* Acesse nosso site
+
+*Profissionais disponíveis:*
+• Magnus
+• Silva  
+• Flavio
+
+*Horário de funcionamento:*
+Segunda a Sábado: 09:00 às 18:00
+
+Obrigado pela preferência! 🙏`;
+
+              // Check for specific OpenAI quota error
+              if (aiError.status === 429 || aiError.code === 'insufficient_quota') {
+                console.error('🚨 OpenAI API quota exceeded - need to add billing credits');
+              }
+              
+              // Send fallback response
+              try {
+                const correctedApiUrl = ensureEvolutionApiEndpoint(globalSettings.evolutionApiUrl);
+                const evolutionResponse = await fetch(`${correctedApiUrl}/message/sendText/${instanceName}`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': globalSettings.evolutionApiGlobalKey
+                  },
+                  body: JSON.stringify({
+                    number: phoneNumber,
+                    text: fallbackMessage
+                  })
+                });
+
+                if (evolutionResponse.ok) {
+                  console.log('✅ Fallback message sent successfully');
+                  
+                  // Save the fallback message to conversation
+                  await storage.createMessage({
+                    conversationId: conversation.id,
+                    content: fallbackMessage,
+                    role: 'assistant',
+                    messageType: 'text',
+                    delivered: true,
+                    timestamp: new Date(),
+                  });
+                } else {
+                  console.error('❌ Failed to send fallback message');
+                }
+              } catch (sendError) {
+                console.error('❌ Error sending fallback message:', sendError);
+              }
             }
           }
         }
