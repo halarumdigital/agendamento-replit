@@ -3186,9 +3186,7 @@ INSTRUÇÕES OBRIGATÓRIAS:
                 },
                 body: JSON.stringify({
                   number: phoneNumber,
-                  textMessage: {
-                    text: aiResponse
-                  }
+                  text: aiResponse
                 })
               });
 
@@ -3269,7 +3267,11 @@ INSTRUÇÕES OBRIGATÓRIAS:
                 
               } else {
                 const errorText = await evolutionResponse.text();
-                console.error('❌ Failed to send message via Evolution API:', errorText);
+                console.error('❌ Failed to send message via Evolution API:', {
+                  status: evolutionResponse.status,
+                  error: evolutionResponse.statusText,
+                  response: JSON.parse(errorText)
+                });
                 console.log('ℹ️  Note: This is normal for test numbers. Real WhatsApp numbers will work.');
                 
                 // Still save the AI response even if sending failed (for debugging)
