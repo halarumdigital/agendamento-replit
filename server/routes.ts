@@ -2863,7 +2863,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           failure: `${process.env.SYSTEM_URL || 'http://localhost:5000'}/pagamento/erro`,
           pending: `${process.env.SYSTEM_URL || 'http://localhost:5000'}/pagamento/pendente`
         },
-        auto_return: "approved",
         external_reference: appointmentId?.toString() || Date.now().toString(),
         notification_url: `${process.env.SYSTEM_URL || 'http://localhost:5000'}/api/webhook/mercadopago`,
         statement_descriptor: company.fantasyName || "Agendamento"
