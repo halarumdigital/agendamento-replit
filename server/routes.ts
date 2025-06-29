@@ -26,6 +26,103 @@ import {
 } from "./storage";
 import { formatBrazilianPhone, validateBrazilianPhone, normalizePhone } from "../shared/phone-utils";
 
+// Function to generate and send Mercado Pago payment link via WhatsApp
+async function generatePaymentLinkForAppointment(companyId: number, conversationId: number, appointment: any, service: any, clientName: string, phoneNumber: string, appointmentDate: Date, appointmentTime: string) {
+  try {
+    const company = await storage.getCompanyById(companyId);
+    if (!company || !company.mercadopagoAccessToken || !service.price || service.price <= 0) {
+      console.log('ℹ️ Skipping payment link generation - no Mercado Pago token configured or service has no price');
+      return;
+    }
+
+    console.log('💳 Generating Mercado Pago payment link for appointment...');
+    
+    // Create payment preference with service details and company name
+    const preference = {
+      items: [
+        {
+          title: `${service.name} - ${company.fantasyName || company.companyName}`,
+          description: service.description || service.name,
+          quantity: 1,
+          unit_price: parseFloat(service.price.toString())
+        }
+      ],
+      payer: {
+        name: clientName,
+        email: 'cliente@exemplo.com'
+      },
+      payment_methods: {
+        excluded_payment_types: [],
+        excluded_payment_methods: [],
+        installments: 12
+      },
+      back_urls: {
+        success: `${process.env.SYSTEM_URL || 'http://localhost:5000'}/pagamento/sucesso`,
+        failure: `${process.env.SYSTEM_URL || 'http://localhost:5000'}/pagamento/erro`,
+        pending: `${process.env.SYSTEM_URL || 'http://localhost:5000'}/pagamento/pendente`
+      },
+      external_reference: appointment?.id?.toString() || Date.now().toString(),
+      notification_url: `${process.env.SYSTEM_URL || 'http://localhost:5000'}/api/webhook/mercadopago`,
+      statement_descriptor: company.fantasyName || company.companyName || "Agendamento"
+    };
+
+    console.log('🔄 Creating Mercado Pago preference:', JSON.stringify(preference, null, 2));
+
+    // Send to Mercado Pago API
+    const response = await fetch('https://api.mercadopago.com/checkout/preferences', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${company.mercadopagoAccessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(preference)
+    });
+
+    if (response.ok) {
+      const preferenceData = await response.json();
+      const paymentLink = preferenceData.init_point;
+      
+      console.log('✅ Payment link generated:', paymentLink);
+      
+      // Send payment message via WhatsApp
+      const conversation = await storage.getConversationById(conversationId);
+      if (conversation && conversation.whatsappInstanceId) {
+        const whatsappInstance = await storage.getWhatsappInstance(conversation.whatsappInstanceId);
+        if (whatsappInstance && whatsappInstance.status === 'connected') {
+          const paymentMessage = `Vou te enviar um link do mercado pago para realizar o pagamento do serviço online, pode confiar que é seguro, para que seu agendamento seja confirmado faça o pagamento pelo link.\n\n💳 Link de Pagamento: ${paymentLink}\n\n💰 Valor: R$ ${service.price}\n🏪 Empresa: ${company.fantasyName || company.companyName}\n📋 Serviço: ${service.name}\n📅 Data/Hora: ${appointmentDate.toLocaleDateString()} às ${appointmentTime}`;
+          
+          const whatsappResponse = await fetch(`${whatsappInstance.apiUrl}/message/sendText/${whatsappInstance.instanceName}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': whatsappInstance.apiKey
+            },
+            body: JSON.stringify({
+              number: phoneNumber.replace(/\D/g, ''),
+              text: paymentMessage
+            })
+          });
+          
+          if (whatsappResponse.ok) {
+            console.log('💬 Payment message sent via WhatsApp successfully');
+          } else {
+            console.error('❌ Failed to send payment message via WhatsApp:', await whatsappResponse.text());
+          }
+        } else {
+          console.log('⚠️ WhatsApp instance not connected, cannot send payment message');
+        }
+      } else {
+        console.log('⚠️ No WhatsApp conversation found, cannot send payment message');
+      }
+    } else {
+      const errorText = await response.text();
+      console.error('❌ Failed to create Mercado Pago preference:', errorText);
+    }
+  } catch (paymentError) {
+    console.error('❌ Error generating payment link:', paymentError);
+  }
+}
+
 // Function to verify reCAPTCHA token
 async function verifyRecaptcha(token: string): Promise<boolean> {
   try {
