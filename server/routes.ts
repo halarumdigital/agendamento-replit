@@ -2559,6 +2559,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get global settings for OpenAI configuration
       const settings = await storage.getGlobalSettings();
+      console.log("OpenAI Settings:", {
+        hasApiKey: !!settings?.openaiApiKey,
+        model: settings?.openaiModel,
+        temperature: settings?.openaiTemperature,
+        maxTokens: settings?.openaiMaxTokens
+      });
+      
       if (!settings?.openaiApiKey) {
         return res.status(400).json({ message: "Configuração OpenAI não encontrada" });
       }
@@ -2588,7 +2595,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       if (!openaiResponse.ok) {
-        throw new Error(`OpenAI API error: ${openaiResponse.statusText}`);
+        const errorText = await openaiResponse.text();
+        console.error("OpenAI API Error:", openaiResponse.status, errorText);
+        throw new Error(`OpenAI API error: ${openaiResponse.statusText} - ${errorText}`);
       }
 
       const openaiData = await openaiResponse.json();
