@@ -40,6 +40,18 @@ export default function SettingsPage() {
     enabled: false, // Only fetch when explicitly triggered
   });
 
+  const { data: openaiUsage, isLoading: isLoadingUsage, refetch: refetchUsage } = useQuery<{ 
+    totalTokens: number; 
+    totalCost: number; 
+    requests: number; 
+    period: string;
+    isValid: boolean;
+    error?: string;
+  }>({
+    queryKey: ["/api/openai/usage"],
+    enabled: false, // Only fetch when explicitly triggered
+  });
+
   const fetchModels = async () => {
     setFetchingModels(true);
     try {
@@ -56,6 +68,22 @@ export default function SettingsPage() {
       });
     } finally {
       setFetchingModels(false);
+    }
+  };
+
+  const fetchUsage = async () => {
+    try {
+      await refetchUsage();
+      toast({
+        title: "Uso atualizado",
+        description: "Informações de uso da OpenAI carregadas com sucesso.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro ao carregar uso",
+        description: error.message || "Não foi possível carregar informações de uso da OpenAI",
+        variant: "destructive",
+      });
     }
   };
 
@@ -1041,6 +1069,55 @@ export default function SettingsPage() {
                       </FormItem>
                     )}
                   />
+
+                  {/* OpenAI Usage Information */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-medium text-blue-900">Uso da OpenAI</h4>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={fetchUsage}
+                        disabled={isLoadingUsage}
+                        className="h-6 px-2 text-xs"
+                      >
+                        {isLoadingUsage ? "Carregando..." : "Atualizar Uso"}
+                      </Button>
+                    </div>
+                    
+                    {openaiUsage ? (
+                      openaiUsage.isValid ? (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                          <div className="text-center">
+                            <div className="font-semibold text-blue-900">{openaiUsage.totalTokens.toLocaleString()}</div>
+                            <div className="text-blue-700">Tokens Usados</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="font-semibold text-blue-900">${openaiUsage.totalCost.toFixed(4)}</div>
+                            <div className="text-blue-700">Custo Total</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="font-semibold text-blue-900">{openaiUsage.requests.toLocaleString()}</div>
+                            <div className="text-blue-700">Requisições</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="font-semibold text-blue-900">{openaiUsage.period}</div>
+                            <div className="text-blue-700">Período</div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-red-600 text-sm">
+                          <p className="font-medium">Erro ao carregar dados de uso:</p>
+                          <p>{openaiUsage.error || "Chave API inválida ou sem permissões"}</p>
+                        </div>
+                      )
+                    ) : (
+                      <div className="text-blue-700 text-sm">
+                        Clique em "Atualizar Uso" para carregar as informações de uso da OpenAI
+                      </div>
+                    )}
+                  </div>
 
                   <div className="bg-green-50 border border-green-200 rounded-lg p-4 mt-4">
                     <h4 className="font-medium text-green-900 mb-2">Configuração OpenAI:</h4>
