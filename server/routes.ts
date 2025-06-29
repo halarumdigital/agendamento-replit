@@ -3746,9 +3746,14 @@ INSTRUÇÕES OBRIGATÓRIAS:
                   aiResponse.toLowerCase().includes(keyword.toLowerCase())
                 );
                 
+                // Check if AI response contains appointment data
+                const hasAppointmentData = aiResponse.toLowerCase().includes('confirmado') || 
+                                         aiResponse.toLowerCase().includes('agendamento') ||
+                                         aiResponse.toLowerCase().includes('está confirmado');
+                
                 console.log('🔍 AI Response analysis:', {
                   hasConfirmation,
-                  hasAppointmentData: false,
+                  hasAppointmentData,
                   aiResponse: aiResponse.substring(0, 100) + '...'
                 });
                 
