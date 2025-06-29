@@ -87,16 +87,32 @@ async function generatePaymentLinkForAppointment(companyId: number, conversation
       // Send payment message via WhatsApp
       // Get all conversations for the company and find the one with this conversation ID
       console.log('🔍 Looking for conversation ID:', conversationId, 'in company:', companyId);
-      const conversations = await storage.getConversationsByCompany(companyId);
+      const conversations = await storage.getConversations(companyId);
       console.log('📋 Found conversations:', conversations.length);
       const conversation = conversations.find(conv => conv.id === conversationId);
       console.log('🎯 Found matching conversation:', conversation ? 'YES' : 'NO');
       
       if (conversation && conversation.whatsappInstanceId) {
         console.log('🔍 Found conversation with WhatsApp instance ID:', conversation.whatsappInstanceId);
-        const whatsappInstance = await storage.getWhatsappInstance(conversation.whatsappInstanceId);
-        console.log('📱 WhatsApp instance:', whatsappInstance ? `Status: ${whatsappInstance.status}` : 'NOT FOUND');
-        if (whatsappInstance && (whatsappInstance.status === 'connected' || whatsappInstance.status === 'open')) {
+        let whatsappInstance = await storage.getWhatsappInstance(conversation.whatsappInstanceId);
+        console.log('📱 WhatsApp instance:', whatsappInstance ? `Status: ${whatsappInstance.status}, API URL: ${whatsappInstance.apiUrl}` : 'NOT FOUND');
+        
+        // If apiUrl is null but we have global settings, update it
+        if (whatsappInstance && !whatsappInstance.apiUrl) {
+          const globalSettings = await storage.getGlobalSettings();
+          if (globalSettings?.evolutionApiUrl) {
+            console.log('🔧 Updating WhatsApp instance apiUrl from global settings');
+            // Update the instance with the correct apiUrl
+            await storage.updateWhatsappInstance(whatsappInstance.id, {
+              apiUrl: globalSettings.evolutionApiUrl
+            });
+            // Refresh the instance data
+            whatsappInstance = await storage.getWhatsappInstance(conversation.whatsappInstanceId);
+            console.log('✅ Updated WhatsApp instance apiUrl to:', whatsappInstance?.apiUrl);
+          }
+        }
+        
+        if (whatsappInstance && (whatsappInstance.status === 'connected' || whatsappInstance.status === 'open') && whatsappInstance.apiUrl) {
           // Enviar mensagem de instrução primeiro
           const instructionMessage = `Vou te enviar um link do mercado pago para realizar o pagamento do serviço online, pode confiar que é seguro, para que seu agendamento seja confirmado faça o pagamento pelo link.`;
           await fetch(`${whatsappInstance.apiUrl}/message/sendText/${whatsappInstance.instanceName}`, {
@@ -131,7 +147,13 @@ async function generatePaymentLinkForAppointment(companyId: number, conversation
             console.error('❌ Failed to send payment message via WhatsApp:', await whatsappResponse.text());
           }
         } else {
-          console.log('⚠️ WhatsApp instance not connected, cannot send payment message');
+          if (!whatsappInstance) {
+            console.log('⚠️ WhatsApp instance not found, cannot send payment message');
+          } else if (!whatsappInstance.apiUrl) {
+            console.log('⚠️ WhatsApp instance apiUrl is null/undefined, cannot send payment message');
+          } else {
+            console.log('⚠️ WhatsApp instance not connected, cannot send payment message');
+          }
         }
       } else {
         console.log('⚠️ No WhatsApp conversation found, cannot send payment message');
@@ -8551,6 +8573,31 @@ const broadcastEvent = (eventData: any) => {
     } catch (error) {
       console.error('Error updating affiliate profile:', error);
       res.status(500).json({ message: 'Erro interno do servidor' });
+    }
+  });
+
+  // Debug endpoint to check WhatsApp instance
+  app.get('/api/debug/whatsapp-instance', async (req, res) => {
+    try {
+      const conversations = await storage.getConversations(1);
+      const conversation = conversations.find(conv => conv.id === 82);
+      if (conversation && conversation.whatsappInstanceId) {
+        const whatsappInstance = await storage.getWhatsappInstance(conversation.whatsappInstanceId);
+        
+        // Also get global settings to check Evolution API URL
+        const settings = await storage.getGlobalSettings();
+        
+        res.json({ 
+          conversation, 
+          whatsappInstance,
+          globalEvolutionApiUrl: settings?.evolutionApiUrl,
+          needsApiUrlUpdate: !whatsappInstance?.apiUrl && settings?.evolutionApiUrl
+        });
+      } else {
+        res.json({ error: 'Conversation not found' });
+      }
+    } catch (error) {
+      res.status(500).json({ error: error.message });
     }
   });
 
