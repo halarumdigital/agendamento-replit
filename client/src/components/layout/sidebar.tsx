@@ -83,10 +83,10 @@ export default function Sidebar({ systemName = "AdminPro", logoUrl }: SidebarPro
   const handleLogout = async () => {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
-      window.location.href = "/administrador/login";
+      window.location.href = "/administrador";
     } catch (error) {
       console.error("Logout error:", error);
-      window.location.href = "/administrador/login";
+      window.location.href = "/administrador";
     }
   };
 
