@@ -2788,6 +2788,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Mercado Pago webhook endpoint
+  app.post('/api/webhook/mercadopago', async (req: any, res) => {
+    try {
+      console.log('🔔 Mercado Pago webhook received:', req.body);
+      
+      const { type, data } = req.body;
+      
+      if (type === 'payment') {
+        const paymentId = data.id;
+        console.log('💰 Payment notification received:', paymentId);
+        
+        // Process payment notification
+        // Here you would:
+        // 1. Verify payment status with Mercado Pago API
+        // 2. Update appointment status
+        // 3. Send WhatsApp confirmation
+        
+        // For now, just acknowledge receipt
+        res.status(200).json({ message: 'Webhook received successfully' });
+      } else {
+        console.log('ℹ️ Other webhook type received:', type);
+        res.status(200).json({ message: 'Webhook received' });
+      }
+    } catch (error) {
+      console.error('❌ Error processing Mercado Pago webhook:', error);
+      res.status(500).json({ message: 'Webhook processing failed' });
+    }
+  });
+
+  // Payment details endpoint for success page
+  app.get('/api/payment/details/:paymentId', async (req: any, res) => {
+    try {
+      const { paymentId } = req.params;
+      console.log('🔍 Fetching payment details for:', paymentId);
+      
+      // Mock payment details for now - in production you would query Mercado Pago API
+      const paymentDetails = {
+        paymentId: paymentId,
+        status: 'approved',
+        amount: 50.00,
+        appointmentId: 123,
+        clientName: 'Cliente Exemplo',
+        serviceName: 'Corte de Cabelo',
+        professionalName: 'Profissional Exemplo',
+        appointmentDate: '2025-07-01',
+        appointmentTime: '14:00',
+        companyName: 'Salão Exemplo',
+        companyAddress: 'Rua Exemplo, 123 - São Paulo, SP',
+        companyPhone: '(11) 99999-9999'
+      };
+      
+      res.json(paymentDetails);
+    } catch (error) {
+      console.error('❌ Error fetching payment details:', error);
+      res.status(500).json({ message: 'Error fetching payment details' });
+    }
+  });
+
   // Test endpoint para diagnosticar problema do agendamento Gilliard
   app.post('/api/test/gilliard-appointment', async (req: any, res) => {
     try {
