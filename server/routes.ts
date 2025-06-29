@@ -6404,6 +6404,68 @@ const broadcastEvent = (eventData: any) => {
     }
   });
 
+  // Configure WhatsApp instance settings
+  app.post('/api/company/whatsapp/instances/:instanceName/configure', async (req: any, res) => {
+    try {
+      const companyId = req.session.companyId;
+      if (!companyId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      const { instanceName } = req.params;
+      const settings = req.body;
+      
+      console.log(`⚙️ Configuring WhatsApp instance: ${instanceName} with settings:`, settings);
+
+      // Get global settings for Evolution API
+      const globalSettings = await storage.getGlobalSettings();
+      if (!globalSettings?.evolutionApiUrl || !globalSettings?.evolutionApiGlobalKey) {
+        return res.status(400).json({ message: "Configurações da Evolution API não encontradas" });
+      }
+
+      // Verify instance belongs to company
+      const instances = await storage.getWhatsappInstancesByCompany(companyId);
+      const instance = instances.find(i => i.instanceName === instanceName);
+      
+      if (!instance) {
+        return res.status(404).json({ message: "Instância não encontrada" });
+      }
+
+      // Configure settings via Evolution API
+      const correctedApiUrl = ensureEvolutionApiEndpoint(globalSettings.evolutionApiUrl);
+      const configUrl = `${correctedApiUrl}/settings/set/${instanceName}`;
+      
+      const evolutionResponse = await fetch(configUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': globalSettings.evolutionApiGlobalKey
+        },
+        body: JSON.stringify(settings)
+      });
+
+      if (!evolutionResponse.ok) {
+        const errorData = await evolutionResponse.text();
+        console.error(`❌ Evolution API configure error:`, errorData);
+        return res.status(400).json({ 
+          message: "Erro ao configurar instância no Evolution API",
+          details: errorData
+        });
+      }
+
+      const result = await evolutionResponse.json();
+      console.log(`✅ WhatsApp instance configured successfully:`, result);
+
+      res.json({ 
+        message: "Configurações do WhatsApp aplicadas com sucesso",
+        result 
+      });
+    } catch (error) {
+      console.error("Error configuring WhatsApp instance:", error);
+      res.status(500).json({ message: "Erro ao configurar instância do WhatsApp" });
+    }
+  });
+
   // Send review invitation
   app.post('/api/appointments/:id/send-review-invitation', async (req: any, res) => {
     try {

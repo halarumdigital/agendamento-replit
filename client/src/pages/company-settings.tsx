@@ -752,6 +752,36 @@ export default function CompanySettings() {
     },
   });
 
+  const configureWhatsappMutation = useMutation({
+    mutationFn: async (instanceName: string) => {
+      const settingsPayload = {
+        rejectCall: true,
+        msgCall: "I do not accept calls",
+        groupsIgnore: true,
+        alwaysOnline: true,
+        readMessages: true,
+        syncFullHistory: false,
+        readStatus: true
+      };
+      
+      return await apiRequest(`/api/company/whatsapp/instances/${instanceName}/configure`, "POST", settingsPayload);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Sucesso",
+        description: "Configurações do WhatsApp aplicadas com sucesso.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/company/whatsapp/instances'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao configurar WhatsApp.",
+        variant: "destructive",
+      });
+    },
+  });
+
   if (!company) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -1193,6 +1223,17 @@ export default function CompanySettings() {
                             >
                               <Bot className="w-4 h-4" />
                               Configurar IA
+                            </Button>
+                            
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => configureWhatsappMutation.mutate(instance.instanceName)}
+                              disabled={configureWhatsappMutation.isPending}
+                              className="flex items-center gap-2"
+                            >
+                              <Settings className="w-4 h-4" />
+                              {configureWhatsappMutation.isPending ? "Configurando..." : "Configurar WhatsApp"}
                             </Button>
                             <Button
                               variant="destructive"
