@@ -96,7 +96,7 @@ async function generatePaymentLinkForAppointment(companyId: number, conversation
         console.log('🔍 Found conversation with WhatsApp instance ID:', conversation.whatsappInstanceId);
         const whatsappInstance = await storage.getWhatsappInstance(conversation.whatsappInstanceId);
         console.log('📱 WhatsApp instance:', whatsappInstance ? `Status: ${whatsappInstance.status}` : 'NOT FOUND');
-        if (whatsappInstance && whatsappInstance.status === 'connected') {
+        if (whatsappInstance && (whatsappInstance.status === 'connected' || whatsappInstance.status === 'open')) {
           // Enviar mensagem de instrução primeiro
           const instructionMessage = `Vou te enviar um link do mercado pago para realizar o pagamento do serviço online, pode confiar que é seguro, para que seu agendamento seja confirmado faça o pagamento pelo link.`;
           await fetch(`${whatsappInstance.apiUrl}/message/sendText/${whatsappInstance.instanceName}`, {
