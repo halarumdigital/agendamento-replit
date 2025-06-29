@@ -87,7 +87,7 @@ async function generatePaymentLinkForAppointment(companyId: number, conversation
       // Send payment message via WhatsApp
       // Get all conversations for the company and find the one with this conversation ID
       console.log('🔍 Looking for conversation ID:', conversationId, 'in company:', companyId);
-      const conversations = await storage.getConversations(companyId);
+      const conversations = await storage.getConversationsByCompany(companyId);
       console.log('📋 Found conversations:', conversations.length);
       const conversation = conversations.find(conv => conv.id === conversationId);
       console.log('🎯 Found matching conversation:', conversation ? 'YES' : 'NO');
