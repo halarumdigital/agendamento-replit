@@ -154,6 +154,7 @@ export const mercadoPagoConfigSchema = z.object({
   mercadopagoAccessToken: z.string().optional(),
   mercadopagoPublicKey: z.string().optional(),
   mercadopagoWebhookUrl: z.string().optional(),
+  mercadopagoEnabled: z.boolean().default(false),
 });
 
 export const settingsSchema = z.object({

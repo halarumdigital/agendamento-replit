@@ -139,11 +139,13 @@ export default function CompanySettings() {
       mercadopagoAccessToken: "",
       mercadopagoPublicKey: "",
       mercadopagoWebhookUrl: "",
+      mercadopagoEnabled: false,
     },
     values: company ? {
       mercadopagoAccessToken: company.mercadopagoAccessToken || "",
       mercadopagoPublicKey: company.mercadopagoPublicKey || "",
       mercadopagoWebhookUrl: company.mercadopagoWebhookUrl || "",
+      mercadopagoEnabled: Boolean(company.mercadopagoEnabled),
     } : undefined,
   });
 
@@ -2236,6 +2238,29 @@ export default function CompanySettings() {
               <Form {...mercadoPagoForm}>
                 <form onSubmit={mercadoPagoForm.handleSubmit(onMercadoPagoSubmit)} className="space-y-6">
                   <div className="grid gap-6">
+                    <FormField
+                      control={mercadoPagoForm.control}
+                      name="mercadopagoEnabled"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base">
+                              Habilitar Pagamentos via Mercado Pago
+                            </FormLabel>
+                            <div className="text-sm text-muted-foreground">
+                              Ativar para permitir pagamentos dos agendamentos via Mercado Pago
+                            </div>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
                     <FormField
                       control={mercadoPagoForm.control}
                       name="mercadopagoAccessToken"

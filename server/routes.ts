@@ -366,6 +366,12 @@ async function generatePaymentLinkForAppointment(companyId: number, conversation
       return;
     }
 
+    // Check if Mercado Pago is enabled for this company
+    if (!company.mercadopagoEnabled) {
+      console.log('ℹ️ Skipping payment link generation - Mercado Pago is disabled for this company');
+      return;
+    }
+
     // Use test credentials if company doesn't have them configured
     const accessToken = company.mercadopagoAccessToken || 'TEST-3532771697303271-063021-46f77e1dd5c5fa8e2e4f37d60b7d5f3a-1446156640';
     const useTestCredentials = !company.mercadopagoAccessToken;
@@ -3372,12 +3378,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Não autenticado" });
       }
 
-      const { mercadopagoAccessToken, mercadopagoPublicKey, mercadopagoWebhookUrl } = req.body;
+      const { mercadopagoAccessToken, mercadopagoPublicKey, mercadopagoWebhookUrl, mercadopagoEnabled } = req.body;
 
       await storage.updateCompany(companyId, {
         mercadopagoAccessToken,
         mercadopagoPublicKey,
-        mercadopagoWebhookUrl
+        mercadopagoWebhookUrl,
+        mercadopagoEnabled: mercadopagoEnabled ? 1 : 0
       });
 
       res.json({ message: "Configurações do Mercado Pago atualizadas com sucesso" });

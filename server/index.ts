@@ -17,6 +17,7 @@ import { ensureAdminAlertsTables } from "./ensure-admin-alerts-tables";
 import { ensureSupportTables } from "./ensure-support-tables";
 import { ensureTourTables } from "./ensure-tour-tables";
 import { ensureTourEnabledColumn } from "./ensure-tour-enabled-column";
+import { ensureMercadopagoEnabledColumn } from "./ensure-mercadopago-enabled-column";
 import { db } from "./db";
 import path from "path";
 
@@ -96,6 +97,9 @@ app.use((req, res, next) => {
   
   // Ensure tour_enabled column exists
   await ensureTourEnabledColumn();
+  
+  // Ensure mercadopago_enabled column exists
+  await ensureMercadopagoEnabledColumn();
   
   // Ensure professional password column exists
   await ensureProfessionalPasswordColumn();

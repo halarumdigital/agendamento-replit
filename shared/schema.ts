@@ -70,6 +70,7 @@ export const companies = mysqlTable("companies", {
   mercadopagoAccessToken: varchar("mercadopago_access_token", { length: 500 }),
   mercadopagoPublicKey: varchar("mercadopago_public_key", { length: 255 }),
   mercadopagoWebhookUrl: varchar("mercadopago_webhook_url", { length: 500 }),
+  mercadopagoEnabled: int("mercadopago_enabled").notNull().default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
