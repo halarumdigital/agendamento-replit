@@ -1725,16 +1725,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const appointment = await storage.createAppointment({
         companyId: 1,
         professionalId: 4, // Silva
-        serviceId: 1, // Corte
-        clientName: 'Gilliard Teste MySQL',
+        serviceId: 10, // Hidratação (exists in database)
+        clientName: 'Teste Pagamento Final',
         clientPhone: '554999214230',
         clientEmail: null,
-        appointmentDate: new Date('2025-06-14'), // Saturday
-        appointmentTime: '15:00',
-        duration: 30,
-        totalPrice: 25.00,
+        appointmentDate: new Date('2025-07-05'), // Future date
+        appointmentTime: '17:00',
+        duration: 60,
+        totalPrice: 50.00,
         status: 'Pendente',
-        notes: 'Teste direto MySQL - criado via endpoint'
+        notes: 'Teste pagamento - serviceId 14 existe no banco'
       });
       
       console.log('✅ Test appointment created in MySQL:', appointment);
