@@ -166,7 +166,7 @@ node scripts/create-migration.js nome-da-migration
 ```
 
 #### Status Atual
-- ✅ **Todas as 7 migrations estão atualizadas** (última verificação: 28/06/2025, 21:10)
+- ✅ **Todas as 8 migrations estão atualizadas** (última verificação: 30/06/2025, 19:45)
 - Sistema de controle de migrations implementado e funcionando
 - Tabela `migrations` criada automaticamente para rastreamento
 
