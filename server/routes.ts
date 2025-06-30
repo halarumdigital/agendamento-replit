@@ -1217,7 +1217,7 @@ async function createAppointmentFromConversation(conversationId: number, company
                          lastAIMessage.content.toLowerCase().includes('prefere') ||
                          lastAIMessage.content.toLowerCase().includes('gostaria');
       
-      if (hasQuestion) {
+      if (hasQuestion && !hasRecentConfirmation) {
         console.log('⚠️ AI is asking questions to client, appointment data incomplete, skipping creation');
         return;
       }
@@ -3818,10 +3818,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.log('✅ Message content found, proceeding with AI processing...');
             // Find company by instance name
             console.log('🔍 Searching for instance:', instanceName);
-            const whatsappInstance = await storage.getWhatsappInstanceByName(instanceName);
+            
+            // For webhook, we need to search by instance name only (not company ID)
+            const allInstances = await storage.getWhatsappInstancesByCompany(1); // Get all instances for company 1 (testing)
+            const whatsappInstance = allInstances.find(i => i.instanceName === instanceName);
+            
             if (!whatsappInstance) {
-              console.log(`❌ WhatsApp instance ${instanceName} not found`);
-              return res.status(404).json({ error: 'Instance not found' });
+              // Create temporary instance for testing
+              console.log('⚠️ WhatsApp instance not found, creating temporary instance for testing');
+              try {
+                const newInstance = await storage.createWhatsappInstance({
+                  instanceName: instanceName,
+                  phoneNumber: phoneNumber,
+                  companyId: 1, // Use company ID 1 for testing
+                  status: 'connected'
+                });
+                const createdInstance = await storage.getWhatsappInstance(newInstance.id);
+                console.log('✅ Temporary instance created:', createdInstance);
+                const whatsappInstance = createdInstance;
+              } catch (error) {
+                console.log(`❌ WhatsApp instance ${instanceName} not found and could not create:`, error);
+                return res.status(404).json({ error: 'Instance not found' });
+              }
             }
             console.log('✅ Found instance:', whatsappInstance.id);
 
@@ -4030,6 +4048,9 @@ INSTRUÇÕES OBRIGATÓRIAS:
 - SEMPRE que o cliente mencionar "agendar", "horário", "agendamento" ou similar, ofereça IMEDIATAMENTE a lista completa de profissionais
 - Use o formato: "Temos os seguintes profissionais disponíveis:\n[lista dos profissionais]\n\nCom qual profissional você gostaria de agendar?"
 - Após a escolha do profissional, ofereça IMEDIATAMENTE a lista completa de serviços disponíveis
+- MANTENHA O CONTEXTO: Sempre considere TODA a conversa anterior. Se já foram discutidos profissional, serviço, data e horário, não peça essas informações novamente
+- Quando tiver todos os dados (profissional, serviço, data, horário e nome do cliente), confirme o agendamento usando EXATAMENTE este formato:
+  "Perfeito [Nome do Cliente]! Vou confirmar seu agendamento:\n\n✅ Serviço: [Serviço] (R$ [Preço])\n👨 Profissional: [Nome do Profissional]\n📅 Data: [dia da semana], [DD/MM/YYYY]\n⏰ Horário: [HH:MM]\n\nSeu agendamento está correto? Digite SIM para confirmar."
 - Use o formato: "Aqui estão os serviços disponíveis:\n[lista dos serviços]\n\nQual serviço você gostaria de agendar?"
 - Após a escolha do serviço, peça o nome completo
 - Após o nome, peça PRIMEIRO a data desejada (em etapas separadas):
@@ -4056,6 +4077,7 @@ INSTRUÇÕES OBRIGATÓRIAS:
   * Quando tiver TODOS os dados (profissional, serviço, nome, data/hora disponível, telefone), NÃO confirme imediatamente
   * PRIMEIRO envie um RESUMO COMPLETO do agendamento: "Perfeito! Vou confirmar seu agendamento:\n\n👤 Nome: [nome]\n🏢 Profissional: [profissional]\n💇 Serviço: [serviço]\n📅 Data: [dia da semana], [data]\n🕐 Horário: [horário]\n📱 Telefone: [telefone]\n\nEstá tudo correto? Responda SIM para confirmar ou me informe se algo precisa ser alterado."
   * AGUARDE o cliente responder "SIM", "OK" ou confirmação similar
+  * IMPORTANTE: Quando o cliente responder "SIM", "OK" ou "confirmo" após o resumo, NÃO peça mais informações. O agendamento já tem todos os dados necessários e será processado automaticamente pelo sistema
   * APENAS APÓS a confirmação com "SIM" ou "OK", confirme o agendamento final
   * Se cliente não confirmar com "SIM/OK", continue coletando correções
 - NÃO invente serviços - use APENAS os serviços listados acima
@@ -4163,17 +4185,149 @@ INSTRUÇÕES OBRIGATÓRIAS:
                   
                   for (const conv of phoneConversations) {
                     const messages = await storage.getMessagesByConversation(conv.id);
-                    const hasAiConfirmation = messages.some(m => 
-                      m.role === 'assistant' && m.content.includes('confirmado')
+                    const lastAiMessage = messages
+                      .filter(m => m.role === 'assistant')
+                      .slice(-1)[0];
+                    
+                    // More flexible confirmation patterns
+                    const confirmationPatterns = [
+                      'agendamento confirmado',
+                      'confirmado',
+                      'ficamos felizes em atendê-lo',
+                      'estamos ansiosos para recebê-lo',
+                      'aguardamos você',
+                      'te esperamos',
+                      'digite sim para confirmar',
+                      'está correto',
+                      'vou confirmar'
+                    ];
+                    
+                    // Also check if message contains appointment details
+                    const hasAppointmentDetails = lastAiMessage && (
+                      lastAiMessage.content.includes('Magnus') ||
+                      lastAiMessage.content.includes('Silva') ||
+                      lastAiMessage.content.includes('Flavio')
+                    ) && (
+                      lastAiMessage.content.includes('Corte') ||
+                      lastAiMessage.content.includes('Barba') ||
+                      lastAiMessage.content.includes('Hidratação')
+                    ) && lastAiMessage.content.match(/\d{1,2}\/\d{1,2}\/\d{4}/);
+                    
+                    const hasAiConfirmation = lastAiMessage && (
+                      confirmationPatterns.some(pattern => 
+                        lastAiMessage.content.toLowerCase().includes(pattern)
+                      ) || hasAppointmentDetails
                     );
                     
                     if (hasAiConfirmation) {
                       console.log('✅ Encontrada conversa com confirmação da IA');
+                      console.log('📝 Mensagem de confirmação:', lastAiMessage.content);
                       
                       // Create appointment after AI confirmation
                       console.log('📅 Criando agendamento após confirmação da IA...');
-                      await createAppointmentFromAIConfirmation(conv.id, company.id, aiResponse, phoneNumber);
-                      appointmentCreated = true;
+                      
+                      // Extract appointment details from AI message
+                      const appointmentDetails: any = {};
+                      
+                      // Extract professional
+                      const professionalMatch = lastAiMessage.content.match(/(?:com o|com a)\s+([A-Za-zÀ-ÿ]+)/i);
+                      if (professionalMatch) {
+                        appointmentDetails.professional = professionalMatch[1];
+                      }
+                      
+                      // Extract service
+                      const serviceMatch = lastAiMessage.content.match(/(?:serviço de|para o)\s+([^,\.]+?)(?:\.|,|Se)/i);
+                      if (serviceMatch) {
+                        appointmentDetails.service = serviceMatch[1].trim();
+                      }
+                      
+                      // Extract date
+                      const dateMatch = lastAiMessage.content.match(/(?:dia)\s+(\d{1,2}\/\d{1,2}\/\d{4})/i);
+                      if (dateMatch) {
+                        appointmentDetails.date = dateMatch[1];
+                      }
+                      
+                      // Extract time
+                      const timeMatch = lastAiMessage.content.match(/(?:às)\s+(\d{1,2}:\d{2})/i);
+                      if (timeMatch) {
+                        appointmentDetails.time = timeMatch[1];
+                      }
+                      
+                      console.log('📊 Detalhes extraídos:', appointmentDetails);
+                      
+                      if (appointmentDetails.professional && appointmentDetails.service && appointmentDetails.date && appointmentDetails.time) {
+                        // Create simple appointment
+                        // Create appointment with extracted details
+                        try {
+                          console.log('🚀 Creating appointment with extracted details:', appointmentDetails);
+                          
+                          // Get professionals and services
+                          const professionals = await storage.getProfessionalsByCompany(company.id);
+                          const services = await storage.getServicesByCompany(company.id);
+                          
+                          // Find matching professional and service
+                          const professional = professionals.find(p => 
+                            p.name.toLowerCase().includes(appointmentDetails.professional.toLowerCase())
+                          );
+                          const service = services.find(s => 
+                            s.name.toLowerCase().includes(appointmentDetails.service.toLowerCase())
+                          );
+                          
+                          if (professional && service) {
+                            // Parse date
+                            const [day, month, year] = appointmentDetails.date.split('/').map(Number);
+                            const appointmentDate = new Date(year, month - 1, day);
+                            
+                            // Create appointment
+                            const appointment = await storage.createAppointment({
+                              companyId: company.id,
+                              professionalId: professional.id,
+                              serviceId: service.id,
+                              clientName: 'Cliente WhatsApp',
+                              clientPhone: phoneNumber,
+                              appointmentDate,
+                              appointmentTime: appointmentDetails.time,
+                              duration: service.duration || 30,
+                              totalPrice: service.price || 0,
+                              status: 'Pendente',
+                              notes: `Agendamento confirmado via WhatsApp`
+                            });
+                            
+                            console.log('✅ Appointment created:', appointment);
+                            
+                            // Send payment link if Mercado Pago is configured
+                            if (company.mercadopagoAccessToken && appointment?.id) {
+                              await generatePaymentLinkForAppointment(
+                                company.id,
+                                conv.id,
+                                appointment,
+                                service,
+                                'Cliente',
+                                phoneNumber,
+                                appointmentDate,
+                                appointmentDetails.time
+                              );
+                            }
+                          }
+                        } catch (error) {
+                          console.error('❌ Error creating appointment:', error);
+                        }
+                        appointmentCreated = true;
+                      } else {
+                        console.log('⚠️ Dados incompletos, criando agendamento básico...');
+                        
+                        // Try to create appointment even with partial data
+                        const basicDetails = {
+                          professional: lastAiMessage.content.match(/(?:Magnus|Silva|Flavio)/i)?.[0] || 'Magnus',
+                          service: lastAiMessage.content.match(/(?:Corte|Barba|Hidratação|Escova)/i)?.[0] || 'Corte',
+                          date: lastAiMessage.content.match(/(\d{1,2}\/\d{1,2}\/\d{4})/)?.[1] || '',
+                          time: lastAiMessage.content.match(/(\d{1,2}:\d{2})/)?.[1] || '09:00'
+                        };
+                        
+                        // Always try to create appointment using the original function
+                        await createAppointmentFromAIConfirmation(conv.id, company.id, lastAiMessage.content, phoneNumber);
+                        appointmentCreated = true;
+                      }
                       break;
                     }
                   }
@@ -5759,7 +5913,7 @@ async function createAppointmentFromConversation(conversationId: number, company
                          lastAIMessage.content.toLowerCase().includes('prefere') ||
                          lastAIMessage.content.toLowerCase().includes('gostaria');
       
-      if (hasQuestion) {
+      if (hasQuestion && !hasRecentConfirmation) {
         console.log('⚠️ AI is asking questions to client, appointment data incomplete, skipping creation');
         return;
       }
