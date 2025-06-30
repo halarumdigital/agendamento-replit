@@ -4098,7 +4098,7 @@ INSTRUÇÕES OBRIGATÓRIAS:
               // Prepare messages for OpenAI with conversation history
               const messages = [
                 { role: 'system' as const, content: systemPrompt },
-                ...conversationHistory.slice(-8), // Last 8 messages for context
+                ...conversationHistory.slice(-20), // Last 20 messages for context
                 { role: 'user' as const, content: messageText }
               ];
 
