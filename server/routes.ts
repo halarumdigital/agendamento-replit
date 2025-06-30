@@ -5731,6 +5731,8 @@ Obrigado pela preferência! 🙏`;
             financial: true,
             reports: true,
             settings: true,
+            support: true,
+            mercadopagoPayments: false,
           };
         }
       } catch (e) {
@@ -5752,6 +5754,8 @@ Obrigado pela preferência! 🙏`;
           financial: true,
           reports: true,
           settings: true,
+          support: true,
+          mercadopagoPayments: false,
         };
       }
 
