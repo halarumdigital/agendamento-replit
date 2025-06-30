@@ -356,9 +356,19 @@ async function generatePaymentLinkFromConversation(conversationId: number, compa
 async function generatePaymentLinkForAppointment(companyId: number, conversationId: number, appointment: any, service: any, clientName: string, phoneNumber: string, appointmentDate: Date, appointmentTime: string) {
   try {
     const company = await storage.getCompanyById(companyId);
-    if (!company || !company.mercadopagoAccessToken || !service.price || service.price <= 0) {
-      console.log('ℹ️ Skipping payment link generation - no Mercado Pago token configured or service has no price');
+    if (!company || !service.price || service.price <= 0) {
+      console.log('ℹ️ Skipping payment link generation - company not found or service has no price');
       return;
+    }
+
+    // Use test credentials if company doesn't have them configured
+    const accessToken = company.mercadopagoAccessToken || 'TEST-3532771697303271-063021-46f77e1dd5c5fa8e2e4f37d60b7d5f3a-1446156640';
+    const useTestCredentials = !company.mercadopagoAccessToken;
+    
+    if (useTestCredentials) {
+      console.log('🧪 Using TEST credentials for Mercado Pago (company credentials not configured)');
+    } else {
+      console.log('🏭 Using company configured Mercado Pago credentials');
     }
 
     console.log('💳 Generating Mercado Pago payment link for appointment...');
@@ -398,7 +408,7 @@ async function generatePaymentLinkForAppointment(companyId: number, conversation
     const response = await fetch('https://api.mercadopago.com/checkout/preferences', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${company.mercadopagoAccessToken}`,
+        'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(preference)
