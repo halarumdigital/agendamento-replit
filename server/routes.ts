@@ -2488,25 +2488,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
-        // TODO: Implement local usage tracking in database
-        // For now, return simulated data to show the interface
-        const currentMonth = new Date().toLocaleDateString('pt-BR', { 
-          month: 'long', 
-          year: 'numeric' 
-        });
-
-        // Estimate based on typical usage patterns
-        const estimatedTokens = 45000; // Example: average monthly tokens
-        const estimatedCost = estimatedTokens * 0.000002; // Rough estimate for GPT-4o
-        const estimatedRequests = 150; // Example: average monthly requests
+        // Get real usage statistics from database
+        const usageStats = await storage.getOpenAIUsageStats();
 
         res.json({
           isValid: true,
-          totalTokens: estimatedTokens,
-          totalCost: estimatedCost,
-          requests: estimatedRequests,
-          period: currentMonth,
-          note: "Dados estimados - implemente rastreamento local para dados precisos"
+          totalTokens: usageStats.totalTokens,
+          totalCost: usageStats.totalCost,
+          requests: usageStats.totalRequests,
+          period: usageStats.period,
+          successfulRequests: usageStats.successfulRequests,
+          failedRequests: usageStats.failedRequests,
+          avgTokensPerRequest: Math.round(usageStats.avgTokensPerRequest)
         });
 
       } catch (error: any) {
@@ -3276,6 +3269,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         throw new Error('Resposta vazia da OpenAI API');
       }
 
+      // Track OpenAI usage for test
+      const usage = openaiData.usage;
+      if (usage) {
+        const model = settings.openaiModel || 'gpt-4o-mini';
+        
+        // Pricing per 1K tokens (approximate values)
+        const modelPricing: Record<string, { input: number; output: number }> = {
+          'gpt-4o': { input: 0.005, output: 0.015 },
+          'gpt-4o-mini': { input: 0.00015, output: 0.0006 },
+          'gpt-4': { input: 0.03, output: 0.06 },
+          'gpt-3.5-turbo': { input: 0.001, output: 0.002 },
+        };
+        
+        const pricing = modelPricing[model] || modelPricing['gpt-4o'];
+        const costEstimate = (usage.prompt_tokens * pricing.input / 1000) + 
+                           (usage.completion_tokens * pricing.output / 1000);
+
+        await storage.trackOpenAIUsage({
+          model: model,
+          promptTokens: usage.prompt_tokens,
+          completionTokens: usage.completion_tokens,
+          totalTokens: usage.total_tokens,
+          costEstimate: costEstimate,
+          requestType: 'test_agent',
+          companyId: companyId,
+          success: true
+        });
+        
+        console.log(`💰 OpenAI Test Usage tracked: ${usage.total_tokens} tokens, ~$${costEstimate.toFixed(6)}`);
+      }
+
       res.json({ 
         response: aiResponse,
         message: "Teste realizado com sucesso"
@@ -3283,6 +3307,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     } catch (error: any) {
       console.error("Error testing AI agent:", error);
+      
+      // Track failed OpenAI usage attempt
+      try {
+        const settings = await storage.getGlobalSettings();
+        await storage.trackOpenAIUsage({
+          model: settings?.openaiModel || 'gpt-4o-mini',
+          promptTokens: 0,
+          completionTokens: 0,
+          totalTokens: 0,
+          costEstimate: 0,
+          requestType: 'test_agent',
+          companyId: companyId,
+          success: false,
+          errorMessage: error.message || "Erro ao testar agente IA"
+        });
+      } catch (trackingError) {
+        console.error("Error tracking failed OpenAI usage:", trackingError);
+      }
+      
       res.status(500).json({ 
         message: error.message || "Erro ao testar agente IA"
       });
@@ -4508,6 +4551,40 @@ INSTRUÇÕES OBRIGATÓRIAS:
                 temperature: parseFloat(globalSettings.openaiTemperature?.toString() || '0.7'),
                 max_tokens: Math.min(parseInt(globalSettings.openaiMaxTokens?.toString() || '300'), 300),
               });
+
+              // Track OpenAI usage
+              const usage = completion.usage;
+              if (usage) {
+                // Calculate cost based on model pricing (rough estimates)
+                const model = globalSettings.openaiModel || 'gpt-4o';
+                let costEstimate = 0;
+                
+                // Pricing per 1K tokens (approximate values as of 2024)
+                const modelPricing: Record<string, { input: number; output: number }> = {
+                  'gpt-4o': { input: 0.005, output: 0.015 },
+                  'gpt-4o-mini': { input: 0.00015, output: 0.0006 },
+                  'gpt-4': { input: 0.03, output: 0.06 },
+                  'gpt-3.5-turbo': { input: 0.001, output: 0.002 },
+                };
+                
+                const pricing = modelPricing[model] || modelPricing['gpt-4o'];
+                costEstimate = (usage.prompt_tokens * pricing.input / 1000) + 
+                              (usage.completion_tokens * pricing.output / 1000);
+
+                // Track the usage
+                await storage.trackOpenAIUsage({
+                  model: model,
+                  promptTokens: usage.prompt_tokens,
+                  completionTokens: usage.completion_tokens,
+                  totalTokens: usage.total_tokens,
+                  costEstimate: costEstimate,
+                  requestType: 'chat_completion',
+                  companyId: company.id,
+                  success: true
+                });
+                
+                console.log(`💰 OpenAI Usage tracked: ${usage.total_tokens} tokens, ~$${costEstimate.toFixed(6)}`);
+              }
 
               const aiResponse = completion.choices[0]?.message?.content || 'Desculpe, não consegui processar sua mensagem.';
 

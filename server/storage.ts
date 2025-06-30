@@ -3766,5 +3766,103 @@ Object.assign(storage, {
       console.error("Error creating affiliate referral:", error);
       throw error;
     }
+  },
+
+  // OpenAI Usage Tracking Methods
+  async trackOpenAIUsage(usageData: {
+    model: string;
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+    costEstimate: number;
+    requestType?: string;
+    companyId?: number;
+    success?: boolean;
+    errorMessage?: string;
+  }) {
+    try {
+      const [result] = await pool.execute(
+        `INSERT INTO openai_usage 
+         (request_date, model, prompt_tokens, completion_tokens, total_tokens, 
+          cost_estimate, request_type, company_id, success, error_message) 
+         VALUES (NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          usageData.model,
+          usageData.promptTokens,
+          usageData.completionTokens,
+          usageData.totalTokens,
+          usageData.costEstimate,
+          usageData.requestType || 'chat',
+          usageData.companyId || null,
+          usageData.success !== false,
+          usageData.errorMessage || null
+        ]
+      );
+      
+      return (result as any).insertId;
+    } catch (error) {
+      console.error("Error tracking OpenAI usage:", error);
+      throw error;
+    }
+  },
+
+  async getOpenAIUsageStats(startDate?: Date, endDate?: Date) {
+    try {
+      const now = new Date();
+      const start = startDate || new Date(now.getFullYear(), now.getMonth(), 1);
+      const end = endDate || new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+
+      const [rows] = await pool.execute(`
+        SELECT 
+          SUM(total_tokens) as totalTokens,
+          SUM(cost_estimate) as totalCost,
+          COUNT(*) as totalRequests,
+          COUNT(CASE WHEN success = true THEN 1 END) as successfulRequests,
+          COUNT(CASE WHEN success = false THEN 1 END) as failedRequests,
+          AVG(total_tokens) as avgTokensPerRequest
+        FROM openai_usage 
+        WHERE request_date BETWEEN ? AND ?
+      `, [start, end]);
+
+      const stats = (rows as any[])[0];
+      
+      return {
+        totalTokens: parseInt(stats.totalTokens) || 0,
+        totalCost: parseFloat(stats.totalCost) || 0,
+        totalRequests: parseInt(stats.totalRequests) || 0,
+        successfulRequests: parseInt(stats.successfulRequests) || 0,
+        failedRequests: parseInt(stats.failedRequests) || 0,
+        avgTokensPerRequest: parseFloat(stats.avgTokensPerRequest) || 0,
+        period: start.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+      };
+    } catch (error) {
+      console.error("Error getting OpenAI usage stats:", error);
+      throw error;
+    }
+  },
+
+  async getOpenAIUsageByModel(startDate?: Date, endDate?: Date) {
+    try {
+      const now = new Date();
+      const start = startDate || new Date(now.getFullYear(), now.getMonth(), 1);
+      const end = endDate || new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+
+      const [rows] = await pool.execute(`
+        SELECT 
+          model,
+          SUM(total_tokens) as totalTokens,
+          SUM(cost_estimate) as totalCost,
+          COUNT(*) as requestCount
+        FROM openai_usage 
+        WHERE request_date BETWEEN ? AND ?
+        GROUP BY model
+        ORDER BY totalTokens DESC
+      `, [start, end]);
+
+      return rows as any[];
+    } catch (error) {
+      console.error("Error getting OpenAI usage by model:", error);
+      throw error;
+    }
   }
 });
