@@ -65,9 +65,59 @@ async function extractClientNameFromConversation(conversationId: number): Promis
 // Function to generate payment link from conversation context and send immediately after SIM/OK
 async function generatePaymentLinkFromConversation(conversationId: number, companyId: number, phoneNumber: string) {
   try {
-    console.log('💳 Generating payment link from conversation context...');
+    console.log('💳 PRIORITY: Checking for existing recent appointment to send payment link...');
     
-    // Extract appointment data from AI conversation
+    // First, check for existing recent appointments (THIS IS THE PRIORITY APPROACH)
+    const recentAppointments = await storage.getAppointmentsByCompany(companyId);
+    const phoneNumberClean = phoneNumber.replace(/\D/g, '');
+    
+    // Find appointments created in the last 30 minutes for this phone
+    const recentAppointment = recentAppointments.find(apt => {
+      const aptPhoneClean = (apt.clientPhone || '').replace(/\D/g, '');
+      const isRecentlyCreated = apt.createdAt && 
+        new Date(apt.createdAt).getTime() > (Date.now() - 30 * 60 * 1000);
+      const phoneMatches = aptPhoneClean === phoneNumberClean || 
+        aptPhoneClean.endsWith(phoneNumberClean) ||
+        phoneNumberClean.endsWith(aptPhoneClean);
+      
+      return isRecentlyCreated && phoneMatches;
+    });
+    
+    if (recentAppointment) {
+      console.log('🎯 PRIORITY: Found recent appointment! Sending payment link directly...');
+      
+      // Get service details for the existing appointment
+      const services = await storage.getServicesByCompany(companyId);
+      const service = services.find(s => s.id === recentAppointment.serviceId);
+      
+      if (service && service.price && service.price > 0) {
+        try {
+          await generatePaymentLinkForAppointment(
+            companyId,
+            conversationId,
+            recentAppointment,
+            service,
+            recentAppointment.clientName,
+            phoneNumber,
+            new Date(recentAppointment.appointmentDate),
+            recentAppointment.appointmentTime
+          );
+          
+          console.log('✅ PRIORITY: Payment link sent successfully for existing appointment!');
+          return true; // Success indicator
+        } catch (error) {
+          console.error('❌ PRIORITY: Error sending payment link for existing appointment:', error);
+        }
+      } else {
+        console.log('ℹ️ PRIORITY: Service has no price, skipping payment link');
+      }
+      
+      return false; // Don't continue with conversation parsing
+    }
+    
+    console.log('💳 No recent appointment found, proceeding with conversation extraction...');
+    
+    // Extract appointment data from AI conversation (FALLBACK APPROACH)
     const services = await storage.getServicesByCompany(companyId);
     const professionals = await storage.getProfessionalsByCompany(companyId);
     
@@ -76,7 +126,7 @@ async function generatePaymentLinkFromConversation(conversationId: number, compa
     
     if (!messages || messages.length === 0) {
       console.log('❌ No conversation data found for payment link');
-      return;
+      return false;
     }
     
     // Extract data from recent messages
@@ -84,7 +134,6 @@ async function generatePaymentLinkFromConversation(conversationId: number, compa
     const conversationText = recentMessages.map(m => m.content).join(' ').toLowerCase();
     
     // Find service by name in conversation
-    const serviceNames = services.map(s => s.name.toLowerCase());
     let selectedService = null;
     for (const service of services) {
       if (conversationText.includes(service.name.toLowerCase())) {
@@ -94,7 +143,6 @@ async function generatePaymentLinkFromConversation(conversationId: number, compa
     }
     
     // Find professional by name in conversation
-    const professionalNames = professionals.map(p => p.name.toLowerCase());
     let selectedProfessional = null;
     for (const professional of professionals) {
       if (conversationText.includes(professional.name.toLowerCase())) {
@@ -154,19 +202,19 @@ async function generatePaymentLinkFromConversation(conversationId: number, compa
     
     if (!extractedData.serviceId || !extractedData.professionalId) {
       console.log('❌ Could not extract service or professional for payment link');
-      return;
+      return false;
     }
     
     const company = await storage.getCompanyById(companyId);
     if (!company || !company.mercadopagoAccessToken) {
       console.log('ℹ️ Skipping payment link - no Mercado Pago token configured');
-      return;
+      return false;
     }
     
     const service = services.find(s => s.id === extractedData.serviceId);
     if (!service || !service.price || service.price <= 0) {
       console.log('ℹ️ Skipping payment link - service has no price');
-      return;
+      return false;
     }
     
     // Create a temporary appointment to get the ID for external_reference
@@ -200,7 +248,7 @@ async function generatePaymentLinkFromConversation(conversationId: number, compa
     
     if (!tempAppointment || !tempAppointment.id) {
       console.error('❌ Failed to create temporary appointment or get ID');
-      return;
+      return false;
     }
     
     // Generate payment preference
@@ -244,7 +292,7 @@ async function generatePaymentLinkFromConversation(conversationId: number, compa
     const responseData = await response.json();
     if (!response.ok) {
       console.error('❌ Mercado Pago API error:', responseData);
-      return;
+      return false;
     }
     
     const paymentLink = responseData.init_point;
@@ -296,8 +344,11 @@ async function generatePaymentLinkFromConversation(conversationId: number, compa
       }
     }
     
+    return true;
+    
   } catch (error) {
     console.error('❌ Error generating payment link from conversation:', error);
+    return false;
   }
 }
 
@@ -3977,7 +4028,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 const isSimpleConfirmation = /^(sim|ok|confirmo)$/i.test(messageText.toLowerCase().trim());
                 
                 if (isSimpleConfirmation && phoneConversations.length > 0) {
-                  // Look for conversation with recent AI confirmation message
+                  console.log('🎯 PRIORITY: Confirmação SIM/OK detectada! Procurando agendamento recente...');
+                  
+                  // FIRST: Check for recent appointments for immediate payment link
+                  const recentAppointments = await storage.getAppointmentsByCompany(company.id);
+                  const phoneNumberClean = phoneNumber.replace(/\D/g, '');
+                  
+                  // Find appointments created in the last 30 minutes for this phone
+                  const recentAppointment = recentAppointments.find(apt => {
+                    const aptPhoneClean = (apt.clientPhone || '').replace(/\D/g, '');
+                    const isRecentlyCreated = apt.createdAt && 
+                      new Date(apt.createdAt).getTime() > (Date.now() - 30 * 60 * 1000);
+                    const phoneMatches = aptPhoneClean === phoneNumberClean || 
+                      aptPhoneClean.endsWith(phoneNumberClean) ||
+                      phoneNumberClean.endsWith(aptPhoneClean);
+                    
+                    console.log('🔍 Checking appointment:', {
+                      id: apt.id,
+                      clientPhone: apt.clientPhone,
+                      aptPhoneClean,
+                      isRecentlyCreated,
+                      phoneMatches,
+                      createdAt: apt.createdAt,
+                      timeDiff: Date.now() - new Date(apt.createdAt || 0).getTime()
+                    });
+                    
+                    return isRecentlyCreated && phoneMatches;
+                  });
+                  
+                  if (recentAppointment) {
+                    console.log('🎯 Found recent appointment for payment:', recentAppointment.id);
+                    
+                    // Get service details
+                    const services = await storage.getServicesByCompany(company.id);
+                    const service = services.find(s => s.id === recentAppointment.serviceId);
+                    
+                    console.log('🔍 Service lookup:', {
+                      recentAppointmentServiceId: recentAppointment.serviceId,
+                      servicesFound: services.length,
+                      serviceFound: service ? service.name : 'NOT FOUND'
+                    });
+                    
+                    if (service && service.price && parseFloat(service.price.toString()) > 0) {
+                      console.log('💳 PRIORITY: Sending payment link immediately...');
+                      
+                      try {
+                        // Use or create conversation for this payment
+                        let paymentConversation = phoneConversations[0];
+                        if (!paymentConversation) {
+                          paymentConversation = await storage.createConversation({
+                            companyId: company.id,
+                            whatsappInstanceId: whatsappInstance.id,
+                            phoneNumber: phoneNumber,
+                            contactName: message.pushName || undefined,
+                            lastMessageAt: new Date(),
+                          });
+                        }
+                        
+                        await generatePaymentLinkForAppointment(
+                          company.id,
+                          paymentConversation.id,
+                          recentAppointment,
+                          service,
+                          recentAppointment.clientName,
+                          phoneNumber,
+                          new Date(recentAppointment.appointmentDate),
+                          recentAppointment.appointmentTime
+                        );
+                        
+                        console.log('✅ PRIORITY: Payment link sent successfully!');
+                        return res.status(200).json({ 
+                          received: true, 
+                          processed: true, 
+                          action: 'payment_link_sent',
+                          appointmentId: recentAppointment.id 
+                        });
+                        
+                      } catch (error) {
+                        console.error('❌ PRIORITY: Error sending payment link:', error);
+                      }
+                    } else {
+                      console.log('⚠️ Service not found for recent appointment');
+                      return res.status(200).json({ received: true, processed: false, reason: 'service_not_found' });
+                    }
+                  }
+                  
+                  // Look for conversation with recent AI confirmation message (FALLBACK)
                   for (const conv of phoneConversations) {
                     const recentMessages = await storage.getMessagesByConversation(conv.id);
                     const lastAiMessage = recentMessages.filter(m => m.role === 'assistant').pop();
@@ -4273,6 +4409,7 @@ INSTRUÇÕES OBRIGATÓRIAS:
                 
                 if (isConfirmationResponse) {
                   console.log('🎯 Confirmação SIM/OK detectada! Buscando agendamentos recentes...');
+                  console.log('🚀 INÍCIO da nova lógica de detecção de agendamentos recentes');
                   
                   // First, check for recent appointments for this phone number
                   const recentAppointments = await storage.getAppointmentsByCompany(company.id);
@@ -4281,11 +4418,11 @@ INSTRUÇÕES OBRIGATÓRIAS:
                   console.log('📞 Phone number (clean):', phoneNumberClean);
                   console.log('📋 Total appointments found:', recentAppointments.length);
                   
-                  // Find appointments created in the last 10 minutes for this phone
+                  // Find appointments created in the last 30 minutes for this phone (increased time window)
                   const recentAppointment = recentAppointments.find(apt => {
                     const aptPhoneClean = (apt.clientPhone || '').replace(/\D/g, '');
                     const isRecentlyCreated = apt.createdAt && 
-                      new Date(apt.createdAt).getTime() > (Date.now() - 10 * 60 * 1000);
+                      new Date(apt.createdAt).getTime() > (Date.now() - 30 * 60 * 1000); // Increased to 30 minutes
                     const phoneMatches = aptPhoneClean === phoneNumberClean || 
                       aptPhoneClean.endsWith(phoneNumberClean) ||
                       phoneNumberClean.endsWith(aptPhoneClean);
@@ -4296,7 +4433,8 @@ INSTRUÇÕES OBRIGATÓRIAS:
                       aptPhoneClean,
                       isRecentlyCreated,
                       phoneMatches,
-                      createdAt: apt.createdAt
+                      createdAt: apt.createdAt,
+                      timeDiff: apt.createdAt ? Date.now() - new Date(apt.createdAt).getTime() : 'N/A'
                     });
                     
                     return isRecentlyCreated && phoneMatches;
@@ -4309,33 +4447,40 @@ INSTRUÇÕES OBRIGATÓRIAS:
                     const services = await storage.getServicesByCompany(company.id);
                     const service = services.find(s => s.id === recentAppointment.serviceId);
                     
+                    console.log('🔍 Service lookup:', {
+                      recentAppointmentServiceId: recentAppointment.serviceId,
+                      servicesFound: services.length,
+                      serviceFound: service ? service.name : 'NOT FOUND'
+                    });
+                    
                     if (service) {
                       console.log('💳 Sending payment link for recent appointment...');
                       
-                      // Find the conversation that contains this appointment's notes
-                      const allConversations = await storage.getConversationsByCompany(company.id);
-                      const appointmentConversation = allConversations.find(conv => {
-                        // Look for conversation mentioned in appointment notes
-                        const conversationRef = recentAppointment.notes?.match(/Conversa ID: (\d+)/);
-                        return conversationRef && conv.id === parseInt(conversationRef[1]);
-                      });
-                      
-                      const conversationId = appointmentConversation ? appointmentConversation.id : conversation.id;
-                      
-                      await generatePaymentLinkForAppointment(
-                        company.id,
-                        conversationId,
-                        recentAppointment,
-                        service,
-                        recentAppointment.clientName,
-                        phoneNumber,
-                        new Date(recentAppointment.appointmentDate),
-                        recentAppointment.appointmentTime
-                      );
-                      
-                      console.log('✅ Payment link sent for appointment:', recentAppointment.id);
-                      return res.status(200).json({ received: true, processed: true, action: 'payment_link_sent' });
+                      // Send payment link immediately using current conversation
+                      try {
+                        await generatePaymentLinkForAppointment(
+                          company.id,
+                          conversation.id,
+                          recentAppointment,
+                          service,
+                          recentAppointment.clientName,
+                          phoneNumber,
+                          new Date(recentAppointment.appointmentDate),
+                          recentAppointment.appointmentTime
+                        );
+                        
+                        console.log('✅ Payment link sent for appointment:', recentAppointment.id);
+                        return res.status(200).json({ received: true, processed: true, action: 'payment_link_sent' });
+                      } catch (error) {
+                        console.error('❌ Error sending payment link:', error);
+                        return res.status(500).json({ received: true, error: 'Failed to send payment link' });
+                      }
+                    } else {
+                      console.log('⚠️ Service not found for recent appointment');
+                      return res.status(200).json({ received: true, processed: false, reason: 'service_not_found' });
                     }
+                  } else {
+                    console.log('⚠️ No recent appointment found for this phone number');
                   }
                   
                   // Fallback: Look for any recent conversation with appointment data for this phone
