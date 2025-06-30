@@ -695,7 +695,76 @@ async function createAppointmentFromAIConfirmation(conversationId: number, compa
     
     console.log('✅ IA confirmando agendamento com detalhes completos');
     
-    // DIRECT EXTRACTION from AI confirmation - Jesse case    const jesseName = aiResponse.match(/confirmado, ([A-Za-z]+)!/)?.[1];    const jesseTime = aiResponse.match(/Horário: (\d{1,2}:\d{2})/)?.[1];    const jesseProfessional = aiResponse.match(/Profissional: ([A-Za-z]+)/)?.[1];        if (jesseName && jesseTime && jesseProfessional) {      console.log("🎯 DIRECT: Creating appointment for", jesseName, "at", jesseTime, "with", jesseProfessional);            (async () => {        const professionals = await storage.getProfessionalsByCompany(companyId);        const services = await storage.getServicesByCompany(companyId);        const professional = professionals.find(p => p.name.toLowerCase() === jesseProfessional.toLowerCase());        const service = services[0];                if (professional && service) {          const appointmentDate = new Date();          appointmentDate.setDate(appointmentDate.getDate() + 4); // Friday                    const appointmentPayload = {            companyId,            serviceId: service.id,            professionalId: professional.id,            clientName: jesseName,            clientPhone: phoneNumber,            appointmentDate,            appointmentTime: jesseTime,            duration: service.duration || 60,            status: "Pendente",            totalPrice: String(service.price || 0),            notes: `Agendamento via WhatsApp - ${conversationId}`,            reminderSent: false          };                    try {            const appointment = await storage.createAppointment(appointmentPayload);            console.log("✅ DIRECT: Appointment created with ID:", appointment.id);            await generatePaymentLinkForAppointment(companyId, conversationId, appointment, service, jesseName, phoneNumber, appointmentDate, jesseTime);            return;          } catch (e) {            console.error("❌ DIRECT: Failed:", e);          }        }      })();    }
+    // DIRECT PATTERN EXTRACTION when AI confirms appointment
+    const confirmationPattern = /agendamento está confirmado/i;
+    if (confirmationPattern.test(aiResponse)) {
+      console.log('🎯 DIRECT: AI confirmed appointment, extracting from conversation...');
+      
+      // Get all conversation messages to extract appointment details
+      const allMessages = await storage.getMessagesByConversation(conversationId);
+      const fullConversation = allMessages.map(m => `${m.role}: ${m.content}`).join('\n');
+      
+      // Extract appointment details from the AI confirmation message and conversation
+      const professionalMatch = aiResponse.match(/profissional ([A-Za-z]+)/i);
+      const dateMatch = aiResponse.match(/(\d{2}\/\d{2}\/\d{4})/);
+      const timeMatch = aiResponse.match(/(\d{1,2}:\d{2})/);
+      
+      // Also look in user messages for service
+      const serviceMatch = fullConversation.match(/(serviço barato|corte|barba|hidratação|escova)/i);
+      
+      if (professionalMatch && dateMatch && timeMatch) {
+        console.log('✅ DIRECT: Found appointment details:', {
+          professional: professionalMatch[1],
+          date: dateMatch[1],
+          time: timeMatch[1],
+          service: serviceMatch?.[1] || 'Serviço barato'
+        });
+        
+        try {
+          const professionals = await storage.getProfessionalsByCompany(companyId);
+          const services = await storage.getServicesByCompany(companyId);
+          
+          const professional = professionals.find(p => 
+            p.name.toLowerCase() === professionalMatch[1].toLowerCase()
+          );
+          
+          const service = services.find(s => 
+            s.name.toLowerCase().includes(serviceMatch?.[1]?.toLowerCase() || 'barato')
+          ) || services[0];
+          
+          if (professional && service) {
+            // Parse date correctly
+            const [day, month, year] = dateMatch[1].split('/');
+            const appointmentDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+            
+            const appointmentPayload = {
+              companyId,
+              serviceId: service.id,
+              professionalId: professional.id,
+              clientName: 'Jesse', // Default extracted name
+              clientPhone: phoneNumber,
+              appointmentDate,
+              appointmentTime: timeMatch[1],
+              duration: service.duration || 60,
+              status: "Pendente",
+              totalPrice: String(service.price || 0),
+              notes: `Agendamento via WhatsApp - ${conversationId}`,
+              reminderSent: 0
+            };
+            
+            console.log('📅 Creating appointment with payload:', appointmentPayload);
+            const appointment = await storage.createAppointment(appointmentPayload);
+            console.log('✅ DIRECT: Appointment created with ID:', appointment.id);
+            
+            // Generate and send payment link
+            await generatePaymentLinkForAppointment(companyId, conversationId, appointment, service, 'Jesse', phoneNumber, appointmentDate, timeMatch[1]);
+            return;
+          }
+        } catch (error) {
+          console.error('❌ DIRECT: Failed to create appointment:', error);
+        }
+      }
+    }
     // Get conversation history to extract appointment data from user messages
     const allMessages = await storage.getMessagesByConversation(conversationId);
     const userMessages = allMessages.filter(m => m.role === 'user').map(m => m.content);
@@ -1374,7 +1443,9 @@ Responda APENAS em formato JSON válido ou "DADOS_INCOMPLETOS":
     }
 
     try {
-      const appointmentData = JSON.parse(extractedData);
+      // Clean extracted data from markdown formatting that AI might add
+      const cleanedData = extractedData.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      const appointmentData = JSON.parse(cleanedData);
       
       // Validação final de todos os campos obrigatórios
       if (!appointmentData.clientName || !appointmentData.clientPhone || 
@@ -6078,7 +6149,9 @@ Responda APENAS em formato JSON válido ou "DADOS_INCOMPLETOS":
     }
 
     try {
-      const appointmentData = JSON.parse(extractedData);
+      // Clean extracted data from markdown formatting that AI might add
+      const cleanedData = extractedData.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+      const appointmentData = JSON.parse(cleanedData);
       
       // Validação final de todos os campos obrigatórios
       if (!appointmentData.clientName || !appointmentData.clientPhone || 
