@@ -4348,7 +4348,7 @@ INSTRUÇÕES OBRIGATÓRIAS:
               if (isUserConfirmation && hasRecentAiSummary) {
                 console.log('🎯 INTERCEPTAÇÃO CRÍTICA: Usuario confirmou com SIM/OK após resumo');
                 console.log('🚫 BLOQUEANDO resposta da IA para evitar confirmação dupla');
-                console.log('💳 Criando agendamento e enviando link de pagamento imediatamente');
+                console.log('💳 ENVIANDO APENAS LINK DE PAGAMENTO (sem criar agendamento)');
                 
                 // Salvar mensagem do usuário sem resposta da IA
                 await storage.createMessage({
@@ -4360,7 +4360,7 @@ INSTRUÇÕES OBRIGATÓRIAS:
                   timestamp: new Date(),
                 });
                 
-                console.log('✅ Mensagem do usuário salva, processando agendamento...');
+                console.log('✅ Mensagem do usuário salva, processando link de pagamento...');
                 
                 // Buscar última mensagem da IA com resumo do agendamento
                 const lastAiMessage = conversationHistory
@@ -4431,8 +4431,8 @@ INSTRUÇÕES OBRIGATÓRIAS:
                 return res.status(200).json({ 
                   received: true, 
                   processed: true, 
-                  action: 'confirmation_intercepted_and_appointment_created',
-                  message: 'Agendamento criado e link de pagamento enviado' 
+                  action: 'payment_link_sent_only',
+                  message: 'Link de pagamento enviado - agendamento será criado após aprovação' 
                 });
               }
 
@@ -4701,30 +4701,24 @@ INSTRUÇÕES OBRIGATÓRIAS:
                             // Extract client name from conversation
                             const clientName = await extractClientNameFromConversation(conv.id) || 'Cliente WhatsApp';
                             
-                            // Create appointment
-                            const appointment = await storage.createAppointment({
-                              companyId: company.id,
-                              professionalId: professional.id,
-                              serviceId: service.id,
+                            // NOVO FLUXO: Apenas enviar link de pagamento (agendamento criado após webhook)
+                            console.log('💳 ENVIANDO APENAS LINK DE PAGAMENTO - agendamento após webhook do MP');
+                            
+                            // Criar objeto temporário para link de pagamento
+                            const tempAppointment = {
+                              id: `temp_${Date.now()}`,
                               clientName,
-                              clientPhone: phoneNumber,
                               appointmentDate,
-                              appointmentTime: appointmentDetails.time,
-                              duration: service.duration || 30,
-                              totalPrice: service.price || 0,
-                              status: 'Pendente',
-                              notes: `Agendamento confirmado via WhatsApp - Conversa ID: ${conv.id}`
-                            });
+                              appointmentTime: appointmentDetails.time
+                            };
                             
-                            console.log('✅ Appointment created successfully:', appointment);
-                            
-                            // Always send payment message and link after SIM/OK confirmation
-                            if (company.mercadopagoAccessToken && appointment?.id) {
-                              console.log('💳 Sending payment message and link...');
+                            // Enviar APENAS link de pagamento
+                            if (company.mercadopagoAccessToken) {
+                              console.log('💳 Sending payment link only...');
                               await generatePaymentLinkForAppointment(
                                 company.id,
                                 conv.id,
-                                appointment,
+                                tempAppointment,
                                 service,
                                 clientName,
                                 phoneNumber,
@@ -4732,7 +4726,7 @@ INSTRUÇÕES OBRIGATÓRIAS:
                                 appointmentDetails.time
                               );
                             } else {
-                              console.log('⚠️ Mercado Pago not configured or appointment creation failed');
+                              console.log('⚠️ Mercado Pago not configured');
                             }
                           }
                         } catch (error) {
@@ -4750,9 +4744,9 @@ INSTRUÇÕES OBRIGATÓRIAS:
                           time: lastAiMessage.content.match(/(\d{1,2}:\d{2})/)?.[1] || '09:00'
                         };
                         
-                        // Always try to create appointment using the original function
-                        await createAppointmentFromAIConfirmation(conv.id, company.id, lastAiMessage.content, phoneNumber);
-                        appointmentCreated = true;
+                        // REMOVIDO: não criar agendamento aqui, apenas após pagamento aprovado
+                        console.log('🚫 BLOQUEADO: Criação de agendamento movida para webhook do Mercado Pago');
+                        appointmentCreated = false;
                       }
                       break;
                     }
