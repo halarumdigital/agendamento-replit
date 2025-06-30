@@ -4639,17 +4639,32 @@ INSTRUÇÕES OBRIGATÓRIAS:
                 messageText.toLowerCase().trim() === phrase.toLowerCase()
               );
               
-              // Verificar se há uma mensagem recente da IA com resumo de agendamento
+              // Verificar se há uma mensagem recente da IA com resumo de agendamento ou contexto de confirmação
               const hasRecentAiSummary = conversationHistory
                 .filter(msg => msg.role === 'assistant')
-                .slice(-2) // Últimas 2 mensagens da IA
+                .slice(-3) // Últimas 3 mensagens da IA
                 .some(msg => 
                   msg.content.includes('Vou confirmar seu agendamento') || 
                   msg.content.includes('Está tudo correto?') ||
-                  msg.content.includes('Responda SIM para confirmar')
+                  msg.content.includes('Responda SIM para confirmar') ||
+                  msg.content.includes('👤 Nome:') ||
+                  msg.content.includes('🏢 Profissional:') ||
+                  msg.content.includes('💇 Serviço:') ||
+                  msg.content.includes('📅 Data:') ||
+                  msg.content.includes('🕐 Horário:')
                 );
+              
+              // NOVA LÓGICA: Verificar se há agendamento recente do mesmo telefone (últimos 10 minutos)
+              const recentAppointments = await storage.getAppointmentsByCompany(company.id);
+              const phoneClean = phoneNumber.replace(/\D/g, '');
+              const hasRecentAppointment = recentAppointments.some(apt => {
+                const aptPhoneClean = (apt.clientPhone || '').replace(/\D/g, '');
+                const timeDiff = Date.now() - new Date(apt.createdAt).getTime();
+                const isRecent = timeDiff < 10 * 60 * 1000; // 10 minutos
+                return aptPhoneClean === phoneClean && isRecent;
+              });
 
-              if (isUserConfirmation && hasRecentAiSummary) {
+              if (isUserConfirmation && (hasRecentAiSummary || hasRecentAppointment)) {
                 console.log('🎯 INTERCEPTAÇÃO CRÍTICA: Usuario confirmou com SIM/OK após resumo');
                 console.log('🚫 BLOQUEANDO resposta da IA para evitar confirmação dupla');
                 console.log('💳 ENVIANDO APENAS LINK DE PAGAMENTO (sem criar agendamento)');
@@ -4671,15 +4686,33 @@ INSTRUÇÕES OBRIGATÓRIAS:
                   .filter(msg => msg.role === 'assistant')
                   .slice(-1)[0];
                 
+                console.log('🔍 DEBUG: Procurando resumo da IA...');
+                console.log('🔍 Última mensagem IA encontrada:', lastAiMessage ? 'SIM' : 'NÃO');
+                if (lastAiMessage) {
+                  console.log('🔍 Conteúdo da última mensagem IA:', lastAiMessage.content);
+                  console.log('🔍 Tem "Responda SIM"?', lastAiMessage.content.includes('Responda SIM para confirmar'));
+                  console.log('🔍 Tem "Responda SIM para confirmar"?', lastAiMessage.content.includes('Responda SIM para confirmar'));
+                  console.log('🔍 Tem "Está tudo correto"?', lastAiMessage.content.includes('Está tudo correto'));
+                }
+                
                 if (lastAiMessage && lastAiMessage.content.includes('Responda SIM para confirmar')) {
                   console.log('📋 Extraindo dados para link de pagamento da última mensagem da IA...');
                   
-                  // Extrair dados básicos do resumo para gerar link de pagamento
-                  const appointmentMatch = lastAiMessage.content.match(/Nome:\s*([^👤🏢💇📅🕐📱\n]+)/);
-                  const professionalMatch = lastAiMessage.content.match(/Profissional:\s*([^👤🏢💇📅🕐📱\n]+)/);
-                  const serviceMatch = lastAiMessage.content.match(/Serviço:\s*([^👤🏢💇📅🕐📱\n(]+)/);
-                  const dateMatch = lastAiMessage.content.match(/Data:\s*[^,]*,?\s*(\d{2}\/\d{2}\/\d{4})/);
-                  const timeMatch = lastAiMessage.content.match(/Horário:\s*(\d{1,2}:\d{2})/);
+                  // Extrair dados básicos do resumo para gerar link de pagamento (melhorado)
+                  const appointmentMatch = lastAiMessage.content.match(/👤\s*Nome:\s*([^\n🏢💇📅🕐📱]+)/);
+                  const professionalMatch = lastAiMessage.content.match(/🏢\s*Profissional:\s*([^\n👤💇📅🕐📱]+)/);
+                  const serviceMatch = lastAiMessage.content.match(/💇\s*Serviço:\s*([^\n👤🏢📅🕐📱(]+)/);
+                  const dateMatch = lastAiMessage.content.match(/📅\s*Data:\s*[^,]*,?\s*(\d{2}\/\d{2}\/\d{4})/);
+                  const timeMatch = lastAiMessage.content.match(/🕐\s*Horário:\s*(\d{1,2}:\d{2})/);
+                  
+                  console.log('🔍 Debug extração:', {
+                    appointmentMatch: appointmentMatch?.[1],
+                    professionalMatch: professionalMatch?.[1],
+                    serviceMatch: serviceMatch?.[1],
+                    dateMatch: dateMatch?.[1],
+                    timeMatch: timeMatch?.[1],
+                    lastAiMessage: lastAiMessage.content
+                  });
                   
                   if (appointmentMatch && professionalMatch && serviceMatch && dateMatch && timeMatch) {
                     const clientName = appointmentMatch[1].trim();
@@ -9844,6 +9877,28 @@ const broadcastEvent = (eventData: any) => {
       } else {
         res.json({ error: 'Conversation not found' });
       }
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Debug endpoint to check conversation messages via direct SQL  
+  app.get('/api/debug/messages', async (req, res) => {
+    try {
+      const [messages] = await pool.execute(
+        'SELECT * FROM messages WHERE conversation_id = 117 ORDER BY timestamp DESC LIMIT 10'
+      );
+      
+      res.json({
+        conversationId: 117,
+        messageCount: (messages as any[]).length,
+        messages: (messages as any[]).map(m => ({
+          id: m.id,
+          role: m.role,
+          content: m.content.substring(0, 500) + (m.content.length > 500 ? '...' : ''),
+          timestamp: m.timestamp
+        }))
+      });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
