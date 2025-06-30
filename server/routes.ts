@@ -4508,9 +4508,10 @@ INSTRUÇÕES OBRIGATÓRIAS:
 - Esta confirmação com a data CORRETA é OBRIGATÓRIA antes de prosseguir para o horário
 - CRÍTICO: VERIFICAÇÃO DE DISPONIBILIDADE POR DATA ESPECÍFICA:
   * ANTES de confirmar qualquer horário, consulte a seção "DISPONIBILIDADE REAL DOS PROFISSIONAIS POR DATA" acima
-  * Se a informação mostrar "OCUPADO às [horários]" para aquela data, NÃO confirme esses horários
-  * Se a informação mostrar "LIVRE", o horário está disponível
-  * NUNCA confirme horários que aparecem como "OCUPADO" na lista de disponibilidade
+  * LEIA CUIDADOSAMENTE: Se mostrar "OCUPADO às 17:00" significa que APENAS às 17:00 está ocupado, todos os outros horários (09:00, 10:00, 11:00, 12:00, 13:00, 14:00, 15:00, 16:00, 18:00) estão LIVRES
+  * Se mostrar "LIVRE (09:00 às 18:00)" significa que TODOS os horários do expediente estão disponíveis
+  * INTERPRETAR CORRETAMENTE: "OCUPADO às 17:00" significa que 15:00, 16:00 e outros horários diferentes de 17:00 estão DISPONÍVEIS
+  * NUNCA diga que um horário está ocupado se ele não aparecer na lista específica de horários ocupados
   * Sempre sugira horários alternativos se o solicitado estiver ocupado
 - Verifique se o profissional trabalha no dia solicitado
 - Verifique se o horário está dentro do expediente (09:00 às 18:00)
