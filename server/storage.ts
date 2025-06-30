@@ -3864,5 +3864,347 @@ Object.assign(storage, {
       console.error("Error getting OpenAI usage by model:", error);
       throw error;
     }
+  },
+
+  // ========== MOBILE API FUNCTIONS ==========
+
+  // Get company by email for mobile login
+  async getCompanyByEmail(email: string): Promise<Company | null> {
+    try {
+      const result = await db.execute(sql`
+        SELECT * FROM companies WHERE email = ${email} LIMIT 1
+      `);
+      return (result as any[])[0] || null;
+    } catch (error) {
+      console.error('Error getting company by email:', error);
+      throw error;
+    }
+  },
+
+  // Get professional by email for mobile login
+  async getProfessionalByEmail(email: string): Promise<Professional | null> {
+    try {
+      const result = await db.execute(sql`
+        SELECT * FROM professionals WHERE email = ${email} LIMIT 1
+      `);
+      return (result as any[])[0] || null;
+    } catch (error) {
+      console.error('Error getting professional by email:', error);
+      throw error;
+    }
+  },
+
+  // Get appointments with filters and pagination
+  async getAppointments(companyId: number, filters: {
+    date?: string;
+    professionalId?: number;
+    status?: string;
+    page?: number;
+    limit?: number;
+  } = {}): Promise<Appointment[]> {
+    try {
+      let query = sql`SELECT * FROM appointments WHERE company_id = ${companyId}`;
+      
+      if (filters.date) {
+        query = sql`${query} AND DATE(appointment_date) = ${filters.date}`;
+      }
+      
+      if (filters.professionalId) {
+        query = sql`${query} AND professional_id = ${filters.professionalId}`;
+      }
+      
+      if (filters.status) {
+        query = sql`${query} AND status = ${filters.status}`;
+      }
+      
+      query = sql`${query} ORDER BY appointment_date DESC, appointment_time ASC`;
+      
+      if (filters.limit) {
+        const offset = ((filters.page || 1) - 1) * filters.limit;
+        query = sql`${query} LIMIT ${filters.limit} OFFSET ${offset}`;
+      }
+      
+      const result = await db.execute(query);
+      return result as Appointment[];
+    } catch (error) {
+      console.error('Error getting appointments:', error);
+      throw error;
+    }
+  },
+
+  // Get appointments by date range
+  async getAppointmentsByDateRange(companyId: number, startDate: string, endDate: string, professionalId?: number): Promise<Appointment[]> {
+    try {
+      let query = sql`
+        SELECT * FROM appointments 
+        WHERE company_id = ${companyId} 
+        AND DATE(appointment_date) BETWEEN ${startDate} AND ${endDate}
+      `;
+      
+      if (professionalId) {
+        query = sql`${query} AND professional_id = ${professionalId}`;
+      }
+      
+      query = sql`${query} ORDER BY appointment_date, appointment_time`;
+      
+      const result = await db.execute(query);
+      return result as Appointment[];
+    } catch (error) {
+      console.error('Error getting appointments by date range:', error);
+      throw error;
+    }
+  },
+
+  // Get single appointment
+  async getAppointment(appointmentId: number): Promise<Appointment | null> {
+    try {
+      const result = await db.execute(sql`
+        SELECT * FROM appointments WHERE id = ${appointmentId} LIMIT 1
+      `);
+      return (result as any[])[0] || null;
+    } catch (error) {
+      console.error('Error getting appointment:', error);
+      throw error;
+    }
+  },
+
+  // Get appointments by client
+  async getAppointmentsByClient(clientId: number): Promise<Appointment[]> {
+    try {
+      const result = await db.execute(sql`
+        SELECT * FROM appointments 
+        WHERE client_id = ${clientId} 
+        ORDER BY appointment_date DESC
+      `);
+      return result as Appointment[];
+    } catch (error) {
+      console.error('Error getting appointments by client:', error);
+      throw error;
+    }
+  },
+
+  // Search clients with multiple parameters
+  async searchClients(companyId: number, searchParams: {
+    phone?: string;
+    name?: string;
+    email?: string;
+  }): Promise<any[]> {
+    try {
+      let query = sql`SELECT * FROM clients WHERE company_id = ${companyId}`;
+      const conditions = [];
+      
+      if (searchParams.phone) {
+        conditions.push(sql`phone LIKE ${'%' + searchParams.phone + '%'}`);
+      }
+      
+      if (searchParams.name) {
+        conditions.push(sql`name LIKE ${'%' + searchParams.name + '%'}`);
+      }
+      
+      if (searchParams.email) {
+        conditions.push(sql`email LIKE ${'%' + searchParams.email + '%'}`);
+      }
+      
+      if (conditions.length > 0) {
+        query = sql`${query} AND (${sql.join(conditions, sql` OR `)})`;
+      }
+      
+      query = sql`${query} ORDER BY name`;
+      
+      const result = await db.execute(query);
+      return result as any[];
+    } catch (error) {
+      console.error('Error searching clients:', error);
+      throw error;
+    }
+  },
+
+  // Get clients with pagination and search
+  async getClients(companyId: number, options: {
+    search?: string;
+    page?: number;
+    limit?: number;
+  } = {}): Promise<any[]> {
+    try {
+      let query = sql`SELECT * FROM clients WHERE company_id = ${companyId}`;
+      
+      if (options.search) {
+        query = sql`${query} AND (name LIKE ${'%' + options.search + '%'} OR phone LIKE ${'%' + options.search + '%'} OR email LIKE ${'%' + options.search + '%'})`;
+      }
+      
+      query = sql`${query} ORDER BY name`;
+      
+      if (options.limit) {
+        const offset = ((options.page || 1) - 1) * options.limit;
+        query = sql`${query} LIMIT ${options.limit} OFFSET ${offset}`;
+      }
+      
+      const result = await db.execute(query);
+      return result as any[];
+    } catch (error) {
+      console.error('Error getting clients:', error);
+      throw error;
+    }
+  },
+
+  // Create client
+  async createClient(clientData: {
+    companyId: number;
+    name: string;
+    phone: string;
+    email?: string;
+    birthDate?: Date | null;
+    address?: string;
+  }): Promise<any> {
+    try {
+      const result = await db.execute(sql`
+        INSERT INTO clients (company_id, name, phone, email, birth_date, address, created_at)
+        VALUES (${clientData.companyId}, ${clientData.name}, ${clientData.phone}, 
+                ${clientData.email || null}, ${clientData.birthDate || null}, 
+                ${clientData.address || null}, NOW())
+      `);
+      
+      const insertId = (result as any).insertId;
+      return await this.getClient(insertId);
+    } catch (error) {
+      console.error('Error creating client:', error);
+      throw error;
+    }
+  },
+
+  // Get single client
+  async getClient(clientId: number): Promise<any | null> {
+    try {
+      const result = await db.execute(sql`
+        SELECT * FROM clients WHERE id = ${clientId} LIMIT 1
+      `);
+      return (result as any[])[0] || null;
+    } catch (error) {
+      console.error('Error getting client:', error);
+      throw error;
+    }
+  },
+
+  // Update client
+  async updateClient(clientId: number, updates: {
+    name?: string;
+    phone?: string;
+    email?: string;
+    birthDate?: Date;
+    address?: string;
+  }): Promise<any> {
+    try {
+      const updateFields = [];
+      
+      if (updates.name) updateFields.push(`name = '${updates.name}'`);
+      if (updates.phone) updateFields.push(`phone = '${updates.phone}'`);
+      if (updates.email) updateFields.push(`email = '${updates.email}'`);
+      if (updates.birthDate) updateFields.push(`birth_date = '${updates.birthDate.toISOString().split('T')[0]}'`);
+      if (updates.address) updateFields.push(`address = '${updates.address}'`);
+      
+      if (updateFields.length === 0) {
+        return await this.getClient(clientId);
+      }
+      
+      updateFields.push('updated_at = NOW()');
+      
+      await db.execute(sql.raw(`
+        UPDATE clients 
+        SET ${updateFields.join(', ')} 
+        WHERE id = ${clientId}
+      `));
+      
+      return await this.getClient(clientId);
+    } catch (error) {
+      console.error('Error updating client:', error);
+      throw error;
+    }
+  },
+
+  // Get single professional
+  async getProfessional(professionalId: number): Promise<Professional | null> {
+    try {
+      const result = await db.execute(sql`
+        SELECT * FROM professionals WHERE id = ${professionalId} LIMIT 1
+      `);
+      return (result as any[])[0] || null;
+    } catch (error) {
+      console.error('Error getting professional:', error);
+      throw error;
+    }
+  },
+
+  // Get professionals by company
+  async getProfessionals(companyId: number): Promise<Professional[]> {
+    try {
+      const result = await db.execute(sql`
+        SELECT * FROM professionals WHERE company_id = ${companyId} ORDER BY name
+      `);
+      return result as Professional[];
+    } catch (error) {
+      console.error('Error getting professionals:', error);
+      throw error;
+    }
+  },
+
+  // Get single service
+  async getService(serviceId: number): Promise<Service | null> {
+    try {
+      const result = await db.execute(sql`
+        SELECT * FROM services WHERE id = ${serviceId} LIMIT 1
+      `);
+      return (result as any[])[0] || null;
+    } catch (error) {
+      console.error('Error getting service:', error);
+      throw error;
+    }
+  },
+
+  // Get services by company
+  async getServices(companyId: number): Promise<Service[]> {
+    try {
+      const result = await db.execute(sql`
+        SELECT * FROM services WHERE company_id = ${companyId} ORDER BY name
+      `);
+      return result as Service[];
+    } catch (error) {
+      console.error('Error getting services:', error);
+      throw error;
+    }
+  },
+
+  // Update company
+  async updateCompany(companyId: number, updates: {
+    fantasyName?: string;
+    phone?: string;
+    address?: string;
+    mercadopagoEnabled?: number;
+  }): Promise<Company> {
+    try {
+      const updateFields = [];
+      
+      if (updates.fantasyName) updateFields.push(`fantasy_name = '${updates.fantasyName}'`);
+      if (updates.phone) updateFields.push(`phone = '${updates.phone}'`);
+      if (updates.address) updateFields.push(`address = '${updates.address}'`);
+      if (typeof updates.mercadopagoEnabled === 'number') updateFields.push(`mercadopago_enabled = ${updates.mercadopagoEnabled}`);
+      
+      if (updateFields.length === 0) {
+        return await this.getCompany(companyId);
+      }
+      
+      updateFields.push('updated_at = NOW()');
+      
+      await db.execute(sql.raw(`
+        UPDATE companies 
+        SET ${updateFields.join(', ')} 
+        WHERE id = ${companyId}
+      `));
+      
+      return await this.getCompany(companyId);
+    } catch (error) {
+      console.error('Error updating company:', error);
+      throw error;
+    }
   }
+
 });

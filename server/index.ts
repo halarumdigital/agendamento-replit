@@ -2,6 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config({ path: '.env' });
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
+import { setupMobileRoutes } from "./mobile-routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { ensureConversationTables, ensureProfessionalPasswordColumn, storage } from "./storage";
 import { ensureReviewTables } from "./create-reviews-tables";
@@ -108,6 +109,9 @@ app.use((req, res, next) => {
   startCampaignScheduler();
   
   const server = await registerRoutes(app);
+  
+  // Setup mobile API routes
+  setupMobileRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
