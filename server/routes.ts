@@ -4045,10 +4045,16 @@ ${availableServices || 'Nenhum serviço cadastrado no momento'}
 ${availabilityInfo}
 
 INSTRUÇÕES OBRIGATÓRIAS:
+- ANÁLISE DE CONTEXTO: Antes de responder, faça uma análise mental da conversa:
+  * Cliente já escolheu um serviço? (ex: "corte e barba") - Se sim, NÃO peça novamente
+  * Cliente já escolheu um profissional? - Se sim, NÃO peça novamente
+  * Cliente já informou data/horário? - Se sim, NÃO peça novamente
+  * Cliente já informou nome? - Se sim, NÃO peça novamente
 - SEMPRE que o cliente mencionar "agendar", "horário", "agendamento" ou similar, ofereça IMEDIATAMENTE a lista completa de profissionais
 - Use o formato: "Temos os seguintes profissionais disponíveis:\n[lista dos profissionais]\n\nCom qual profissional você gostaria de agendar?"
-- Após a escolha do profissional, ofereça IMEDIATAMENTE a lista completa de serviços disponíveis
+- Após a escolha do profissional, ofereça IMEDIATAMENTE a lista completa de serviços disponíveis (EXCETO se o cliente já escolheu um serviço anteriormente - neste caso, use o serviço já mencionado)
 - MANTENHA O CONTEXTO: Sempre considere TODA a conversa anterior. Se já foram discutidos profissional, serviço, data e horário, não peça essas informações novamente
+- REGRA CRÍTICA DE CONTEXTO: Antes de pedir qualquer informação, SEMPRE verifique se ela já foi mencionada anteriormente na conversa. Se o cliente já escolheu um serviço (ex: "corte e barba"), NÃO peça para escolher novamente
 - Quando tiver todos os dados (profissional, serviço, data, horário e nome do cliente), confirme o agendamento usando EXATAMENTE este formato:
   "Perfeito [Nome do Cliente]! Vou confirmar seu agendamento:\n\n✅ Serviço: [Serviço] (R$ [Preço])\n👨 Profissional: [Nome do Profissional]\n📅 Data: [dia da semana], [DD/MM/YYYY]\n⏰ Horário: [HH:MM]\n\nSeu agendamento está correto? Digite SIM para confirmar."
 - Use o formato: "Aqui estão os serviços disponíveis:\n[lista dos serviços]\n\nQual serviço você gostaria de agendar?"
