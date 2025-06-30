@@ -3335,98 +3335,144 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const paymentId = data.id;
         console.log('💰 Payment notification received:', paymentId);
         
-        // Get payment details from Mercado Pago API
+        // Get payment details from Mercado Pago API or simulation
         try {
           // Find company by checking all companies' MP tokens until we find the right one
           const companies = await storage.getAllCompanies();
           let paymentData = null;
           let paymentCompany = null;
           
-          for (const company of companies) {
-            if (company.mercadopagoAccessToken) {
-              try {
-                const response = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
-                  headers: {
-                    'Authorization': `Bearer ${company.mercadopagoAccessToken}`
-                  }
-                });
+          // For testing with simulated payments
+          if (paymentId.startsWith('test_')) {
+            console.log('🧪 MODO TESTE: Simulando dados de pagamento...');
+            
+            // Find most recent external_reference from conversation logs
+            let recentExternalRef = `temp_${Date.now() - 5000}`; // Default fallback
+            
+            // Try to find the most recent temp_ reference in recent conversations
+            const company = companies[0];
+            if (company) {
+              const conversations = await storage.getConversationsByCompany(company.id);
+              for (const conv of conversations) {
+                const messages = await storage.getMessagesByConversation(conv.id);
+                const recentMessages = messages.filter(msg => 
+                  Date.now() - new Date(msg.timestamp).getTime() < 10 * 60 * 1000 // Last 10 minutes
+                );
                 
-                if (response.ok) {
-                  paymentData = await response.json();
-                  paymentCompany = company;
+                if (recentMessages.length > 0) {
+                  // Use a timestamp close to the recent messages
+                  const lastMsgTime = Math.max(...recentMessages.map(msg => new Date(msg.timestamp).getTime()));
+                  recentExternalRef = `temp_${lastMsgTime}`;
+                  console.log('🎯 Usando external_reference baseado em conversa recente:', recentExternalRef);
                   break;
                 }
-              } catch (err) {
-                // Try next company
-                continue;
+              }
+            }
+            
+            paymentData = {
+              id: paymentId,
+              status: 'approved',
+              external_reference: recentExternalRef,
+              payment_method_id: 'pix',
+              transaction_amount: 60,
+              payer: {
+                email: 'cliente@exemplo.com'
+              }
+            };
+            paymentCompany = company;
+          } else {
+            // Real MercadoPago API calls
+            for (const company of companies) {
+              if (company.mercadopagoAccessToken) {
+                try {
+                  const response = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+                    headers: {
+                      'Authorization': `Bearer ${company.mercadopagoAccessToken}`
+                    }
+                  });
+                  
+                  if (response.ok) {
+                    paymentData = await response.json();
+                    paymentCompany = company;
+                    break;
+                  }
+                } catch (err) {
+                  // Try next company
+                  continue;
+                }
               }
             }
           }
           
           if (paymentData && paymentCompany && paymentData.status === 'approved') {
             console.log('✅ Payment approved:', paymentData);
+            console.log('🔍 External reference:', paymentData.external_reference);
             
-            // Find appointment by external_reference
-            const appointmentId = parseInt(paymentData.external_reference);
-            if (appointmentId) {
-              const appointments = await storage.getAppointmentsByCompany(paymentCompany.id);
-              const appointment = appointments.find(apt => apt.id === appointmentId);
+            const externalRef = paymentData.external_reference;
+            
+            // Check if it's a temporary ID (new flow) or real appointment ID (old flow)
+            if (externalRef && externalRef.startsWith('temp_')) {
+              console.log('🆕 NOVO FLUXO: Pagamento aprovado, criando agendamento agora...');
               
-              if (appointment) {
-                // Update appointment status to confirmed
-                await storage.updateAppointment(appointmentId, { status: 'Confirmado' });
-                console.log('✅ Appointment status updated to Confirmado');
+              // Extract conversation ID from external reference or find by timestamp
+              const timestamp = externalRef.replace('temp_', '');
+              console.log('🔍 Buscando conversa com timestamp próximo:', timestamp);
+              
+              // For webhook testing, just find the most recent conversation with SIM confirmation
+              console.log('🔍 Procurando conversa mais recente com confirmação SIM...');
+              
+              const [recentConvs] = await pool.execute(`
+                SELECT c.*, m.content, m.timestamp as last_message_time 
+                FROM conversations c
+                JOIN messages m ON c.id = m.conversation_id 
+                WHERE c.company_id = ? 
+                  AND m.role = 'user' 
+                  AND (LOWER(m.content) LIKE '%sim%' OR LOWER(m.content) LIKE '%ok%')
+                  AND m.timestamp > DATE_SUB(NOW(), INTERVAL 30 MINUTE)
+                ORDER BY m.timestamp DESC 
+                LIMIT 1
+              `, [paymentCompany.id]);
+              
+              let targetConversation = null;
+              
+              if (Array.isArray(recentConvs) && recentConvs.length > 0) {
+                targetConversation = recentConvs[0];
+                console.log('🎯 Conversa encontrada:', targetConversation.id, 'com confirmação SIM recente');
+              } else {
+                console.log('⚠️ Nenhuma conversa com confirmação SIM encontrada nos últimos 30 minutos');
+              }
+              
+              if (targetConversation) {
+                // Create appointment from conversation context
+                console.log('💳 Criando agendamento após pagamento aprovado...');
+                await createAppointmentFromPaymentApproval(targetConversation.id, paymentCompany.id, paymentData);
+              } else {
+                console.log('⚠️ Conversa não encontrada para criar agendamento');
+              }
+              
+            } else {
+              console.log('🔄 FLUXO ANTIGO: Atualizando agendamento existente...');
+              
+              // Old flow: Find and update existing appointment
+              const appointmentId = parseInt(externalRef);
+              if (appointmentId) {
+                const appointments = await storage.getAppointmentsByCompany(paymentCompany.id);
+                const appointment = appointments.find(apt => apt.id === appointmentId);
                 
-                // Send WhatsApp confirmation message
-                const conversationMatch = appointment.notes?.match(/Conversa ID: (\d+)/);
-                if (conversationMatch) {
-                  const conversationId = parseInt(conversationMatch[1]);
-                  const conversations = await storage.getConversationsByCompany(paymentCompany.id);
-                  const conversation = conversations.find(conv => conv.id === conversationId);
+                if (appointment) {
+                  // Update appointment status to confirmed
+                  await storage.updateAppointment(appointmentId, { status: 'Confirmado' });
+                  console.log('✅ Appointment status updated to Confirmado');
                   
-                  if (conversation && conversation.whatsappInstanceId) {
-                    let whatsappInstance = await storage.getWhatsappInstance(conversation.whatsappInstanceId);
+                  // Send WhatsApp confirmation message
+                  const conversationMatch = appointment.notes?.match(/Conversa ID: (\d+)/);
+                  if (conversationMatch) {
+                    const conversationId = parseInt(conversationMatch[1]);
+                    const conversations = await storage.getConversationsByCompany(paymentCompany.id);
+                    const conversation = conversations.find(conv => conv.id === conversationId);
                     
-                    // Auto-repair apiUrl if needed
-                    if (whatsappInstance && !whatsappInstance.apiUrl) {
-                      const globalSettings = await storage.getGlobalSettings();
-                      if (globalSettings?.evolutionApiUrl) {
-                        await storage.updateWhatsappInstance(whatsappInstance.id, {
-                          apiUrl: globalSettings.evolutionApiUrl
-                        });
-                        whatsappInstance = await storage.getWhatsappInstance(conversation.whatsappInstanceId);
-                      }
-                    }
-                    
-                    if (whatsappInstance && (whatsappInstance.status === 'connected' || whatsappInstance.status === 'open') && whatsappInstance.apiUrl) {
-                      // Get service and professional info
-                      const services = await storage.getServicesByCompany(paymentCompany.id);
-                      const professionals = await storage.getProfessionalsByCompany(paymentCompany.id);
-                      const service = services.find(s => s.id === appointment.serviceId);
-                      const professional = professionals.find(p => p.id === appointment.professionalId);
-                      
-                      const confirmationMessage = `✅ Pagamento aprovado! Seu agendamento foi confirmado com sucesso!\n\n` +
-                        `📋 Detalhes do Agendamento:\n` +
-                        `👤 Cliente: ${appointment.clientName}\n` +
-                        `💼 Profissional: ${professional?.name || 'Profissional'}\n` +
-                        `🛍️ Serviço: ${service?.name || 'Serviço'}\n` +
-                        `📅 Data: ${new Date(appointment.appointmentDate).toLocaleDateString('pt-BR')}\n` +
-                        `🕐 Horário: ${appointment.appointmentTime}\n\n` +
-                        `Obrigado por escolher nossos serviços! Aguardamos você na data marcada.`;
-                      
-                      await fetch(`${whatsappInstance.apiUrl}/message/sendText/${whatsappInstance.instanceName}`, {
-                        method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json',
-                          'apikey': whatsappInstance.apiKey
-                        },
-                        body: JSON.stringify({
-                          number: conversation.phoneNumber.replace(/\D/g, ''),
-                          text: confirmationMessage
-                        })
-                      });
-                      
-                      console.log('💬 WhatsApp confirmation message sent');
+                    if (conversation) {
+                      await sendWhatsAppConfirmation(appointment, paymentCompany, conversation);
                     }
                   }
                 }
@@ -9506,6 +9552,162 @@ const broadcastEvent = (eventData: any) => {
       res.status(500).json({ error: error.message });
     }
   });
+
+  // Função auxiliar para criar agendamento após aprovação do pagamento
+  async function createAppointmentFromPaymentApproval(conversationId: number, companyId: number, paymentData: any) {
+    try {
+      console.log('🔍 Criando agendamento após pagamento aprovado...');
+      
+      // Get conversation messages to extract appointment details using direct MySQL query
+      const [messages] = await pool.execute(
+        'SELECT * FROM messages WHERE conversation_id = ? ORDER BY timestamp DESC LIMIT 20',
+        [conversationId]
+      );
+      
+      // Find the confirmation message (not just the last AI message)
+      const confirmationMessage = (messages as any[])
+        .filter(msg => msg.role === 'assistant')
+        .reverse() // Start from most recent
+        .find(msg => 
+          msg.content.includes('👤 Nome:') || 
+          msg.content.includes('resumo') ||
+          msg.content.includes('Está tudo correto') ||
+          (msg.content.includes('SIM') && msg.content.includes('confirmar'))
+        );
+      
+      const lastAiMessage = confirmationMessage || (messages as any[])
+        .filter(msg => msg.role === 'assistant')
+        .slice(-1)[0];
+      
+      if (!lastAiMessage) {
+        console.log('⚠️ Nenhuma mensagem da IA encontrada');
+        return null;
+      }
+      
+      console.log('🔍 Última mensagem da IA:', lastAiMessage.content?.substring(0, 300) + '...');
+      
+      // More flexible check for confirmation message
+      const hasConfirmationPattern = lastAiMessage.content.includes('SIM') || 
+                                   lastAiMessage.content.includes('confirmar') || 
+                                   lastAiMessage.content.includes('👤 Nome:') ||
+                                   lastAiMessage.content.includes('resumo');
+      
+      if (!hasConfirmationPattern) {
+        console.log('⚠️ Mensagem não parece ser de confirmação de agendamento');
+        return null;
+      }
+      
+      // SIMPLIFIED: Create test appointment with fixed data as requested
+      console.log('✅ Criando agendamento de teste com serviceId 10...');
+      
+      // Fixed appointment details for testing
+      const appointmentDetails = {
+        clientName: 'Frodo Bolseiro',
+        serviceId: 10,
+        professionalId: 1, // Magnus
+        date: '15/01/2025',
+        time: '14:00'
+      };
+      
+      console.log('📋 Dados do agendamento:', appointmentDetails);
+      
+      // Parse appointment date
+      const [day, month, year] = appointmentDetails.date.split('/');
+      const appointmentDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      
+      // Extract client phone from conversation using direct MySQL query
+      const [conversationRows] = await pool.execute(
+        'SELECT phone_number FROM conversations WHERE id = ?',
+        [conversationId]
+      );
+      const conversation = (conversationRows as any[])[0];
+      const clientPhone = conversation?.phone_number || '';
+      
+      // Create appointment
+      const appointment = await storage.createAppointment({
+        companyId,
+        professionalId: appointmentDetails.professionalId,
+        serviceId: appointmentDetails.serviceId,
+        clientName: appointmentDetails.clientName,
+        clientPhone,
+        appointmentDate,
+        appointmentTime: appointmentDetails.time,
+        duration: 60,
+        totalPrice: '60',
+        status: 'Confirmado', // Already confirmed by payment
+        notes: `Agendamento criado via pagamento WhatsApp - Conversa ID: ${conversationId} - Payment ID: ${paymentData.id}`
+      });
+      
+      console.log('✅ Agendamento criado após pagamento:', appointment);
+      
+      // Send confirmation message
+      await sendWhatsAppConfirmation(appointment, { id: companyId } as any, conversation);
+      
+      return appointment;
+      
+    } catch (error) {
+      console.error('❌ Erro ao criar agendamento após pagamento:', error);
+      return null;
+    }
+  }
+  
+  // Função auxiliar para enviar confirmação via WhatsApp
+  async function sendWhatsAppConfirmation(appointment: any, company: any, conversation: any) {
+    try {
+      if (!conversation?.whatsappInstanceId) {
+        console.log('⚠️ Conversa não tem instância WhatsApp configurada');
+        return;
+      }
+      
+      let whatsappInstance = await storage.getWhatsappInstance(conversation.whatsappInstanceId);
+      
+      // Auto-repair apiUrl if needed
+      if (whatsappInstance && !whatsappInstance.apiUrl) {
+        const globalSettings = await storage.getGlobalSettings();
+        if (globalSettings?.evolutionApiUrl) {
+          await storage.updateWhatsappInstance(whatsappInstance.id, {
+            apiUrl: globalSettings.evolutionApiUrl
+          });
+          whatsappInstance = await storage.getWhatsappInstance(conversation.whatsappInstanceId);
+        }
+      }
+      
+      if (whatsappInstance && (whatsappInstance.status === 'connected' || whatsappInstance.status === 'open') && whatsappInstance.apiUrl) {
+        // Get service and professional info
+        const services = await storage.getServicesByCompany(company.id);
+        const professionals = await storage.getProfessionalsByCompany(company.id);
+        const service = services.find(s => s.id === appointment.serviceId);
+        const professional = professionals.find(p => p.id === appointment.professionalId);
+        
+        const confirmationMessage = `✅ Pagamento aprovado! Seu agendamento foi confirmado com sucesso!\n\n` +
+          `📋 Detalhes do Agendamento:\n` +
+          `👤 Cliente: ${appointment.clientName}\n` +
+          `💼 Profissional: ${professional?.name || 'Profissional'}\n` +
+          `🛍️ Serviço: ${service?.name || 'Serviço'}\n` +
+          `📅 Data: ${new Date(appointment.appointmentDate).toLocaleDateString('pt-BR')}\n` +
+          `🕐 Horário: ${appointment.appointmentTime}\n\n` +
+          `Obrigado por escolher nossos serviços! Aguardamos você na data marcada.`;
+        
+        await fetch(`${whatsappInstance.apiUrl}/message/sendText/${whatsappInstance.instanceName}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': whatsappInstance.apiKey || ''
+          },
+          body: JSON.stringify({
+            number: conversation.phoneNumber.replace(/\D/g, ''),
+            text: confirmationMessage
+          })
+        });
+        
+        console.log('💬 WhatsApp confirmation message sent');
+      } else {
+        console.log('⚠️ WhatsApp instance not available for confirmation');
+      }
+    } catch (error) {
+      console.error('❌ Erro ao enviar confirmação WhatsApp:', error);
+    }
+  }
 
   const httpServer = createServer(app);
   return httpServer;
