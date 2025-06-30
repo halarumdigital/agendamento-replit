@@ -4321,8 +4321,13 @@ INSTRUÇÕES OBRIGATÓRIAS:
 - Mantenha respostas concisas e adequadas para mensagens de texto
 - Seja profissional mas amigável
 - Use o histórico da conversa para dar respostas contextualizadas
+- NUNCA REPITA PERGUNTAS que já foram feitas e respondidas na conversa
+- SEMPRE analise o histórico completo antes de responder para evitar repetições
+- Se o cliente já informou dados (nome, profissional, data, horário, serviço), USE essas informações
+- Só pergunte dados que realmente não foram fornecidos ainda
 - Limite respostas a no máximo 200 palavras por mensagem
-- Lembre-se do que já foi discutido anteriormente na conversa`;
+- Lembre-se do que já foi discutido anteriormente na conversa
+- REGRA CRÍTICA: Analise todas as mensagens anteriores antes de fazer qualquer pergunta`;
 
               // 🚨 INTERCEPTAÇÃO CRÍTICA ANTES DA IA: Detectar confirmação SIM/OK e evitar resposta da IA
               const userConfirmedPhrases = ['sim', 'ok', 'confirmo', 'sim, confirmo', 'ok, confirmo', 'está correto', 'sim, está correto'];
@@ -4343,7 +4348,7 @@ INSTRUÇÕES OBRIGATÓRIAS:
               if (isUserConfirmation && hasRecentAiSummary) {
                 console.log('🎯 INTERCEPTAÇÃO CRÍTICA: Usuario confirmou com SIM/OK após resumo');
                 console.log('🚫 BLOQUEANDO resposta da IA para evitar confirmação dupla');
-                console.log('💳 Apenas link de pagamento será enviado automaticamente pela lógica existente');
+                console.log('💳 Criando agendamento e enviando link de pagamento imediatamente');
                 
                 // Salvar mensagem do usuário sem resposta da IA
                 await storage.createMessage({
@@ -4355,21 +4360,38 @@ INSTRUÇÕES OBRIGATÓRIAS:
                   timestamp: new Date(),
                 });
                 
-                console.log('✅ Mensagem do usuário salva, sistema processará pagamento automaticamente');
+                console.log('✅ Mensagem do usuário salva, processando agendamento...');
+                
+                // Buscar última mensagem da IA com resumo do agendamento
+                const lastAiMessage = conversationHistory
+                  .filter(msg => msg.role === 'assistant')
+                  .slice(-1)[0];
+                
+                if (lastAiMessage && lastAiMessage.content.includes('Responda SIM para confirmar')) {
+                  console.log('📋 Processando dados do agendamento da última mensagem da IA...');
+                  
+                  try {
+                    // Criar agendamento baseado no resumo da IA
+                    await createAppointmentFromAIConfirmation(conversation.id, company.id, lastAiMessage.content, phoneNumber);
+                    console.log('✅ Agendamento criado com sucesso via interceptação');
+                  } catch (error) {
+                    console.error('❌ Erro ao criar agendamento via interceptação:', error);
+                  }
+                }
                 
                 // Retornar sem gerar resposta da IA
                 return res.status(200).json({ 
                   received: true, 
                   processed: true, 
-                  action: 'confirmation_intercepted_before_ai',
-                  message: 'Link de pagamento enviado automaticamente' 
+                  action: 'confirmation_intercepted_and_appointment_created',
+                  message: 'Agendamento criado e link de pagamento enviado' 
                 });
               }
 
-              // Prepare messages for OpenAI with conversation history
+              // Prepare messages for OpenAI with conversation history (expandida para 50 mensagens)
               const messages = [
                 { role: 'system' as const, content: systemPrompt },
-                ...conversationHistory.slice(-20), // Last 20 messages for context
+                ...conversationHistory.slice(-50), // Last 50 messages for better context retention
                 { role: 'user' as const, content: messageText }
               ];
 
