@@ -16,6 +16,7 @@ export interface PlanPermissions {
   financial: boolean;
   reports: boolean;
   settings: boolean;
+  mercadopagoPayments: boolean;
 }
 
 interface PlanInfo {

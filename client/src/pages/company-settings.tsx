@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Settings, Building2, Lock, User, MessageSquare, Trash2, Plus, Smartphone, QrCode, RefreshCw, Bot, Key, Gift, Calendar, Bell, Clock, CheckCircle, Send, XCircle, LogOut } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useCompanyAuth } from "@/hooks/useCompanyAuth";
+import { usePlan } from "@/hooks/use-plan";
 import { z } from "zod";
 import { formatDocument, companyProfileSchema, companyPasswordSchema, companyAiAgentSchema, whatsappInstanceSchema, webhookConfigSchema, companySettingsSchema, mercadoPagoConfigSchema } from "@/lib/validations";
 
@@ -65,6 +66,7 @@ export default function CompanySettings() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { company } = useCompanyAuth();
+  const { hasPermission } = usePlan();
   const [selectedInstance, setSelectedInstance] = useState<any>(null);
   const [qrCodeData, setQrCodeData] = useState<string>("");
   const [showQrDialog, setShowQrDialog] = useState(false);
@@ -880,7 +882,7 @@ export default function CompanySettings() {
         </div>
 
         <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className={`grid w-full ${hasPermission("mercadopagoPayments") ? "grid-cols-6" : "grid-cols-5"}`}>
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <Building2 className="w-4 h-4" />
               Empresa
@@ -893,10 +895,12 @@ export default function CompanySettings() {
               <Settings className="w-4 h-4" />
               Configurações
             </TabsTrigger>
-            <TabsTrigger value="mercadopago" className="flex items-center gap-2">
-              <Key className="w-4 h-4" />
-              Mercado Pago
-            </TabsTrigger>
+            {hasPermission("mercadopagoPayments") && (
+              <TabsTrigger value="mercadopago" className="flex items-center gap-2">
+                <Key className="w-4 h-4" />
+                Mercado Pago
+              </TabsTrigger>
+            )}
             <TabsTrigger value="reminders" className="flex items-center gap-2">
               <Bell className="w-4 h-4" />
               Lembretes
@@ -2216,7 +2220,8 @@ export default function CompanySettings() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="mercadopago" className="space-y-6">
+        {hasPermission("mercadopagoPayments") && (
+          <TabsContent value="mercadopago" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -2341,7 +2346,8 @@ export default function CompanySettings() {
               </Form>
             </CardContent>
           </Card>
-        </TabsContent>
+          </TabsContent>
+        )}
         </Tabs>
 
         {/* QR Code Dialog */}
