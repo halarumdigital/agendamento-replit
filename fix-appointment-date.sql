@@ -1,1 +1,0 @@
-UPDATE appointments SET appointment_date = '2025-06-14' WHERE id = 29;

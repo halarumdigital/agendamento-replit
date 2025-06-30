@@ -1,1 +1,0 @@
-ALTER TABLE tasks ADD COLUMN whatsapp_number VARCHAR(20);
