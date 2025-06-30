@@ -112,6 +112,7 @@ export const plans = mysqlTable("plans", {
     reports: boolean;
     settings: boolean;
     support: boolean;
+    mercadopagoPayments: boolean;
   }>().default({
     dashboard: true,
     appointments: true,
@@ -129,6 +130,7 @@ export const plans = mysqlTable("plans", {
     reports: false,
     settings: true,
     support: true,
+    mercadopagoPayments: false,
   }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),

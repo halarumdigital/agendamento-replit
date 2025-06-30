@@ -169,6 +169,7 @@ export default function Plans() {
         financial: true,
         reports: true,
         settings: true,
+        mercadopagoPayments: false,
       },
     });
     setIsModalOpen(true);
@@ -444,6 +445,15 @@ export default function Plans() {
                     onCheckedChange={(checked) => form.setValue("permissions.settings", !!checked)}
                   />
                   <Label htmlFor="settings" className="text-sm">Configurações</Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="mercadopagoPayments"
+                    checked={form.watch("permissions.mercadopagoPayments")}
+                    onCheckedChange={(checked) => form.setValue("permissions.mercadopagoPayments", !!checked)}
+                  />
+                  <Label htmlFor="mercadopagoPayments" className="text-sm">Pagamentos Mercado Pago</Label>
                 </div>
               </div>
             </div>
