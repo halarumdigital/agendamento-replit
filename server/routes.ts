@@ -266,9 +266,14 @@ async function generatePaymentLinkFromConversation(conversationId: number, compa
         email: 'cliente@exemplo.com'
       },
       payment_methods: {
-        excluded_payment_types: [],
+        excluded_payment_types: [
+          { id: "ticket" },
+          { id: "bank_transfer" },
+          { id: "atm" },
+          { id: "prepaid_card" }
+        ],
         excluded_payment_methods: [],
-        installments: 12
+        installments: 3
       },
       back_urls: {
         success: `${process.env.SYSTEM_URL || 'http://localhost:5000'}/pagamento/sucesso`,
@@ -388,9 +393,14 @@ async function generatePaymentLinkForAppointment(companyId: number, conversation
         email: 'cliente@exemplo.com'
       },
       payment_methods: {
-        excluded_payment_types: [],
+        excluded_payment_types: [
+          { id: "ticket" },
+          { id: "bank_transfer" },
+          { id: "atm" },
+          { id: "prepaid_card" }
+        ],
         excluded_payment_methods: [],
-        installments: 12
+        installments: 3
       },
       back_urls: {
         success: `${process.env.SYSTEM_URL || 'http://localhost:5000'}/pagamento/sucesso`,
@@ -3584,9 +3594,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           email: clientEmail || 'cliente@exemplo.com'
         },
         payment_methods: {
-          excluded_payment_types: [],
+          excluded_payment_types: [
+            { id: "ticket" },
+            { id: "bank_transfer" },
+            { id: "atm" },
+            { id: "prepaid_card" }
+          ],
           excluded_payment_methods: [],
-          installments: 12
+          installments: 3
         },
         back_urls: {
           success: `${process.env.SYSTEM_URL || 'http://localhost:5000'}/pagamento/sucesso`,
