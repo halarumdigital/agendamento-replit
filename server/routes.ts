@@ -4272,9 +4272,73 @@ INSTRUÇÕES OBRIGATÓRIAS:
                 const isConfirmationResponse = /\b(sim|ok|confirmo)\b/i.test(messageText.toLowerCase().trim());
                 
                 if (isConfirmationResponse) {
-                  console.log('🎯 Confirmação SIM/OK detectada! Enviando link de pagamento primeiro...');
+                  console.log('🎯 Confirmação SIM/OK detectada! Buscando agendamentos recentes...');
                   
-                  // Look for any recent conversation with appointment data for this phone
+                  // First, check for recent appointments for this phone number
+                  const recentAppointments = await storage.getAppointmentsByCompany(company.id);
+                  const phoneNumberClean = phoneNumber.replace(/\D/g, '');
+                  
+                  console.log('📞 Phone number (clean):', phoneNumberClean);
+                  console.log('📋 Total appointments found:', recentAppointments.length);
+                  
+                  // Find appointments created in the last 10 minutes for this phone
+                  const recentAppointment = recentAppointments.find(apt => {
+                    const aptPhoneClean = (apt.clientPhone || '').replace(/\D/g, '');
+                    const isRecentlyCreated = apt.createdAt && 
+                      new Date(apt.createdAt).getTime() > (Date.now() - 10 * 60 * 1000);
+                    const phoneMatches = aptPhoneClean === phoneNumberClean || 
+                      aptPhoneClean.endsWith(phoneNumberClean) ||
+                      phoneNumberClean.endsWith(aptPhoneClean);
+                    
+                    console.log('🔍 Checking appointment:', {
+                      id: apt.id,
+                      clientPhone: apt.clientPhone,
+                      aptPhoneClean,
+                      isRecentlyCreated,
+                      phoneMatches,
+                      createdAt: apt.createdAt
+                    });
+                    
+                    return isRecentlyCreated && phoneMatches;
+                  });
+                  
+                  if (recentAppointment) {
+                    console.log('🎯 Found recent appointment for payment:', recentAppointment.id);
+                    
+                    // Get service details
+                    const services = await storage.getServicesByCompany(company.id);
+                    const service = services.find(s => s.id === recentAppointment.serviceId);
+                    
+                    if (service) {
+                      console.log('💳 Sending payment link for recent appointment...');
+                      
+                      // Find the conversation that contains this appointment's notes
+                      const allConversations = await storage.getConversationsByCompany(company.id);
+                      const appointmentConversation = allConversations.find(conv => {
+                        // Look for conversation mentioned in appointment notes
+                        const conversationRef = recentAppointment.notes?.match(/Conversa ID: (\d+)/);
+                        return conversationRef && conv.id === parseInt(conversationRef[1]);
+                      });
+                      
+                      const conversationId = appointmentConversation ? appointmentConversation.id : conversation.id;
+                      
+                      await generatePaymentLinkForAppointment(
+                        company.id,
+                        conversationId,
+                        recentAppointment,
+                        service,
+                        recentAppointment.clientName,
+                        phoneNumber,
+                        new Date(recentAppointment.appointmentDate),
+                        recentAppointment.appointmentTime
+                      );
+                      
+                      console.log('✅ Payment link sent for appointment:', recentAppointment.id);
+                      return res.status(200).json({ received: true, processed: true, action: 'payment_link_sent' });
+                    }
+                  }
+                  
+                  // Fallback: Look for any recent conversation with appointment data for this phone
                   const allConversations = await storage.getConversationsByCompany(company.id);
                   const phoneConversations = allConversations
                     .filter(conv => conv.phoneNumber === phoneNumber)
