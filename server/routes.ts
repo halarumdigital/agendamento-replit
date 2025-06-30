@@ -26,6 +26,42 @@ import {
 } from "./storage";
 import { formatBrazilianPhone, validateBrazilianPhone, normalizePhone } from "../shared/phone-utils";
 
+// Function to extract client name from conversation
+async function extractClientNameFromConversation(conversationId: number): Promise<string | null> {
+  try {
+    const messages = await storage.getMessagesByConversation(conversationId);
+    const userMessages = messages.filter(m => m.role === 'user');
+    
+    // Look for name patterns in user messages
+    for (const message of userMessages) {
+      const content = message.content;
+      
+      // Pattern 1: "Meu nome é X" or "Me chamo X"
+      let nameMatch = content.match(/(?:meu nome é|me chamo|sou o|sou a)\s+([A-ZÀÁÉÍÓÚ][a-záéíóúâêôã]+)/i);
+      if (nameMatch) {
+        return nameMatch[1];
+      }
+      
+      // Pattern 2: Look for capitalized names at start of message
+      nameMatch = content.match(/^([A-ZÀÁÉÍÓÚ][a-záéíóúâêôã]+)(?:\s|,|\.)/);
+      if (nameMatch) {
+        return nameMatch[1];
+      }
+      
+      // Pattern 3: Look for name context like "para Jesse"
+      nameMatch = content.match(/para\s+([A-ZÀÁÉÍÓÚ][a-záéíóúâêôã]+)/i);
+      if (nameMatch) {
+        return nameMatch[1];
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error extracting client name:', error);
+    return null;
+  }
+}
+
 // Function to generate payment link from conversation context and send immediately after SIM/OK
 async function generatePaymentLinkFromConversation(conversationId: number, companyId: number, phoneNumber: string) {
   try {
@@ -352,22 +388,11 @@ async function generatePaymentLinkForAppointment(companyId: number, conversation
         }
         
         if (whatsappInstance && (whatsappInstance.status === 'connected' || whatsappInstance.status === 'open') && whatsappInstance.apiUrl) {
-          // Enviar mensagem de instrução primeiro
-          const instructionMessage = `Vou te enviar um link do mercado pago para realizar o pagamento do serviço online, pode confiar que é seguro, para que seu agendamento seja confirmado faça o pagamento pelo link.`;
-          await fetch(`${whatsappInstance.apiUrl}/message/sendText/${whatsappInstance.instanceName}`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'apikey': whatsappInstance.apiKey
-            },
-            body: JSON.stringify({
-              number: phoneNumber.replace(/\D/g, ''),
-              text: instructionMessage
-            })
-          });
+          // Send the exact payment message you requested
+          const paymentMessage = `Para confirmar seu horário vou te enviar um link de pagamento do Mercado Pago, clique nele e faça o pagamento com cartão ou pix, assim que o pagamento for concluído o seu agendamento estará confirmado.
 
-          // Em seguida, envie o link de pagamento com os detalhes
-          const paymentMessage = `💳 Link de Pagamento: ${paymentLink}\n\n💰 Valor: R$ ${service.price}\n🏪 Empresa: ${company.fantasyName || company.companyName}\n📋 Serviço: ${service.name}\n📅 Data/Hora: ${appointmentDate.toLocaleDateString()} às ${appointmentTime}`;
+${paymentLink}`;
+          
           const whatsappResponse = await fetch(`${whatsappInstance.apiUrl}/message/sendText/${whatsappInstance.instanceName}`, {
             method: 'POST',
             headers: {
@@ -1217,10 +1242,6 @@ async function createAppointmentFromConversation(conversationId: number, company
                          lastAIMessage.content.toLowerCase().includes('prefere') ||
                          lastAIMessage.content.toLowerCase().includes('gostaria');
       
-      if (hasQuestion && !hasRecentConfirmation) {
-        console.log('⚠️ AI is asking questions to client, appointment data incomplete, skipping creation');
-        return;
-      }
     }
     
     // Get available professionals and services to match
@@ -4284,35 +4305,41 @@ INSTRUÇÕES OBRIGATÓRIAS:
                             const [day, month, year] = appointmentDetails.date.split('/').map(Number);
                             const appointmentDate = new Date(year, month - 1, day);
                             
+                            // Extract client name from conversation
+                            const clientName = await extractClientNameFromConversation(conv.id) || 'Cliente WhatsApp';
+                            
                             // Create appointment
                             const appointment = await storage.createAppointment({
                               companyId: company.id,
                               professionalId: professional.id,
                               serviceId: service.id,
-                              clientName: 'Cliente WhatsApp',
+                              clientName,
                               clientPhone: phoneNumber,
                               appointmentDate,
                               appointmentTime: appointmentDetails.time,
                               duration: service.duration || 30,
                               totalPrice: service.price || 0,
                               status: 'Pendente',
-                              notes: `Agendamento confirmado via WhatsApp`
+                              notes: `Agendamento confirmado via WhatsApp - Conversa ID: ${conv.id}`
                             });
                             
-                            console.log('✅ Appointment created:', appointment);
+                            console.log('✅ Appointment created successfully:', appointment);
                             
-                            // Send payment link if Mercado Pago is configured
+                            // Always send payment message and link after SIM/OK confirmation
                             if (company.mercadopagoAccessToken && appointment?.id) {
+                              console.log('💳 Sending payment message and link...');
                               await generatePaymentLinkForAppointment(
                                 company.id,
                                 conv.id,
                                 appointment,
                                 service,
-                                'Cliente',
+                                clientName,
                                 phoneNumber,
                                 appointmentDate,
                                 appointmentDetails.time
                               );
+                            } else {
+                              console.log('⚠️ Mercado Pago not configured or appointment creation failed');
                             }
                           }
                         } catch (error) {
@@ -5919,10 +5946,6 @@ async function createAppointmentFromConversation(conversationId: number, company
                          lastAIMessage.content.toLowerCase().includes('prefere') ||
                          lastAIMessage.content.toLowerCase().includes('gostaria');
       
-      if (hasQuestion && !hasRecentConfirmation) {
-        console.log('⚠️ AI is asking questions to client, appointment data incomplete, skipping creation');
-        return;
-      }
     }
     
     // Get available professionals and services to match
