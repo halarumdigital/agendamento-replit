@@ -145,7 +145,7 @@ export default function CompanySettings() {
       mercadopagoAccessToken: company.mercadopagoAccessToken || "",
       mercadopagoPublicKey: company.mercadopagoPublicKey || "",
       mercadopagoWebhookUrl: company.mercadopagoWebhookUrl || "",
-      mercadopagoEnabled: Boolean(company.mercadopagoEnabled),
+      mercadopagoEnabled: company.mercadopagoEnabled === 1,
     } : undefined,
   });
 
