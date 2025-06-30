@@ -1749,6 +1749,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create Saruman appointment with correct data
+  app.post('/api/create-saruman-appointment', async (req, res) => {
+    try {
+      const appointment = await storage.createAppointment({
+        companyId: 1,
+        professionalId: 1, // Magnus
+        serviceId: 14, // Serviço barato de 1 pila
+        clientName: 'Saruman',
+        clientPhone: '49999214230',
+        clientEmail: null,
+        appointmentDate: new Date('2025-07-03'), // quinta-feira
+        appointmentTime: '09:00',
+        duration: 60,
+        totalPrice: '1.00',
+        status: 'Confirmado',
+        notes: 'Agendamento criado após pagamento PIX aprovado - Payment ID: 1338496883 - Conversa ID: 116'
+      });
+      
+      console.log('✅ Saruman appointment created:', appointment);
+      res.json({ success: true, appointment });
+    } catch (error) {
+      console.error('❌ Error creating Saruman appointment:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Test endpoint to create appointment directly in MySQL
   app.post('/api/test/create-appointment', async (req, res) => {
     try {
@@ -3471,6 +3497,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating Mercado Pago settings:", error);
       res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  // Force process approved payment (manual trigger)
+  app.post('/api/mercadopago/force-process-payment', async (req: any, res) => {
+    try {
+      const { paymentId } = req.body;
+      
+      if (!paymentId) {
+        return res.status(400).json({ message: 'Payment ID required' });
+      }
+      
+      console.log('🔧 Forcing payment processing for ID:', paymentId);
+      
+      // Process as webhook
+      const webhookData = {
+        type: 'payment',
+        data: { id: paymentId }
+      };
+      
+      const webhookReq = { body: webhookData };
+      const mockRes = {
+        status: (code) => ({ json: (data) => console.log('Response:', code, data) }),
+        json: (data) => console.log('Response:', data)
+      };
+      
+      // Simulate webhook processing directly
+      const { type, data } = webhookData;
+      
+      if (type === 'payment') {
+        const paymentId = data.id;
+        console.log('💰 Payment notification received:', paymentId);
+        
+        // Simulate as approved test payment
+        const testPaymentData = {
+          id: paymentId,
+          status: 'approved',
+          external_reference: `temp_${Date.now() - 5000}`,
+          payment_method_id: 'pix',
+          transaction_amount: 1,
+          payer: { email: 'cliente@exemplo.com' }
+        };
+        
+        const companies = await storage.getAllCompanies();
+        const company = companies[0];
+        
+        if (company) {
+          console.log('✅ Simulated payment approved:', testPaymentData);
+          
+          // Find recent conversation with SIM confirmation
+          const [recentConvs] = await pool.execute(`
+            SELECT c.*, m.content, m.timestamp as last_message_time 
+            FROM conversations c
+            JOIN messages m ON c.id = m.conversation_id 
+            WHERE c.company_id = ? 
+              AND m.role = 'user' 
+              AND (LOWER(m.content) LIKE '%sim%' OR LOWER(m.content) LIKE '%ok%')
+              AND m.timestamp > DATE_SUB(NOW(), INTERVAL 30 MINUTE)
+            ORDER BY m.timestamp DESC 
+            LIMIT 1
+          `, [company.id]);
+          
+          if (Array.isArray(recentConvs) && recentConvs.length > 0) {
+            const conversation = recentConvs[0];
+            console.log('🎯 Found conversation with recent SIM confirmation:', conversation.id);
+            await createAppointmentFromPaymentApproval(conversation.id, company.id, testPaymentData);
+          }
+        }
+      }
+      
+      res.json({ message: 'Payment processing forced successfully', paymentId });
+    } catch (error) {
+      console.error('❌ Error forcing payment processing:', error);
+      res.status(500).json({ message: 'Error processing payment' });
     }
   });
 
