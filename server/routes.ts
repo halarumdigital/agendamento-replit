@@ -4368,14 +4368,62 @@ INSTRUÇÕES OBRIGATÓRIAS:
                   .slice(-1)[0];
                 
                 if (lastAiMessage && lastAiMessage.content.includes('Responda SIM para confirmar')) {
-                  console.log('📋 Processando dados do agendamento da última mensagem da IA...');
+                  console.log('📋 Extraindo dados para link de pagamento da última mensagem da IA...');
                   
-                  try {
-                    // Criar agendamento baseado no resumo da IA
-                    await createAppointmentFromAIConfirmation(conversation.id, company.id, lastAiMessage.content, phoneNumber);
-                    console.log('✅ Agendamento criado com sucesso via interceptação');
-                  } catch (error) {
-                    console.error('❌ Erro ao criar agendamento via interceptação:', error);
+                  // Extrair dados básicos do resumo para gerar link de pagamento
+                  const appointmentMatch = lastAiMessage.content.match(/Nome:\s*([^👤🏢💇📅🕐📱\n]+)/);
+                  const professionalMatch = lastAiMessage.content.match(/Profissional:\s*([^👤🏢💇📅🕐📱\n]+)/);
+                  const serviceMatch = lastAiMessage.content.match(/Serviço:\s*([^👤🏢💇📅🕐📱\n(]+)/);
+                  const dateMatch = lastAiMessage.content.match(/Data:\s*[^,]*,?\s*(\d{2}\/\d{2}\/\d{4})/);
+                  const timeMatch = lastAiMessage.content.match(/Horário:\s*(\d{1,2}:\d{2})/);
+                  
+                  if (appointmentMatch && professionalMatch && serviceMatch && dateMatch && timeMatch) {
+                    const clientName = appointmentMatch[1].trim();
+                    const serviceName = serviceMatch[1].trim().replace(/\s*\(R\$.*\)/, '');
+                    const appointmentDateStr = dateMatch[1];
+                    const appointmentTime = timeMatch[1];
+                    
+                    console.log('💳 ENVIANDO LINK DE PAGAMENTO (não cria agendamento ainda)...');
+                    console.log('📊 Dados extraídos:', { clientName, serviceName, appointmentDateStr, appointmentTime });
+                    
+                    try {
+                      // Buscar serviço para pegar preço
+                      const services = await storage.getServicesByCompany(company.id);
+                      const service = services.find(s => s.name.toLowerCase().includes(serviceName.toLowerCase()));
+                      
+                      if (service && company.mercadopagoAccessToken) {
+                        // Criar objeto temporário para link de pagamento
+                        const [day, month, year] = appointmentDateStr.split('/').map(Number);
+                        const appointmentDate = new Date(year, month - 1, day);
+                        
+                        const tempAppointment = {
+                          id: `temp_${Date.now()}`, // ID temporário
+                          clientName,
+                          appointmentDate,
+                          appointmentTime
+                        };
+                        
+                        // Enviar APENAS link de pagamento, sem criar agendamento
+                        await generatePaymentLinkForAppointment(
+                          company.id,
+                          conversation.id,
+                          tempAppointment,
+                          service,
+                          clientName,
+                          phoneNumber,
+                          appointmentDate,
+                          appointmentTime
+                        );
+                        
+                        console.log('✅ Link de pagamento enviado! Agendamento será criado APENAS após aprovação do pagamento');
+                      } else {
+                        console.log('⚠️ Mercado Pago não configurado ou serviço não encontrado');
+                      }
+                    } catch (error) {
+                      console.error('❌ Erro ao enviar link de pagamento:', error);
+                    }
+                  } else {
+                    console.log('⚠️ Dados incompletos no resumo da IA, não é possível gerar link');
                   }
                 }
                 
