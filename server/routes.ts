@@ -4324,6 +4324,48 @@ INSTRUÇÕES OBRIGATÓRIAS:
 - Limite respostas a no máximo 200 palavras por mensagem
 - Lembre-se do que já foi discutido anteriormente na conversa`;
 
+              // 🚨 INTERCEPTAÇÃO CRÍTICA ANTES DA IA: Detectar confirmação SIM/OK e evitar resposta da IA
+              const userConfirmedPhrases = ['sim', 'ok', 'confirmo', 'sim, confirmo', 'ok, confirmo', 'está correto', 'sim, está correto'];
+              const isUserConfirmation = userConfirmedPhrases.some(phrase => 
+                messageText.toLowerCase().trim() === phrase.toLowerCase()
+              );
+              
+              // Verificar se há uma mensagem recente da IA com resumo de agendamento
+              const hasRecentAiSummary = conversationHistory
+                .filter(msg => msg.role === 'assistant')
+                .slice(-2) // Últimas 2 mensagens da IA
+                .some(msg => 
+                  msg.content.includes('Vou confirmar seu agendamento') || 
+                  msg.content.includes('Está tudo correto?') ||
+                  msg.content.includes('Responda SIM para confirmar')
+                );
+
+              if (isUserConfirmation && hasRecentAiSummary) {
+                console.log('🎯 INTERCEPTAÇÃO CRÍTICA: Usuario confirmou com SIM/OK após resumo');
+                console.log('🚫 BLOQUEANDO resposta da IA para evitar confirmação dupla');
+                console.log('💳 Apenas link de pagamento será enviado automaticamente pela lógica existente');
+                
+                // Salvar mensagem do usuário sem resposta da IA
+                await storage.createMessage({
+                  conversationId: conversation.id,
+                  messageId: message.key?.id || `msg_${Date.now()}`,
+                  content: messageText,
+                  role: 'user',
+                  messageType: message.messageType || 'text',
+                  timestamp: new Date(),
+                });
+                
+                console.log('✅ Mensagem do usuário salva, sistema processará pagamento automaticamente');
+                
+                // Retornar sem gerar resposta da IA
+                return res.status(200).json({ 
+                  received: true, 
+                  processed: true, 
+                  action: 'confirmation_intercepted_before_ai',
+                  message: 'Link de pagamento enviado automaticamente' 
+                });
+              }
+
               // Prepare messages for OpenAI with conversation history
               const messages = [
                 { role: 'system' as const, content: systemPrompt },
