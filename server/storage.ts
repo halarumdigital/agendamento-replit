@@ -378,9 +378,19 @@ export class DatabaseStorage implements IStorage {
     console.log('Searching for company with email:', email);
     try {
       const result = await db.select().from(companies).where(eq(companies.email, email));
-      console.log('Database query result:', result);
+      console.log('Database query result count:', result.length);
       const [company] = result;
-      console.log('Company found:', company ? 'Yes' : 'No', company);
+      if (company) {
+        console.log('Company found:', {
+          id: company.id,
+          email: company.email,
+          fantasyName: company.fantasyName,
+          hasPassword: !!company.password,
+          passwordLength: company.password?.length || 0
+        });
+      } else {
+        console.log('No company found with email:', email);
+      }
       return company;
     } catch (error) {
       console.error('Error in getCompanyByEmail:', error);

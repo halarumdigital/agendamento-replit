@@ -210,6 +210,10 @@ async function generatePaymentLinkFromConversation(conversationId: number, compa
       console.log('ℹ️ Skipping payment link - no Mercado Pago token configured');
       return false;
     }
+
+    // Get system URL from global settings
+    const globalSettings = await storage.getGlobalSettings();
+    const systemUrl = globalSettings?.systemUrl || process.env.SYSTEM_URL || 'http://localhost:5000';
     
     const service = services.find(s => s.id === extractedData.serviceId);
     if (!service || !service.price || service.price <= 0) {
@@ -276,12 +280,12 @@ async function generatePaymentLinkFromConversation(conversationId: number, compa
         installments: 3
       },
       back_urls: {
-        success: `${process.env.SYSTEM_URL || 'http://localhost:5000'}/pagamento/sucesso`,
-        failure: `${process.env.SYSTEM_URL || 'http://localhost:5000'}/pagamento/erro`,
-        pending: `${process.env.SYSTEM_URL || 'http://localhost:5000'}/pagamento/pendente`
+        success: `${systemUrl}/pagamento/sucesso`,
+        failure: `${systemUrl}/pagamento/erro`,
+        pending: `${systemUrl}/pagamento/pendente`
       },
       external_reference: tempAppointment.id.toString(),
-      notification_url: `${process.env.SYSTEM_URL || 'http://localhost:5000'}/api/webhook/mercadopago`,
+      notification_url: `${systemUrl}/api/webhook/mercadopago`,
       statement_descriptor: company.fantasyName || company.companyName || "Agendamento"
     };
     
@@ -372,6 +376,10 @@ async function generatePaymentLinkForAppointment(companyId: number, conversation
       return;
     }
 
+    // Get system URL from global settings
+    const globalSettings = await storage.getGlobalSettings();
+    const systemUrl = globalSettings?.systemUrl || process.env.SYSTEM_URL || 'http://localhost:5000';
+
     // Use test credentials if company doesn't have them configured
     const accessToken = company.mercadopagoAccessToken || 'TEST-3532771697303271-063021-46f77e1dd5c5fa8e2e4f37d60b7d5f3a-1446156640';
     const useTestCredentials = !company.mercadopagoAccessToken;
@@ -409,12 +417,12 @@ async function generatePaymentLinkForAppointment(companyId: number, conversation
         installments: 3
       },
       back_urls: {
-        success: `${process.env.SYSTEM_URL || 'http://localhost:5000'}/pagamento/sucesso`,
-        failure: `${process.env.SYSTEM_URL || 'http://localhost:5000'}/pagamento/erro`,
-        pending: `${process.env.SYSTEM_URL || 'http://localhost:5000'}/pagamento/pendente`
+        success: `${systemUrl}/pagamento/sucesso`,
+        failure: `${systemUrl}/pagamento/erro`,
+        pending: `${systemUrl}/pagamento/pendente`
       },
       external_reference: appointment?.id?.toString() || Date.now().toString(),
-      notification_url: `${process.env.SYSTEM_URL || 'http://localhost:5000'}/api/webhook/mercadopago`,
+      notification_url: `${systemUrl}/api/webhook/mercadopago`,
       statement_descriptor: company.fantasyName || company.companyName || "Agendamento"
     };
 
@@ -3002,12 +3010,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Email e senha são obrigatórios" });
       }
 
+      console.log('🔍 Starting company login process for:', email);
+
+      // Consulta SQL direta para debug
+      const [directResult] = await db.select({
+        id: companies.id,
+        email: companies.email,
+        password: companies.password,
+        fantasyName: companies.fantasyName
+      }).from(companies).where(eq(companies.email, email));
+      
+      console.log('📊 Direct DB query result:', {
+        email,
+        found: !!directResult,
+        id: directResult?.id,
+        hasPassword: !!directResult?.password,
+        passwordLength: directResult?.password?.length || 0,
+        passwordStart: directResult?.password?.substring(0, 10) || 'N/A'
+      });
+
       const company = await storage.getCompanyByEmail(email);
+      console.log('🔍 Storage method result:', {
+        email,
+        companyFound: !!company,
+        companyId: company?.id,
+        hasPassword: !!company?.password,
+        passwordLength: company?.password?.length || 0,
+        passwordIsString: typeof company?.password === 'string'
+      });
+      
       if (!company) {
         return res.status(401).json({ message: "Credenciais inválidas" });
       }
 
+      // Usar consulta direta se storage method falhar
+      if (!company || !company.password) {
+        console.log('⚠️ Storage method failed, using direct result');
+        if (!directResult || !directResult.password) {
+          return res.status(400).json({ 
+            message: "Senha não configurada para esta empresa. Entre em contato com o administrador." 
+          });
+        }
+        // Usar resultado direto como fallback
+        const directCompany = {
+          id: directResult.id,
+          email: directResult.email,
+          password: directResult.password,
+          fantasyName: directResult.fantasyName
+        };
+        
+        console.log('🔐 Using direct result for password comparison...');
+        const isValidPassword = await bcrypt.compare(password, directCompany.password);
+        console.log('✅ Password comparison result:', isValidPassword);
+        
+        if (!isValidPassword) {
+          return res.status(401).json({ message: "Credenciais inválidas" });
+        }
+        
+        // Success with direct result
+        req.session.companyId = directCompany.id;
+        res.json({
+          message: "Login realizado com sucesso",
+          company: {
+            id: directCompany.id,
+            email: directCompany.email,
+            fantasyName: directCompany.fantasyName
+          }
+        });
+        return;
+      }
+
+      // Verificar se a empresa tem senha definida (método normal)
+      if (!company.password || company.password.trim() === '') {
+        console.log('❌ Company password is empty or null');
+        return res.status(400).json({ 
+          message: "Senha não configurada para esta empresa. Entre em contato com o administrador." 
+        });
+      }
+
+      console.log('🔐 Attempting password comparison...');
       const isValidPassword = await bcrypt.compare(password, company.password);
+      console.log('✅ Password comparison result:', isValidPassword);
+      
       if (!isValidPassword) {
         return res.status(401).json({ message: "Credenciais inválidas" });
       }
@@ -3577,6 +3661,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Credenciais do Mercado Pago não configuradas" });
       }
 
+      // Get system URL from global settings
+      const globalSettings = await storage.getGlobalSettings();
+      const systemUrl = globalSettings?.systemUrl || process.env.SYSTEM_URL || 'http://localhost:5000';
+
       const {
         title,
         price,
@@ -3611,12 +3699,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           installments: 3
         },
         back_urls: {
-          success: `${process.env.SYSTEM_URL || 'http://localhost:5000'}/pagamento/sucesso`,
-          failure: `${process.env.SYSTEM_URL || 'http://localhost:5000'}/pagamento/erro`,
-          pending: `${process.env.SYSTEM_URL || 'http://localhost:5000'}/pagamento/pendente`
+          success: `${systemUrl}/pagamento/sucesso`,
+          failure: `${systemUrl}/pagamento/erro`,
+          pending: `${systemUrl}/pagamento/pendente`
         },
         external_reference: appointmentId?.toString() || Date.now().toString(),
-        notification_url: `${process.env.SYSTEM_URL || 'http://localhost:5000'}/api/webhook/mercadopago`,
+        notification_url: `${systemUrl}/api/webhook/mercadopago`,
         statement_descriptor: company.fantasyName || "Agendamento"
       };
 
@@ -3667,7 +3755,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('🧪 Testing Mercado Pago payment creation...');
 
       // Create a test payment preference
-      const testPaymentRes = await fetch(`http://localhost:5000/api/mercadopago/create-preference`, {
+      const testPaymentRes = await fetch(`${systemUrl}/api/mercadopago/create-preference`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
