@@ -778,19 +778,37 @@ export default function CompanySettings() {
 
   const updateMercadoPagoMutation = useMutation({
     mutationFn: async (data: MercadoPagoConfigData) => {
-      return await apiRequest("/api/company/mercadopago-config", "PUT", data);
+      console.log('🔧 Sending Mercado Pago data:', {
+        mercadopagoEnabled: data.mercadopagoEnabled,
+        hasAccessToken: !!data.mercadopagoAccessToken,
+        hasPublicKey: !!data.mercadopagoPublicKey,
+        hasWebhookUrl: !!data.mercadopagoWebhookUrl
+      });
+      
+      const response = await apiRequest("/api/company/mercadopago-config", "PUT", data);
+      console.log('✅ Mercado Pago response:', response);
+      return response;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('✅ Mercado Pago update successful:', data);
       queryClient.invalidateQueries({ queryKey: ["/api/company/auth/profile"] });
       toast({
         title: "Sucesso",
         description: "Configurações do Mercado Pago atualizadas com sucesso.",
       });
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error('❌ Mercado Pago update error:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        status: error.status,
+        response: error.response,
+        stack: error.stack
+      });
+      
       toast({
         title: "Erro",
-        description: "Erro ao atualizar configurações do Mercado Pago.",
+        description: error.message || "Erro ao atualizar configurações do Mercado Pago.",
         variant: "destructive",
       });
     },
