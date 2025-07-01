@@ -3491,6 +3491,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Mercado Pago configuration endpoint
   app.put('/api/company/mercadopago-config', async (req: any, res) => {
+    console.log('🚀 MERCADO PAGO ENDPOINT HIT!'); // This should appear if route is registered
     try {
       console.log('🔧 Mercado Pago config endpoint called');
       console.log('🔧 Session data:', { companyId: req.session?.companyId, hasSession: !!req.session });
