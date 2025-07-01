@@ -421,26 +421,47 @@ export class DatabaseStorage implements IStorage {
 
   async updateCompany(id: number, companyData: Partial<InsertCompany>): Promise<Company> {
     try {
-      console.log('Storage updateCompany - ID:', id, 'Data:', companyData);
+      console.log('🔧 Storage updateCompany - ID:', id);
+      console.log('🔧 Raw data received:', companyData);
       
-      // Remove undefined values to prevent database errors
+      // Remove undefined values and log each field
       const cleanData = Object.fromEntries(
-        Object.entries(companyData).filter(([_, v]) => v !== undefined)
+        Object.entries(companyData).filter(([key, value]) => {
+          if (value !== undefined) {
+            console.log(`✅ Including field: ${key} = ${value}`);
+            return true;
+          } else {
+            console.log(`❌ Excluding undefined field: ${key}`);
+            return false;
+          }
+        })
       );
       
-      console.log('Clean data for update:', cleanData);
+      console.log('🔧 Clean data for update:', cleanData);
       
-      await db.update(companies).set(cleanData).where(eq(companies.id, id));
+      // Test the actual SQL query
+      console.log('🔧 Executing UPDATE query...');
+      const updateResult = await db.update(companies).set(cleanData).where(eq(companies.id, id));
+      console.log('🔧 Update result:', updateResult);
+      
+      console.log('🔧 Fetching updated company...');
       const [company] = await db.select().from(companies).where(eq(companies.id, id));
       
       if (!company) {
         throw new Error(`Company with ID ${id} not found after update`);
       }
       
-      console.log('Successfully updated company:', company.id);
+      console.log('✅ Successfully updated company:', company.id);
+      console.log('✅ Updated Mercado Pago fields:', {
+        mercadopagoEnabled: company.mercadopagoEnabled,
+        mercadopagoAccessToken: company.mercadopagoAccessToken ? '[CONFIGURED]' : '[NOT SET]',
+        mercadopagoPublicKey: company.mercadopagoPublicKey ? '[CONFIGURED]' : '[NOT SET]'
+      });
+      
       return company;
     } catch (error) {
-      console.error('Error in updateCompany storage function:', error);
+      console.error('❌ Error in updateCompany storage function:', error);
+      console.error('❌ Error details:', error instanceof Error ? error.message : 'Unknown error');
       throw error;
     }
   }
