@@ -1853,6 +1853,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test endpoint for Mercado Pago (before auth middleware)
+  app.get('/api/company/mercadopago-test', (req: any, res) => {
+    console.log('🔧 Mercado Pago test endpoint hit');
+    res.json({ message: 'Mercado Pago test endpoint working', session: req.session });
+  });
+
   // Auth middleware
   await setupAuth(app);
 
@@ -3477,12 +3483,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
 
-
-  // Test endpoint for Mercado Pago
-  app.get('/api/company/mercadopago-test', (req: any, res) => {
-    console.log('🔧 Mercado Pago test endpoint hit');
-    res.json({ message: 'Mercado Pago test endpoint working', companyId: req.session?.companyId });
-  });
 
   // Mercado Pago configuration endpoint  
   app.put('/api/company/mercadopago-config', async (req: any, res) => {
