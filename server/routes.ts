@@ -3643,7 +3643,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Mercado Pago webhook endpoint
   app.post('/api/webhook/mercadopago', async (req: any, res) => {
     try {
-      console.log('🔔 Mercado Pago webhook received:', req.body);
+      console.log('🔔 Mercado Pago webhook received:', JSON.stringify(req.body, null, 2));
+      console.log('📋 Headers:', req.headers);
       
       const { type, data } = req.body;
       
@@ -10017,21 +10018,67 @@ const broadcastEvent = (eventData: any) => {
         return null;
       }
       
-      // SIMPLIFIED: Create test appointment with fixed data as requested
-      console.log('✅ Criando agendamento de teste com serviceId 10...');
+      // Extract appointment details from the AI message
+      console.log('📋 Extraindo dados do agendamento da mensagem da IA...');
       
-      // Fixed appointment details for testing
+      const aiContent = lastAiMessage.content;
+      
+      // Extract details with flexible patterns
+      const clientName = aiContent.match(/(?:👤\s*)?Nome:\s*([^\n]+)/)?.[1]?.trim() || 'Cliente';
+      const serviceName = aiContent.match(/(?:💇\s*)?Serviço:\s*([^\n(]+)/)?.[1]?.trim() || 'Corte';
+      const professionalName = aiContent.match(/(?:🏢\s*)?Profissional:\s*([^\n]+)/)?.[1]?.trim() || '[A definir]';
+      const dateMatch = aiContent.match(/(?:📅\s*)?Data:\s*[^\d]*(\d{1,2}\/\d{1,2}\/\d{4})/)?.[1] || '';
+      const timeMatch = aiContent.match(/(?:🕐\s*)?Horário:\s*(\d{1,2}:\d{2})/)?.[1] || '14:00';
+      
+      console.log('👤 Cliente extraído:', clientName);
+      console.log('💇 Serviço extraído:', serviceName);
+      console.log('🏢 Profissional extraído:', professionalName);
+      console.log('📅 Data extraída:', dateMatch);
+      console.log('🕐 Horário extraído:', timeMatch);
+      
+      // Find service ID
+      const [services] = await pool.execute(
+        'SELECT id, price, duration FROM services WHERE company_id = ? AND (name LIKE ? OR name LIKE ?) AND is_active = 1 LIMIT 1',
+        [companyId, `%${serviceName}%`, `%Corte%`]
+      );
+      const service = (services as any[])[0];
+      const serviceId = service?.id || 10;
+      const price = service?.price || '60.00';
+      const duration = service?.duration || 60;
+      
+      // Find professional ID
+      let professionalId = 1; // Default
+      if (professionalName && professionalName !== '[A definir]') {
+        const [professionals] = await pool.execute(
+          'SELECT id FROM professionals WHERE company_id = ? AND name LIKE ? AND active = 1 LIMIT 1',
+          [companyId, `%${professionalName}%`]
+        );
+        if ((professionals as any[]).length > 0) {
+          professionalId = (professionals as any[])[0].id;
+        }
+      }
+      
+      // Parse date
+      let parsedDate: Date;
+      if (dateMatch) {
+        const [day, month, year] = dateMatch.split('/').map(Number);
+        parsedDate = new Date(year, month - 1, day);
+      } else {
+        parsedDate = new Date();
+        parsedDate.setDate(parsedDate.getDate() + 1); // Tomorrow as default
+      }
+      
       const appointmentDetails = {
-        clientName: 'Frodo Bolseiro',
-        serviceId: 10,
-        professionalId: 1, // Magnus
-        date: '15/01/2025',
-        time: '14:00'
+        clientName,
+        serviceId,
+        professionalId,
+        date: dateMatch || parsedDate.toLocaleDateString('pt-BR'),
+        time: timeMatch
       };
       
       console.log('📋 Dados do agendamento:', appointmentDetails);
       
-      // Parse appointment date
+      // Parse appointment date for database
       const [day, month, year] = appointmentDetails.date.split('/');
       const appointmentDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
       
