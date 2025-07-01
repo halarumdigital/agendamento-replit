@@ -4698,7 +4698,9 @@ INSTRUÇÕES OBRIGATÓRIAS:
                   console.log('🔍 Tem "Está tudo correto"?', lastAiMessage.content.includes('Está tudo correto'));
                 }
                 
-                if (lastAiMessage && lastAiMessage.content.includes('Responda SIM para confirmar')) {
+                if (lastAiMessage && (lastAiMessage.content.includes('Responda SIM para confirmar') || 
+                                     lastAiMessage.content.includes('Digite SIM para confirmar') ||
+                                     lastAiMessage.content.includes('SIM para confirmar'))) {
                   console.log('📋 Extraindo dados para link de pagamento da última mensagem da IA...');
                   
                   // Extrair dados básicos do resumo para gerar link de pagamento (melhorado)
