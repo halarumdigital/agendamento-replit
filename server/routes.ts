@@ -3489,10 +3489,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ message: 'Test PUT endpoint working', companyId: req.session?.companyId, body: req.body });
   });
 
-  // Mercado Pago configuration endpoint - SIMPLIFIED VERSION
-  app.put('/api/company/mercadopago-config', (req: any, res) => {
-    console.log('🚀 MERCADO PAGO ENDPOINT HIT - SIMPLIFIED!');
-    res.json({ message: "Test successful", received: req.body });
+  // Mercado Pago configuration endpoint
+  app.put('/api/company/mercadopago-config', async (req: any, res) => {
+    console.log('🚀 MERCADO PAGO ENDPOINT HIT!');
+    
+    try {
+      const companyId = req.session?.companyId;
+      if (!companyId) {
+        console.log('❌ No company ID in session');
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      console.log('🔧 Request body:', req.body);
+      const { mercadopagoAccessToken, mercadopagoPublicKey, mercadopagoWebhookUrl, mercadopagoEnabled } = req.body;
+      
+      console.log('🔧 Updating Mercado Pago config for company:', companyId);
+
+      // Call storage with proper error handling
+      const result = await storage.updateCompany(companyId, {
+        mercadopagoAccessToken: mercadopagoAccessToken || null,
+        mercadopagoPublicKey: mercadopagoPublicKey || null,
+        mercadopagoWebhookUrl: mercadopagoWebhookUrl || null,
+        mercadopagoEnabled: mercadopagoEnabled ? 1 : 0
+      });
+      
+      console.log('✅ Storage update result:', result);
+      res.json({ message: "Configurações do Mercado Pago atualizadas com sucesso" });
+      
+    } catch (error) {
+      console.error("❌ Error updating Mercado Pago settings:", error);
+      res.status(500).json({ message: "Erro interno do servidor", error: String(error) });
+    }
   });
 
   // Force process approved payment (manual trigger)
