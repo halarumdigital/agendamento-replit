@@ -3482,6 +3482,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ message: 'Test endpoint working', companyId: req.session?.companyId });
   });
 
+  // Test PUT endpoint for debugging
+  app.put('/api/company/test-put', (req: any, res) => {
+    console.log('🔧 Test PUT endpoint called, session:', req.session?.companyId);
+    console.log('🔧 Body:', req.body);
+    res.json({ message: 'Test PUT endpoint working', companyId: req.session?.companyId, body: req.body });
+  });
+
   // Mercado Pago configuration endpoint
   app.put('/api/company/mercadopago-config', async (req: any, res) => {
     try {
