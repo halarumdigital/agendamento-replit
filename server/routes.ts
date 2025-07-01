@@ -1859,10 +1859,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ message: 'Mercado Pago test endpoint working', session: req.session });
   });
 
-
-
-  // Auth middleware
+  // Auth middleware - MUST BE BEFORE AUTHENTICATED ROUTES
   await setupAuth(app);
+
+  // Test endpoint to check company authentication status
+  app.get('/api/company/auth-test', (req: any, res) => {
+    console.log('🔧 Company auth test - Session:', req.session);
+    res.json({ 
+      authenticated: !!req.session?.companyId,
+      companyId: req.session?.companyId || null,
+      sessionExists: !!req.session
+    });
+  });
+
+  // Simulate company login for testing (temporary endpoint)
+  app.post('/api/company/test-login', async (req: any, res) => {
+    console.log('🔧 Test login - setting companyId in session');
+    req.session.companyId = 1; // Simulate company ID 1 login
+    res.json({ message: 'Test login successful', companyId: 1 });
+  });
+
+  // Create a test endpoint WITH authentication middleware to see what happens
+  app.get('/api/company/auth-test-protected', isCompanyAuthenticated, async (req: any, res) => {
+    console.log('🔧 Protected auth test reached successfully');
+    res.json({ message: 'Protected endpoint reached', companyId: req.session.companyId });
+  });
 
   // SSE endpoint for real-time updates
   app.get('/api/events', (req, res) => {
