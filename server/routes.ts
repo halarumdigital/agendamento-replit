@@ -3485,6 +3485,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { mercadopagoAccessToken, mercadopagoPublicKey, mercadopagoWebhookUrl, mercadopagoEnabled } = req.body;
+      
+      console.log('🔧 Updating Mercado Pago config for company:', companyId);
+      console.log('🔧 Data received:', {
+        hasAccessToken: !!mercadopagoAccessToken,
+        hasPublicKey: !!mercadopagoPublicKey,
+        hasWebhookUrl: !!mercadopagoWebhookUrl,
+        mercadopagoEnabled
+      });
 
       await storage.updateCompany(companyId, {
         mercadopagoAccessToken,
@@ -3493,9 +3501,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         mercadopagoEnabled: mercadopagoEnabled ? 1 : 0
       });
 
+      console.log('✅ Mercado Pago config updated successfully for company:', companyId);
       res.json({ message: "Configurações do Mercado Pago atualizadas com sucesso" });
     } catch (error) {
-      console.error("Error updating Mercado Pago settings:", error);
+      console.error("❌ Error updating Mercado Pago settings:", error);
       res.status(500).json({ message: "Erro interno do servidor" });
     }
   });
