@@ -1859,41 +1859,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ message: 'Mercado Pago test endpoint working', session: req.session });
   });
 
-  // Mercado Pago PUT endpoint (before auth middleware for testing)
-  app.put('/api/company/mercadopago-config', async (req: any, res) => {
-    console.log('🔧 === MERCADO PAGO CONFIG ENDPOINT START (BEFORE AUTH) ===');
-    console.log('🔧 Raw body:', req.body);
-    
-    try {
-      const { mercadopagoAccessToken, mercadopagoPublicKey, mercadopagoWebhookUrl, mercadopagoEnabled } = req.body;
-      
-      const updateData = {
-        mercadopagoAccessToken: mercadopagoAccessToken || null,
-        mercadopagoPublicKey: mercadopagoPublicKey || null,
-        mercadopagoWebhookUrl: mercadopagoWebhookUrl || null,
-        mercadopagoEnabled: mercadopagoEnabled ? 1 : 0
-      };
-      
-      console.log('🔧 Update data to send:', updateData);
-      console.log('🔧 Calling storage.updateCompany with hardcoded company ID 1...');
 
-      const result = await storage.updateCompany(1, updateData); // Hardcoded for testing
-      
-      console.log('✅ Storage returned:', result);
-      res.json({ 
-        success: true, 
-        message: 'Configurações do Mercado Pago atualizadas com sucesso!',
-        data: result
-      });
-    } catch (error) {
-      console.error('❌ Error in Mercado Pago config endpoint:', error);
-      res.status(500).json({ 
-        success: false, 
-        message: 'Erro ao atualizar configurações do Mercado Pago',
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-  });
 
   // Auth middleware
   await setupAuth(app);
@@ -3297,6 +3263,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating company profile:", error);
       res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  // Mercado Pago configuration endpoint  
+  app.put('/api/company/mercadopago-config', isCompanyAuthenticated, async (req: any, res) => {
+    console.log('🔧 === MERCADO PAGO CONFIG ENDPOINT START ===');
+    console.log('🔧 Session:', req.session);
+    console.log('🔧 Raw body:', req.body);
+    
+    try {
+      const companyId = req.session?.companyId;
+      if (!companyId) {
+        console.log('❌ No company ID in session');
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+
+      console.log('🔧 Company ID found:', companyId);
+      const { mercadopagoAccessToken, mercadopagoPublicKey, mercadopagoWebhookUrl, mercadopagoEnabled } = req.body;
+      
+      console.log('🔧 Extracted values:', {
+        mercadopagoAccessToken: mercadopagoAccessToken ? 'HAS_VALUE' : 'NULL',
+        mercadopagoPublicKey: mercadopagoPublicKey ? 'HAS_VALUE' : 'NULL', 
+        mercadopagoWebhookUrl: mercadopagoWebhookUrl ? 'HAS_VALUE' : 'NULL',
+        mercadopagoEnabled: mercadopagoEnabled
+      });
+
+      const updateData = {
+        mercadopagoAccessToken: mercadopagoAccessToken || null,
+        mercadopagoPublicKey: mercadopagoPublicKey || null,
+        mercadopagoWebhookUrl: mercadopagoWebhookUrl || null,
+        mercadopagoEnabled: mercadopagoEnabled ? 1 : 0
+      };
+      
+      console.log('🔧 Update data to send:', updateData);
+      console.log('🔧 Calling storage.updateCompany...');
+
+      const result = await storage.updateCompany(companyId, updateData);
+      
+      console.log('✅ Storage returned:', result);
+      res.json({ 
+        success: true, 
+        message: 'Configurações do Mercado Pago atualizadas com sucesso!',
+        data: result
+      });
+    } catch (error) {
+      console.error('❌ Error in Mercado Pago config endpoint:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Erro ao atualizar configurações do Mercado Pago',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
 
