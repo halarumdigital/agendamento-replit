@@ -15,12 +15,17 @@ export async function apiRequest(
   method: string,
   data?: unknown | undefined,
 ): Promise<any> {
+  console.log('🔧 Making API request:', { url, method, hasData: !!data });
+  
   const res = await fetch(url, {
     method,
     headers: data ? { "Content-Type": "application/json" } : {},
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
+
+  console.log('🔧 Response status:', res.status);
+  console.log('🔧 Response headers:', Object.fromEntries(res.headers.entries()));
 
   await throwIfResNotOk(res);
   
@@ -30,7 +35,17 @@ export async function apiRequest(
   }
   
   const text = await res.text();
-  return text ? JSON.parse(text) : null;
+  console.log('🔧 Response text:', text.substring(0, 500) + (text.length > 500 ? '...' : ''));
+  
+  if (!text) return null;
+  
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    console.error('❌ JSON parse error:', error);
+    console.error('❌ Response text that failed to parse:', text);
+    throw new Error(`Invalid JSON response: ${text.substring(0, 100)}`);
+  }
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
