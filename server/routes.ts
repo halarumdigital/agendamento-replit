@@ -3478,8 +3478,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
 
+  // Test endpoint for Mercado Pago
+  app.get('/api/company/mercadopago-test', (req: any, res) => {
+    console.log('🔧 Mercado Pago test endpoint hit');
+    res.json({ message: 'Mercado Pago test endpoint working', companyId: req.session?.companyId });
+  });
+
   // Mercado Pago configuration endpoint  
   app.put('/api/company/mercadopago-config', async (req: any, res) => {
+    console.log('🔧 === MERCADO PAGO CONFIG ENDPOINT START ===');
+    console.log('🔧 Session:', req.session);
+    console.log('🔧 Raw body:', req.body);
     
     try {
       const companyId = req.session?.companyId;
@@ -3488,24 +3497,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Não autenticado" });
       }
 
-      console.log('🔧 Request body:', req.body);
+      console.log('🔧 Company ID found:', companyId);
       const { mercadopagoAccessToken, mercadopagoPublicKey, mercadopagoWebhookUrl, mercadopagoEnabled } = req.body;
       
-      console.log('🔧 Updating Mercado Pago config for company:', companyId);
+      console.log('🔧 Extracted values:', {
+        mercadopagoAccessToken: mercadopagoAccessToken ? 'HAS_VALUE' : 'NULL',
+        mercadopagoPublicKey: mercadopagoPublicKey ? 'HAS_VALUE' : 'NULL', 
+        mercadopagoWebhookUrl: mercadopagoWebhookUrl ? 'HAS_VALUE' : 'NULL',
+        mercadopagoEnabled: mercadopagoEnabled
+      });
 
-      // Call storage with proper error handling
-      const result = await storage.updateCompany(companyId, {
+      const updateData = {
         mercadopagoAccessToken: mercadopagoAccessToken || null,
         mercadopagoPublicKey: mercadopagoPublicKey || null,
         mercadopagoWebhookUrl: mercadopagoWebhookUrl || null,
         mercadopagoEnabled: mercadopagoEnabled ? 1 : 0
-      });
+      };
+      
+      console.log('🔧 Update data to send:', updateData);
+      console.log('🔧 Calling storage.updateCompany...');
+
+      const result = await storage.updateCompany(companyId, updateData);
       
       console.log('✅ Storage update result:', result);
+      console.log('🔧 === MERCADO PAGO CONFIG ENDPOINT SUCCESS ===');
       res.json({ message: "Configurações do Mercado Pago atualizadas com sucesso" });
       
     } catch (error) {
-      console.error("❌ Error updating Mercado Pago settings:", error);
+      console.error("❌ === MERCADO PAGO CONFIG ENDPOINT ERROR ===");
+      console.error("❌ Error details:", error);
+      console.error("❌ Error stack:", error instanceof Error ? error.stack : 'No stack');
       res.status(500).json({ message: "Erro interno do servidor", error: String(error) });
     }
   });
