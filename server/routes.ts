@@ -272,8 +272,7 @@ async function generatePaymentLinkFromConversation(conversationId: number, compa
       payment_methods: {
         excluded_payment_types: [
           { id: "bank_transfer" },
-          { id: "atm" },
-          { id: "ticket" }
+          { id: "atm" }
         ],
         excluded_payment_methods: [],
         installments: 3
@@ -408,8 +407,7 @@ async function generatePaymentLinkForAppointment(companyId: number, conversation
       payment_methods: {
         excluded_payment_types: [
           { id: "bank_transfer" },
-          { id: "atm" },
-          { id: "ticket" }
+          { id: "atm" }
         ],
         excluded_payment_methods: [],
         installments: 3
@@ -3789,8 +3787,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         payment_methods: {
           excluded_payment_types: [
             { id: "bank_transfer" },
-            { id: "atm" },
-            { id: "ticket" }
+            { id: "atm" }
           ],
           excluded_payment_methods: [],
           installments: 3
