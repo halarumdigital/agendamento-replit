@@ -282,7 +282,7 @@ async function generatePaymentLinkFromConversation(conversationId: number, compa
         failure: `${systemUrl}/pagamento/erro`,
         pending: `${systemUrl}/pagamento/pendente`
       },
-      external_reference: tempAppointment.id.toString(),
+      external_reference: `temp_${Date.now()}`,
       notification_url: `${systemUrl}/api/webhook/mercadopago`,
       statement_descriptor: company.fantasyName || company.companyName || "Agendamento"
     };
@@ -417,7 +417,7 @@ async function generatePaymentLinkForAppointment(companyId: number, conversation
         failure: `${systemUrl}/pagamento/erro`,
         pending: `${systemUrl}/pagamento/pendente`
       },
-      external_reference: appointment?.id?.toString() || Date.now().toString(),
+      external_reference: appointment?.id?.toString() || `temp_${Date.now()}`,
       notification_url: `${systemUrl}/api/webhook/mercadopago`,
       statement_descriptor: company.fantasyName || company.companyName || "Agendamento"
     };
@@ -3573,6 +3573,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: 'Error processing payment' });
     }
   });
+  
+  // Test endpoint to simulate Mercado Pago webhook
+  app.post('/api/test/simulate-payment-webhook', async (req: any, res) => {
+    try {
+      console.log('🧪 Simulando webhook do Mercado Pago...');
+      
+      // Find the company with Mercado Pago configured
+      const companies = await storage.getAllCompanies();
+      const company = companies.find(c => c.mercadopagoPublicKey && c.mercadopagoAccessToken);
+      
+      if (!company) {
+        return res.status(400).json({ message: 'Nenhuma empresa com Mercado Pago configurado' });
+      }
+      
+      // Find the most recent conversation with SIM confirmation
+      const [recentConvs] = await pool.execute(`
+        SELECT c.*, m.content, m.timestamp as last_message_time 
+        FROM conversations c
+        JOIN messages m ON c.id = m.conversation_id 
+        WHERE c.company_id = ? 
+          AND m.role = 'user' 
+          AND (LOWER(m.content) LIKE '%sim%' OR LOWER(m.content) LIKE '%ok%')
+          AND m.timestamp > DATE_SUB(NOW(), INTERVAL 30 MINUTE)
+        ORDER BY m.timestamp DESC 
+        LIMIT 1
+      `, [company.id]);
+      
+      if (!Array.isArray(recentConvs) || recentConvs.length === 0) {
+        return res.status(400).json({ message: 'Nenhuma conversa com confirmação SIM encontrada' });
+      }
+      
+      const conversation = recentConvs[0];
+      console.log('🎯 Conversa encontrada:', conversation.id);
+      
+      // Simulate webhook payload
+      const webhookPayload = {
+        type: 'payment',
+        data: {
+          id: `test-payment-${Date.now()}`
+        }
+      };
+      
+      // Simulate payment data
+      const paymentData = {
+        id: webhookPayload.data.id,
+        status: 'approved',
+        external_reference: `temp_${Date.now()}`,
+        payment_method_id: 'pix',
+        transaction_amount: 60,
+        payer: { email: 'cliente@exemplo.com' }
+      };
+      
+      // Create appointment
+      console.log('💳 Criando agendamento após pagamento simulado...');
+      const result = await createAppointmentFromPaymentApproval(conversation.id, company.id, paymentData);
+      
+      res.json({ 
+        message: 'Webhook simulado com sucesso', 
+        conversationId: conversation.id,
+        appointmentCreated: !!result
+      });
+    } catch (error) {
+      console.error('❌ Erro ao simular webhook:', error);
+      res.status(500).json({ message: 'Erro ao processar simulação' });
+    }
+  });
 
   // Mercado Pago webhook endpoint
   app.post('/api/webhook/mercadopago', async (req: any, res) => {
@@ -3797,7 +3863,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           failure: `${systemUrl}/pagamento/erro`,
           pending: `${systemUrl}/pagamento/pendente`
         },
-        external_reference: appointmentId?.toString() || Date.now().toString(),
+        external_reference: appointmentId?.toString() || `temp_${Date.now()}`,
         notification_url: `${systemUrl}/api/webhook/mercadopago`,
         statement_descriptor: company.fantasyName || "Agendamento"
       };
