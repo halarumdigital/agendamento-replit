@@ -3489,46 +3489,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ message: 'Test PUT endpoint working', companyId: req.session?.companyId, body: req.body });
   });
 
-  // Mercado Pago configuration endpoint
-  app.put('/api/company/mercadopago-config', async (req: any, res) => {
-    console.log('🚀 MERCADO PAGO ENDPOINT HIT!'); // This should appear if route is registered
-    try {
-      console.log('🔧 Mercado Pago config endpoint called');
-      console.log('🔧 Session data:', { companyId: req.session?.companyId, hasSession: !!req.session });
-      
-      const companyId = req.session.companyId;
-      if (!companyId) {
-        console.log('❌ No company ID in session');
-        return res.status(401).json({ message: "Não autenticado" });
-      }
-
-      console.log('🔧 Request body:', req.body);
-      const { mercadopagoAccessToken, mercadopagoPublicKey, mercadopagoWebhookUrl, mercadopagoEnabled } = req.body;
-      
-      console.log('🔧 Updating Mercado Pago config for company:', companyId);
-      console.log('🔧 Data received:', {
-        hasAccessToken: !!mercadopagoAccessToken,
-        hasPublicKey: !!mercadopagoPublicKey,
-        hasWebhookUrl: !!mercadopagoWebhookUrl,
-        mercadopagoEnabled
-      });
-
-      console.log('🔧 Calling storage.updateCompany...');
-      const result = await storage.updateCompany(companyId, {
-        mercadopagoAccessToken,
-        mercadopagoPublicKey,
-        mercadopagoWebhookUrl,
-        mercadopagoEnabled: mercadopagoEnabled ? 1 : 0
-      });
-      
-      console.log('✅ Storage update result:', result);
-      console.log('✅ Mercado Pago config updated successfully for company:', companyId);
-      res.json({ message: "Configurações do Mercado Pago atualizadas com sucesso" });
-    } catch (error) {
-      console.error("❌ Error updating Mercado Pago settings:", error);
-      console.error("❌ Error stack:", error instanceof Error ? error.stack : 'No stack trace');
-      res.status(500).json({ message: "Erro interno do servidor" });
-    }
+  // Mercado Pago configuration endpoint - SIMPLIFIED VERSION
+  app.put('/api/company/mercadopago-config', (req: any, res) => {
+    console.log('🚀 MERCADO PAGO ENDPOINT HIT - SIMPLIFIED!');
+    res.json({ message: "Test successful", received: req.body });
   });
 
   // Force process approved payment (manual trigger)
