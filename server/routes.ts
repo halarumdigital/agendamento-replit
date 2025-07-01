@@ -272,7 +272,8 @@ async function generatePaymentLinkFromConversation(conversationId: number, compa
       payment_methods: {
         excluded_payment_types: [
           { id: "bank_transfer" },
-          { id: "atm" }
+          { id: "atm" },
+          { id: "ticket" }
         ],
         excluded_payment_methods: [],
         installments: 3
@@ -407,7 +408,8 @@ async function generatePaymentLinkForAppointment(companyId: number, conversation
       payment_methods: {
         excluded_payment_types: [
           { id: "bank_transfer" },
-          { id: "atm" }
+          { id: "atm" },
+          { id: "ticket" }
         ],
         excluded_payment_methods: [],
         installments: 3
@@ -3787,7 +3789,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         payment_methods: {
           excluded_payment_types: [
             { id: "bank_transfer" },
-            { id: "atm" }
+            { id: "atm" },
+            { id: "ticket" }
           ],
           excluded_payment_methods: [],
           installments: 3
@@ -4699,11 +4702,12 @@ INSTRUÇÕES OBRIGATÓRIAS:
                   console.log('📋 Extraindo dados para link de pagamento da última mensagem da IA...');
                   
                   // Extrair dados básicos do resumo para gerar link de pagamento (melhorado)
-                  const appointmentMatch = lastAiMessage.content.match(/👤\s*Nome:\s*([^\n🏢💇📅🕐📱]+)/);
-                  const professionalMatch = lastAiMessage.content.match(/🏢\s*Profissional:\s*([^\n👤💇📅🕐📱]+)/);
-                  const serviceMatch = lastAiMessage.content.match(/💇\s*Serviço:\s*([^\n👤🏢📅🕐📱(]+)/);
-                  const dateMatch = lastAiMessage.content.match(/📅\s*Data:\s*[^,]*,?\s*(\d{2}\/\d{2}\/\d{4})/);
-                  const timeMatch = lastAiMessage.content.match(/🕐\s*Horário:\s*(\d{1,2}:\d{2})/);
+                  const appointmentMatch = lastAiMessage.content.match(/(?:👤\s*Nome:|Nome:)\s*([^\n🏢💇📅🕐📱✅👨⏰]+)/) ||
+                                          lastAiMessage.content.match(/([A-Z][a-z]+\s+[A-Z][a-z]+)(?=!)/);
+                  const professionalMatch = lastAiMessage.content.match(/(?:🏢\s*Profissional:|👨\s*Profissional:)\s*([^\n👤💇📅🕐📱✅⏰]+)/);
+                  const serviceMatch = lastAiMessage.content.match(/(?:💇\s*Serviço:|✅\s*Serviço:)\s*([^\n👤🏢📅🕐📱(✅👨⏰]+)/);
+                  const dateMatch = lastAiMessage.content.match(/(?:📅\s*Data:)\s*[^,]*,?\s*(\d{2}\/\d{2}\/\d{4})/);
+                  const timeMatch = lastAiMessage.content.match(/(?:🕐\s*Horário:|⏰\s*Horário:)\s*(\d{1,2}:\d{2})/);
                   
                   console.log('🔍 Debug extração:', {
                     appointmentMatch: appointmentMatch?.[1],
