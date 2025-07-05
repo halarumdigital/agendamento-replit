@@ -3327,16 +3327,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+
   // Mercado Pago configuration endpoint  
   app.put('/api/company/mercadopago-config', isCompanyAuthenticated, async (req: any, res) => {
     console.log('🔧 === MERCADO PAGO CONFIG ENDPOINT START ===');
-    console.log('🔧 Session:', req.session);
-    console.log('🔧 Raw body:', req.body);
+    console.log('🔧 Request headers:', req.headers);
+    console.log('🔧 Session ID:', req.sessionID);
+    console.log('🔧 Session:', JSON.stringify(req.session, null, 2));
+    console.log('🔧 Raw body:', JSON.stringify(req.body, null, 2));
     
     try {
       const companyId = req.session?.companyId;
       if (!companyId) {
         console.log('❌ No company ID in session');
+        console.log('❌ Complete session data:', JSON.stringify(req.session, null, 2));
         return res.status(401).json({ message: "Não autenticado" });
       }
 
