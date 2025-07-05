@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, isCompanyAuthenticated } from "./auth";
+import { sentryUtils } from "./sentry-utils";
 import { db, pool } from "./db";
 import { loadCompanyPlan, requirePermission, checkProfessionalsLimit, RequestWithPlan } from "./plan-middleware";
 import { checkSubscriptionStatus, getCompanyPaymentAlerts, markAlertAsShown } from "./subscription-middleware";
@@ -1859,6 +1860,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ message: 'Mercado Pago test endpoint working', session: req.session });
   });
 
+
+
   // Auth middleware - MUST BE BEFORE AUTHENTICATED ROUTES
   await setupAuth(app);
 
@@ -1870,6 +1873,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       companyId: req.session?.companyId || null,
       sessionExists: !!req.session
     });
+  });
+
+  // Sentry test endpoint (accessible without authentication)
+  app.get('/api/sentry-test', (req: any, res) => {
+    try {
+      // Test Sentry message capture
+      sentryUtils.captureMessage('Sentry test endpoint accessed', 'info');
+      
+      // Test breadcrumb
+      sentryUtils.addBreadcrumb('Sentry test endpoint', 'test', 'info', {
+        endpoint: '/api/sentry-test',
+        timestamp: new Date().toISOString(),
+      });
+      
+      res.json({ 
+        message: 'Sentry test successful',
+        timestamp: new Date().toISOString(),
+        status: 'active' 
+      });
+    } catch (error) {
+      sentryUtils.captureException(error as Error, { endpoint: '/api/sentry-test' });
+      res.status(500).json({ message: 'Sentry test failed', error: (error as Error).message });
+    }
+  });
+
+  // Sentry error test endpoint (accessible without authentication)
+  app.get('/api/sentry-error-test', (req: any, res) => {
+    try {
+      // Intentionally throw an error to test Sentry error capture
+      throw new Error('This is a test error for Sentry monitoring');
+    } catch (error) {
+      sentryUtils.captureApiError(error as Error, req, { 
+        test: true, 
+        purpose: 'error_monitoring_test' 
+      });
+      res.status(500).json({ message: 'Test error captured by Sentry' });
+    }
   });
 
   // Simulate company login for testing (temporary endpoint)

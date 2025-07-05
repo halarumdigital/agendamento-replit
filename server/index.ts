@@ -1,6 +1,10 @@
+// IMPORTANT: Sentry instrument must be imported first
+import "./instrument.js";
+
 import dotenv from 'dotenv';
 dotenv.config({ path: '.env' });
 import express, { type Request, Response, NextFunction } from "express";
+import { sentryUtils, sentryExpressErrorHandler } from "./sentry-utils";
 import { registerRoutes } from "./routes";
 import { setupMobileRoutes } from "./mobile-routes";
 import { setupVite, serveStatic, log } from "./vite";
@@ -23,6 +27,7 @@ import { db } from "./db";
 import path from "path";
 
 const app = express();
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
@@ -113,9 +118,21 @@ app.use((req, res, next) => {
   // Setup mobile API routes
   setupMobileRoutes(app);
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  // Use Sentry error handler middleware
+  app.use(sentryExpressErrorHandler);
+
+  app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
+
+    // Additional context for critical errors
+    if (status >= 500) {
+      sentryUtils.addBreadcrumb(`Server Error: ${message}`, "error", "error", {
+        statusCode: status,
+        endpoint: req.path,
+        method: req.method,
+      });
+    }
 
     res.status(status).json({ message });
     throw err;

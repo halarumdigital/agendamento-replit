@@ -176,9 +176,36 @@ node scripts/create-migration.js nome-da-migration
 - Proteção contra re-execução de migrations já aplicadas
 - Sistema de rollback manual quando necessário
 
+## Monitoring and Error Tracking
+
+### Sentry Integration
+- **Framework**: @sentry/node for comprehensive error monitoring
+- **Configuration**: Production-ready Sentry setup with DSN integration
+- **Features**: 
+  - Automatic error capture and reporting
+  - Performance monitoring with request tracing
+  - Database operation monitoring
+  - Custom error context and breadcrumbs
+  - Environment-based configuration
+
+### Monitoring Capabilities
+- **Error Tracking**: Automatic exception capture with context
+- **Performance Monitoring**: HTTP request tracing and database operations
+- **Custom Context**: API errors, database errors, authentication failures, payment errors
+- **User Context**: Session-based user identification
+- **Breadcrumbs**: Debugging trail for error investigation
+
+### Sentry Utilities
+- Comprehensive error categorization (API, database, auth, payment)
+- Request context capture for debugging
+- User session tracking
+- Custom breadcrumb logging
+- Environment-based debug configuration
+
 ## Changelog
 ```
 Changelog:
+- July 05, 2025. COMPLETED: Sentry error monitoring integration - installed @sentry/node package, created comprehensive monitoring system with production DSN configuration, implemented error tracking utilities for API errors, database failures, authentication issues and payment problems, added automatic HTTP request tracing and performance monitoring, created Sentry utilities module with categorized error capture, breadcrumb logging and user context tracking, system now captures and reports all errors to Sentry dashboard for production monitoring and debugging
 - July 01, 2025. COMPLETED: Mercado Pago configuration endpoint bug fixed - resolved critical issue where `/api/company/mercadopago-config` PUT endpoint was returning HTML instead of JSON in external environment, identified problem in complex async code structure causing route registration failure, simplified and restructured endpoint with proper error handling and null value management, system now correctly saves and loads Mercado Pago configurations (access token, public key, webhook URL, enabled status) through company settings interface without JSON parsing errors
 - July 01, 2025. COMPLETED: Mercado Pago migration fix for external databases - created migration 008_mercadopago_columns.sql to add mercadopago_enabled, mercadopago_access_token and mercadopago_public_key columns with IF NOT EXISTS clause, ensuring compatibility with external databases where columns might not exist, migration successfully applied and all Mercado Pago functionality now working in external environments
 - July 01, 2025. COMPLETED: Enhanced regex patterns for AI confirmation parsing - updated appointment data extraction to work with new AI summary format using different emojis, improved pattern matching for client name extraction including fallback patterns, corrected professional and service parsing to handle 👨 and ✅ emojis respectively, enhanced date and time parsing for ⏰ emoji format, system now correctly extracts appointment data from AI confirmations and generates payment links successfully
